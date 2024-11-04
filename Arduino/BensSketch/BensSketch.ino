@@ -6,7 +6,9 @@
 //#include <ArduinoJson.h>
 #include <FirebaseJson.h>
 #include <SPIFFS.h>
-#include "LittleFS.h"
+#include <LittleFS.h>
+
+#include "html_pages.h"
 
 
 #define BQ34Z100 0x55
@@ -45,8 +47,8 @@ String voltage_string;
 String current_string;
 String temp_string;
 String trial;
-String mytitle = "CUB_001 - ";
-String percent = "%";
+String mytitle = "ESP32 BMS Aodhan (";
+String percent = "%)";
 String device_title;
 String toggle1 = "toggle";
 String JSON_string;
