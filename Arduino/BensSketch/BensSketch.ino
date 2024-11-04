@@ -839,11 +839,13 @@ void setup(){
   // SPIFFS.begin();
   initLittleFS();
 
+  // 3 minute timer to check the connection is still live
   timer = timerBegin(0, 80, true);                //using timer 0, prescaler of 80, count up
   timerAttachInterrupt(timer, &onTimer, true);    //  hardware timer, address of ISR, edge type
   timerAlarmWrite(timer, 180000000, true);        // use timer, count up to (180000000 u seconds = 3 mins), reload
   timerAlarmEnable(timer);  
 
+  // 1 second timer to "refresh" the info on the page
   timer2 = timerBegin(1, 80, true);                //using timer 1, prescaler of 80, count up
   timerAttachInterrupt(timer2, &onTimer2, true);    //  hardware timer, address of ISR, edge type
   timerAlarmWrite(timer2, 1000000, true);        // use timer, count up to (1000000 u seconds = 1 sec), reload
