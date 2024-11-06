@@ -8,6 +8,8 @@
 
 #include <string.h>
 
+#include "html.h"
+
 #define WIFI_SSID "ESP32-AP"
 #define WIFI_PASS "12345678"
 #define MAX_STA_CONN 4
@@ -58,12 +60,7 @@ void wifi_init_softap(void)
 // Function to handle HTTP GET requests
 esp_err_t index_handler(httpd_req_t *req)
 {
-    const char *response = "<!DOCTYPE html>"
-                           "<html>"
-                           "<head><title>ESP32 Webpage</title></head>"
-                           "<body><h1>Welcome to the ESP32 Web Server!</h1></body>"
-                           "</html>";
-    httpd_resp_send(req, response, HTTPD_RESP_USE_STRLEN); // Send the HTML page as a response
+    httpd_resp_send(req, index_html, HTTPD_RESP_USE_STRLEN); // Send the HTML page as a response
     return ESP_OK;
 }
 
