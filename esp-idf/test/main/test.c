@@ -4,6 +4,7 @@
 #include "esp_event.h"
 #include "esp_log.h"
 #include "nvs_flash.h"
+#include "esp_http_server.h"
 
 #include <string.h>
 
@@ -54,10 +55,43 @@ void wifi_init_softap(void)
     ESP_LOGI(TAG, "WiFi AP started. SSID: %s, Password: %s", WIFI_SSID, WIFI_PASS);
 }
 
+// Function to handle HTTP GET requests
+esp_err_t index_handler(httpd_req_t *req)
+{
+    const char *response = "<!DOCTYPE html>"
+                           "<html>"
+                           "<head><title>ESP32 Webpage</title></head>"
+                           "<body><h1>Welcome to the ESP32 Web Server!</h1></body>"
+                           "</html>";
+    httpd_resp_send(req, response, HTTPD_RESP_USE_STRLEN); // Send the HTML page as a response
+    return ESP_OK;
+}
+
+// Start HTTP server
+httpd_handle_t start_webserver(void)
+{
+    httpd_config_t config = HTTPD_DEFAULT_CONFIG();
+
+    // Start the httpd server
+    httpd_handle_t server = NULL;
+    if (httpd_start(&server, &config) == ESP_OK) {
+        // Register URI handler
+        httpd_uri_t uri_get = {
+            .uri       = "/",
+            .method    = HTTP_GET,
+            .handler   = index_handler,
+            .user_ctx  = NULL
+        };
+        httpd_register_uri_handler(server, &uri_get);
+    }
+    return server;
+}
+
 void app_main(void)
 {
     // Start the Access Point
     wifi_init_softap();
 
-    // The ESP32 will now function as an AP
+    // Start the HTTP server to serve the HTML page
+    start_webserver();
 }
