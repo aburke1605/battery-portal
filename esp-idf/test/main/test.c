@@ -211,6 +211,20 @@ httpd_handle_t start_webserver(void)
             .user_ctx  = NULL
         };
         httpd_register_uri_handler(server, &hotspot_detect_get_windows);
+        httpd_uri_t hotspot_detect_get_windows2 = {
+            .uri       = "/favicon.ico",
+            .method    = HTTP_GET,
+            .handler   = index_handler,
+            .user_ctx  = NULL
+        };
+        httpd_register_uri_handler(server, &hotspot_detect_get_windows2);
+        httpd_uri_t hotspot_detect_get_windows3 = {
+            .uri       = "/redirect",
+            .method    = HTTP_GET,
+            .handler   = index_handler,
+            .user_ctx  = NULL
+        };
+        httpd_register_uri_handler(server, &hotspot_detect_get_windows3);
 
 
         return server;
