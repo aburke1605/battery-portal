@@ -184,14 +184,34 @@ httpd_handle_t start_webserver(void)
     if (httpd_start(&server, &config) == ESP_OK) {
         ESP_LOGI(TAG, "Registering URI handlers");
         httpd_register_uri_handler(server, &ws);  // Register WebSocket URI
-        // Register hotspot-detect.html page
-        httpd_uri_t hotspot_detect_get = {
+
+        // Register ios detect page
+        httpd_uri_t hotspot_detect_get_ios = {
             .uri       = "/hotspot-detect.html",
             .method    = HTTP_GET,
             .handler   = index_handler,
             .user_ctx  = NULL
         };
-        httpd_register_uri_handler(server, &hotspot_detect_get);
+        httpd_register_uri_handler(server, &hotspot_detect_get_ios);
+
+        // Register android detect page
+        httpd_uri_t hotspot_detect_get_android = {
+            .uri       = "/generate_204",
+            .method    = HTTP_GET,
+            .handler   = index_handler,
+            .user_ctx  = NULL
+        };
+        httpd_register_uri_handler(server, &hotspot_detect_get_android);
+
+        // Register windows detect page
+        httpd_uri_t hotspot_detect_get_windows = {
+            .uri       = "/connecttest.txt",
+            .method    = HTTP_GET,
+            .handler   = index_handler,
+            .user_ctx  = NULL
+        };
+        httpd_register_uri_handler(server, &hotspot_detect_get_windows);
+
 
         return server;
     }
