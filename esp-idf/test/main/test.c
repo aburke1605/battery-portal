@@ -173,6 +173,12 @@ esp_err_t index_handler(httpd_req_t *req)
     return ESP_OK;
 }
 
+esp_err_t page2_handler(httpd_req_t *req)
+{
+    httpd_resp_send(req, page2_html, HTTPD_RESP_USE_STRLEN);
+    return ESP_OK;
+}
+
 // Start HTTP server
 httpd_handle_t start_webserver(void)
 {
@@ -225,6 +231,15 @@ httpd_handle_t start_webserver(void)
             .user_ctx  = NULL
         };
         httpd_register_uri_handler(server, &hotspot_detect_get_windows3);
+
+
+        httpd_uri_t get_page2 = {
+            .uri       = "/page2",
+            .method    = HTTP_GET,
+            .handler   = page2_handler,
+            .user_ctx  = NULL
+        };
+        httpd_register_uri_handler(server, &get_page2);
 
 
         return server;
