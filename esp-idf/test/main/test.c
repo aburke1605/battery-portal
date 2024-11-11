@@ -3,14 +3,18 @@
 #include <esp_log.h>
 #include <nvs_flash.h>
 #include <esp_http_server.h>
+#include "lwip/sockets.h"
+#include "lwip/netdb.h"
+#include "lwip/dns.h"
 
 #include <string.h>
 
 #include "html.h"
 
-#define WIFI_SSID "ESP32-AP"
+#define WIFI_SSID "ESP32-AP-TEST"
 #define WIFI_PASS "12345678"
 #define MAX_STA_CONN 4
+#define DNS_PORT 53
 
 static const char *TAG = "websocket_server";
 
@@ -44,9 +48,9 @@ void wifi_init_softap(void)
         },
     };
 
-    if (strlen(WIFI_PASS) == 0) {
+    //if (strlen(WIFI_PASS) == 0) {
         wifi_config.ap.authmode = WIFI_AUTH_OPEN;
-    }
+    //}
 
     ESP_ERROR_CHECK(esp_wifi_set_mode(WIFI_MODE_AP)); // Set ESP32 as AP
     ESP_ERROR_CHECK(esp_wifi_set_config(ESP_IF_WIFI_AP, &wifi_config));
@@ -162,6 +166,13 @@ static const httpd_uri_t ws = {
         .is_websocket = true // Mark this URI as WebSocket
 };
 
+// TODO Function to handle HTTP GET requests  handle all the request
+esp_err_t index_handler(httpd_req_t *req)
+{
+    httpd_resp_send(req, index_html, HTTPD_RESP_USE_STRLEN); // Send the HTML page as a response
+    return ESP_OK;
+}
+
 // Start HTTP server
 httpd_handle_t start_webserver(void)
 {
@@ -173,11 +184,113 @@ httpd_handle_t start_webserver(void)
     if (httpd_start(&server, &config) == ESP_OK) {
         ESP_LOGI(TAG, "Registering URI handlers");
         httpd_register_uri_handler(server, &ws);  // Register WebSocket URI
+        // Register hotspot-detect.html page
+        httpd_uri_t hotspot_detect_get = {
+            .uri       = "/hotspot-detect.html",
+            .method    = HTTP_GET,
+            .handler   = index_handler,
+            .user_ctx  = NULL
+        };
+        httpd_register_uri_handler(server, &hotspot_detect_get);
+
         return server;
     }
 
     ESP_LOGI(TAG, "Error starting server!");
     return NULL;
+}
+
+// DNS handler (redirect all requests to our AP IP)
+static void dns_server_task(void *pvParameters) {
+    struct sockaddr_in dest_addr;
+    struct sockaddr_in source_addr;
+    uint8_t buffer[512];
+    int addr_family = AF_INET;
+    int ip_protocol = IPPROTO_IP;
+
+    dest_addr.sin_addr.s_addr = htonl(INADDR_ANY);
+    dest_addr.sin_family = AF_INET;
+    dest_addr.sin_port = htons(DNS_PORT);
+
+    // Create UDP socket
+    int sock = socket(addr_family, SOCK_DGRAM, ip_protocol);
+    if (sock < 0) {
+        ESP_LOGE(TAG, "Unable to create socket: errno %d", errno);
+        vTaskDelete(NULL);
+    }
+    if (bind(sock, (struct sockaddr *)&dest_addr, sizeof(dest_addr)) < 0) {
+        ESP_LOGE(TAG, "Socket unable to bind: errno %d", errno);
+        close(sock);
+        vTaskDelete(NULL);
+    }
+
+    ESP_LOGI(TAG, "DNS server started on port %d", DNS_PORT);
+
+    // Get AP IP address
+    esp_netif_ip_info_t ip_info;
+    esp_netif_t *netif = esp_netif_get_handle_from_ifkey("WIFI_AP_DEF");
+    if (netif == NULL || esp_netif_get_ip_info(netif, &ip_info) != ESP_OK) {
+        ESP_LOGE(TAG, "Failed to get AP IP address");
+        vTaskDelete(NULL);
+    }
+
+    while (1) {
+        socklen_t socklen = sizeof(source_addr);
+        int len = recvfrom(sock, buffer, sizeof(buffer), 0, (struct sockaddr *)&source_addr, &socklen);
+
+        if (len > 0) {
+            ESP_LOGI(TAG, "DNS request received, responding with AP IP: " IPSTR, IP2STR(&ip_info.ip));
+
+            // Set the DNS response flags
+            buffer[2] = 0x81; // Response flag and authoritative answer
+            buffer[3] = 0x80; // Recursion available
+
+            // Questions count (already in the request, copying as is)
+            // Answer count: Set to 1
+            buffer[6] = 0x00;
+            buffer[7] = 0x01;
+
+            // Append answer record after the question
+            int response_offset = len;
+
+            // Point to the answer section, matching the question section
+            buffer[response_offset++] = 0xc0; // Pointer to name offset
+            buffer[response_offset++] = 0x0c;
+
+            // Type A record (IPv4 address)
+            buffer[response_offset++] = 0x00;
+            buffer[response_offset++] = 0x01;
+
+            // Class IN
+            buffer[response_offset++] = 0x00;
+            buffer[response_offset++] = 0x01;
+
+            // TTL (Time to live) - 5 minutes
+            buffer[response_offset++] = 0x00;
+            buffer[response_offset++] = 0x00;
+            buffer[response_offset++] = 0x0e;
+            buffer[response_offset++] = 0x10;
+
+            // Data length (IPv4 address length)
+            buffer[response_offset++] = 0x00;
+            buffer[response_offset++] = 0x04;
+
+            // Add the AP IP address as the answer (4 bytes)
+            buffer[response_offset++] = ip4_addr1(&ip_info.ip);
+            buffer[response_offset++] = ip4_addr2(&ip_info.ip);
+            buffer[response_offset++] = ip4_addr3(&ip_info.ip);
+            buffer[response_offset++] = ip4_addr4(&ip_info.ip);
+
+            // Send DNS response
+            sendto(sock, buffer, response_offset, 0, (struct sockaddr *)&source_addr, socklen);
+        } else {
+            ESP_LOGE(TAG, "recvfrom failed: errno %d", errno);
+        }
+    }
+
+    // Cleanup if the loop exits
+    close(sock);
+    vTaskDelete(NULL);
 }
 
 void app_main(void)
@@ -188,4 +301,7 @@ void app_main(void)
     // Start the ws server to serve the HTML page
     static httpd_handle_t server = NULL;
     server =  start_webserver();
+
+    // Start DNS server task
+    xTaskCreate(&dns_server_task, "dns_server_task", 4096, NULL, 5, NULL);
 }
