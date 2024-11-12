@@ -7,9 +7,11 @@ static const char index_html[] = R"rawliteral(
 <p>time: <span id='time'></span></p>
 
 <body>
-  <div class="container">
-    <form action="/page2">
-      <button type="submit">Go</button>
+  <div class='container'>
+    <form action='/page2' method='GET'>
+      <label>Username : </label>
+      <input type='text' placeholder='Enter Username' name='username' required>
+      <button type='submit'>Go</button>
     </form>
   </div>
 </body>

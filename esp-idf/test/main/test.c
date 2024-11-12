@@ -173,9 +173,37 @@ esp_err_t index_handler(httpd_req_t *req)
     return ESP_OK;
 }
 
+/* TODO
+give the homepage a name somehow, so its not just "www.msftconnecttest.com/page2"
+*/
 esp_err_t page2_handler(httpd_req_t *req)
 {
-    httpd_resp_send(req, page2_html, HTTPD_RESP_USE_STRLEN);
+    char username[100];
+
+    // Parse the query string
+    if (httpd_req_get_url_query_str(req, username, sizeof(username)) == ESP_OK) {
+        ESP_LOGI(TAG, "Received query string: %s", username);
+
+        // Extract the 'username' parameter
+        char param[50];
+        if (httpd_query_key_value(username, "username", param, sizeof(param)) == ESP_OK) {
+            ESP_LOGI(TAG, "Username: %s", param);
+
+            // Check if the username matches the expected value
+            if (strcmp(param, "user") == 0) {
+                httpd_resp_send(req, page2_html, HTTPD_RESP_USE_STRLEN);
+            } else {
+                httpd_resp_send(req, "<html><body><h1>Access Denied</h1></body></html>", HTTPD_RESP_USE_STRLEN);
+            }
+        }
+    }
+    /*
+    // don't think this is needed since in the html page the username is required
+    else {
+        ESP_LOGE(TAG, "No query string received");
+        httpd_resp_send_404(req);
+    }
+    */
     return ESP_OK;
 }
 
