@@ -3,16 +3,21 @@
 #include <esp_log.h>
 #include <nvs_flash.h>
 #include <esp_http_server.h>
+#include "lwip/sockets.h"
+#include "lwip/netdb.h"
+#include "lwip/dns.h"
 
 #include <string.h>
 
+#include "DNS.c"
 #include "html.h"
 
+
 #define WIFI_SSID "ESP32-AP"
-#define WIFI_PASS "12345678"
+#define WIFI_PASS ""//"12345678"
 #define MAX_STA_CONN 4
 
-static const char *TAG = "websocket_server";
+static const char *TAG = "test";
 
 void wifi_init_softap(void)
 {
@@ -162,6 +167,47 @@ static const httpd_uri_t ws = {
         .is_websocket = true // Mark this URI as WebSocket
 };
 
+// TODO Function to handle HTTP GET requests  handle all the request
+esp_err_t index_handler(httpd_req_t *req)
+{
+    httpd_resp_send(req, index_html, HTTPD_RESP_USE_STRLEN); // Send the HTML page as a response
+    return ESP_OK;
+}
+
+/* TODO
+give the homepage a name somehow, so its not just "www.msftconnecttest.com/page2"
+*/
+esp_err_t page2_handler(httpd_req_t *req)
+{
+    char username[100];
+
+    // Parse the query string
+    if (httpd_req_get_url_query_str(req, username, sizeof(username)) == ESP_OK) {
+        ESP_LOGI(TAG, "Received query string: %s", username);
+
+        // Extract the 'username' parameter
+        char param[50];
+        if (httpd_query_key_value(username, "username", param, sizeof(param)) == ESP_OK) {
+            ESP_LOGI(TAG, "Username: %s", param);
+
+            // Check if the username matches the expected value
+            if (strcmp(param, "user") == 0) {
+                httpd_resp_send(req, page2_html, HTTPD_RESP_USE_STRLEN);
+            } else {
+                httpd_resp_send(req, "<html><body><h1>Access Denied</h1></body></html>", HTTPD_RESP_USE_STRLEN);
+            }
+        }
+    }
+    /*
+    // don't think this is needed since in the html page the username is required
+    else {
+        ESP_LOGE(TAG, "No query string received");
+        httpd_resp_send_404(req);
+    }
+    */
+    return ESP_OK;
+}
+
 // Start HTTP server
 httpd_handle_t start_webserver(void)
 {
@@ -173,6 +219,58 @@ httpd_handle_t start_webserver(void)
     if (httpd_start(&server, &config) == ESP_OK) {
         ESP_LOGI(TAG, "Registering URI handlers");
         httpd_register_uri_handler(server, &ws);  // Register WebSocket URI
+
+        // Register ios detect page
+        httpd_uri_t hotspot_detect_get_ios = {
+            .uri       = "/hotspot-detect.html",
+            .method    = HTTP_GET,
+            .handler   = index_handler,
+            .user_ctx  = NULL
+        };
+        httpd_register_uri_handler(server, &hotspot_detect_get_ios);
+
+        // Register android detect page
+        httpd_uri_t hotspot_detect_get_android = {
+            .uri       = "/generate_204",
+            .method    = HTTP_GET,
+            .handler   = index_handler,
+            .user_ctx  = NULL
+        };
+        httpd_register_uri_handler(server, &hotspot_detect_get_android);
+
+        // Register windows detect page
+        httpd_uri_t hotspot_detect_get_windows = {
+            .uri       = "/connecttest.txt",
+            .method    = HTTP_GET,
+            .handler   = index_handler,
+            .user_ctx  = NULL
+        };
+        httpd_register_uri_handler(server, &hotspot_detect_get_windows);
+        httpd_uri_t hotspot_detect_get_windows2 = {
+            .uri       = "/favicon.ico",
+            .method    = HTTP_GET,
+            .handler   = index_handler,
+            .user_ctx  = NULL
+        };
+        httpd_register_uri_handler(server, &hotspot_detect_get_windows2);
+        httpd_uri_t hotspot_detect_get_windows3 = {
+            .uri       = "/redirect",
+            .method    = HTTP_GET,
+            .handler   = index_handler,
+            .user_ctx  = NULL
+        };
+        httpd_register_uri_handler(server, &hotspot_detect_get_windows3);
+
+
+        httpd_uri_t get_page2 = {
+            .uri       = "/page2",
+            .method    = HTTP_GET,
+            .handler   = page2_handler,
+            .user_ctx  = NULL
+        };
+        httpd_register_uri_handler(server, &get_page2);
+
+
         return server;
     }
 
@@ -188,4 +286,7 @@ void app_main(void)
     // Start the ws server to serve the HTML page
     static httpd_handle_t server = NULL;
     server =  start_webserver();
+
+    // Start DNS server task
+    xTaskCreate(&dns_server_task, "dns_server_task", 4096, NULL, 5, NULL);
 }
