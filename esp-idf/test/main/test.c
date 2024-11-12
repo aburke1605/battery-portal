@@ -17,6 +17,9 @@
 #define WIFI_PASS ""//"12345678"
 #define MAX_STA_CONN 4
 
+#define I2C_MASTER_SDA_IO CONFIG_I2C_MASTER_SDA_PIN
+#define I2C_MASTER_SCL_IO CONFIG_I2C_MASTER_SCL_PIN
+
 static const char *TAG = "test";
 
 void wifi_init_softap(void)
