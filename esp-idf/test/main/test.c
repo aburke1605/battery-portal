@@ -3,13 +3,14 @@
 #include <esp_log.h>
 #include <nvs_flash.h>
 #include <esp_http_server.h>
-#include "lwip/sockets.h"
-#include "lwip/netdb.h"
-#include "lwip/dns.h"
+#include <lwip/sockets.h>
+#include <lwip/netdb.h>
+#include <lwip/dns.h>
 
 #include <string.h>
 
 #include "DNS.c"
+#include "I2C.c"
 #include "html.h"
 
 
@@ -17,8 +18,6 @@
 #define WIFI_PASS ""//"12345678"
 #define MAX_STA_CONN 4
 
-#define I2C_MASTER_SDA_IO CONFIG_I2C_MASTER_SDA_PIN
-#define I2C_MASTER_SCL_IO CONFIG_I2C_MASTER_SCL_PIN
 
 static const char *TAG = "test";
 
@@ -283,6 +282,28 @@ httpd_handle_t start_webserver(void)
 
 void app_main(void)
 {
+    esp_err_t ret;
+    uint8_t data[10];  // Array to store data from I2C device
+
+    // Initialize I2C
+    ret = i2c_master_init();
+    if (ret != ESP_OK) {
+        ESP_LOGE("I2C", "I2C initialization failed");
+        return;
+    }
+
+    // Read charge from I2C device
+    ret = i2c_read_charge(data, sizeof(data));
+    if (ret == ESP_OK) {
+        ESP_LOGI("I2C", "Read data: ");
+        for (int i = 0; i < sizeof(data); i++) {
+            ESP_LOGI("I2C", "Data[%d]: 0x%02X", i, data[i]);
+        }
+    } else {
+        ESP_LOGE("I2C", "Failed to read charge from device");
+    }
+    return;
+
     // Start the Access Point
     wifi_init_softap();
 
