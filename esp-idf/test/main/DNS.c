@@ -36,7 +36,7 @@ static void dns_server_task(void *pvParameters) {
         vTaskDelete(NULL);
     }
 
-    while (1) {
+    while (true) {
         socklen_t socklen = sizeof(source_addr);
         int len = recvfrom(sock, buffer, sizeof(buffer), 0, (struct sockaddr *)&source_addr, &socklen);
 
