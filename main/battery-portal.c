@@ -3,18 +3,18 @@
 #include <esp_log.h>
 #include <nvs_flash.h>
 #include <esp_http_server.h>
-#include "lwip/sockets.h"
-#include "lwip/netdb.h"
-#include "lwip/dns.h"
+#include <lwip/sockets.h>
+#include <lwip/netdb.h>
+#include <lwip/dns.h>
 
 #include <string.h>
 
 #include "DNS.c"
+#include "I2C.c"
 #include "html/index_page.h"
 #include "html/display_page.h"
 
-
-#define WIFI_SSID "ESP32-AP-TEST-YF"
+#define WIFI_SSID "ESP32-AP"
 #define WIFI_PASS ""//"12345678"
 #define MAX_STA_CONN 4
 
@@ -22,7 +22,6 @@ static const char *TAG = "test";
 static int CONFIG_MAX_CLIENTS = 5;
 
 void wifi_init_softap(void)
-{
     // Initialize NVS
     esp_err_t ret = nvs_flash_init();
     if (ret == ESP_ERR_NVS_NO_FREE_PAGES || ret == ESP_ERR_NVS_NEW_VERSION_FOUND) {
@@ -59,7 +58,7 @@ void wifi_init_softap(void)
     ESP_ERROR_CHECK(esp_wifi_set_config(ESP_IF_WIFI_AP, &wifi_config));
     ESP_ERROR_CHECK(esp_wifi_start());
 
-    ESP_LOGI(TAG, "WiFi AP started. SSID: %s, Password: %s", WIFI_SSID, WIFI_PASS);
+    ESP_LOGI("test", "WiFi AP started. SSID: %s, Password: %s", WIFI_SSID, WIFI_PASS);
 }
 
 /*
@@ -75,8 +74,7 @@ struct async_resp_arg {
 /*
  * async send function, which we put into the httpd work queue
  */
-static void ws_async_send(void *arg)
-{
+static void ws_async_send(void *arg) {
     static const char * data = "Async data";
     struct async_resp_arg *resp_arg = arg;
     httpd_handle_t hd = resp_arg->hd;
@@ -91,8 +89,7 @@ static void ws_async_send(void *arg)
     free(resp_arg);
 }
 
-static esp_err_t trigger_async_send(httpd_handle_t handle, httpd_req_t *req)
-{
+static esp_err_t trigger_async_send(httpd_handle_t handle, httpd_req_t *req) {
     struct async_resp_arg *resp_arg = malloc(sizeof(struct async_resp_arg));
     if (resp_arg == NULL) {
         return ESP_ERR_NO_MEM;
@@ -110,10 +107,9 @@ static esp_err_t trigger_async_send(httpd_handle_t handle, httpd_req_t *req)
  * This handler echos back the received ws data
  * and triggers an async send if certain message received
  */
-esp_err_t websocket_handler(httpd_req_t *req)
-{
+esp_err_t websocket_handler(httpd_req_t *req) {
     if (req->method == HTTP_GET) {
-        ESP_LOGI(TAG, "Handshake done, the new connection was opened");
+        ESP_LOGI("test", "Handshake done, the new connection was opened");
         return ESP_OK;
     }
     httpd_ws_frame_t ws_pkt;
@@ -123,29 +119,28 @@ esp_err_t websocket_handler(httpd_req_t *req)
     /* Set max_len = 0 to get the frame len */
     esp_err_t ret = httpd_ws_recv_frame(req, &ws_pkt, 0);
     if (ret != ESP_OK) {
-        ESP_LOGE(TAG, "httpd_ws_recv_frame failed to get frame len with %d", ret);
-        
+        ESP_LOGE("test", "httpd_ws_recv_frame failed to get frame len with %d", ret);
         return ret;
     }
-    ESP_LOGI(TAG, "frame len is %d", ws_pkt.len);
+    ESP_LOGI("test", "frame len is %d", ws_pkt.len);
     if (ws_pkt.len) {
         /* ws_pkt.len + 1 is for NULL termination as we are expecting a string */
         buf = calloc(1, ws_pkt.len + 1);
         if (buf == NULL) {
-            ESP_LOGE(TAG, "Failed to calloc memory for buf");
+            ESP_LOGE("test", "Failed to calloc memory for buf");
             return ESP_ERR_NO_MEM;
         }
         ws_pkt.payload = buf;
         /* Set max_len = ws_pkt.len to get the frame payload */
         ret = httpd_ws_recv_frame(req, &ws_pkt, ws_pkt.len);
         if (ret != ESP_OK) {
-            ESP_LOGE(TAG, "httpd_ws_recv_frame failed with %d", ret);
+            ESP_LOGE("test", "httpd_ws_recv_frame failed with %d", ret);
             free(buf);
             return ret;
         }
-        ESP_LOGI(TAG, "Got packet with message: %s", ws_pkt.payload);
+        ESP_LOGI("test", "Got packet with message: %s", ws_pkt.payload);
     }
-    ESP_LOGI(TAG, "Packet type: %d", ws_pkt.type);
+    ESP_LOGI("test", "Packet type: %d", ws_pkt.type);
     if (ws_pkt.type == HTTPD_WS_TYPE_TEXT &&
         strcmp((char*)ws_pkt.payload,"Trigger async") == 0) {
         free(buf);
@@ -154,7 +149,7 @@ esp_err_t websocket_handler(httpd_req_t *req)
 
     ret = httpd_ws_send_frame(req, &ws_pkt);
     if (ret != ESP_OK) {
-        ESP_LOGE(TAG, "httpd_ws_send_frame failed with %d", ret);
+        ESP_LOGE("test", "httpd_ws_send_frame failed with %d", ret);
     }
     free(buf);
     return ret;
@@ -332,15 +327,14 @@ esp_err_t display_handler(httpd_req_t *req)
 }
 
 // Start HTTP server
-httpd_handle_t start_webserver(void)
-{
+httpd_handle_t start_webserver(void) {
     httpd_handle_t server = NULL;
     httpd_config_t config = HTTPD_DEFAULT_CONFIG();
 
     // Start the httpd server
-    ESP_LOGI(TAG, "Starting server on port: '%d'", config.server_port);
+    ESP_LOGI("test", "Starting server on port: '%d'", config.server_port);
     if (httpd_start(&server, &config) == ESP_OK) {
-        ESP_LOGI(TAG, "Registering URI handlers");
+        ESP_LOGI("test", "Registering URI handlers");
         httpd_register_uri_handler(server, &ws);  // Register WebSocket URI
 
         // Register ios detect page
@@ -398,12 +392,32 @@ httpd_handle_t start_webserver(void)
         return server;
     }
 
-    ESP_LOGI(TAG, "Error starting server!");
+    ESP_LOGI("test", "Error starting server!");
     return NULL;
 }
 
-void app_main(void)
-{
+void app_main(void) {
+
+    ESP_ERROR_CHECK(i2c_master_init());
+    ESP_LOGI("test", "I2C initialized successfully");
+
+    uint16_t iCharge = read_2byte_data(STATE_OF_CHARGE_REG);
+    ESP_LOGI("test", "Charge: %d %%", iCharge);
+
+    uint16_t iVoltage = read_2byte_data(VOLTAGE_REG);
+    float fVoltage = (float)iVoltage / 1000.0;
+    ESP_LOGI("test", "Voltage: %.2f V", fVoltage);
+
+    uint16_t iCurrent = read_2byte_data(CURRENT_REG);
+    float fCurrent = (float)iCurrent / 1000.0;
+    ESP_LOGI("test", "Current: %.2f A", fCurrent);
+
+    uint16_t iTemperature = read_2byte_data(TEMPERATURE_REG);
+    float fTemperature = (float)iTemperature / 10.0 - 273.15;
+    ESP_LOGI("test", "Temperature: %.2f \u00B0C", fTemperature);
+
+    return;
+
     // Start the Access Point
     wifi_init_softap();
 
