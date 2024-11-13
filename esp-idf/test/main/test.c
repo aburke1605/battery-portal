@@ -13,13 +13,9 @@
 #include "I2C.c"
 #include "html.h"
 
-
 #define WIFI_SSID "ESP32-AP"
 #define WIFI_PASS ""//"12345678"
 #define MAX_STA_CONN 4
-
-
-static const char *TAG = "test";
 
 void wifi_init_softap(void) {
     // Initialize NVS
@@ -58,7 +54,7 @@ void wifi_init_softap(void) {
     ESP_ERROR_CHECK(esp_wifi_set_config(ESP_IF_WIFI_AP, &wifi_config));
     ESP_ERROR_CHECK(esp_wifi_start());
 
-    ESP_LOGI(TAG, "WiFi AP started. SSID: %s, Password: %s", WIFI_SSID, WIFI_PASS);
+    ESP_LOGI("test", "WiFi AP started. SSID: %s, Password: %s", WIFI_SSID, WIFI_PASS);
 }
 
 /*
@@ -109,7 +105,7 @@ static esp_err_t trigger_async_send(httpd_handle_t handle, httpd_req_t *req) {
  */
 esp_err_t websocket_handler(httpd_req_t *req) {
     if (req->method == HTTP_GET) {
-        ESP_LOGI(TAG, "Handshake done, the new connection was opened");
+        ESP_LOGI("test", "Handshake done, the new connection was opened");
         return ESP_OK;
     }
     httpd_ws_frame_t ws_pkt;
@@ -119,28 +115,28 @@ esp_err_t websocket_handler(httpd_req_t *req) {
     /* Set max_len = 0 to get the frame len */
     esp_err_t ret = httpd_ws_recv_frame(req, &ws_pkt, 0);
     if (ret != ESP_OK) {
-        ESP_LOGE(TAG, "httpd_ws_recv_frame failed to get frame len with %d", ret);
+        ESP_LOGE("test", "httpd_ws_recv_frame failed to get frame len with %d", ret);
         return ret;
     }
-    ESP_LOGI(TAG, "frame len is %d", ws_pkt.len);
+    ESP_LOGI("test", "frame len is %d", ws_pkt.len);
     if (ws_pkt.len) {
         /* ws_pkt.len + 1 is for NULL termination as we are expecting a string */
         buf = calloc(1, ws_pkt.len + 1);
         if (buf == NULL) {
-            ESP_LOGE(TAG, "Failed to calloc memory for buf");
+            ESP_LOGE("test", "Failed to calloc memory for buf");
             return ESP_ERR_NO_MEM;
         }
         ws_pkt.payload = buf;
         /* Set max_len = ws_pkt.len to get the frame payload */
         ret = httpd_ws_recv_frame(req, &ws_pkt, ws_pkt.len);
         if (ret != ESP_OK) {
-            ESP_LOGE(TAG, "httpd_ws_recv_frame failed with %d", ret);
+            ESP_LOGE("test", "httpd_ws_recv_frame failed with %d", ret);
             free(buf);
             return ret;
         }
-        ESP_LOGI(TAG, "Got packet with message: %s", ws_pkt.payload);
+        ESP_LOGI("test", "Got packet with message: %s", ws_pkt.payload);
     }
-    ESP_LOGI(TAG, "Packet type: %d", ws_pkt.type);
+    ESP_LOGI("test", "Packet type: %d", ws_pkt.type);
     if (ws_pkt.type == HTTPD_WS_TYPE_TEXT &&
         strcmp((char*)ws_pkt.payload,"Trigger async") == 0) {
         free(buf);
@@ -149,7 +145,7 @@ esp_err_t websocket_handler(httpd_req_t *req) {
 
     ret = httpd_ws_send_frame(req, &ws_pkt);
     if (ret != ESP_OK) {
-        ESP_LOGE(TAG, "httpd_ws_send_frame failed with %d", ret);
+        ESP_LOGE("test", "httpd_ws_send_frame failed with %d", ret);
     }
     free(buf);
     return ret;
@@ -179,12 +175,12 @@ esp_err_t page2_handler(httpd_req_t *req) {
 
     // Parse the query string
     if (httpd_req_get_url_query_str(req, username, sizeof(username)) == ESP_OK) {
-        ESP_LOGI(TAG, "Received query string: %s", username);
+        ESP_LOGI("test", "Received query string: %s", username);
 
         // Extract the 'username' parameter
         char param[50];
         if (httpd_query_key_value(username, "username", param, sizeof(param)) == ESP_OK) {
-            ESP_LOGI(TAG, "Username: %s", param);
+            ESP_LOGI("test", "Username: %s", param);
 
             // Check if the username matches the expected value
             if (strcmp(param, "user") == 0) {
@@ -197,7 +193,7 @@ esp_err_t page2_handler(httpd_req_t *req) {
     /*
     // don't think this is needed since in the html page the username is required
     else {
-        ESP_LOGE(TAG, "No query string received");
+        ESP_LOGE("test", "No query string received");
         httpd_resp_send_404(req);
     }
     */
@@ -210,9 +206,9 @@ httpd_handle_t start_webserver(void) {
     httpd_config_t config = HTTPD_DEFAULT_CONFIG();
 
     // Start the httpd server
-    ESP_LOGI(TAG, "Starting server on port: '%d'", config.server_port);
+    ESP_LOGI("test", "Starting server on port: '%d'", config.server_port);
     if (httpd_start(&server, &config) == ESP_OK) {
-        ESP_LOGI(TAG, "Registering URI handlers");
+        ESP_LOGI("test", "Registering URI handlers");
         httpd_register_uri_handler(server, &ws);  // Register WebSocket URI
 
         // Register ios detect page
@@ -269,17 +265,17 @@ httpd_handle_t start_webserver(void) {
         return server;
     }
 
-    ESP_LOGI(TAG, "Error starting server!");
+    ESP_LOGI("test", "Error starting server!");
     return NULL;
 }
 
 void app_main(void) {
 
     ESP_ERROR_CHECK(i2c_master_init());
-    ESP_LOGI(TAG, "I2C initialized successfully");
+    ESP_LOGI("test", "I2C initialized successfully");
 
     uint16_t charge = read_battery_state_of_charge();
-    ESP_LOGI(TAG, "Charge: %d%%", charge);
+    ESP_LOGI("test", "Charge: %d%%", charge);
     return;
 
     // Start the Access Point

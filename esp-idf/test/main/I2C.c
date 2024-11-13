@@ -62,7 +62,7 @@ uint16_t read_battery_state_of_charge(void) {
     esp_err_t ret = i2c_master_cmd_begin(I2C_MASTER_NUM, cmd, pdMS_TO_TICKS(I2C_MASTER_TIMEOUT_MS));
     i2c_cmd_link_delete(cmd);
     if (ret != ESP_OK) {
-        ESP_LOGE("Battery", "Error in I2C transmission: %s", esp_err_to_name(ret));
+        ESP_LOGE("I2C", "Error in I2C transmission: %s", esp_err_to_name(ret));
         return 0;
     }
 
@@ -76,7 +76,7 @@ uint16_t read_battery_state_of_charge(void) {
     ret = i2c_master_cmd_begin(I2C_MASTER_NUM, cmd, pdMS_TO_TICKS(I2C_MASTER_TIMEOUT_MS));
     i2c_cmd_link_delete(cmd);
     if (ret != ESP_OK) {
-        ESP_LOGE("Battery", "Error in I2C read: %s", esp_err_to_name(ret));
+        ESP_LOGE("I2C", "Error in I2C read: %s", esp_err_to_name(ret));
         return 0;
     }
 
