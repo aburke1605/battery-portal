@@ -274,7 +274,7 @@ void app_main(void) {
     ESP_ERROR_CHECK(i2c_master_init());
     ESP_LOGI("test", "I2C initialized successfully");
 
-    uint16_t charge = read_state_of_charge();
+    uint16_t charge = read_2byte_data(STATE_OF_CHARGE_REG);
     ESP_LOGI("test", "Charge: %d%%", charge);
     return;
 

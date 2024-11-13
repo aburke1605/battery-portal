@@ -52,20 +52,20 @@ void device_scan(void) {
     if (n_devices == 0) ESP_LOGW("I2C", "No devices found.");
 }
 
-uint16_t read_state_of_charge(void) {
+uint16_t read_2byte_data(int REG_ADDR) {
     uint8_t data[2] = {0}; // 2 bytes
 
     // Send command to request the state of charge register
     i2c_cmd_handle_t cmd = i2c_cmd_link_create();
     i2c_master_start(cmd);
     i2c_master_write_byte(cmd, (I2C_ADDR << 1) | I2C_MASTER_WRITE, true);
-    i2c_master_write_byte(cmd, STATE_OF_CHARGE_REG, true);
+    i2c_master_write_byte(cmd, REG_ADDR, true);
     i2c_master_stop(cmd);
 
-    esp_err_t ret = i2c_master_cmd_begin(I2C_MASTER_NUM, cmd, pdMS_TO_TICKS(I2C_MASTER_TIMEOUT_MS));
+    esp_err_t err = i2c_master_cmd_begin(I2C_MASTER_NUM, cmd, pdMS_TO_TICKS(I2C_MASTER_TIMEOUT_MS));
     i2c_cmd_link_delete(cmd);
-    if (ret != ESP_OK) {
-        ESP_LOGE("I2C", "Error in I2C transmission: %s", esp_err_to_name(ret));
+    if (err != ESP_OK) {
+        ESP_LOGE("I2C", "Error in I2C transmission: %s", esp_err_to_name(err));
         return 0;
     }
 
@@ -76,13 +76,13 @@ uint16_t read_state_of_charge(void) {
     i2c_master_read(cmd, data, 2, I2C_MASTER_LAST_NACK);
     i2c_master_stop(cmd);
 
-    ret = i2c_master_cmd_begin(I2C_MASTER_NUM, cmd, pdMS_TO_TICKS(I2C_MASTER_TIMEOUT_MS));
+    err = i2c_master_cmd_begin(I2C_MASTER_NUM, cmd, pdMS_TO_TICKS(I2C_MASTER_TIMEOUT_MS));
     i2c_cmd_link_delete(cmd);
-    if (ret != ESP_OK) {
-        ESP_LOGE("I2C", "Error in I2C read: %s", esp_err_to_name(ret));
+    if (err != ESP_OK) {
+        ESP_LOGE("I2C", "Error in I2C read: %s", esp_err_to_name(err));
         return 0;
     }
 
-    uint16_t charge = (data[1] << 8) | data[0];
-    return charge;
+    uint16_t ret = (data[1] << 8) | data[0];
+    return ret;
 }
