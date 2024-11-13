@@ -1,16 +1,16 @@
 #include <driver/i2c.h>
 
-#define I2C_ADDR                   CONFIG_I2C_ADDR           // 7-bit I2C address of the battery
-#define I2C_MASTER_SDA_IO          CONFIG_I2C_MASTER_SDA_PIN // GPIO number for I2C master data
-#define I2C_MASTER_SCL_IO          CONFIG_I2C_MASTER_SCL_PIN // GPIO number for I2C master clock
-#define I2C_MASTER_FREQ_HZ         CONFIG_I2C_FREQ_HZ        // I2C master clock frequency
-#define I2C_MASTER_NUM             I2C_NUM_0                 // I2C port number for master dev
+#define I2C_ADDR           CONFIG_I2C_ADDR           // 7-bit I2C address of the battery
+#define I2C_MASTER_SDA_IO  CONFIG_I2C_MASTER_SDA_PIN // GPIO number for I2C master data
+#define I2C_MASTER_SCL_IO  CONFIG_I2C_MASTER_SCL_PIN // GPIO number for I2C master clock
+#define I2C_MASTER_FREQ_HZ CONFIG_I2C_FREQ_HZ        // I2C master clock frequency
+#define I2C_MASTER_NUM     I2C_NUM_0                 // I2C port number for master dev
 
-#define STATE_OF_CHARGE_REG        0x2C                      // Register address for StateOfCharge
+#define STATE_OF_CHARGE_REG CONFIG_STATE_OF_CHARGE_REG // Register address for StateOfCharge
 
-#define I2C_MASTER_TIMEOUT_MS      1000                      // time delay to allow for BMS response
-#define I2C_MASTER_TX_BUF_DISABLE  0                         // I2C master doesn't need buffer
-#define I2C_MASTER_RX_BUF_DISABLE  0                         // I2C master doesn't need buffer
+#define I2C_MASTER_TIMEOUT_MS     1000 // time delay to allow for BMS response
+#define I2C_MASTER_TX_BUF_DISABLE 0    // I2C master doesn't need buffer
+#define I2C_MASTER_RX_BUF_DISABLE 0    // I2C master doesn't need buffer
 
 
 esp_err_t i2c_master_init(void) {
@@ -49,7 +49,7 @@ void device_scan(void) {
     if (n_devices == 0) ESP_LOGW("I2C", "No devices found.");
 }
 
-uint16_t read_battery_state_of_charge(void) {
+uint16_t read_state_of_charge(void) {
     uint8_t data[2] = {0}; // 2 bytes
 
     // Send command to request the state of charge register
