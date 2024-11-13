@@ -274,8 +274,21 @@ void app_main(void) {
     ESP_ERROR_CHECK(i2c_master_init());
     ESP_LOGI("test", "I2C initialized successfully");
 
-    uint16_t charge = read_2byte_data(STATE_OF_CHARGE_REG);
-    ESP_LOGI("test", "Charge: %d%%", charge);
+    uint16_t iCharge = read_2byte_data(STATE_OF_CHARGE_REG);
+    ESP_LOGI("test", "Charge: %d %%", iCharge);
+
+    uint16_t iVoltage = read_2byte_data(VOLTAGE_REG);
+    float fVoltage = (float)iVoltage / 1000.0;
+    ESP_LOGI("test", "Voltage: %.2f V", fVoltage);
+
+    uint16_t iCurrent = read_2byte_data(CURRENT_REG);
+    float fCurrent = (float)iCurrent / 1000.0;
+    ESP_LOGI("test", "Current: %.2f A", fCurrent);
+
+    uint16_t iTemperature = read_2byte_data(TEMPERATURE_REG);
+    float fTemperature = (float)iTemperature / 10.0 - 273.15;
+    ESP_LOGI("test", "Temperature: %.2f \u00B0C", fTemperature);
+
     return;
 
     // Start the Access Point
