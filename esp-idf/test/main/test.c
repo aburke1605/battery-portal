@@ -282,26 +282,11 @@ httpd_handle_t start_webserver(void)
 
 void app_main(void)
 {
-    esp_err_t ret;
-    uint8_t data[10];  // Array to store data from I2C device
+    ESP_ERROR_CHECK(i2c_master_init());
+    ESP_LOGI(TAG, "I2C initialized successfully");
 
-    // Initialize I2C
-    ret = i2c_master_init();
-    if (ret != ESP_OK) {
-        ESP_LOGE("I2C", "I2C initialization failed");
-        return;
-    }
-
-    // Read charge from I2C device
-    ret = i2c_read_charge(data, sizeof(data));
-    if (ret == ESP_OK) {
-        ESP_LOGI("I2C", "Read data: ");
-        for (int i = 0; i < sizeof(data); i++) {
-            ESP_LOGI("I2C", "Data[%d]: 0x%02X", i, data[i]);
-        }
-    } else {
-        ESP_LOGE("I2C", "Failed to read charge from device");
-    }
+    uint16_t charge = read_battery_state_of_charge();
+    ESP_LOGI(TAG, "Charge: %d%%", charge);
     return;
 
     // Start the Access Point
