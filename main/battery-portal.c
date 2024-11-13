@@ -3,6 +3,7 @@
 #include <esp_log.h>
 #include <nvs_flash.h>
 #include <esp_http_server.h>
+#include <esp_spiffs.h>
 #include <lwip/sockets.h>
 #include <lwip/netdb.h>
 #include <lwip/dns.h>
@@ -322,6 +323,41 @@ esp_err_t display_handler(httpd_req_t *req) {
     return ESP_OK;
 }
 
+// TODO dress this function so that the same one can be used for aceon and aceon2
+esp_err_t image_get_handler(httpd_req_t *req) { //, const char *file_path) {
+    // Path to the file in the SPIFFS partition
+    const char *file_path = "/storage/aceon.png";
+    FILE *file = fopen(file_path, "r");
+
+    if (file == NULL) {
+        ESP_LOGE("SPIFFS", "Failed to open file: %s", file_path);
+        httpd_resp_send_404(req);
+        return ESP_FAIL;
+    }
+
+    // Set the response type to indicate it's an image
+    httpd_resp_set_type(req, "image/png");
+
+    // Buffer for reading file chunks
+    char buffer[1024];
+    size_t read_bytes;
+
+    // Read the file and send chunks
+    while ((read_bytes = fread(buffer, 1, sizeof(buffer), file)) > 0) {
+        if (httpd_resp_send_chunk(req, buffer, read_bytes) != ESP_OK) {
+            fclose(file);
+            ESP_LOGE("SPIFFS", "Failed to send file chunk");
+            httpd_resp_send_500(req);
+            return ESP_FAIL;
+        }
+    }
+
+    // Close the file and send the final empty chunk to signal the end of the response
+    fclose(file);
+    httpd_resp_send_chunk(req, NULL, 0);
+    return ESP_OK;
+}
+
 // Start HTTP server
 httpd_handle_t start_webserver(void) {
     httpd_handle_t server = NULL;
@@ -384,6 +420,15 @@ httpd_handle_t start_webserver(void) {
             .user_ctx  = NULL
         };
         httpd_register_uri_handler(server, &display_page_get);
+
+        // Add a handler for serving the image
+        httpd_uri_t image_uri = {
+            .uri       = "/image/aceon.png",
+            .method    = HTTP_GET,
+            .handler   = image_get_handler, // Function to read and send the image
+            .user_ctx  = NULL
+        };
+        httpd_register_uri_handler(server, &image_uri);
 
         return server;
     }
