@@ -30,4 +30,22 @@ config STATE_OF_CHARGE_REG
     help
       Set the register address for the BMS to read the battery state of charge.
 
+config VOLTAGE_REG
+    hex "BMS Voltage Address"
+    default 0x08
+    help
+      Set the register address for the BMS to read the battery voltage.
+
+config CURRENT_REG
+    hex "BMS Current Address"
+    default 0x14
+    help
+      Set the register address for the BMS to read the battery average current.
+
+config TEMPERATURE_REG
+    hex "BMS Temperature Address"
+    default 0x06
+    help
+      Set the register address for the BMS to read the battery temperature.
+
 endmenu

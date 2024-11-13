@@ -7,6 +7,9 @@
 #define I2C_MASTER_NUM     I2C_NUM_0                 // I2C port number for master dev
 
 #define STATE_OF_CHARGE_REG CONFIG_STATE_OF_CHARGE_REG // Register address for StateOfCharge
+#define VOLTAGE_REG CONFIG_VOLTAGE_REG                 // Register address for Voltage
+#define CURRENT_REG CONFIG_CURRENT_REG                 // Register address for AverageCurrent
+#define TEMPERATURE_REG CONFIG_TEMPERATURE_REG         // Register address for Temperature
 
 #define I2C_MASTER_TIMEOUT_MS     1000 // time delay to allow for BMS response
 #define I2C_MASTER_TX_BUF_DISABLE 0    // I2C master doesn't need buffer
