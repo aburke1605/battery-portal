@@ -18,7 +18,6 @@
 #define WIFI_PASS ""//"12345678"
 #define MAX_STA_CONN 4
 
-static const char *TAG = "test";
 static int CONFIG_MAX_CLIENTS = 5;
 
 void wifi_init_softap(void)
@@ -159,7 +158,7 @@ esp_err_t websocket_handler(httpd_req_t *req) {
 esp_err_t test_websocket_handler(httpd_req_t *req)
 {
     if (req->method == HTTP_GET) {
-        ESP_LOGI(TAG, "Handshake done, new connection opened");
+        ESP_LOGI("test", "Handshake done, new connection opened");
     }
 
     httpd_ws_frame_t ws_pkt;
@@ -170,26 +169,26 @@ esp_err_t test_websocket_handler(httpd_req_t *req)
     /* Get the frame length */
     esp_err_t ret = httpd_ws_recv_frame(req, &ws_pkt, 0);
     if (ret != ESP_OK) {
-        ESP_LOGE(TAG, "httpd_ws_recv_frame failed to get frame len with %d", ret);
+        ESP_LOGE("test", "httpd_ws_recv_frame failed to get frame len with %d", ret);
         return ret;
     }
-    ESP_LOGI(TAG, "Frame len is %d", ws_pkt.len);
+    ESP_LOGI("test", "Frame len is %d", ws_pkt.len);
 
     /* Receive payload if available */
     if (ws_pkt.len) {
         buf = calloc(1, ws_pkt.len + 1);
         if (buf == NULL) {
-            ESP_LOGE(TAG, "Failed to calloc memory for buf");
+            ESP_LOGE("test", "Failed to calloc memory for buf");
             return ESP_ERR_NO_MEM;
         }
         ws_pkt.payload = buf;
         ret = httpd_ws_recv_frame(req, &ws_pkt, ws_pkt.len);
         if (ret != ESP_OK) {
-            ESP_LOGE(TAG, "httpd_ws_recv_frame failed with %d", ret);
+            ESP_LOGE("test", "httpd_ws_recv_frame failed with %d", ret);
             free(buf);
             return ret;
         }
-        ESP_LOGI(TAG, "Received message: %s", ws_pkt.payload);
+        ESP_LOGI("test", "Received message: %s", ws_pkt.payload);
     }
 
     // if (ws_pkt.type == HTTPD_WS_TYPE_TEXT && strcmp((char *)ws_pkt.payload, "Trigger async") == 0) {
@@ -200,7 +199,7 @@ esp_err_t test_websocket_handler(httpd_req_t *req)
     // /* Send echo message back */
     // ret = httpd_ws_send_frame(req, &ws_pkt);
     // if (ret != ESP_OK) {
-    //     ESP_LOGE(TAG, "httpd_ws_send_frame failed with %d", ret);
+    //     ESP_LOGE("test", "httpd_ws_send_frame failed with %d", ret);
     // }
 
     // free(buf);
@@ -214,9 +213,9 @@ esp_err_t test_websocket_handler(httpd_req_t *req)
 
     ret = httpd_ws_send_frame(req, &ws_response);
     if (ret != ESP_OK) {
-        ESP_LOGE(TAG, "Failed to send message to client with error: %d", ret);
+        ESP_LOGE("test", "Failed to send message to client with error: %d", ret);
     } else {
-        ESP_LOGI(TAG, "Message sent to client: %s", response_msg);
+        ESP_LOGI("test", "Message sent to client: %s", response_msg);
     }
 
     free(buf);
@@ -240,9 +239,9 @@ void websocket_send_task(void *arg) {
         for (int fd = 0; fd < CONFIG_MAX_CLIENTS; fd++) {
             esp_err_t ret = httpd_ws_send_frame_async(server, fd, &ws_pkt);
             if (ret == ESP_OK) {
-                ESP_LOGI(TAG, "Sent message to client %d", fd);
+                ESP_LOGI("test", "Sent message to client %d", fd);
             } else {
-                ESP_LOGE(TAG, "Failed to send message to client %d, error %d", fd, ret);
+                ESP_LOGE("test", "Failed to send message to client %d, error %d", fd, ret);
             }
         }
 
@@ -312,9 +311,9 @@ esp_err_t display_handler(httpd_req_t *req)
     // Parse the POST data for username and password
     parse_post_data(content, username, password);
 
-    ESP_LOGI(TAG, "Received query string: %s", username);
+    ESP_LOGI("test", "Received query string: %s", username);
 
-    ESP_LOGI(TAG, "Received query string: %s", password);
+    ESP_LOGI("test", "Received query string: %s", password);
 
     if (strcmp(username, "admin") == 0 && strcmp(password, "1234") == 0) 
     {
