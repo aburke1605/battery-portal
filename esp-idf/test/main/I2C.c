@@ -26,8 +26,12 @@ esp_err_t i2c_master_init(void) {
     if (err != ESP_OK) return err;
 
     err = i2c_driver_install(I2C_MASTER_NUM, conf.mode, I2C_MASTER_RX_BUF_DISABLE, I2C_MASTER_TX_BUF_DISABLE, 0);
+    return err;
+}
 
-    printf("I2C scanner scanning...\n");
+void device_scan(void) {
+    ESP_LOGI("I2C", "Scanning for devices...");
+    uint8_t n_devices = 0;
     for (uint8_t i = 1; i < 127; i++) {
         i2c_cmd_handle_t cmd = i2c_cmd_link_create();
         i2c_master_start(cmd);
@@ -37,17 +41,15 @@ esp_err_t i2c_master_init(void) {
         i2c_cmd_link_delete(cmd);
 
         if (ret == ESP_OK) {
-            printf("I2C device found at address 0x%02X\n", i);
+            ESP_LOGI("I2C", "I2C device found at address 0x%02X", i);
+            n_devices++;
         }
     }
-    printf("Scan completed.\n");
 
-
-
-    return err;
+    if (n_devices == 0) ESP_LOGW("I2C", "No devices found.");
 }
 
-uint16_t read_battery_state_of_charge() {
+uint16_t read_battery_state_of_charge(void) {
     uint8_t data[2] = {0}; // 2 bytes
 
     // Send command to request the state of charge register

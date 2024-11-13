@@ -21,8 +21,7 @@
 
 static const char *TAG = "test";
 
-void wifi_init_softap(void)
-{
+void wifi_init_softap(void) {
     // Initialize NVS
     esp_err_t ret = nvs_flash_init();
     if (ret == ESP_ERR_NVS_NO_FREE_PAGES || ret == ESP_ERR_NVS_NEW_VERSION_FOUND) {
@@ -75,8 +74,7 @@ struct async_resp_arg {
 /*
  * async send function, which we put into the httpd work queue
  */
-static void ws_async_send(void *arg)
-{
+static void ws_async_send(void *arg) {
     static const char * data = "Async data";
     struct async_resp_arg *resp_arg = arg;
     httpd_handle_t hd = resp_arg->hd;
@@ -91,8 +89,7 @@ static void ws_async_send(void *arg)
     free(resp_arg);
 }
 
-static esp_err_t trigger_async_send(httpd_handle_t handle, httpd_req_t *req)
-{
+static esp_err_t trigger_async_send(httpd_handle_t handle, httpd_req_t *req) {
     struct async_resp_arg *resp_arg = malloc(sizeof(struct async_resp_arg));
     if (resp_arg == NULL) {
         return ESP_ERR_NO_MEM;
@@ -110,8 +107,7 @@ static esp_err_t trigger_async_send(httpd_handle_t handle, httpd_req_t *req)
  * This handler echos back the received ws data
  * and triggers an async send if certain message received
  */
-esp_err_t websocket_handler(httpd_req_t *req)
-{
+esp_err_t websocket_handler(httpd_req_t *req) {
     if (req->method == HTTP_GET) {
         ESP_LOGI(TAG, "Handshake done, the new connection was opened");
         return ESP_OK;
@@ -170,8 +166,7 @@ static const httpd_uri_t ws = {
 };
 
 // TODO Function to handle HTTP GET requests  handle all the request
-esp_err_t index_handler(httpd_req_t *req)
-{
+esp_err_t index_handler(httpd_req_t *req) {
     httpd_resp_send(req, index_html, HTTPD_RESP_USE_STRLEN); // Send the HTML page as a response
     return ESP_OK;
 }
@@ -179,8 +174,7 @@ esp_err_t index_handler(httpd_req_t *req)
 /* TODO
 give the homepage a name somehow, so its not just "www.msftconnecttest.com/page2"
 */
-esp_err_t page2_handler(httpd_req_t *req)
-{
+esp_err_t page2_handler(httpd_req_t *req) {
     char username[100];
 
     // Parse the query string
@@ -211,8 +205,7 @@ esp_err_t page2_handler(httpd_req_t *req)
 }
 
 // Start HTTP server
-httpd_handle_t start_webserver(void)
-{
+httpd_handle_t start_webserver(void) {
     httpd_handle_t server = NULL;
     httpd_config_t config = HTTPD_DEFAULT_CONFIG();
 
@@ -280,8 +273,8 @@ httpd_handle_t start_webserver(void)
     return NULL;
 }
 
-void app_main(void)
-{
+void app_main(void) {
+
     ESP_ERROR_CHECK(i2c_master_init());
     ESP_LOGI(TAG, "I2C initialized successfully");
 
