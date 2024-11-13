@@ -103,7 +103,7 @@ button {
           <span class="state">Red LED:</span>
           <span id="redstate">%STATE%</span>
         </p>
-        <img src="aceon2" style="max-width: 100%; height:auto;"> 
+        <img src="/image/aceon2.png" style="max-width: 100%; height:auto;">
         <form action="/about">
           <button type="Submit">About AceOn</button>
         </form>

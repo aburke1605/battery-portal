@@ -68,7 +68,7 @@ button {
             Forgot <a href="#"> password? </a>  
           </form> 
         </div>   
-        <img src="aceon">
+        <img src="/image/aceon.png">
 </body>     
 </html>  
 )rawliteral";
