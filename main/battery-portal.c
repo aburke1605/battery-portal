@@ -20,7 +20,7 @@
 
 static int CONFIG_MAX_CLIENTS = 5;
 
-void wifi_init_softap(void)
+void wifi_init_softap(void) {
     // Initialize NVS
     esp_err_t ret = nvs_flash_init();
     if (ret == ESP_ERR_NVS_NO_FREE_PAGES || ret == ESP_ERR_NVS_NEW_VERSION_FOUND) {
@@ -155,8 +155,7 @@ esp_err_t websocket_handler(httpd_req_t *req) {
 }
 
 // Test websocket
-esp_err_t test_websocket_handler(httpd_req_t *req)
-{
+esp_err_t test_websocket_handler(httpd_req_t *req) {
     if (req->method == HTTP_GET) {
         ESP_LOGI("test", "Handshake done, new connection opened");
     }
@@ -260,8 +259,7 @@ static const httpd_uri_t ws = {
 };
 
 // Function to handle HTTP GET requests
-esp_err_t index_handler(httpd_req_t *req)
-{
+esp_err_t index_handler(httpd_req_t *req) {
     httpd_resp_send(req, index_html, HTTPD_RESP_USE_STRLEN);
     return ESP_OK;
 }
@@ -284,8 +282,7 @@ void parse_post_data(const char *data, char *username, char *password) {
 }
 
 // Function to handle HTTP GET requests
-esp_err_t display_handler(httpd_req_t *req)
-{
+esp_err_t display_handler(httpd_req_t *req) {
     // Define buffer to receive POST data
     char content[100];
     char username[50] = {0}; // Buffer for the username
