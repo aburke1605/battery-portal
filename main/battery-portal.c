@@ -438,6 +438,18 @@ httpd_handle_t start_webserver(void) {
 }
 
 void app_main(void) {
+    // initialise SPIFFS
+    esp_vfs_spiffs_conf_t config = {
+        .base_path = "/storage",
+        .partition_label = NULL,
+        .max_files = 5,
+        .format_if_mount_failed = true
+    };
+    esp_err_t result = esp_vfs_spiffs_register(&config);
+    if (result != ESP_OK) {
+        ESP_LOGE("SPIFFS", "Failed to initialise SPIFFS (%s)", esp_err_to_name(result));
+        return;
+    }
 
     ESP_ERROR_CHECK(i2c_master_init());
     ESP_LOGI("test", "I2C initialized successfully");
@@ -456,8 +468,6 @@ void app_main(void) {
     uint16_t iTemperature = read_2byte_data(TEMPERATURE_REG);
     float fTemperature = (float)iTemperature / 10.0 - 273.15;
     ESP_LOGI("test", "Temperature: %.2f \u00B0C", fTemperature);
-
-    return;
 
     // Start the Access Point
     wifi_init_softap();
