@@ -10,8 +10,8 @@
 #include <string.h>
 
 #include "DNS.c"
-#include "index_page.h"
-#include "display_page.h"
+#include "html/index_page.h"
+#include "html/display_page.h"
 
 
 #define WIFI_SSID "ESP32-AP-TEST-YF"
@@ -19,7 +19,7 @@
 #define MAX_STA_CONN 4
 
 static const char *TAG = "test";
-static const char *CONFIG_MAX_CLIENTS = 5;
+static int CONFIG_MAX_CLIENTS = 5;
 
 void wifi_init_softap(void)
 {
