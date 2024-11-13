@@ -4,7 +4,7 @@ static const char index_html[] = R"rawliteral(
   
 <html>   
 <head>  
-<meta name="viewport" content="width=device-width, initial-scale=1">  
+<meta name='viewport' content='width=device-width, initial-scale=1'>  
 <title> Login Page </title>  
 <style>   
 Body {  
@@ -56,19 +56,19 @@ button {
 <body>    
     <center> <h1> CUB_00001 Login Form </h1> </center>   
     
-        <div class="container">   
-          <form action="/display"  method="post">
+        <div class='container'>   
+          <form action='/display'  method='post'>
             <label>Username : </label>   
-            <input type="text" placeholder="Enter Username" name="username" required>  
+            <input type='text' placeholder='Enter Username' name='username' required>  
             <label>Password : </label>   
-            <input type="password" placeholder="Enter Password" name="password" required>  
-            <button type="submit">Submit</button> 
-            <input type="checkbox" checked="checked"> Remember me   
-            <button type="button" class="cancelbtn"> Cancel</button>   
-            Forgot <a href="#"> password? </a>  
+            <input type='password' placeholder='Enter Password' name='password' required>  
+            <button type='submit'>Submit</button> 
+            <input type='checkbox' checked='checked'> Remember me   
+            <button type='button' class='cancelbtn'> Cancel</button>   
+            Forgot <a href='#'> password? </a>  
           </form> 
         </div>   
-        <img src="/image/aceon.png">
+        <img src='/image/aceon.png'>
 </body>     
 </html>  
 )rawliteral";

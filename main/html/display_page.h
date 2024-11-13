@@ -4,9 +4,9 @@ static const char display_html[] = R"rawliteral(
   
 <html>   
 <head>  
-<meta name="viewport" content="width=device-width, initial-scale=1">  
+<meta name='viewport' content='width=device-width, initial-scale=1'>  
 <title> Info Page </title>  
-<link rel="icon" href="data:,">
+<link rel='icon' href='data:,'>
 <style>   
 Body {  
   font-family: Calibri, Helvetica, sans-serif;  
@@ -68,47 +68,47 @@ button {
 
   
 </style> 
-<link rel="icon" href="data:,">  
+<link rel='icon' href='data:,'>  
 </head>    
 <body>    
     <center> <h1> Battery information </h1> </center>   
     
-        <div class="container">   
+        <div class='container'>   
           <p> 
-            <span class="charge">State of charge:</span> 
-            <span id="charge">%CHARGE%</span> 
-            <span id="charge">&#37</span>
+            <span class='charge'>State of charge:</span> 
+            <span id='charge'>%CHARGE%</span> 
+            <span id='charge'>&#37</span>
           </p>
           <p>
-            <span class="voltage">Voltage:</span> 
-            <span id="voltage">%VOLTAGE%</span> 
-            <span id="voltage">mV</span>
+            <span class='voltage'>Voltage:</span> 
+            <span id='voltage'>%VOLTAGE%</span> 
+            <span id='voltage'>mV</span>
           </p>
           <p>
-            <span class="current">Current:</span> 
-            <span id="current">%CURRENT%</span> 
-            <span id="current">mA</span>
+            <span class='current'>Current:</span> 
+            <span id='current'>%CURRENT%</span> 
+            <span id='current'>mA</span>
           </p>
           <p>
-            <span class="temp">Temperature:</span> 
-            <span id="temp">%TEMPERATURE%</span> 
-            <span id="temp">degC</span>
+            <span class='temp'>Temperature:</span> 
+            <span id='temp'>%TEMPERATURE%</span> 
+            <span id='temp'>degC</span>
           </p>
         </div> 
-        <p><button id="bluebutton" class="button">Blue</button>
-          <span class="state">Blue LED:</span>
-          <span id="bluestate">%STATE%</span>
+        <p><button id='bluebutton' class='button'>Blue</button>
+          <span class='state'>Blue LED:</span>
+          <span id='bluestate'>%STATE%</span>
         </p>
-        <p><button id="redbutton" class="button">Red</button>
-          <span class="state">Red LED:</span>
-          <span id="redstate">%STATE%</span>
+        <p><button id='redbutton' class='button'>Red</button>
+          <span class='state'>Red LED:</span>
+          <span id='redstate'>%STATE%</span>
         </p>
-        <img src="/image/aceon2.png" style="max-width: 100%; height:auto;">
-        <form action="/about">
-          <button type="Submit">About AceOn</button>
+        <img src='/image/aceon2.png' style='max-width: 100%; height:auto;'>
+        <form action='/about'>
+          <button type='Submit'>About AceOn</button>
         </form>
-        <form action="/unit image">
-          <button type="Submit">Unit layout</button>
+        <form action='/unit image'>
+          <button type='Submit'>Unit layout</button>
         </form>
 <script>
   var gateway = `ws://${window.location.hostname}/ws`;
@@ -136,30 +136,30 @@ button {
     var current;
     var temp;
     var info = 0;
-    if (event.data == "1"){
-      bluestate = "ON";
+    if (event.data == '1'){
+      bluestate = 'ON';
       document.getElementById('bluestate').innerHTML = bluestate;
     }
-    else if(event.data == "0"){
-      bluestate = "OFF";
+    else if(event.data == '0'){
+      bluestate = 'OFF';
       document.getElementById('bluestate').innerHTML = bluestate;
     }
-    else if(event.data == "2"){
-      redstate = "OFF";
+    else if(event.data == '2'){
+      redstate = 'OFF';
       document.getElementById('redstate').innerHTML = redstate;
     }
-    else if(event.data == "3"){
-      redstate = "ON";
+    else if(event.data == '3'){
+      redstate = 'ON';
       document.getElementById('redstate').innerHTML = redstate;
     }
 
     else{
              
        info = JSON.parse(event.data);    //extract individual data from json string
-       SOC = info["charge"];
-       voltage = info["volts"];          //put each data type into javascript variable 
-       current = info["amps"];
-       temp = info["temp"];
+       SOC = info['charge'];
+       voltage = info['volts'];          //put each data type into javascript variable 
+       current = info['amps'];
+       temp = info['temp'];
        
        document.getElementById('charge').innerHTML = SOC;
        document.getElementById('voltage').innerHTML = voltage;    //replace values on page with new data values
