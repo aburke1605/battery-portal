@@ -1,3 +1,10 @@
+#include <esp_log.h>
+#include <esp_wifi.h>
+#include <lwip/netdb.h>
+#include <lwip/dns.h>
+
+#include "src/DNS.h"
+
 #define DNS_PORT 53
 
 // DNS handler (redirect all requests to our AP IP)

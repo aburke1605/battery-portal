@@ -1,4 +1,4 @@
-#include <driver/i2c.h>
+#include "src/I2C.h"
 
 #define I2C_ADDR           CONFIG_I2C_ADDR           // 7-bit I2C address of the battery
 #define I2C_MASTER_SDA_IO  CONFIG_I2C_MASTER_SDA_PIN // GPIO number for I2C master data

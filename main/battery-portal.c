@@ -1,18 +1,12 @@
-#include <esp_wifi.h>
-#include <esp_event.h>
-#include <esp_log.h>
 #include <nvs_flash.h>
-#include <esp_http_server.h>
 #include <esp_spiffs.h>
 #include <lwip/sockets.h>
-#include <lwip/netdb.h>
-#include <lwip/dns.h>
 
 #include <string.h>
 
 #include "src/DNS.c"
 #include "src/I2C.c"
-#include "src/handlers.c"
+#include "src/handlers.h"
 
 #define WIFI_SSID "ESP32-AP"
 #define WIFI_PASS ""//"12345678"
