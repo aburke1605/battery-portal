@@ -10,8 +10,8 @@
 
 #include <string.h>
 
-#include "DNS.c"
-#include "I2C.c"
+#include "src/DNS.c"
+#include "src/I2C.c"
 #include "html/index_page.h"
 #include "html/display_page.h"
 
