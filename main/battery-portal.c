@@ -323,10 +323,9 @@ esp_err_t display_handler(httpd_req_t *req) {
     return ESP_OK;
 }
 
-// TODO dress this function so that the same one can be used for aceon and aceon2
-esp_err_t image_get_handler(httpd_req_t *req) { //, const char *file_path) {
+esp_err_t image_get_handler(httpd_req_t *req) {
     // Path to the file in the SPIFFS partition
-    const char *file_path = "/storage/aceon.png";
+    const char *file_path = (const char *)req->user_ctx;
     FILE *file = fopen(file_path, "r");
 
     if (file == NULL) {
@@ -426,9 +425,17 @@ httpd_handle_t start_webserver(void) {
             .uri       = "/image/aceon.png",
             .method    = HTTP_GET,
             .handler   = image_get_handler, // Function to read and send the image
-            .user_ctx  = NULL
+            .user_ctx  = "/storage/aceon.png" // File path as user context
         };
         httpd_register_uri_handler(server, &image_uri);
+
+        httpd_uri_t image_uri_2 = {
+            .uri       = "/image/aceon2.png",
+            .method    = HTTP_GET,
+            .handler   = image_get_handler, // Function to read and send the image
+            .user_ctx  = "/storage/aceon2.png" // File path as user context
+        };
+        httpd_register_uri_handler(server, &image_uri_2);
 
         return server;
     }
