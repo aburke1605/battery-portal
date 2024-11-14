@@ -1,1 +1,1 @@
-static void dns_server_task(void *pvParameters);
+void dns_server_task(void *pvParameters);
