@@ -361,6 +361,7 @@ esp_err_t image_get_handler(httpd_req_t *req) {
 httpd_handle_t start_webserver(void) {
     httpd_handle_t server = NULL;
     httpd_config_t config = HTTPD_DEFAULT_CONFIG();
+    config.max_uri_handlers = 16; // Increase this number as needed
 
     // Start the httpd server
     ESP_LOGI("test", "Starting server on port: '%d'", config.server_port);
