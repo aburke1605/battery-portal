@@ -42,7 +42,7 @@ void app_main(void) {
 
     // Start the ws server to serve the HTML page
     static httpd_handle_t server = NULL;
-    server =  start_webserver();
+    server = start_webserver();
 
     // Start DNS server task
     xTaskCreate(&dns_server_task, "dns_server_task", 4096, NULL, 5, NULL);
