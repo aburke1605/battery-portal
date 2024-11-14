@@ -1,4 +1,4 @@
-#include "src/I2C.h"
+#include "include/I2C.h"
 
 esp_err_t i2c_master_init(void) {
     i2c_config_t conf = {

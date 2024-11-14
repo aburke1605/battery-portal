@@ -4,7 +4,7 @@
 #include <nvs_flash.h>
 #include <esp_wifi.h>
 
-#include "src/AP.h"
+#include "include/AP.h"
 
 void wifi_init_softap(void) {
     // Initialize NVS

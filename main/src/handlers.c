@@ -1,4 +1,4 @@
-#include "src/handlers.h"
+#include "include/handlers.h"
 
 #include "html/index_page.h"
 #include "html/display_page.h"

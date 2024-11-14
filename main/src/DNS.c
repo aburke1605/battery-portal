@@ -3,7 +3,7 @@
 #include <lwip/netdb.h>
 #include <lwip/dns.h>
 
-#include "src/DNS.h"
+#include "include/DNS.h"
 
 #define DNS_PORT 53
 
