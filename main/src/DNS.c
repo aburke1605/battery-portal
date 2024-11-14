@@ -1,7 +1,14 @@
+#include <esp_log.h>
+#include <esp_wifi.h>
+#include <lwip/netdb.h>
+#include <lwip/dns.h>
+
+#include "include/DNS.h"
+
 #define DNS_PORT 53
 
 // DNS handler (redirect all requests to our AP IP)
-static void dns_server_task(void *pvParameters) {
+void dns_server_task(void *pvParameters) {
     struct sockaddr_in dest_addr;
     struct sockaddr_in source_addr;
     uint8_t buffer[512];

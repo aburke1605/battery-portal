@@ -2,3 +2,6 @@ __pycache__
 .vscode
 **/build/**
 **/sdkconfig.old
+.idea
+cmake-build-debug
+.DS_Store
