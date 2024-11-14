@@ -2,11 +2,9 @@
 #include <esp_spiffs.h>
 #include <lwip/sockets.h>
 
-#include <string.h>
-
-#include "src/DNS.c"
-#include "src/I2C.c"
 #include "src/AP.h"
+#include "src/DNS.h"
+#include "src/I2C.h"
 #include "src/handlers.h"
 
 static int CONFIG_MAX_CLIENTS = 5;
