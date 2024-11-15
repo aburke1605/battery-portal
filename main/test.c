@@ -161,17 +161,17 @@ void websocket_broadcast_task(void *pvParameters) {
                 ESP_LOGI("WEBSOCKET", "Attempting to send frame to client %d", client_sockets[i]);
                 
                 // Validate WebSocket connection with a PING
-                // esp_err_t ping_status = httpd_ws_send_frame(server, client_sockets[i], &(httpd_ws_frame_t){
-                //     .payload = NULL,
-                //     .len = 0,
-                //     .type = HTTPD_WS_TYPE_PING
-                // });
+                esp_err_t ping_status = httpd_ws_send_frame(server, client_sockets[i], &(httpd_ws_frame_t){
+                    .payload = NULL,
+                    .len = 0,
+                    .type = HTTPD_WS_TYPE_PING
+                });
 
-                // if (ping_status != ESP_OK) {
-                //     ESP_LOGE("WEBSOCKET", "Client %d disconnected. Removing.", client_sockets[i]);
-                //     remove_client(client_sockets[i]);
-                //     continue;
-                // }
+                if (ping_status != ESP_OK) {
+                    ESP_LOGE("WEBSOCKET", "Client %d disconnected. Removing.", client_sockets[i]);
+                    remove_client(client_sockets[i]);
+                    continue;
+                }
 
                 httpd_ws_frame_t ws_pkt = {
                     .payload = (uint8_t *)buffer,
