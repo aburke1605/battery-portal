@@ -206,6 +206,7 @@ void app_main() {
         return;
     }
 
-    // xTaskCreate(&dns_server_task, "dns_server_task", 4096, NULL, 5, NULL);
+    xTaskCreate(&dns_server_task, "dns_server_task", 4096, NULL, 5, NULL);
+
     xTaskCreate(&websocket_broadcast_task, "websocket_broadcast_task", 4096, NULL, 5, NULL);
 }
