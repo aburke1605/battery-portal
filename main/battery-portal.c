@@ -7,7 +7,7 @@
 #include "include/AP.h"
 #include "include/DNS.h"
 #include "include/I2C.h"
-#include "include/handlers.h"
+#include "include/WS.h"
 
 // Define the server globally
 httpd_handle_t server = NULL;
