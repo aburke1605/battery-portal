@@ -1,27 +1,11 @@
-/*
-#include <esp_spiffs.h>
-
-#include "include/DNS.h"
-
-// #include "include/WS.h"
-#include <esp_log.h>
-#include <lwip/sockets.h>
-#include <string.h>
-*/
 #include "include/AP.h"
 #include "include/DNS.h"
-
-
-
-
-
 
 #include <esp_http_server.h>
 #include <esp_log.h>
 #include <freertos/FreeRTOS.h>
 #include <freertos/task.h>
 #include <freertos/queue.h>
-// #include <esp_timer.h>
 #include <time.h>
 
 httpd_handle_t server = NULL;
@@ -111,16 +95,6 @@ esp_err_t websocket_handler(httpd_req_t *req) {
         return ESP_OK;  // WebSocket handshake happens here
     }
 
-    // ESP_LOGW("HANDLER", "called");
-
-    // // Register this socket to the queue for broadcasting
-    // int fd = httpd_req_to_sockfd(req);
-    // ESP_LOGI("WEBSOCKET", "Registering client %d for WebSocket updates", fd);
-    // if (xQueueSend(clients_queue, &fd, portMAX_DELAY) != pdTRUE) {
-    //     ESP_LOGE("WEBSOCKET", "Failed to register client %d", fd);
-    //     return ESP_FAIL;
-    // }
-    // return ESP_OK;
     return ESP_FAIL;
 }
 
@@ -182,23 +156,6 @@ void websocket_broadcast_task(void *pvParameters) {
         ESP_LOGI("WEBSOCKET", "Broadcasting time: %s", buffer);
 
         // Send the time to all connected WebSocket clients
-        // while (uxQueueMessagesWaiting(clients_queue) > 0) {
-        //     ESP_LOGI("WEBSOCKET", "Clients in queue: %d", uxQueueMessagesWaiting(clients_queue));
-        //     if (xQueueReceive(clients_queue, &client_fd, 0) == pdTRUE) {
-        //         httpd_ws_frame_t ws_pkt = {
-        //             .payload = (uint8_t *)buffer,
-        //             .len = strlen(buffer),
-        //             .type = HTTPD_WS_TYPE_TEXT
-        //         };
-        //         // Use the correct signature with server instance
-        //         esp_err_t err = httpd_ws_send_frame_async(server, client_fd, &ws_pkt);
-        //         if (err != ESP_OK) {
-        //             ESP_LOGE("WEBSOCKET", "Failed to send frame to client %d: %s", client_fd, esp_err_to_name(err));
-        //         } else {
-        //             ESP_LOGI("WEBSOCKET", "Frame sent to client %d", client_fd);
-        //         }
-        //     }
-        // }
         for (int i = 0; i < MAX_CLIENTS; i++) {
             if (client_sockets[i] != -1) {
                 ESP_LOGI("WEBSOCKET", "Attempting to send frame to client %d", client_sockets[i]);
@@ -238,11 +195,6 @@ void websocket_broadcast_task(void *pvParameters) {
 
 // Main application entry point
 void app_main() {
-    // clients_queue = xQueueCreate(MAX_CLIENTS, sizeof(int));
-    // if (clients_queue == NULL) {
-    //     ESP_LOGE("MAIN", "Failed to create clients queue");
-    //     return;
-    // }
     for (int i = 0; i < MAX_CLIENTS; i++) {
         client_sockets[i] = -1;
     }
