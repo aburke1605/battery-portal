@@ -1,3 +1,4 @@
+/*
 static const char index_html[] = R"rawliteral(
 <!DOCTYPE HTML><html><head>
   <!DOCTYPE HTML><html>
@@ -57,7 +58,7 @@ button {
     <center> <h1> CUB_00001 Login Form </h1> </center>   
     
         <div class='container'>   
-          <form action='/display'  method='post'>
+          <form action='/ws'  method='post'>
             <label>Username : </label>   
             <input type='text' placeholder='Enter Username' name='username' required>  
             <label>Password : </label>   
@@ -71,4 +72,22 @@ button {
         <img src='/image/aceon.png'>
 </body>     
 </html>  
+)rawliteral";
+*/
+
+static const char login_html[] = R"rawliteral(
+<!DOCTYPE html>
+<html>
+
+<head><title>Login</title></head>
+<body>
+  <h1>Login Page</h1>
+  <form action='/display' method='get'>
+    Username: <input type='text' name='username'><br>
+    Password: <input type='password' name='password'><br>
+    <button type='submit'>Login</button>
+  </form>
+</body>
+
+</html>
 )rawliteral";
