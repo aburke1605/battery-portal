@@ -13,7 +13,6 @@
 httpd_handle_t server = NULL;
 
 void app_main(void) {
-    /*
     // initialise SPIFFS
     esp_vfs_spiffs_conf_t config = {
         .base_path = "/storage",
@@ -44,7 +43,6 @@ void app_main(void) {
     uint16_t iTemperature = read_2byte_data(TEMPERATURE_REG);
     float fTemperature = (float)iTemperature / 10.0 - 273.15;
     ESP_LOGI("main", "Temperature: %.2f \u00B0C", fTemperature);
-    */
 
     // Start the Access Point
     wifi_init_softap();
