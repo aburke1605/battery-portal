@@ -6,22 +6,20 @@
 
 void add_client(int fd) {
     for (int i = 0; i < CONFIG_MAX_CLIENTS; i++) {
-        ESP_LOGW("WEBSOCKET", "%d %d", i, client_sockets[i]);
         if (client_sockets[i] == -1) {
-            ESP_LOGW("WEBSOCKET", "%d", i);
             client_sockets[i] = fd;
-            ESP_LOGI("WEBSOCKET", "Client %d added", fd);
+            ESP_LOGI("WS", "Client %d added", fd);
             return;
         }
     }
-    ESP_LOGE("WEBSOCKET", "No space for client %d", fd);
+    ESP_LOGE("WS", "No space for client %d", fd);
 }
 
 void remove_client(int fd) {
     for (int i = 0; i < CONFIG_MAX_CLIENTS; i++) {
         if (client_sockets[i] == fd) {
             client_sockets[i] = -1;
-            ESP_LOGI("WEBSOCKET", "Client %d removed", fd);
+            ESP_LOGI("WS", "Client %d removed", fd);
             return;
         }
     }
@@ -42,7 +40,7 @@ esp_err_t display_handler(httpd_req_t *req) {
 esp_err_t websocket_handler(httpd_req_t *req) {
     if (req->method == HTTP_GET) {
         int fd = httpd_req_to_sockfd(req);
-        ESP_LOGI("WEBSOCKET", "WebSocket handshake complete for client %d", fd);
+        ESP_LOGI("WS", "WebSocket handshake complete for client %d", fd);
         add_client(fd);
         return ESP_OK;  // WebSocket handshake happens here
     }
@@ -56,7 +54,7 @@ esp_err_t image_handler(httpd_req_t *req) {
     FILE *file = fopen(file_path, "r");
 
     if (file == NULL) {
-        ESP_LOGE("handlers", "Failed to open file: %s", file_path);
+        ESP_LOGE("WS", "Failed to open file: %s", file_path);
         httpd_resp_send_404(req);
         return ESP_FAIL;
     }
@@ -72,7 +70,7 @@ esp_err_t image_handler(httpd_req_t *req) {
     while ((read_bytes = fread(buffer, 1, sizeof(buffer), file)) > 0) {
         if (httpd_resp_send_chunk(req, buffer, read_bytes) != ESP_OK) {
             fclose(file);
-            ESP_LOGE("handlers", "Failed to send file chunk");
+            ESP_LOGE("WS", "Failed to send file chunk");
             httpd_resp_send_500(req);
             return ESP_FAIL;
         }
@@ -86,13 +84,10 @@ esp_err_t image_handler(httpd_req_t *req) {
 
 // Start HTTP server
 httpd_handle_t start_webserver(void) {
-
-    ESP_LOGW("TEST", "here1");
+    // create sockets for clients
     for (int i = 0; i < CONFIG_MAX_CLIENTS; i++) {
-        ESP_LOGW("TEST", "%d", i);
         client_sockets[i] = -1;
     }
-    ESP_LOGW("TEST", "here2");
 
     httpd_config_t config = HTTPD_DEFAULT_CONFIG();
     config.uri_match_fn = httpd_uri_match_wildcard;
@@ -178,12 +173,12 @@ void websocket_broadcast_task(void *pvParameters) {
         strftime(buffer, sizeof(buffer), "%H:%M:%S", &timeinfo);
 
         // Log the current time
-        ESP_LOGI("WEBSOCKET", "Broadcasting time: %s", buffer);
+        ESP_LOGI("WS", "Broadcasting time: %s", buffer);
 
         // Send the time to all connected WebSocket clients
         for (int i = 0; i < CONFIG_MAX_CLIENTS; i++) {
             if (client_sockets[i] != -1) {
-                ESP_LOGI("WEBSOCKET", "Attempting to send frame to client %d", client_sockets[i]);
+                ESP_LOGI("WS", "Attempting to send frame to client %d", client_sockets[i]);
                 /*
                 // Validate WebSocket connection with a PING
                 esp_err_t ping_status = httpd_ws_send_frame_async(server, client_sockets[i], &(httpd_ws_frame_t){
@@ -191,10 +186,10 @@ void websocket_broadcast_task(void *pvParameters) {
                     .len = 0,
                     .type = HTTPD_WS_TYPE_PING
                 });
-                ESP_LOGE("WEBSOCKET", "ping error: %s", esp_err_to_name(ping_status));
+                ESP_LOGE("WS", "ping error: %s", esp_err_to_name(ping_status));
 
                 if (ping_status != ESP_OK) {
-                    ESP_LOGE("WEBSOCKET", "Client %d disconnected. Removing.", client_sockets[i]);
+                    ESP_LOGE("WS", "Client %d disconnected. Removing.", client_sockets[i]);
                     remove_client(client_sockets[i]);
                     continue;
                 }
@@ -208,10 +203,10 @@ void websocket_broadcast_task(void *pvParameters) {
                 };
                 esp_err_t err = httpd_ws_send_frame_async(server, client_sockets[i], &ws_pkt);
                 if (err != ESP_OK) {
-                    ESP_LOGE("WEBSOCKET", "Failed to send frame to client %d: %s", client_sockets[i], esp_err_to_name(err));
+                    ESP_LOGE("WS", "Failed to send frame to client %d: %s", client_sockets[i], esp_err_to_name(err));
                     remove_client(client_sockets[i]);  // Clean up disconnected clients
                 } else {
-                    ESP_LOGI("WEBSOCKET", "Frame sent to client %d", client_sockets[i]);
+                    ESP_LOGI("WS", "Frame sent to client %d", client_sockets[i]);
                 }
             }
         }
