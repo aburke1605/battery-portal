@@ -1,48 +1,118 @@
-/*
 static const char display_html[] = R"rawliteral(
-<!DOCTYPE html>
+<!DOCTYPE HTML><html><head>
+  <!DOCTYPE HTML><html>
+
 <html>
-<head><title>ESP32 Webpage</title></head>
+<head>
+<meta name='viewport' content='width=device-width, initial-scale=1'>
+<title> Info Page </title>
+<link rel='icon' href='data:,'>
+<style>
+Body {
+  font-family: Calibri, Helvetica, sans-serif;
+  background-color: lightblue;
+}
 
-<body><h1>Welcome to the ESP32 Web Server!</h1></body>
-<p>time: <span id='time'></span></p>
 
+button {
+       background-color: #4CAF50;
+       width: 100%;
+        color: orange;
+        padding: 15px;
+        margin: 30px 0px;
+        border: none;
+        cursor: pointer;
+        -webkit-touch-callout: none;
+        -webkit-user-select: none;
+        -khtml-user-select: none;
+        -moz-user-select: none;
+        -ms-user-select: none;
+        user-select: none;
+        -webkit-tap-highlight-color: rgba(0,0,0,0);
+         }
+ form {
+        border: 3px solid #f1f1f1;
+    }
+ input[type=text], input[type=password] {
+        width: 100%;
+        margin: 8px 0;
+        padding: 12px 20px;
+        display: inline-block;
+        border: 2px solid green;
+        box-sizing: border-box;
+    }
+ button:hover {
+        opacity: 0.7;
+    }
+ .button:active {
+     background-color: #0f8b8d;
+     box-shadow: 2 2px #CDCDCD;
+     transform: translateY(2px);
+   }
+   .state {
+     font-size: 1.5rem;
+     color:#8c8c8c;
+     font-weight: bold;
+   }
+  .cancelbtn {
+        width: auto;
+        padding: 10px 18px;
+        margin: 10px 5px;
+    }
+
+
+ .container {
+        padding: 25px;
+        background-color: lightgreen;
+    }
+
+
+</style>
+<link rel='icon' href='data:,'>
+</head>
 <body>
-  <div class='container'>
-    <form action='/page2' method='GET'>
-      <label>Username : </label>
-      <input type='text' placeholder='Enter Username' name='username' required>
-      <button type='submit'>Go</button>
-    </form>
-  </div>
-</body>
+    <center> <h1> Battery information </h1> </center>
 
-<script>
-  const socket = new WebSocket('ws://' + window.location.hostname + '/ws');
-  socket.onopen = function() {
-    console.log('WebSocket connection established');
-    // You can send messages or request data here if needed
-  };
-  socket.onmessage = function(event) {
-    console.log('Message from server: ' + event.data);
-    // Process received data here
-  };
-  Date.prototype.timeNow = function () {
-    return ((this.getHours() < 10)?'0':'') + this.getHours() +':'+ ((this.getMinutes() < 10)?'0':'') + this.getMinutes() +':'+ ((this.getSeconds() < 10)?'0':'') + this.getSeconds();
-  }
-  var time = new Date().timeNow() + ' (LastSync)';
-  document.getElementById('time').innerHTML = time;
-</script>
-</html>)rawliteral";
-*/
+        <div class='container'>
+          <p>
+            <span class='charge'>State of charge:</span>
+            <span id='charge'>%CHARGE%</span>
+            <span id='charge'>&#37</span>
+          </p>
+          <p>
+            <span class='voltage'>Voltage:</span>
+            <span id='voltage'>%VOLTAGE%</span>
+            <span id='voltage'>mV</span>
+          </p>
+          <p>
+            <span class='current'>Current:</span>
+            <span id='current'>%CURRENT%</span>
+            <span id='current'>mA</span>
+          </p>
+          <p>
+            <span class='temp'>Temperature:</span>
+            <span id='temp'>%TEMPERATURE%</span>
+            <span id='temp'>degC</span>
+          </p>
+        </div>
+        <p><button id='bluebutton' class='button'>Blue</button>
+          <span class='state'>Blue LED:</span>
+          <span id='bluestate'>%STATE%</span>
+        </p>
+        <p><button id='redbutton' class='button'>Red</button>
+          <span class='state'>Red LED:</span>
+          <span id='redstate'>%STATE%</span>
+        </p>
+        <img src='/image/aceon2.png' style='max-width: 100%; height:auto;'>
+        <form action='/about'>
+          <button type='Submit'>About AceOn</button>
+        </form>
+        <form action='/unit image'>
+          <button type='Submit'>Unit layout</button>
+        </form>
 
-static const char display_html[] = R"rawliteral(
-<!DOCTYPE html>
-<html>
-
-<head><title>Time Display</title></head>
-<body>
-  <h1>Live Time</h1>
+  <h1>Live Timer</h1>
+  <p>(proof the websocket is connected)</p>
   <div id='time'>Connecting...</div>
   <script>
     let socket = new WebSocket('ws://' + location.host + '/ws');
@@ -59,7 +129,7 @@ static const char display_html[] = R"rawliteral(
         console.log('WebSocket connection closed');
     };
   </script>
-</body>
 
+</body>
 </html>
 )rawliteral";
