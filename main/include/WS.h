@@ -17,7 +17,7 @@ esp_err_t display_handler(httpd_req_t *req);
 
 esp_err_t websocket_handler(httpd_req_t *req);
 
-esp_err_t image_get_handler(httpd_req_t *req);
+esp_err_t image_handler(httpd_req_t *req);
 
 httpd_handle_t start_webserver(void);
 

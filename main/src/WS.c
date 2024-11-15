@@ -50,7 +50,7 @@ esp_err_t websocket_handler(httpd_req_t *req) {
     return ESP_FAIL;
 }
 
-esp_err_t image_get_handler(httpd_req_t *req) {
+esp_err_t image_handler(httpd_req_t *req) {
     // Path to the file in the SPIFFS partition
     const char *file_path = (const char *)req->user_ctx;
     FILE *file = fopen(file_path, "r");
@@ -147,7 +147,7 @@ httpd_handle_t start_webserver(void) {
         httpd_uri_t image_uri = {
             .uri       = "/image/aceon.png",
             .method    = HTTP_GET,
-            .handler   = image_get_handler, // Function to read and send the image
+            .handler   = image_handler, // Function to read and send the image
             .user_ctx  = "/storage/aceon.png" // File path as user context
         };
         httpd_register_uri_handler(server, &image_uri);
@@ -155,7 +155,7 @@ httpd_handle_t start_webserver(void) {
         httpd_uri_t image_uri_2 = {
             .uri       = "/image/aceon2.png",
             .method    = HTTP_GET,
-            .handler   = image_get_handler, // Function to read and send the image
+            .handler   = image_handler, // Function to read and send the image
             .user_ctx  = "/storage/aceon2.png" // File path as user context
         };
         httpd_register_uri_handler(server, &image_uri_2);
