@@ -1,8 +1,4 @@
-#include <string.h>
-
 #include <esp_spiffs.h>
-#include <esp_log.h>
-#include <esp_http_server.h>
 
 #include "include/AP.h"
 #include "include/DNS.h"
@@ -58,6 +54,5 @@ void app_main(void) {
     // Start DNS server task
     xTaskCreate(&dns_server_task, "dns_server_task", 4096, NULL, 5, NULL);
 
-    // xTaskCreate(&websocket_send_task, "websocket_send_task", 4096, server, 5, NULL);    // Create a task to periodically send WebSocket updates
     xTaskCreate(&websocket_broadcast_task, "websocket_broadcast_task", 4096, &server, 5, NULL);
 }
