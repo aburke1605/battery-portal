@@ -80,14 +80,9 @@ button {
           <p>Temperature: <span id='temperature'></span> degC</p>
         </div>
 
-        <p><button id='bluebutton' class='button'>Blue</button>
-          <span class='state'>Blue LED:</span>
-          <span id='bluestate'></span>
-        </p>
-        <p><button id='redbutton' class='button'>Red</button>
-          <span class='state'>Red LED:</span>
-          <span id='redstate'></span>
-        </p>
+        <h1>ESP32 LED Control</h1>
+        <button onclick="fetch('/toggle').then(() => alert('LED Toggled'))">Toggle LED</button>
+
         <img src='/image/aceon2.png' style='max-width: 100%; height:auto;'>
         <form action='/about' method='get'>
           <button type='Submit'>About AceOn</button>
