@@ -1,5 +1,6 @@
 #include <esp_log.h>
 #include <esp_http_server.h>
+#include <cJSON.h>
 #include <lwip/sockets.h>
 
 extern httpd_handle_t server;
@@ -16,6 +17,10 @@ esp_err_t login_handler(httpd_req_t *req);
 esp_err_t display_handler(httpd_req_t *req);
 
 esp_err_t websocket_handler(httpd_req_t *req);
+
+esp_err_t about_handler(httpd_req_t *req);
+
+esp_err_t device_handler(httpd_req_t *req);
 
 esp_err_t image_handler(httpd_req_t *req);
 

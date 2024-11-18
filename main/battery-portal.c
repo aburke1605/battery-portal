@@ -18,27 +18,12 @@ void app_main(void) {
     };
     esp_err_t result = esp_vfs_spiffs_register(&config);
     if (result != ESP_OK) {
-        ESP_LOGE("SPIFFS", "Failed to initialise SPIFFS (%s)", esp_err_to_name(result));
+        ESP_LOGE("main", "Failed to initialise SPIFFS (%s)", esp_err_to_name(result));
         return;
     }
 
     ESP_ERROR_CHECK(i2c_master_init());
     ESP_LOGI("main", "I2C initialized successfully");
-
-    uint16_t iCharge = read_2byte_data(STATE_OF_CHARGE_REG);
-    ESP_LOGI("main", "Charge: %d %%", iCharge);
-
-    uint16_t iVoltage = read_2byte_data(VOLTAGE_REG);
-    float fVoltage = (float)iVoltage / 1000.0;
-    ESP_LOGI("main", "Voltage: %.2f V", fVoltage);
-
-    uint16_t iCurrent = read_2byte_data(CURRENT_REG);
-    float fCurrent = (float)iCurrent / 1000.0;
-    ESP_LOGI("main", "Current: %.2f A", fCurrent);
-
-    uint16_t iTemperature = read_2byte_data(TEMPERATURE_REG);
-    float fTemperature = (float)iTemperature / 10.0 - 273.15;
-    ESP_LOGI("main", "Temperature: %.2f \u00B0C", fTemperature);
 
     // Start the Access Point
     wifi_init_softap();
@@ -47,7 +32,7 @@ void app_main(void) {
     // static httpd_handle_t server = NULL;
     server = start_webserver();
     if (server == NULL) {
-        ESP_LOGE("MAIN", "Failed to start web server!");
+        ESP_LOGE("main", "Failed to start web server!");
         return;
     }
 

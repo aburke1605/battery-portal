@@ -1,7 +1,10 @@
 #include "include/WS.h"
+#include "include/I2C.h"
 
 #include "html/login_page.h"
 #include "html/display_page.h"
+#include "html/about_page.h"
+#include "html/device_page.h"
 
 
 void add_client(int fd) {
@@ -25,14 +28,14 @@ void remove_client(int fd) {
     }
 }
 
-// Function to handle HTTP GET requests
 esp_err_t login_handler(httpd_req_t *req) {
+    httpd_resp_set_type(req, "text/html");
     httpd_resp_send(req, login_html, HTTPD_RESP_USE_STRLEN);
     return ESP_OK;
 }
 
-// Function to handle HTTP GET requests
 esp_err_t display_handler(httpd_req_t *req) {
+    httpd_resp_set_type(req, "text/html");
     httpd_resp_send(req, display_html, HTTPD_RESP_USE_STRLEN);
     return ESP_OK;
 }
@@ -46,6 +49,18 @@ esp_err_t websocket_handler(httpd_req_t *req) {
     }
 
     return ESP_FAIL;
+}
+
+esp_err_t about_handler(httpd_req_t *req) {
+    httpd_resp_set_type(req, "text/html");
+    httpd_resp_send(req, about_html, HTTPD_RESP_USE_STRLEN);
+    return ESP_OK;
+}
+
+esp_err_t device_handler(httpd_req_t *req) {
+    httpd_resp_set_type(req, "text/html");
+    httpd_resp_send(req, device_html, HTTPD_RESP_USE_STRLEN);
+    return ESP_OK;
 }
 
 esp_err_t image_handler(httpd_req_t *req) {
@@ -128,6 +143,8 @@ httpd_handle_t start_webserver(void) {
             .user_ctx  = NULL
         };
         httpd_register_uri_handler(server, &display_uri);
+        display_uri.uri = "/return";
+        httpd_register_uri_handler(server, &display_uri);
 
         // WebSocket
         httpd_uri_t ws_uri = {
@@ -137,6 +154,24 @@ httpd_handle_t start_webserver(void) {
             .is_websocket = true
         };
         httpd_register_uri_handler(server, &ws_uri);
+
+        // About page
+        httpd_uri_t about_uri = {
+            .uri       = "/about",
+            .method    = HTTP_GET,
+            .handler   = about_handler,
+            .user_ctx  = NULL
+        };
+        httpd_register_uri_handler(server, &about_uri);
+
+        // Device page
+        httpd_uri_t device_uri = {
+            .uri       = "/device",
+            .method    = HTTP_GET,
+            .handler   = device_handler,
+            .user_ctx  = NULL
+        };
+        httpd_register_uri_handler(server, &device_uri);
 
         // Add a handler for serving the image
         httpd_uri_t image_uri = {
@@ -163,52 +198,65 @@ httpd_handle_t start_webserver(void) {
 
 
 void websocket_broadcast_task(void *pvParameters) {
-    char buffer[32];
-    // int client_fd;
 
     while (true) {
-        time_t now = time(NULL);
-        struct tm timeinfo;
-        localtime_r(&now, &timeinfo);
-        strftime(buffer, sizeof(buffer), "%H:%M:%S", &timeinfo);
+        // get the battery info
+        uint16_t iCharge = read_2byte_data(STATE_OF_CHARGE_REG);
 
-        // Log the current time
-        ESP_LOGI("WS", "Broadcasting time: %s", buffer);
+        uint16_t iVoltage = read_2byte_data(VOLTAGE_REG);
+        float fVoltage = (float)iVoltage / 1000.0;
 
-        // Send the time to all connected WebSocket clients
-        for (int i = 0; i < CONFIG_MAX_CLIENTS; i++) {
-            if (client_sockets[i] != -1) {
-                ESP_LOGI("WS", "Attempting to send frame to client %d", client_sockets[i]);
-                /*
-                // Validate WebSocket connection with a PING
-                esp_err_t ping_status = httpd_ws_send_frame_async(server, client_sockets[i], &(httpd_ws_frame_t){
-                    .payload = NULL,
-                    .len = 0,
-                    .type = HTTPD_WS_TYPE_PING
-                });
-                ESP_LOGE("WS", "ping error: %s", esp_err_to_name(ping_status));
+        uint16_t iCurrent = read_2byte_data(CURRENT_REG);
+        float fCurrent = (float)iCurrent / 1000.0;
 
-                if (ping_status != ESP_OK) {
-                    ESP_LOGE("WS", "Client %d disconnected. Removing.", client_sockets[i]);
-                    remove_client(client_sockets[i]);
-                    continue;
-                }
-                */
+        uint16_t iTemperature = read_2byte_data(TEMPERATURE_REG);
+        float fTemperature = (float)iTemperature / 10.0 - 273.15;
 
-                httpd_ws_frame_t ws_pkt = {
-                    .payload = (uint8_t *)buffer,
-                    .len = strlen(buffer),
-                    .type = HTTPD_WS_TYPE_TEXT,
-                    // .final = true,                 // Mark the frame as the final fragment
-                };
-                esp_err_t err = httpd_ws_send_frame_async(server, client_sockets[i], &ws_pkt);
-                if (err != ESP_OK) {
-                    ESP_LOGE("WS", "Failed to send frame to client %d: %s", client_sockets[i], esp_err_to_name(err));
-                    remove_client(client_sockets[i]);  // Clean up disconnected clients
-                } else {
-                    ESP_LOGI("WS", "Frame sent to client %d", client_sockets[i]);
+        cJSON *json = cJSON_CreateObject();
+        cJSON_AddNumberToObject(json, "charge", iCharge);
+        cJSON_AddNumberToObject(json, "voltage", fVoltage);
+        cJSON_AddNumberToObject(json, "current", fCurrent);
+        cJSON_AddNumberToObject(json, "temperature", fTemperature);
+
+        char *json_string = cJSON_PrintUnformatted(json);
+        cJSON_Delete(json);
+
+        if (json_string != NULL) {
+            // Send the JSON data to all connected WebSocket clients
+            for (int i = 0; i < CONFIG_MAX_CLIENTS; i++) {
+                if (client_sockets[i] != -1) {
+                    ESP_LOGI("WS", "Attempting to send frame to client %d", client_sockets[i]);
+                    /*
+                    // Validate WebSocket connection with a PING
+                    esp_err_t ping_status = httpd_ws_send_frame_async(server, client_sockets[i], &(httpd_ws_frame_t){
+                        .payload = NULL,
+                        .len = 0,
+                        .type = HTTPD_WS_TYPE_PING
+                    });
+                    ESP_LOGE("WS", "ping error: %s", esp_err_to_name(ping_status));
+
+                    if (ping_status != ESP_OK) {
+                        ESP_LOGE("WS", "Client %d disconnected. Removing.", client_sockets[i]);
+                        remove_client(client_sockets[i]);
+                        continue;
+                    }
+                    */
+
+                    httpd_ws_frame_t ws_pkt = {
+                        .payload = (uint8_t *)json_string,
+                        .len = strlen(json_string),
+                        .type = HTTPD_WS_TYPE_TEXT,
+                    };
+                    esp_err_t err = httpd_ws_send_frame_async(server, client_sockets[i], &ws_pkt);
+                    if (err != ESP_OK) {
+                        ESP_LOGE("WS", "Failed to send frame to client %d: %s", client_sockets[i], esp_err_to_name(err));
+                        remove_client(client_sockets[i]);  // Clean up disconnected clients
+                    } else {
+                        ESP_LOGI("WS", "Frame sent to client %d", client_sockets[i]);
+                    }
                 }
             }
+            free(json_string);
         }
 
         vTaskDelay(pdMS_TO_TICKS(1000));  // Update every second
