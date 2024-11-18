@@ -1,254 +1,148 @@
 #include "include/WS.h"
-#include "include/handlers.h"
 
-/*
- * async send function, which we put into the httpd work queue
- */
-void ws_async_send(void *arg) {
-    static const char * data = "Async data";
-    struct async_resp_arg *resp_arg = arg;
-    httpd_handle_t hd = resp_arg->hd;
-    int fd = resp_arg->fd;
-    httpd_ws_frame_t ws_pkt;
-    memset(&ws_pkt, 0, sizeof(httpd_ws_frame_t));
-    ws_pkt.payload = (uint8_t*)data;
-    ws_pkt.len = strlen(data);
-    ws_pkt.type = HTTPD_WS_TYPE_TEXT;
+#include "html/login_page.h"
+#include "html/display_page.h"
 
-    httpd_ws_send_frame_async(hd, fd, &ws_pkt);
-    free(resp_arg);
+
+void add_client(int fd) {
+    for (int i = 0; i < CONFIG_MAX_CLIENTS; i++) {
+        if (client_sockets[i] == -1) {
+            client_sockets[i] = fd;
+            ESP_LOGI("WS", "Client %d added", fd);
+            return;
+        }
+    }
+    ESP_LOGE("WS", "No space for client %d", fd);
 }
 
-esp_err_t trigger_async_send(httpd_handle_t handle, httpd_req_t *req) {
-    struct async_resp_arg *resp_arg = malloc(sizeof(struct async_resp_arg));
-    if (resp_arg == NULL) {
-        return ESP_ERR_NO_MEM;
+void remove_client(int fd) {
+    for (int i = 0; i < CONFIG_MAX_CLIENTS; i++) {
+        if (client_sockets[i] == fd) {
+            client_sockets[i] = -1;
+            ESP_LOGI("WS", "Client %d removed", fd);
+            return;
+        }
     }
-    resp_arg->hd = req->handle;
-    resp_arg->fd = httpd_req_to_sockfd(req);
-    esp_err_t ret = httpd_queue_work(handle, ws_async_send, resp_arg);
-    if (ret != ESP_OK) {
-        free(resp_arg);
-    }
-    return ret;
 }
 
-/*
- * This handler echos back the received ws data
- * and triggers an async send if certain message received
- */
+// Function to handle HTTP GET requests
+esp_err_t login_handler(httpd_req_t *req) {
+    httpd_resp_send(req, login_html, HTTPD_RESP_USE_STRLEN);
+    return ESP_OK;
+}
+
+// Function to handle HTTP GET requests
+esp_err_t display_handler(httpd_req_t *req) {
+    httpd_resp_send(req, display_html, HTTPD_RESP_USE_STRLEN);
+    return ESP_OK;
+}
+
 esp_err_t websocket_handler(httpd_req_t *req) {
     if (req->method == HTTP_GET) {
-        ESP_LOGI("WS", "Handshake done, the new connection was opened");
-        return ESP_OK;
-    }
-    httpd_ws_frame_t ws_pkt;
-    uint8_t *buf = NULL;
-    memset(&ws_pkt, 0, sizeof(httpd_ws_frame_t));
-    ws_pkt.type = HTTPD_WS_TYPE_TEXT;
-    /* Set max_len = 0 to get the frame len */
-    esp_err_t ret = httpd_ws_recv_frame(req, &ws_pkt, 0);
-    if (ret != ESP_OK) {
-        ESP_LOGE("WS", "httpd_ws_recv_frame failed to get frame len with %d", ret);
-        return ret;
-    }
-    ESP_LOGI("WS", "frame len is %d", ws_pkt.len);
-    if (ws_pkt.len) {
-        /* ws_pkt.len + 1 is for NULL termination as we are expecting a string */
-        buf = calloc(1, ws_pkt.len + 1);
-        if (buf == NULL) {
-            ESP_LOGE("WS", "Failed to calloc memory for buf");
-            return ESP_ERR_NO_MEM;
-        }
-        ws_pkt.payload = buf;
-        /* Set max_len = ws_pkt.len to get the frame payload */
-        ret = httpd_ws_recv_frame(req, &ws_pkt, ws_pkt.len);
-        if (ret != ESP_OK) {
-            ESP_LOGE("WS", "httpd_ws_recv_frame failed with %d", ret);
-            free(buf);
-            return ret;
-        }
-        ESP_LOGI("WS", "Got packet with message: %s", ws_pkt.payload);
-    }
-    ESP_LOGI("WS", "Packet type: %d", ws_pkt.type);
-    if (ws_pkt.type == HTTPD_WS_TYPE_TEXT &&
-        strcmp((char*)ws_pkt.payload,"Trigger async") == 0) {
-        free(buf);
-        return trigger_async_send(req->handle, req);
+        int fd = httpd_req_to_sockfd(req);
+        ESP_LOGI("WS", "WebSocket handshake complete for client %d", fd);
+        add_client(fd);
+        return ESP_OK;  // WebSocket handshake happens here
     }
 
-    ret = httpd_ws_send_frame(req, &ws_pkt);
-    if (ret != ESP_OK) {
-        ESP_LOGE("WS", "httpd_ws_send_frame failed with %d", ret);
-    }
-    free(buf);
-    return ret;
+    return ESP_FAIL;
 }
 
-// Test websocket
-esp_err_t test_websocket_handler(httpd_req_t *req) {
-    if (req->method == HTTP_GET) {
-        ESP_LOGI("WS", "Handshake done, new connection opened");
+esp_err_t image_handler(httpd_req_t *req) {
+    // Path to the file in the SPIFFS partition
+    const char *file_path = (const char *)req->user_ctx;
+    FILE *file = fopen(file_path, "r");
+
+    if (file == NULL) {
+        ESP_LOGE("WS", "Failed to open file: %s", file_path);
+        httpd_resp_send_404(req);
+        return ESP_FAIL;
     }
 
-    httpd_ws_frame_t ws_pkt;
-    uint8_t *buf = NULL;
-    memset(&ws_pkt, 0, sizeof(httpd_ws_frame_t));
-    ws_pkt.type = HTTPD_WS_TYPE_TEXT;
+    // Set the response type to indicate it's an image
+    httpd_resp_set_type(req, "image/png");
 
-    /* Get the frame length */
-    esp_err_t ret = httpd_ws_recv_frame(req, &ws_pkt, 0);
-    if (ret != ESP_OK) {
-        ESP_LOGE("WS", "httpd_ws_recv_frame failed to get frame len with %d", ret);
-        return ret;
-    }
-    ESP_LOGI("WS", "Frame len is %d", ws_pkt.len);
+    // Buffer for reading file chunks
+    char buffer[1024];
+    size_t read_bytes;
 
-    /* Receive payload if available */
-    if (ws_pkt.len) {
-        buf = calloc(1, ws_pkt.len + 1);
-        if (buf == NULL) {
-            ESP_LOGE("WS", "Failed to calloc memory for buf");
-            return ESP_ERR_NO_MEM;
+    // Read the file and send chunks
+    while ((read_bytes = fread(buffer, 1, sizeof(buffer), file)) > 0) {
+        if (httpd_resp_send_chunk(req, buffer, read_bytes) != ESP_OK) {
+            fclose(file);
+            ESP_LOGE("WS", "Failed to send file chunk");
+            httpd_resp_send_500(req);
+            return ESP_FAIL;
         }
-        ws_pkt.payload = buf;
-        ret = httpd_ws_recv_frame(req, &ws_pkt, ws_pkt.len);
-        if (ret != ESP_OK) {
-            ESP_LOGE("WS", "httpd_ws_recv_frame failed with %d", ret);
-            free(buf);
-            return ret;
-        }
-        ESP_LOGI("WS", "Received message: %s", ws_pkt.payload);
     }
 
-    // if (ws_pkt.type == HTTPD_WS_TYPE_TEXT && strcmp((char *)ws_pkt.payload, "Trigger async") == 0) {
-    //     free(buf);
-    //     return trigger_async_send(req->handle, req);
-    // }
-
-    // /* Send echo message back */
-    // ret = httpd_ws_send_frame(req, &ws_pkt);
-    // if (ret != ESP_OK) {
-    //     ESP_LOGE("WS", "httpd_ws_send_frame failed with %d", ret);
-    // }
-
-    // free(buf);
-
-    char *response_msg = "Hello from ESP32!";
-    httpd_ws_frame_t ws_response;
-    memset(&ws_response, 0, sizeof(httpd_ws_frame_t));
-    ws_response.type = HTTPD_WS_TYPE_TEXT;
-    ws_response.payload = (uint8_t *)response_msg;
-    ws_response.len = strlen(response_msg);
-
-    ret = httpd_ws_send_frame(req, &ws_response);
-    if (ret != ESP_OK) {
-        ESP_LOGE("WS", "Failed to send message to client with error: %d", ret);
-    } else {
-        ESP_LOGI("WS", "Message sent to client: %s", response_msg);
-    }
-
-    free(buf);
-
-    return ret;
-}
-
-/* Function to periodically send a message */
-void websocket_send_task(void *arg) {
-    httpd_handle_t server = (httpd_handle_t)arg;
-    httpd_ws_frame_t ws_pkt;
-    char *message = "Hello from ESP32";
-
-    while (true) {
-        memset(&ws_pkt, 0, sizeof(httpd_ws_frame_t));
-        ws_pkt.type = HTTPD_WS_TYPE_TEXT;
-        ws_pkt.payload = (uint8_t *)message;
-        ws_pkt.len = strlen(message);
-
-        /* Send the message to all connected clients */
-        for (int fd = 0; fd < CONFIG_MAX_CLIENTS; fd++) {
-            esp_err_t ret = httpd_ws_send_frame_async(server, fd, &ws_pkt);
-            if (ret == ESP_OK) {
-                ESP_LOGI("WS", "Sent message to client %d", fd);
-            } else {
-                ESP_LOGE("WS", "Failed to send message to client %d, error %d", fd, ret);
-            }
-        }
-
-        /* Wait for 5 seconds */
-        vTaskDelay(pdMS_TO_TICKS(5000));
-    }
+    // Close the file and send the final empty chunk to signal the end of the response
+    fclose(file);
+    httpd_resp_send_chunk(req, NULL, 0);
+    return ESP_OK;
 }
 
 // Start HTTP server
 httpd_handle_t start_webserver(void) {
-    httpd_handle_t server = NULL;
+    // create sockets for clients
+    for (int i = 0; i < CONFIG_MAX_CLIENTS; i++) {
+        client_sockets[i] = -1;
+    }
+
     httpd_config_t config = HTTPD_DEFAULT_CONFIG();
+    config.uri_match_fn = httpd_uri_match_wildcard;
     config.max_uri_handlers = 16; // Increase this number as needed
 
     // Start the httpd server
     ESP_LOGI("WS", "Starting server on port: '%d'", config.server_port);
+
     if (httpd_start(&server, &config) == ESP_OK) {
         ESP_LOGI("WS", "Registering URI handlers");
-        httpd_register_uri_handler(server, &ws);  // Register WebSocket URI
 
-        // Register ios detect page
-        httpd_uri_t hotspot_detect_get_ios = {
-            .uri       = "/hotspot-detect.html",
+        // Login page
+        httpd_uri_t login_uri = {
+            .uri       = "/",
             .method    = HTTP_GET,
-            .handler   = index_handler,
+            .handler   = login_handler,
             .user_ctx  = NULL
         };
-        httpd_register_uri_handler(server, &hotspot_detect_get_ios);
-
-        // Register android detect page
-        httpd_uri_t hotspot_detect_get_android = {
-            .uri       = "/generate_204",
-            .method    = HTTP_GET,
-            .handler   = index_handler,
-            .user_ctx  = NULL
-        };
-        httpd_register_uri_handler(server, &hotspot_detect_get_android);
-
-        // Register windows detect page
-        httpd_uri_t hotspot_detect_get_windows = {
-            .uri       = "/connecttest.txt",
-            .method    = HTTP_GET,
-            .handler   = index_handler,
-            .user_ctx  = NULL
-        };
-        httpd_register_uri_handler(server, &hotspot_detect_get_windows);
-
-        httpd_uri_t hotspot_detect_get_windows2 = {
-            .uri       = "/favicon.ico",
-            .method    = HTTP_GET,
-            .handler   = index_handler,
-            .user_ctx  = NULL
-        };
-        httpd_register_uri_handler(server, &hotspot_detect_get_windows2);
-
-        httpd_uri_t hotspot_detect_get_windows3 = {
-            .uri       = "/redirect",
-            .method    = HTTP_GET,
-            .handler   = index_handler,
-            .user_ctx  = NULL
-        };
-        httpd_register_uri_handler(server, &hotspot_detect_get_windows3);
+        httpd_register_uri_handler(server, &login_uri);
+        
+        // do some more to catch all device types
+        login_uri.uri = "/hotspot-detect.html";
+        httpd_register_uri_handler(server, &login_uri);
+        login_uri.uri = "/generate_204";
+        httpd_register_uri_handler(server, &login_uri);
+        login_uri.uri = "/connecttest.txt";
+        httpd_register_uri_handler(server, &login_uri);
+        login_uri.uri = "/favicon.ico";
+        httpd_register_uri_handler(server, &login_uri);
+        login_uri.uri = "/redirect";
+        httpd_register_uri_handler(server, &login_uri);
 
         // Display page
-        httpd_uri_t display_page_get = {
+        httpd_uri_t display_uri = {
             .uri       = "/display",
-            .method    = HTTP_POST,
+            .method    = HTTP_GET,
             .handler   = display_handler,
             .user_ctx  = NULL
         };
-        httpd_register_uri_handler(server, &display_page_get);
+        httpd_register_uri_handler(server, &display_uri);
+
+        // WebSocket
+        httpd_uri_t ws_uri = {
+            .uri = "/ws",
+            .method = HTTP_GET,
+            .handler = websocket_handler,
+            .is_websocket = true
+        };
+        httpd_register_uri_handler(server, &ws_uri);
 
         // Add a handler for serving the image
         httpd_uri_t image_uri = {
             .uri       = "/image/aceon.png",
             .method    = HTTP_GET,
-            .handler   = image_get_handler, // Function to read and send the image
+            .handler   = image_handler, // Function to read and send the image
             .user_ctx  = "/storage/aceon.png" // File path as user context
         };
         httpd_register_uri_handler(server, &image_uri);
@@ -256,14 +150,67 @@ httpd_handle_t start_webserver(void) {
         httpd_uri_t image_uri_2 = {
             .uri       = "/image/aceon2.png",
             .method    = HTTP_GET,
-            .handler   = image_get_handler, // Function to read and send the image
+            .handler   = image_handler, // Function to read and send the image
             .user_ctx  = "/storage/aceon2.png" // File path as user context
         };
         httpd_register_uri_handler(server, &image_uri_2);
-
-        return server;
+    } else {
+        ESP_LOGE("WS", "Error starting server!");
     }
+    return server;
+}
 
-    ESP_LOGI("WS", "Error starting server!");
-    return NULL;
+
+
+void websocket_broadcast_task(void *pvParameters) {
+    char buffer[32];
+    // int client_fd;
+
+    while (true) {
+        time_t now = time(NULL);
+        struct tm timeinfo;
+        localtime_r(&now, &timeinfo);
+        strftime(buffer, sizeof(buffer), "%H:%M:%S", &timeinfo);
+
+        // Log the current time
+        ESP_LOGI("WS", "Broadcasting time: %s", buffer);
+
+        // Send the time to all connected WebSocket clients
+        for (int i = 0; i < CONFIG_MAX_CLIENTS; i++) {
+            if (client_sockets[i] != -1) {
+                ESP_LOGI("WS", "Attempting to send frame to client %d", client_sockets[i]);
+                /*
+                // Validate WebSocket connection with a PING
+                esp_err_t ping_status = httpd_ws_send_frame_async(server, client_sockets[i], &(httpd_ws_frame_t){
+                    .payload = NULL,
+                    .len = 0,
+                    .type = HTTPD_WS_TYPE_PING
+                });
+                ESP_LOGE("WS", "ping error: %s", esp_err_to_name(ping_status));
+
+                if (ping_status != ESP_OK) {
+                    ESP_LOGE("WS", "Client %d disconnected. Removing.", client_sockets[i]);
+                    remove_client(client_sockets[i]);
+                    continue;
+                }
+                */
+
+                httpd_ws_frame_t ws_pkt = {
+                    .payload = (uint8_t *)buffer,
+                    .len = strlen(buffer),
+                    .type = HTTPD_WS_TYPE_TEXT,
+                    // .final = true,                 // Mark the frame as the final fragment
+                };
+                esp_err_t err = httpd_ws_send_frame_async(server, client_sockets[i], &ws_pkt);
+                if (err != ESP_OK) {
+                    ESP_LOGE("WS", "Failed to send frame to client %d: %s", client_sockets[i], esp_err_to_name(err));
+                    remove_client(client_sockets[i]);  // Clean up disconnected clients
+                } else {
+                    ESP_LOGI("WS", "Frame sent to client %d", client_sockets[i]);
+                }
+            }
+        }
+
+        vTaskDelay(pdMS_TO_TICKS(1000));  // Update every second
+    }
 }

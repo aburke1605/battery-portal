@@ -1,4 +1,4 @@
-static const char index_html[] = R"rawliteral(
+static const char login_html[] = R"rawliteral(
 <!DOCTYPE HTML><html><head>
   <!DOCTYPE HTML><html>
   
@@ -57,7 +57,7 @@ button {
     <center> <h1> CUB_00001 Login Form </h1> </center>   
     
         <div class='container'>   
-          <form action='/display'  method='post'>
+          <form action='/display' method='get'>
             <label>Username : </label>   
             <input type='text' placeholder='Enter Username' name='username' required>  
             <label>Password : </label>   

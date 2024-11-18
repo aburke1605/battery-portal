@@ -2,8 +2,11 @@
 
 #include "include/AP.h"
 #include "include/DNS.h"
-#include "include/WS.h"
 #include "include/I2C.h"
+#include "include/WS.h"
+
+// Define the server globally
+httpd_handle_t server = NULL;
 
 void app_main(void) {
     // initialise SPIFFS
@@ -41,11 +44,15 @@ void app_main(void) {
     wifi_init_softap();
 
     // Start the ws server to serve the HTML page
-    static httpd_handle_t server = NULL;
-    server =  start_webserver();
+    // static httpd_handle_t server = NULL;
+    server = start_webserver();
+    if (server == NULL) {
+        ESP_LOGE("MAIN", "Failed to start web server!");
+        return;
+    }
 
     // Start DNS server task
     xTaskCreate(&dns_server_task, "dns_server_task", 4096, NULL, 5, NULL);
 
-    // xTaskCreate(&websocket_send_task, "websocket_send_task", 4096, server, 5, NULL);
+    xTaskCreate(&websocket_broadcast_task, "websocket_broadcast_task", 4096, &server, 5, NULL);
 }
