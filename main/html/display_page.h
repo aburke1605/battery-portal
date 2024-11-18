@@ -107,7 +107,7 @@ button {
         <form action='/about' method='get'>
           <button type='Submit'>About AceOn</button>
         </form>
-        <form action='/unit image'>
+        <form action='/device' method='get'>
           <button type='Submit'>Unit layout</button>
         </form>
 

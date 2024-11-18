@@ -3,6 +3,7 @@
 #include "html/login_page.h"
 #include "html/display_page.h"
 #include "html/about_page.h"
+#include "html/device_page.h"
 
 
 void add_client(int fd) {
@@ -49,6 +50,11 @@ esp_err_t websocket_handler(httpd_req_t *req) {
 
 esp_err_t about_handler(httpd_req_t *req) {
     httpd_resp_send(req, about_html, HTTPD_RESP_USE_STRLEN);
+    return ESP_OK;
+}
+
+esp_err_t device_handler(httpd_req_t *req) {
+    httpd_resp_send(req, device_html, HTTPD_RESP_USE_STRLEN);
     return ESP_OK;
 }
 
@@ -150,6 +156,15 @@ httpd_handle_t start_webserver(void) {
             .user_ctx  = NULL
         };
         httpd_register_uri_handler(server, &about_uri);
+
+        // Device page
+        httpd_uri_t device_uri = {
+            .uri       = "/device",
+            .method    = HTTP_GET,
+            .handler   = device_handler,
+            .user_ctx  = NULL
+        };
+        httpd_register_uri_handler(server, &device_uri);
 
         // Add a handler for serving the image
         httpd_uri_t image_uri = {
