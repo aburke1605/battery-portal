@@ -18,7 +18,7 @@ void app_main(void) {
     };
     esp_err_t result = esp_vfs_spiffs_register(&config);
     if (result != ESP_OK) {
-        ESP_LOGE("SPIFFS", "Failed to initialise SPIFFS (%s)", esp_err_to_name(result));
+        ESP_LOGE("main", "Failed to initialise SPIFFS (%s)", esp_err_to_name(result));
         return;
     }
 
@@ -32,7 +32,7 @@ void app_main(void) {
     // static httpd_handle_t server = NULL;
     server = start_webserver();
     if (server == NULL) {
-        ESP_LOGE("MAIN", "Failed to start web server!");
+        ESP_LOGE("main", "Failed to start web server!");
         return;
     }
 
