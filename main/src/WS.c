@@ -1,4 +1,5 @@
 #include "include/WS.h"
+#include "include/I2C.h"
 
 #include "html/login_page.h"
 #include "html/display_page.h"

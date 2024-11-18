@@ -74,26 +74,10 @@ button {
     <center> <h1> Battery information </h1> </center>
 
         <div class='container'>
-          <p>
-            <span class='charge'>State of charge:</span>
-            <span id='charge'>%CHARGE%</span>
-            <span id='charge'>&#37</span>
-          </p>
-          <p>
-            <span class='voltage'>Voltage:</span>
-            <span id='voltage'>%VOLTAGE%</span>
-            <span id='voltage'>mV</span>
-          </p>
-          <p>
-            <span class='current'>Current:</span>
-            <span id='current'>%CURRENT%</span>
-            <span id='current'>mA</span>
-          </p>
-          <p>
-            <span class='temp'>Temperature:</span>
-            <span id='temp'>%TEMPERATURE%</span>
-            <span id='temp'>degC</span>
-          </p>
+          <p>State of charge: <span id='charge'></span> %</p>
+          <p>Voltage: <span id='voltage'></span> V</p>
+          <p>Current: <span id='current'></span> A</p>
+          <p>Temperature: <span id='temperature'></span> degC</p>
         </div>
         <p><button id='bluebutton' class='button'>Blue</button>
           <span class='state'>Blue LED:</span>
@@ -111,16 +95,21 @@ button {
           <button type='Submit'>Unit layout</button>
         </form>
 
-  <h1>Live Timer</h1>
-  <p>(proof the websocket is connected)</p>
-  <div id='time'>Connecting...</div>
   <script>
     let socket = new WebSocket('ws://' + location.host + '/ws');
     socket.onopen = function() {
         console.log('WebSocket connection established');
     };
     socket.onmessage = function(event) {
-        document.getElementById('time').textContent = event.data;
+        try {
+            let data = JSON.parse(event.data);
+            document.getElementById('charge').innerHTML = data.charge;
+            document.getElementById('voltage').innerHTML = data.voltage.toFixed(2);
+            document.getElementById('current').innerHTML = data.current.toFixed(2);
+            document.getElementById('temperature').innerHTML = data.temperature.toFixed(2);
+        } catch (error) {
+            console.error('Error parsing JSON:', error);
+        }
     };
     socket.onerror = function(error) {
         console.error('WebSocket error:', error);
