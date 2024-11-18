@@ -29,11 +29,13 @@ void remove_client(int fd) {
 }
 
 esp_err_t login_handler(httpd_req_t *req) {
+    httpd_resp_set_type(req, "text/html");
     httpd_resp_send(req, login_html, HTTPD_RESP_USE_STRLEN);
     return ESP_OK;
 }
 
 esp_err_t display_handler(httpd_req_t *req) {
+    httpd_resp_set_type(req, "text/html");
     httpd_resp_send(req, display_html, HTTPD_RESP_USE_STRLEN);
     return ESP_OK;
 }
@@ -50,11 +52,13 @@ esp_err_t websocket_handler(httpd_req_t *req) {
 }
 
 esp_err_t about_handler(httpd_req_t *req) {
+    httpd_resp_set_type(req, "text/html");
     httpd_resp_send(req, about_html, HTTPD_RESP_USE_STRLEN);
     return ESP_OK;
 }
 
 esp_err_t device_handler(httpd_req_t *req) {
+    httpd_resp_set_type(req, "text/html");
     httpd_resp_send(req, device_html, HTTPD_RESP_USE_STRLEN);
     return ESP_OK;
 }
