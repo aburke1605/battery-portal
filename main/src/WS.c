@@ -138,6 +138,8 @@ httpd_handle_t start_webserver(void) {
             .user_ctx  = NULL
         };
         httpd_register_uri_handler(server, &display_uri);
+        display_uri.uri = "/return";
+        httpd_register_uri_handler(server, &display_uri);
 
         // WebSocket
         httpd_uri_t ws_uri = {
