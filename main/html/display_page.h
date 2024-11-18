@@ -79,13 +79,14 @@ button {
           <p>Current: <span id='current'></span> A</p>
           <p>Temperature: <span id='temperature'></span> degC</p>
         </div>
+
         <p><button id='bluebutton' class='button'>Blue</button>
           <span class='state'>Blue LED:</span>
-          <span id='bluestate'>%STATE%</span>
+          <span id='bluestate'></span>
         </p>
         <p><button id='redbutton' class='button'>Red</button>
           <span class='state'>Red LED:</span>
-          <span id='redstate'>%STATE%</span>
+          <span id='redstate'></span>
         </p>
         <img src='/image/aceon2.png' style='max-width: 100%; height:auto;'>
         <form action='/about' method='get'>
