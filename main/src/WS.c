@@ -2,6 +2,7 @@
 
 #include "html/login_page.h"
 #include "html/display_page.h"
+#include "html/about_page.h"
 
 
 void add_client(int fd) {
@@ -25,13 +26,11 @@ void remove_client(int fd) {
     }
 }
 
-// Function to handle HTTP GET requests
 esp_err_t login_handler(httpd_req_t *req) {
     httpd_resp_send(req, login_html, HTTPD_RESP_USE_STRLEN);
     return ESP_OK;
 }
 
-// Function to handle HTTP GET requests
 esp_err_t display_handler(httpd_req_t *req) {
     httpd_resp_send(req, display_html, HTTPD_RESP_USE_STRLEN);
     return ESP_OK;
@@ -46,6 +45,11 @@ esp_err_t websocket_handler(httpd_req_t *req) {
     }
 
     return ESP_FAIL;
+}
+
+esp_err_t about_handler(httpd_req_t *req) {
+    httpd_resp_send(req, about_html, HTTPD_RESP_USE_STRLEN);
+    return ESP_OK;
 }
 
 esp_err_t image_handler(httpd_req_t *req) {
@@ -137,6 +141,15 @@ httpd_handle_t start_webserver(void) {
             .is_websocket = true
         };
         httpd_register_uri_handler(server, &ws_uri);
+
+        // About page
+        httpd_uri_t about_uri = {
+            .uri       = "/about",
+            .method    = HTTP_GET,
+            .handler   = about_handler,
+            .user_ctx  = NULL
+        };
+        httpd_register_uri_handler(server, &about_uri);
 
         // Add a handler for serving the image
         httpd_uri_t image_uri = {

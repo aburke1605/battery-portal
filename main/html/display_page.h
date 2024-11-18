@@ -104,7 +104,7 @@ button {
           <span id='redstate'>%STATE%</span>
         </p>
         <img src='/image/aceon2.png' style='max-width: 100%; height:auto;'>
-        <form action='/about'>
+        <form action='/about' method='get'>
           <button type='Submit'>About AceOn</button>
         </form>
         <form action='/unit image'>
