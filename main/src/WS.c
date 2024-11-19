@@ -1,8 +1,8 @@
 #include "include/WS.h"
 #include "include/I2C.h"
 
-#include "html/login_page.h"
-#include "html/display_page.h"
+#include "html/test_login_page.h"
+#include "html/test_display_page.h"
 #include "html/about_page.h"
 #include "html/device_page.h"
 
@@ -206,6 +206,7 @@ httpd_handle_t start_webserver(void) {
             .user_ctx  = "/storage/aceon2.png" // File path as user context
         };
         httpd_register_uri_handler(server, &image_uri_2);
+
     } else {
         ESP_LOGE("WS", "Error starting server!");
     }
