@@ -25,6 +25,16 @@ void app_main(void) {
     ESP_ERROR_CHECK(i2c_master_init());
     ESP_LOGI("main", "I2C initialized successfully");
 
+    // Initialize the GPIO pin as an output for LED toggling
+    gpio_config_t io_conf = {
+        .pin_bit_mask = (1ULL << LED_GPIO_PIN),
+        .mode = GPIO_MODE_OUTPUT,
+        .pull_up_en = GPIO_PULLUP_DISABLE,
+        .pull_down_en = GPIO_PULLDOWN_DISABLE,
+        .intr_type = GPIO_INTR_DISABLE
+    };
+    gpio_config(&io_conf);
+
     // Start the Access Point
     wifi_init_softap();
 

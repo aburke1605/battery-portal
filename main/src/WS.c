@@ -63,6 +63,15 @@ esp_err_t device_handler(httpd_req_t *req) {
     return ESP_OK;
 }
 
+esp_err_t toggle_handler(httpd_req_t *req) {
+    static bool led_on = false;
+    led_on = !led_on;
+    gpio_set_level(LED_GPIO_PIN, led_on ? 1 : 0);
+    ESP_LOGI("WS", "LED is now %s", led_on ? "ON" : "OFF");
+    httpd_resp_send(req, "LED Toggled", HTTPD_RESP_USE_STRLEN);
+    return ESP_OK;
+}
+
 esp_err_t image_handler(httpd_req_t *req) {
     // Path to the file in the SPIFFS partition
     const char *file_path = (const char *)req->user_ctx;
@@ -172,6 +181,14 @@ httpd_handle_t start_webserver(void) {
             .user_ctx  = NULL
         };
         httpd_register_uri_handler(server, &device_uri);
+
+        httpd_uri_t toggle_uri = {
+            .uri = "/toggle",
+            .method = HTTP_GET,
+            .handler = toggle_handler,
+            .user_ctx = NULL
+        };
+        httpd_register_uri_handler(server, &toggle_uri);
 
         // Add a handler for serving the image
         httpd_uri_t image_uri = {

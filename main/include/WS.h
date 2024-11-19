@@ -2,11 +2,14 @@
 #include <esp_http_server.h>
 #include <cJSON.h>
 #include <lwip/sockets.h>
+#include <driver/gpio.h>
 
 extern httpd_handle_t server;
 
 #define CONFIG_MAX_CLIENTS 5
 static int client_sockets[CONFIG_MAX_CLIENTS];
+
+#define LED_GPIO_PIN 2
 
 void add_client(int fd);
 
@@ -21,6 +24,8 @@ esp_err_t websocket_handler(httpd_req_t *req);
 esp_err_t about_handler(httpd_req_t *req);
 
 esp_err_t device_handler(httpd_req_t *req);
+
+esp_err_t toggle_handler(httpd_req_t *req);
 
 esp_err_t image_handler(httpd_req_t *req);
 
