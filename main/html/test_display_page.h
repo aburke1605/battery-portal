@@ -44,7 +44,7 @@ static const char display_html[] = R"rawliteral(
         </div>
          <div class="bg-white p-8 rounded-lg shadow-lg">
           <div class="flex justify-between items-center">
-              <img src="/image/aceon2.png" alt="Company Logo" class="h-16">
+              <img src="/image/aceon2.png" alt="Company Logo" class="h-16" style="width: 200px; height: 100px">
               <div class="flex flex-col space-y-4">
                   <a href="/about" class="text-blue-700 underline hover:text-blue-900">About AceOn</a>
                   <a href="/device" class="text-blue-700 underline hover:text-blue-900">Unit Layout</a>
