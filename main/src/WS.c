@@ -225,6 +225,7 @@ void websocket_broadcast_task(void *pvParameters) {
 
         uint16_t iCurrent = read_2byte_data(CURRENT_REG);
         float fCurrent = (float)iCurrent / 1000.0;
+        if (fCurrent<65.536 && fCurrent>32.767) fCurrent = 65.536 - fCurrent;
 
         uint16_t iTemperature = read_2byte_data(TEMPERATURE_REG);
         float fTemperature = (float)iTemperature / 10.0 - 273.15;
