@@ -54,7 +54,7 @@ static void websocket_event_handler(void *handler_args, esp_event_base_t base, i
             break;
 
         default:
-            // ESP_LOGW(TAG, "Unhandled WebSocket event ID: %d", event_id);
+            ESP_LOGW(TAG, "Unhandled WebSocket event ID: %ld", event_id);
             break;
     }
 }
