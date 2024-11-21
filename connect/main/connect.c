@@ -93,5 +93,7 @@ void app_main(void) {
     
     wifi_init();
 
+    vTaskDelay(pdMS_TO_TICKS(3000));
+
     xTaskCreate(websocket_task, "websocket_task", 4096, NULL, 5, NULL);
 }
