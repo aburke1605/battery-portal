@@ -11,27 +11,13 @@
 
 // Define the server globally
 httpd_handle_t server = NULL;
+// and the remote queue
+QueueHandle_t broadcast_queue;
+// Shared JSON objec
+cJSON *global_json = NULL;
 
-void wifi_init_sta(void) {
-    esp_netif_init();
-    esp_event_loop_create_default();
-    esp_netif_create_default_wifi_sta();
-    wifi_init_config_t cfg = WIFI_INIT_CONFIG_DEFAULT();
-    esp_wifi_init(&cfg);
-
-    wifi_config_t wifi_config = {
-        .sta = {
-            .ssid = "AceOn battery",
-            .password = "password",
-        },
-    };
-    esp_wifi_set_mode(WIFI_MODE_STA);
-    esp_wifi_set_config(ESP_IF_WIFI_STA, &wifi_config);
-    esp_wifi_start();
-    esp_wifi_connect();
-}
-
-static void websocket_event_handler(void *handler_args, esp_event_base_t base, int32_t event_id, void *event_data) {
+void websocket_event_handler(void *handler_args, esp_event_base_t base, int32_t event_id, void *event_data) {
+    QueueHandle_t *queue = (QueueHandle_t *)handler_args;
     esp_websocket_event_data_t *data = (esp_websocket_event_data_t *)event_data;
 
     switch (event_id) {
@@ -44,7 +30,30 @@ static void websocket_event_handler(void *handler_args, esp_event_base_t base, i
             break;
 
         case WEBSOCKET_EVENT_DATA:
+            char *received_data = strndup((char *)data->data_ptr, data->data_len);
+            if (xQueueSend(*queue, &received_data, pdMS_TO_TICKS(100)) != pdPASS) {
+                ESP_LOGW("WS", "Failed to enqueue received data");
+                free(received_data); // Free if the queue is full
+            }
             ESP_LOGI("battery-portal", "WebSocket data received: %.*s", data->data_len, (char *)data->data_ptr);
+
+
+            ESP_LOGI("battery-portal", "WebSocket data received: %.*s", data->data_len, (char *)data->data_ptr);
+
+            // Parse received JSON data
+            cJSON *received_data_json = cJSON_ParseWithLength((char *)data->data_ptr, data->data_len);
+            if (!received_data_json) {
+                ESP_LOGE("battery-portal", "Failed to parse received WebSocket data");
+                return;
+            }
+            // Update global JSON
+            if (!global_json) {
+                global_json = cJSON_CreateObject();
+            }
+            // Replace or merge remote_data field
+            cJSON_DeleteItemFromObject(global_json, "remote_data");
+            cJSON_AddItemToObject(global_json, "remote_data", received_data_json); // Ownership is transferred
+
             break;
 
         case WEBSOCKET_EVENT_ERROR:
@@ -58,6 +67,8 @@ static void websocket_event_handler(void *handler_args, esp_event_base_t base, i
 }
 
 void websocket_client_task(void *pvParameters) {
+    QueueHandle_t *queue = (QueueHandle_t *)pvParameters;
+
     // Configure WebSocket client
     esp_websocket_client_config_t websocket_cfg = {
         .uri = WEBSOCKET_URI,
@@ -65,13 +76,13 @@ void websocket_client_task(void *pvParameters) {
 
     // Initialize WebSocket client
     esp_websocket_client_handle_t client = esp_websocket_client_init(&websocket_cfg);
-    esp_websocket_register_events(client, ESP_EVENT_ANY_ID, websocket_event_handler, NULL);
+    esp_websocket_register_events(client, ESP_EVENT_ANY_ID, websocket_event_handler, queue);
 
     // Start WebSocket client
     esp_websocket_client_start(client);
 
     // Keep the task running indefinitely
-    while (1) {
+    while (true) {
         vTaskDelay(pdMS_TO_TICKS(1000)); // Add a delay to avoid task starvation
     }
 
@@ -107,10 +118,11 @@ void app_main(void) {
         .intr_type = GPIO_INTR_DISABLE
     };
     gpio_config(&io_conf);
+    // Initialize the queue
+    broadcast_queue = xQueueCreate(10, sizeof(char *));
 
-    // Start the Access Point
-    wifi_init_softap();
-    wifi_init_sta();
+    // Start the Access Point and Connection
+    wifi_init();
     vTaskDelay(pdMS_TO_TICKS(3000));
 
     // Start the ws server to serve the HTML page
@@ -127,5 +139,5 @@ void app_main(void) {
     xTaskCreate(&websocket_broadcast_task, "websocket_broadcast_task", 4096, &server, 5, NULL);
 
     // Start WebSocket Client to connect to another ESP32
-    xTaskCreate(websocket_client_task, "websocket_client_task", 4096, NULL, 5, NULL);
+    xTaskCreate(websocket_client_task, "websocket_client_task", 4096, &broadcast_queue, 5, NULL);
 }

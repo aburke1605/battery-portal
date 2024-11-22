@@ -215,6 +215,8 @@ httpd_handle_t start_webserver(void) {
 
 
 void websocket_broadcast_task(void *pvParameters) {
+    // QueueHandle_t *queue = (QueueHandle_t *)pvParameters;
+    char *received_data = NULL; // To hold data received from the queue
 
     while (true) {
         // get the battery info
@@ -235,8 +237,27 @@ void websocket_broadcast_task(void *pvParameters) {
         cJSON_AddNumberToObject(json, "voltage", fVoltage);
         cJSON_AddNumberToObject(json, "current", fCurrent);
         cJSON_AddNumberToObject(json, "temperature", fTemperature);
+        // Check if there is remote data in the queue
+        if (xQueueReceive(broadcast_queue, &received_data, 0) == pdPASS) {
+            cJSON *remote_json = cJSON_Parse(received_data);
+            if (remote_json != NULL) {
+                // Add remote data as a nested JSON object
+                printf("here!\n");
+                if (global_json) {
+                    // remove it
+                    char *global_string = cJSON_PrintUnformatted(global_json);
+                    ESP_LOGE("WS", "global_json: %.*s", strlen(global_string), (char *)global_string);
+                    cJSON *remote_data = cJSON_DetachItemFromObject(global_json, "remote_data");
+                }
+                cJSON_AddItemToObject(json, "remote_data", remote_json);
+            } else {
+                ESP_LOGW("WS", "Failed to parse remote data JSON");
+            }
+            free(received_data); // Free received data after parsing
+        }
 
         char *json_string = cJSON_PrintUnformatted(json);
+        ESP_LOGI("WS", "Sending WebSocket data: %.*s", strlen(json_string), (char *)json_string);
         cJSON_Delete(json);
 
         if (json_string != NULL) {

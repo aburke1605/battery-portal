@@ -5,6 +5,8 @@
 #include <driver/gpio.h>
 
 extern httpd_handle_t server;
+extern QueueHandle_t broadcast_queue;
+extern cJSON *global_json;
 
 #define CONFIG_MAX_CLIENTS 5
 static int client_sockets[CONFIG_MAX_CLIENTS];

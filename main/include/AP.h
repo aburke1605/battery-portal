@@ -2,4 +2,4 @@
 #define WIFI_PASS "password"
 #define MAX_STA_CONN 4
 
-void wifi_init_softap(void);
+void wifi_init(void);
