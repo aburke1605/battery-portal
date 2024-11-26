@@ -25,7 +25,7 @@ void wifi_init(void) {
     ESP_ERROR_CHECK(esp_wifi_init(&cfg));
 
     // Set Wi-Fi mode to both AP and STA
-    ESP_ERROR_CHECK(esp_wifi_set_mode(WIFI_MODE_APSTA));
+    ESP_ERROR_CHECK(esp_wifi_set_mode(WIFI_MODE_STA));
 
     // Configure the Access Point
     wifi_config_t wifi_ap_config = {
@@ -41,8 +41,7 @@ void wifi_init(void) {
     if (strlen(WIFI_PASS) == 0) {
         wifi_ap_config.ap.authmode = WIFI_AUTH_OPEN;
     }
-    // ESP_ERROR_CHECK(esp_wifi_set_mode(WIFI_MODE_AP)); // Set ESP32 as AP
-    ESP_ERROR_CHECK(esp_wifi_set_config(ESP_IF_WIFI_AP, &wifi_ap_config));
+    // ESP_ERROR_CHECK(esp_wifi_set_config(ESP_IF_WIFI_AP, &wifi_ap_config));
 
     wifi_config_t wifi_sta_config = {
         .sta = {
