@@ -4,14 +4,16 @@
 #include <lwip/sockets.h>
 #include <driver/gpio.h>
 
-extern httpd_handle_t server;
-extern QueueHandle_t broadcast_queue;
-extern cJSON *global_json;
 
 #define CONFIG_MAX_CLIENTS 5
-static int client_sockets[CONFIG_MAX_CLIENTS];
-
 #define LED_GPIO_PIN 2
+
+extern httpd_handle_t server;
+extern int client_sockets[CONFIG_MAX_CLIENTS];
+// extern QueueHandle_t broadcast_queue;
+// extern cJSON *global_json;
+// extern char remote_json[512];
+// extern SemaphoreHandle_t remote_json_mutex;
 
 void add_client(int fd);
 
