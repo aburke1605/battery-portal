@@ -7,7 +7,7 @@
 #include "include/I2C.h"
 #include "include/WS.h"
 
-#define WEBSOCKET_URI "ws://192.168.4.1:80/ws" // Replace with the WebSocket server URI
+#define WEBSOCKET_URI "ws://192.168.4.1/ws" // Replace with the WebSocket server URI
 
 // Define the server globally
 httpd_handle_t server = NULL;
