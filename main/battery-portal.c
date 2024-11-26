@@ -11,6 +11,7 @@
 
 // Define the server globally
 httpd_handle_t server = NULL;
+int client_sockets[CONFIG_MAX_CLIENTS];
 // and the remote queue
 // QueueHandle_t broadcast_queue;
 // Shared JSON objec
