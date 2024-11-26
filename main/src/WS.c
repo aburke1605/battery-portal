@@ -233,56 +233,13 @@ void websocket_broadcast_task(void *pvParameters) {
         float fTemperature = (float)iTemperature / 10.0 - 273.15;
 
         cJSON *json = cJSON_CreateObject();
-        cJSON_AddNumberToObject(json, "humidity", 60.0);
         cJSON_AddNumberToObject(json, "charge", iCharge);
         cJSON_AddNumberToObject(json, "voltage", fVoltage);
         cJSON_AddNumberToObject(json, "current", fCurrent);
         cJSON_AddNumberToObject(json, "temperature", fTemperature);
-        // Check if there is remote data in the queue
-        if (xQueueReceive(broadcast_queue, &received_data, 0) == pdPASS) {
-            cJSON *remote_json = cJSON_Parse(received_data);
-            if (remote_json != NULL) {
-                // Add remote data as a nested JSON object
-                printf("here!\n");
-                if (global_json) {
-                    // remove it
-                    char *global_string = cJSON_PrintUnformatted(global_json);
-                    ESP_LOGE("WS", "global_json: %.*s", strlen(global_string), (char *)global_string);
-                    cJSON *remote_data = cJSON_DetachItemFromObject(global_json, "remote_data");
-                }
-                cJSON_AddItemToObject(json, "remote_data", remote_json);
-            } else {
-                ESP_LOGW("WS", "Failed to parse remote data JSON");
-            }
-            free(received_data); // Free received data after parsing
-        }
-
-        // Add remote sensor data
-        xSemaphoreTake(remote_json_mutex, portMAX_DELAY);
-        if (strlen(remote_json) > 0) {
-            cJSON *remote_json_obj = cJSON_Parse(remote_json);
-            if (remote_json_obj != NULL) {
-                // Extract only the relevant fields from remote_json_obj to prevent nesting
-                cJSON *remote_humidity = cJSON_GetObjectItem(remote_json_obj, "humidity");
-                if (remote_humidity != NULL && cJSON_IsNumber(remote_humidity)) {
-                    // Create a clean object for "remote_sensor"
-                    cJSON *remote_sensor_clean = cJSON_CreateObject();
-                    cJSON_AddNumberToObject(remote_sensor_clean, "humidity", remote_humidity->valuedouble);
-                    cJSON_AddItemToObject(json, "remote_sensor", remote_sensor_clean);
-                } else {
-                    cJSON_AddStringToObject(json, "remote_sensor", "Invalid remote data");
-                }
-                cJSON_Delete(remote_json_obj); // Clean up parsed remote JSON
-            } else {
-                cJSON_AddStringToObject(json, "remote_sensor", "Invalid JSON");
-            }
-        } else {
-            cJSON_AddStringToObject(json, "remote_sensor", "No data");
-        }
-        xSemaphoreGive(remote_json_mutex);
 
         char *json_string = cJSON_PrintUnformatted(json);
-        ESP_LOGI("WS", "Sending WebSocket data: %.*s", strlen(json_string), (char *)json_string);
+        ESP_LOGI("SENDING", "WebSocket data: %.*s", strlen(json_string), (char *)json_string);
         cJSON_Delete(json);
 
         if (json_string != NULL) {
