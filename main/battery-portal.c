@@ -7,8 +7,6 @@
 #include "include/I2C.h"
 #include "include/WS.h"
 
-#define WEBSOCKET_URI "ws://192.168.4.1/ws" // Replace with the WebSocket server URI
-
 // global variables
 httpd_handle_t server = NULL;
 int client_sockets[CONFIG_MAX_CLIENTS];
@@ -61,7 +59,7 @@ void websocket_client_task(void *pvParameters) {
 
     // Configure WebSocket client
     esp_websocket_client_config_t websocket_cfg = {
-        .uri = WEBSOCKET_URI,
+        .uri = "ws://192.168.4.1/ws",
         .port = 80,
         .network_timeout_ms = 5000,
         .reconnect_timeout_ms = 5000,
