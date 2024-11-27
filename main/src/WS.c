@@ -255,10 +255,29 @@ void websocket_broadcast_task(void *pvParameters) {
             if (strlen(received_data) > 0) {
                 cJSON *received_json = cJSON_Parse(received_data);
                 if (received_json != NULL) {
-                    cJSON_AddItemToObject(json, "received_data", received_json);
+                    // TODO: is the below line actually enough,
+                    //       or do we need all of the lines below?
+                    // cJSON_AddItemToObject(json, "received_data", received_json);
+
+                    // Create a clean / empty object for "received_data"
+                    cJSON *received_data_clean = cJSON_CreateObject();
+                    // Iterate through all keys in the parsed JSON
+                    cJSON *item = received_json->child;
+                    while (item != NULL) {
+                        if (cJSON_IsNumber(item)) {
+                            cJSON_AddNumberToObject(received_data_clean, item->string, item->valuedouble);
+                        } else {
+                            ESP_LOGW("WS", "Support for reading %s from server is not implemented", item->string);
+                        }
+                        item = item->next;
+                    }
+                    cJSON_AddItemToObject(json, "received_data", received_data_clean);
+                    cJSON_Delete(received_json); // Clean up parsed JSON
                 } else {
                     ESP_LOGE("WS", "Failed to parse received_data as JSON");
                 }
+            } else {
+                cJSON_AddStringToObject(json, "received_data", "No data");
             }
             xSemaphoreGive(data_mutex);
         } else {
