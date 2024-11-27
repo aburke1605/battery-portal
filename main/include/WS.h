@@ -10,10 +10,8 @@
 
 extern httpd_handle_t server;
 extern int client_sockets[CONFIG_MAX_CLIENTS];
-// extern QueueHandle_t broadcast_queue;
-// extern cJSON *global_json;
-// extern char remote_json[512];
-// extern SemaphoreHandle_t remote_json_mutex;
+extern char received_data[256];
+extern SemaphoreHandle_t data_mutex;
 
 void add_client(int fd);
 

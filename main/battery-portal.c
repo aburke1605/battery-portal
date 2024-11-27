@@ -9,9 +9,11 @@
 
 #define WEBSOCKET_URI "ws://192.168.4.1/ws" // Replace with the WebSocket server URI
 
-// Define the server globally
+// global variables
 httpd_handle_t server = NULL;
 int client_sockets[CONFIG_MAX_CLIENTS];
+char received_data[256];
+SemaphoreHandle_t data_mutex;
 
 void websocket_event_handler(void *handler_args, esp_event_base_t base, int32_t event_id, void *event_data) {
     esp_websocket_event_data_t *data = (esp_websocket_event_data_t *)event_data;
@@ -102,6 +104,13 @@ void app_main(void) {
         .intr_type = GPIO_INTR_DISABLE
     };
     gpio_config(&io_conf);
+
+    // initialise mutex
+    data_mutex = xSemaphoreCreateMutex();
+    if (data_mutex == NULL) {
+        ESP_LOGE("MAIN", "Failed to create data mutex");
+        return;
+    }
 
     // Start the Access Point and Connection
     wifi_init();
