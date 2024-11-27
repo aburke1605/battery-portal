@@ -23,6 +23,8 @@ esp_err_t display_handler(httpd_req_t *req);
 
 esp_err_t websocket_handler(httpd_req_t *req);
 
+esp_err_t nearby_handler(httpd_req_t *req);
+
 esp_err_t about_handler(httpd_req_t *req);
 
 esp_err_t device_handler(httpd_req_t *req);

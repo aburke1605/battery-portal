@@ -3,6 +3,7 @@
 
 #include "html/login_page.h"
 #include "html/display_page.h"
+#include "html/nearby_page.h"
 #include "html/about_page.h"
 #include "html/device_page.h"
 
@@ -49,6 +50,12 @@ esp_err_t websocket_handler(httpd_req_t *req) {
     }
 
     return ESP_FAIL;
+}
+
+esp_err_t nearby_handler(httpd_req_t *req) {
+    httpd_resp_set_type(req, "text/html");
+    httpd_resp_send(req, nearby_html, HTTPD_RESP_USE_STRLEN);
+    return ESP_OK;
 }
 
 esp_err_t about_handler(httpd_req_t *req) {
@@ -163,6 +170,15 @@ httpd_handle_t start_webserver(void) {
             .is_websocket = true
         };
         httpd_register_uri_handler(server, &ws_uri);
+
+        // Nearby page
+        httpd_uri_t nearby_uri = {
+            .uri       = "/nearby",
+            .method    = HTTP_GET,
+            .handler   = nearby_handler,
+            .user_ctx  = NULL
+        };
+        httpd_register_uri_handler(server, &nearby_uri);
 
         // About page
         httpd_uri_t about_uri = {

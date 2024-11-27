@@ -1,4 +1,4 @@
-static const char display_html[] = R"rawliteral(
+static const char nearby_html[] = R"rawliteral(
 <!DOCTYPE HTML><html><head>
   <!DOCTYPE HTML><html>
 
@@ -80,19 +80,7 @@ button {
           <p>Temperature: <span id='temperature'></span> degC</p>
         </div>
 
-        <h1>ESP32 LED Control</h1>
-        <button onclick="fetch('/toggle').then(() => alert('LED Toggled'))">Toggle LED</button>
-
         <img src='/image/aceon2.png' style='max-width: 100%; height:auto;'>
-        <form action='/nearby' method='get'>
-          <button type='Submit'>Nearby batteries</button>
-        </form>
-        <form action='/about' method='get'>
-          <button type='Submit'>About AceOn</button>
-        </form>
-        <form action='/device' method='get'>
-          <button type='Submit'>Unit layout</button>
-        </form>
 
   <script>
     let socket = new WebSocket('ws://' + location.host + '/ws');
@@ -102,10 +90,10 @@ button {
     socket.onmessage = function(event) {
         try {
             let data = JSON.parse(event.data);
-            document.getElementById('charge').innerHTML = data.charge;
-            document.getElementById('voltage').innerHTML = data.voltage.toFixed(2);
-            document.getElementById('current').innerHTML = data.current.toFixed(2);
-            document.getElementById('temperature').innerHTML = data.temperature.toFixed(2);
+            document.getElementById('charge').innerHTML = data.received_data.charge;
+            document.getElementById('voltage').innerHTML = data.received_data.voltage.toFixed(2);
+            document.getElementById('current').innerHTML = data.received_data.current.toFixed(2);
+            document.getElementById('temperature').innerHTML = data.received_data.temperature.toFixed(2);
         } catch (error) {
             console.error('Error parsing JSON:', error);
         }
