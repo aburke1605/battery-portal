@@ -64,7 +64,7 @@ void wifi_init(void) {
     ip_info_struct.gw = gateway;
     ESP_ERROR_CHECK(esp_netif_set_ip_info(ap_netif, &ip_info_struct));
     ESP_ERROR_CHECK(esp_netif_dhcps_start(ap_netif));
-    ESP_LOGI("wifi_init_ap", "AP initialized with IP: 192.168.5.1");
+    ESP_LOGI("AP", "AP initialized with IP: 192.168.5.1");
 
 
     wifi_config_t wifi_sta_config = {

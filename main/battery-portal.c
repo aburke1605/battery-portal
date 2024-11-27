@@ -41,7 +41,7 @@ void app_main(void) {
     // initialise mutex
     data_mutex = xSemaphoreCreateMutex();
     if (data_mutex == NULL) {
-        ESP_LOGE("MAIN", "Failed to create data mutex");
+        ESP_LOGE("main", "Failed to create data mutex");
         return;
     }
 

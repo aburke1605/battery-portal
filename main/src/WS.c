@@ -266,7 +266,7 @@ void websocket_broadcast_task(void *pvParameters) {
         }
 
         char *json_string = cJSON_PrintUnformatted(json);
-        ESP_LOGI("SENDING", "WebSocket data: %.*s", strlen(json_string), (char *)json_string);
+        ESP_LOGI("WS", "Sending WebSocket data: %.*s", strlen(json_string), (char *)json_string);
         cJSON_Delete(json);
 
         if (json_string != NULL) {
@@ -316,38 +316,38 @@ void websocket_event_handler(void *handler_args, esp_event_base_t base, int32_t 
 
     switch (event_id) {
         case WEBSOCKET_EVENT_ERROR:
-            ESP_LOGE("battery-portal", "WebSocket error occurred");
+            ESP_LOGE("WS", "WebSocket error occurred");
             break;
 
         case WEBSOCKET_EVENT_BEFORE_CONNECT:
-            ESP_LOGI("battery-portal", "WebSocket connecting...");
+            ESP_LOGI("WS", "WebSocket connecting...");
             break;
 
         case WEBSOCKET_EVENT_CONNECTED:
-            ESP_LOGI("battery-portal", "WebSocket connected");
+            ESP_LOGI("WS", "WebSocket connected");
             break;
 
         case WEBSOCKET_EVENT_BEGIN:
-            ESP_LOGI("battery-portal", "Websocket beginning...");
+            ESP_LOGI("WS", "Websocket beginning...");
             break;
 
         case WEBSOCKET_EVENT_DATA:
-            ESP_LOGI("RECEIVING", "WebSocket data: %.*s", data->data_len, (char *)data->data_ptr);
+            ESP_LOGI("WS", "Receiving WebSocket data: %.*s", data->data_len, (char *)data->data_ptr);
             if (xSemaphoreTake(data_mutex, portMAX_DELAY)) {
                 strncpy(received_data, data->data_ptr, data->data_len);
                 received_data[data->data_len] = '\0';  // Null-terminate the string
                 xSemaphoreGive(data_mutex);
             } else {
-                ESP_LOGE("WEBSOCKET", "Failed to take mutex for received data");
+                ESP_LOGE("WS", "Failed to take mutex for received data");
             }
             break;
 
         case WEBSOCKET_EVENT_DISCONNECTED:
-            ESP_LOGW("battery-portal", "WebSocket disconnected");
+            ESP_LOGW("WS", "WebSocket disconnected");
             break;
 
         default:
-            ESP_LOGW("battery-portal", "Unhandled WebSocket event ID: %ld", event_id);
+            ESP_LOGW("WS", "Unhandled WebSocket event ID: %ld", event_id);
             break;
     }
 }
