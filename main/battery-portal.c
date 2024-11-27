@@ -37,6 +37,13 @@ void websocket_event_handler(void *handler_args, esp_event_base_t base, int32_t 
 
         case WEBSOCKET_EVENT_DATA:
             ESP_LOGI("RECEIVING", "WebSocket data: %.*s", data->data_len, (char *)data->data_ptr);
+            if (xSemaphoreTake(data_mutex, portMAX_DELAY)) {
+                strncpy(received_data, data->data_ptr, data->data_len);
+                received_data[data->data_len] = '\0';  // Null-terminate the string
+                xSemaphoreGive(data_mutex);
+            } else {
+                ESP_LOGE("WEBSOCKET", "Failed to take mutex for received data");
+            }
             break;
 
         case WEBSOCKET_EVENT_DISCONNECTED:
@@ -129,6 +136,5 @@ void app_main(void) {
 
     xTaskCreate(&websocket_broadcast_task, "websocket_broadcast_task", 4096, &server, 5, NULL);
 
-    // Start WebSocket Client to connect to another ESP32
     xTaskCreate(websocket_client_task, "websocket_client_task", 4096, NULL, 5, NULL);
 }
