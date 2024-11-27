@@ -215,11 +215,7 @@ httpd_handle_t start_webserver(void) {
 
 
 void websocket_broadcast_task(void *pvParameters) {
-    // QueueHandle_t *queue = (QueueHandle_t *)pvParameters;
-    // char *received_data = NULL; // To hold data received from the queue
-
     while (true) {
-        // get the battery info
         uint16_t iCharge = read_2byte_data(STATE_OF_CHARGE_REG);
 
         uint16_t iVoltage = read_2byte_data(VOLTAGE_REG);

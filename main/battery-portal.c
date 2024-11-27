@@ -12,10 +12,6 @@
 // Define the server globally
 httpd_handle_t server = NULL;
 int client_sockets[CONFIG_MAX_CLIENTS];
-// and the remote queue
-// QueueHandle_t broadcast_queue;
-// Shared JSON objec
-// cJSON *global_json = NULL;
 
 void websocket_event_handler(void *handler_args, esp_event_base_t base, int32_t event_id, void *event_data) {
     esp_websocket_event_data_t *data = (esp_websocket_event_data_t *)event_data;
@@ -125,6 +121,5 @@ void app_main(void) {
     xTaskCreate(&websocket_broadcast_task, "websocket_broadcast_task", 4096, &server, 5, NULL);
 
     // Start WebSocket Client to connect to another ESP32
-    // broadcast_queue = xQueueCreate(10, sizeof(char *));
     xTaskCreate(websocket_client_task, "websocket_client_task", 4096, NULL, 5, NULL);
 }
