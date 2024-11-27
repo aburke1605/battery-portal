@@ -46,7 +46,7 @@ void wifi_init(void) {
 
     // manually set the netmask and gateway as something different from first ESP
     // TODO: can we somehow 'discover' the available APs and their IPs,
-    //       and choose a unique one here?
+    //       and automatically choose a unique one here?
     ESP_ERROR_CHECK(esp_netif_dhcps_stop(ap_netif));
     esp_ip4_addr_t ip_info = {
         .addr = esp_ip4addr_aton("192.168.5.1"),
