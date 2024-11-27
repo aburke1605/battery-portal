@@ -234,6 +234,21 @@ void websocket_broadcast_task(void *pvParameters) {
         cJSON_AddNumberToObject(json, "current", fCurrent);
         cJSON_AddNumberToObject(json, "temperature", fTemperature);
 
+        // Add received data if available
+        if (xSemaphoreTake(data_mutex, portMAX_DELAY)) {
+            if (strlen(received_data) > 0) {
+                cJSON *received_json = cJSON_Parse(received_data);
+                if (received_json != NULL) {
+                    cJSON_AddItemToObject(json, "received_data", received_json);
+                } else {
+                    ESP_LOGE("WS", "Failed to parse received_data as JSON");
+                }
+            }
+            xSemaphoreGive(data_mutex);
+        } else {
+            ESP_LOGE("WS", "Failed to take mutex for broadcast data");
+        }
+
         char *json_string = cJSON_PrintUnformatted(json);
         ESP_LOGI("SENDING", "WebSocket data: %.*s", strlen(json_string), (char *)json_string);
         cJSON_Delete(json);
