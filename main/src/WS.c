@@ -310,3 +310,73 @@ void websocket_broadcast_task(void *pvParameters) {
         vTaskDelay(pdMS_TO_TICKS(1000));  // Update every second
     }
 }
+
+void websocket_event_handler(void *handler_args, esp_event_base_t base, int32_t event_id, void *event_data) {
+    esp_websocket_event_data_t *data = (esp_websocket_event_data_t *)event_data;
+
+    switch (event_id) {
+        case WEBSOCKET_EVENT_ERROR:
+            ESP_LOGE("battery-portal", "WebSocket error occurred");
+            break;
+
+        case WEBSOCKET_EVENT_BEFORE_CONNECT:
+            ESP_LOGI("battery-portal", "WebSocket connecting...");
+            break;
+
+        case WEBSOCKET_EVENT_CONNECTED:
+            ESP_LOGI("battery-portal", "WebSocket connected");
+            break;
+
+        case WEBSOCKET_EVENT_BEGIN:
+            ESP_LOGI("battery-portal", "Websocket beginning...");
+            break;
+
+        case WEBSOCKET_EVENT_DATA:
+            ESP_LOGI("RECEIVING", "WebSocket data: %.*s", data->data_len, (char *)data->data_ptr);
+            if (xSemaphoreTake(data_mutex, portMAX_DELAY)) {
+                strncpy(received_data, data->data_ptr, data->data_len);
+                received_data[data->data_len] = '\0';  // Null-terminate the string
+                xSemaphoreGive(data_mutex);
+            } else {
+                ESP_LOGE("WEBSOCKET", "Failed to take mutex for received data");
+            }
+            break;
+
+        case WEBSOCKET_EVENT_DISCONNECTED:
+            ESP_LOGW("battery-portal", "WebSocket disconnected");
+            break;
+
+        default:
+            ESP_LOGW("battery-portal", "Unhandled WebSocket event ID: %ld", event_id);
+            break;
+    }
+}
+
+void websocket_client_task(void *pvParameters) {
+    QueueHandle_t *queue = (QueueHandle_t *)pvParameters;
+
+    // Configure WebSocket client
+    esp_websocket_client_config_t websocket_cfg = {
+        .uri = "ws://192.168.4.1/ws",
+        .port = 80,
+        .network_timeout_ms = 5000,
+        .reconnect_timeout_ms = 5000,
+    };
+
+    // Initialize WebSocket client
+    esp_websocket_client_handle_t client = esp_websocket_client_init(&websocket_cfg);
+    esp_websocket_register_events(client, ESP_EVENT_ANY_ID, websocket_event_handler, queue);
+
+    // Start WebSocket client
+    esp_websocket_client_start(client);
+
+    // Keep the task running indefinitely
+    while (true) {
+        vTaskDelay(pdMS_TO_TICKS(1000)); // Add a delay to avoid task starvation
+    }
+
+    // Cleanup (this point will not be reached in the current loop)
+    esp_websocket_client_stop(client);
+    esp_websocket_client_destroy(client);
+    vTaskDelete(NULL);
+}
