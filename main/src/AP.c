@@ -122,7 +122,7 @@ void wifi_init(void) {
     char buffer[strlen(WIFI_SSID) + 4 + 2 + 16 + 1 + 1]; // "AceOn battery" + " xxx" + ": " + uint16_t, + "%" + "\0"
     int SSID_number = find_unique_SSID();
     uint16_t iCharge = read_2byte_data(STATE_OF_CHARGE_REG);
-    snprintf(buffer, sizeof(buffer), "%s %d: %d%%", WIFI_SSID, SSID_number, iCharge);
+    snprintf(buffer, sizeof(buffer), "%s %u: %d%%", WIFI_SSID, SSID_number, iCharge);
 
     strncpy((char *)wifi_ap_config.ap.ssid, buffer, sizeof(wifi_ap_config.ap.ssid) - 1);
     wifi_ap_config.ap.ssid[sizeof(wifi_ap_config.ap.ssid) - 1] = '\0'; // Ensure null-termination
@@ -135,18 +135,19 @@ void wifi_init(void) {
 
 
     // manually set the netmask and gateway as something different from first ESP
-    // TODO: can we somehow 'discover' the available APs and their IPs,
-    //       and automatically choose a unique one here?
     ESP_ERROR_CHECK(esp_netif_dhcps_stop(ap_netif));
+    char IP_buffer[15];
+    snprintf(IP_buffer, sizeof(IP_buffer), "192.168.%u.1", 4 + (SSID_number-1));
+    printf("\n\n%s\n\n", IP_buffer);
     esp_ip4_addr_t ip_info = {
-        .addr = esp_ip4addr_aton("192.168.5.1"), // AceOn battery 1(=4-3)
+        .addr = esp_ip4addr_aton(IP_buffer),
     };
     esp_ip4_addr_t netmask = {
         .addr = esp_ip4addr_aton("255.255.255.0"),
     };
 
     esp_ip4_addr_t gateway = {
-        .addr = esp_ip4addr_aton("192.168.5.1"),
+        .addr = esp_ip4addr_aton(IP_buffer),
     };
     esp_netif_ip_info_t ip_info_struct;
     ip_info_struct.ip = ip_info;
