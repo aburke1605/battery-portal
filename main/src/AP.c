@@ -36,7 +36,7 @@ void wifi_scan(void) {
     size_t target_length = strlen(target_substring);
 
     // Print out AP details
-    for (int i = 0; i < ap_num; i++) {
+    for (int i = 0, j = 0; i < ap_num; i++) {
         const char* ssid = (const char *)ap_info[i].ssid;
         if (strstr(ssid, target_substring) != NULL) {
             // Calculate the start of the trailing part
@@ -48,18 +48,36 @@ void wifi_scan(void) {
             // Check if the trailing part starts with digits
             if (isdigit((unsigned char)*trailing_part)) {
                 // Extract the digits
-                char digits[4] = {0}; // Assuming numbers won't exceed 3 digits
-                int j = 0;
-                while (isdigit((unsigned char)*trailing_part) && j < sizeof(digits) - 1) digits[j++] = *trailing_part++;
-                digits[j] = '\0'; // Null-terminate the string
-
-                ESP_LOGI("AP", "SSID: %s, Trailing Number: %s", ssid, digits);
+                char digits[4] = {0}; // Assuming numbers won't exceed 3 digits (4th character for null-termination)
+                int k = 0;
+                while (isdigit((unsigned char)*trailing_part) && k < sizeof(digits) - 1) digits[k++] = *trailing_part++;
+                digits[k] = '\0'; // Null-terminate the string
+                other_AP_SSIDs[j++] = atoi(digits);
             } else {
-                ESP_LOGW("AP", "SSID: %s contains '%s' but no trailing number", ssid, target_substring);
+                ESP_LOGW("AP", "AP with SSID: %s contains '%s' but no trailing number", ssid, target_substring);
             }
         }
     }
     free(ap_info);
+}
+
+int find_unique_SSID(void) {
+    int SSID = 1;
+    bool unique = false;
+    bool incremented;
+    do {
+        incremented = false;
+        for (int i = 0; i < 256; i++) {
+            if (other_AP_SSIDs[i] == 0) continue;
+            if (SSID == other_AP_SSIDs[i]) {
+                SSID++;
+                incremented = true;
+                break;
+            }
+        }
+        unique = !incremented;
+    } while (unique == false);
+    return SSID;
 }
 
 void wifi_init(void) {
@@ -85,7 +103,6 @@ void wifi_init(void) {
     ESP_ERROR_CHECK(esp_wifi_start());
 
     wifi_scan();
-    printf("here\n\n");
     ESP_ERROR_CHECK(esp_wifi_stop());
 
     // Set Wi-Fi mode to both AP and STA
@@ -94,14 +111,21 @@ void wifi_init(void) {
     // Configure the Access Point
     wifi_config_t wifi_ap_config = {
         .ap = {
-            .ssid = WIFI_SSID,
-            .ssid_len = strlen(WIFI_SSID),
             .channel = 1,
             .password = WIFI_PASS,
             .max_connection = MAX_STA_CONN,
             .authmode = WIFI_AUTH_WPA_WPA2_PSK
         },
     };
+    // set the SSID as well    
+    char SSID_buffer[strlen(WIFI_SSID) + 1 + 4]; // 1 for space, 3 for ndigits and 1 for null-termination
+    int SSID_number = find_unique_SSID();
+    snprintf(SSID_buffer, sizeof(SSID_buffer), "%s %d", WIFI_SSID, SSID_number);
+
+    strncpy((char *)wifi_ap_config.ap.ssid, SSID_buffer, sizeof(wifi_ap_config.ap.ssid) - 1);
+    wifi_ap_config.ap.ssid[sizeof(wifi_ap_config.ap.ssid) - 1] = '\0'; // Ensure null-termination
+    wifi_ap_config.ap.ssid_len = strlen((char *)wifi_ap_config.ap.ssid); // Set SSID length
+
     if (strlen(WIFI_PASS) == 0) {
         wifi_ap_config.ap.authmode = WIFI_AUTH_OPEN;
     }
