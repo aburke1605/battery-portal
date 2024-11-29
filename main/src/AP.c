@@ -5,6 +5,7 @@
 #include <esp_wifi.h>
 
 #include "include/AP.h"
+#include "include/I2C.h"
 
 void wifi_init_softap(void) {
     // Initialize NVS
@@ -26,14 +27,20 @@ void wifi_init_softap(void) {
     // Configure the Access Point
     wifi_config_t wifi_config = {
         .ap = {
-            .ssid = WIFI_SSID,
-            .ssid_len = strlen(WIFI_SSID),
             .channel = 1,
             .password = WIFI_PASS,
             .max_connection = MAX_STA_CONN,
             .authmode = WIFI_AUTH_WPA_WPA2_PSK
         },
     };
+
+    char buffer[strlen(WIFI_SSID) + 2 + 16 + 1 + 1]; // ": " + uint16_t, + "%" + "\0"
+    uint16_t iCharge = read_2byte_data(STATE_OF_CHARGE_REG);
+    snprintf(buffer, sizeof(buffer), "%s: %d%%", WIFI_SSID, iCharge);
+
+    strncpy((char *)wifi_config.ap.ssid, buffer, sizeof(wifi_config.ap.ssid) - 1);
+    wifi_config.ap.ssid[sizeof(wifi_config.ap.ssid) - 1] = '\0'; // Ensure null-termination
+    wifi_config.ap.ssid_len = strlen((char *)wifi_config.ap.ssid); // Set SSID length
 
     if (strlen(WIFI_PASS) == 0) {
         wifi_config.ap.authmode = WIFI_AUTH_OPEN;
