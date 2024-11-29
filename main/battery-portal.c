@@ -12,6 +12,7 @@ char received_data[256];
 SemaphoreHandle_t data_mutex;
 
 void app_main(void) {
+    /*
     // initialise SPIFFS
     esp_vfs_spiffs_conf_t config = {
         .base_path = "/storage",
@@ -24,6 +25,7 @@ void app_main(void) {
         ESP_LOGE("main", "Failed to initialise SPIFFS (%s)", esp_err_to_name(result));
         return;
     }
+    */
 
     ESP_ERROR_CHECK(i2c_master_init());
     ESP_LOGI("main", "I2C initialized successfully");
