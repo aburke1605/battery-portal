@@ -119,21 +119,14 @@ void wifi_init(void) {
         },
     };
     // set the SSID as well
-    char SSID_buffer[strlen(WIFI_SSID) + 1 + 4]; // 1 for space, 3 for ndigits and 1 for null-termination
+    char buffer[strlen(WIFI_SSID) + 4 + 2 + 16 + 1 + 1]; // "AceOn battery" + " xxx" + ": " + uint16_t, + "%" + "\0"
     int SSID_number = find_unique_SSID();
-    snprintf(SSID_buffer, sizeof(SSID_buffer), "%s %d", WIFI_SSID, SSID_number);
+    uint16_t iCharge = read_2byte_data(STATE_OF_CHARGE_REG);
+    snprintf(buffer, sizeof(buffer), "%s %d: %d%%", WIFI_SSID, SSID_number, iCharge);
 
-    strncpy((char *)wifi_ap_config.ap.ssid, SSID_buffer, sizeof(wifi_ap_config.ap.ssid) - 1);
+    strncpy((char *)wifi_ap_config.ap.ssid, buffer, sizeof(wifi_ap_config.ap.ssid) - 1);
     wifi_ap_config.ap.ssid[sizeof(wifi_ap_config.ap.ssid) - 1] = '\0'; // Ensure null-termination
     wifi_ap_config.ap.ssid_len = strlen((char *)wifi_ap_config.ap.ssid); // Set SSID length
-
-    char buffer[strlen(WIFI_SSID) + 2 + 16 + 1 + 1]; // ": " + uint16_t, + "%" + "\0"
-    uint16_t iCharge = read_2byte_data(STATE_OF_CHARGE_REG);
-    snprintf(buffer, sizeof(buffer), "%s: %d%%", WIFI_SSID, iCharge);
-
-    strncpy((char *)wifi_config.ap.ssid, buffer, sizeof(wifi_config.ap.ssid) - 1);
-    wifi_config.ap.ssid[sizeof(wifi_config.ap.ssid) - 1] = '\0'; // Ensure null-termination
-    wifi_config.ap.ssid_len = strlen((char *)wifi_config.ap.ssid); // Set SSID length
 
     if (strlen(WIFI_PASS) == 0) {
         wifi_ap_config.ap.authmode = WIFI_AUTH_OPEN;
