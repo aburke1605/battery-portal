@@ -6,6 +6,7 @@
 #include <esp_wifi.h>
 
 #include "include/AP.h"
+#include "include/I2C.h"
 
 void wifi_scan(void) {
     // Configure Wi-Fi scan settings
@@ -125,6 +126,14 @@ void wifi_init(void) {
     strncpy((char *)wifi_ap_config.ap.ssid, SSID_buffer, sizeof(wifi_ap_config.ap.ssid) - 1);
     wifi_ap_config.ap.ssid[sizeof(wifi_ap_config.ap.ssid) - 1] = '\0'; // Ensure null-termination
     wifi_ap_config.ap.ssid_len = strlen((char *)wifi_ap_config.ap.ssid); // Set SSID length
+
+    char buffer[strlen(WIFI_SSID) + 2 + 16 + 1 + 1]; // ": " + uint16_t, + "%" + "\0"
+    uint16_t iCharge = read_2byte_data(STATE_OF_CHARGE_REG);
+    snprintf(buffer, sizeof(buffer), "%s: %d%%", WIFI_SSID, iCharge);
+
+    strncpy((char *)wifi_config.ap.ssid, buffer, sizeof(wifi_config.ap.ssid) - 1);
+    wifi_config.ap.ssid[sizeof(wifi_config.ap.ssid) - 1] = '\0'; // Ensure null-termination
+    wifi_config.ap.ssid_len = strlen((char *)wifi_config.ap.ssid); // Set SSID length
 
     if (strlen(WIFI_PASS) == 0) {
         wifi_ap_config.ap.authmode = WIFI_AUTH_OPEN;
