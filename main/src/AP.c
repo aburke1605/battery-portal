@@ -117,7 +117,7 @@ void wifi_init(void) {
             .authmode = WIFI_AUTH_WPA_WPA2_PSK
         },
     };
-    // set the SSID as well    
+    // set the SSID as well
     char SSID_buffer[strlen(WIFI_SSID) + 1 + 4]; // 1 for space, 3 for ndigits and 1 for null-termination
     int SSID_number = find_unique_SSID();
     snprintf(SSID_buffer, sizeof(SSID_buffer), "%s %d", WIFI_SSID, SSID_number);
