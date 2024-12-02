@@ -36,33 +36,6 @@ esp_err_t login_handler(httpd_req_t *req) {
     return ESP_OK;
 }
 
-esp_err_t validate_login_handler(httpd_req_t *req) {
-    char content[100];
-    esp_err_t err = get_POST_data(req, content, sizeof(content));
-
-    char username[50] = {0};
-    char password[50] = {0};
-    // a correct login gets POSTed as:
-    //    username=admin&password=1234
-    sscanf(content, "username=%49[^&]&password=%49s", username, password);
-    // %49:   read up to 49 characters (including the null terminator) to prevent buffer overflow
-    // [^&]:  a scan set that matches any character except &
-    // s:     reads a sequence of non-whitespace characters until a space, newline, or null terminator is encountered
-
-    if (strcmp(username, "admin") == 0 && strcmp(password, "1234") == 0) {
-        // credentials correct
-        httpd_resp_set_status(req, "302 Found");
-        httpd_resp_set_hdr(req, "Location", "/display"); // redirect to /display
-        httpd_resp_send(req, NULL, 0); // no response body
-        return ESP_OK;
-    } else {
-        // credentials incorrect
-        const char *error_msg = "Invalid username or password.";
-        httpd_resp_send(req, error_msg, strlen(error_msg));
-    }
-    return ESP_OK;
-}
-
 esp_err_t display_handler(httpd_req_t *req) {
     httpd_resp_set_type(req, "text/html");
     httpd_resp_send(req, display_html, HTTPD_RESP_USE_STRLEN);
@@ -101,6 +74,33 @@ esp_err_t get_POST_data(httpd_req_t *req, char* content, size_t content_size) {
     }
     content[ret] = '\0'; // null-terminate the string
 
+    return ESP_OK;
+}
+
+esp_err_t validate_login_handler(httpd_req_t *req) {
+    char content[100];
+    esp_err_t err = get_POST_data(req, content, sizeof(content));
+
+    char username[50] = {0};
+    char password[50] = {0};
+    // a correct login gets POSTed as:
+    //    username=admin&password=1234
+    sscanf(content, "username=%49[^&]&password=%49s", username, password);
+    // %49:   read up to 49 characters (including the null terminator) to prevent buffer overflow
+    // [^&]:  a scan set that matches any character except &
+    // s:     reads a sequence of non-whitespace characters until a space, newline, or null terminator is encountered
+
+    if (strcmp(username, "admin") == 0 && strcmp(password, "1234") == 0) {
+        // credentials correct
+        httpd_resp_set_status(req, "302 Found");
+        httpd_resp_set_hdr(req, "Location", "/display"); // redirect to /display
+        httpd_resp_send(req, NULL, 0); // no response body
+        return ESP_OK;
+    } else {
+        // credentials incorrect
+        const char *error_msg = "Invalid username or password.";
+        httpd_resp_send(req, error_msg, strlen(error_msg));
+    }
     return ESP_OK;
 }
 
