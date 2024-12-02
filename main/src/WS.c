@@ -36,6 +36,41 @@ esp_err_t login_handler(httpd_req_t *req) {
     return ESP_OK;
 }
 
+esp_err_t validate_handler(httpd_req_t *req) {
+    char content[100];
+    int ret, content_len = req->content_len;
+
+    // ensure the content fits in the buffer
+    if (content_len >= sizeof(content)) {
+        return ESP_ERR_INVALID_SIZE;
+    }
+
+    // read the POST data
+    ret = httpd_req_recv(req, content, content_len);
+    if (ret <= 0) {
+        return ESP_FAIL;
+    }
+    content[ret] = '\0'; // null-terminate the string
+
+    // parse username and password
+    char username[50] = {0};
+    char password[50] = {0};
+    sscanf(content, "username=%49[^&]&password=%49s", username, password);
+
+    if (strcmp(username, "admin") == 0 && strcmp(password, "1234") == 0) {
+        // credentials correct
+        httpd_resp_set_status(req, "302 Found");
+        httpd_resp_set_hdr(req, "Location", "/display"); // redirect to /display
+        httpd_resp_send(req, NULL, 0); // no response body
+        return ESP_OK;
+    } else {
+        // credentials incorrect
+        const char *error_msg = "Invalid username or password.";
+        httpd_resp_send(req, error_msg, strlen(error_msg));
+    }
+    return ESP_OK;
+}
+
 esp_err_t display_handler(httpd_req_t *req) {
     httpd_resp_set_type(req, "text/html");
     httpd_resp_send(req, display_html, HTTPD_RESP_USE_STRLEN);
