@@ -56,7 +56,7 @@ button {
 <body>
     <center> <h1> WiFi connection </h1> </center>
         <div class='container'>
-          <form action='/device' method='get'>
+          <form action='/validate_connect' method='post'>
             <label>SSID: </label>
             <input type='text' placeholder='Enter SSID' name='ssid' required>
             <label>Password: </label>

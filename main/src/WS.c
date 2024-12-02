@@ -36,7 +36,7 @@ esp_err_t login_handler(httpd_req_t *req) {
     return ESP_OK;
 }
 
-esp_err_t validate_handler(httpd_req_t *req) {
+esp_err_t validate_login_handler(httpd_req_t *req) {
     char content[100];
     int ret, content_len = req->content_len;
 
@@ -52,10 +52,14 @@ esp_err_t validate_handler(httpd_req_t *req) {
     }
     content[ret] = '\0'; // null-terminate the string
 
-    // parse username and password
     char username[50] = {0};
     char password[50] = {0};
+    // a correct login gets POSTed as:
+    //    username=admin&password=1234
     sscanf(content, "username=%49[^&]&password=%49s", username, password);
+    // %49:   read up to 49 characters (including the null terminator) to prevent buffer overflow
+    // [^&]:  a scan set that matches any character except &
+    // s:     reads a sequence of non-whitespace characters until a space, newline, or null terminator is encountered
 
     if (strcmp(username, "admin") == 0 && strcmp(password, "1234") == 0) {
         // credentials correct
@@ -91,6 +95,51 @@ esp_err_t websocket_handler(httpd_req_t *req) {
 esp_err_t connect_handler(httpd_req_t *req) {
     httpd_resp_set_type(req, "text/html");
     httpd_resp_send(req, connect_html, HTTPD_RESP_USE_STRLEN);
+    return ESP_OK;
+}
+
+esp_err_t get_POST_data(httpd_req_t *req, char* content) {
+    int ret, content_len = req->content_len;
+
+    // ensure the content fits in the buffer
+    if (content_len >= sizeof(content)) {
+        return ESP_ERR_INVALID_SIZE;
+    }
+
+    // read the POST data
+    ret = httpd_req_recv(req, content, content_len);
+    if (ret <= 0) {
+        return ESP_FAIL;
+    }
+    content[ret] = '\0'; // null-terminate the string
+
+    printf("here\n\n");
+    printf("\na\na\n%s\na\na\n", content);
+
+    return ESP_OK;
+}
+
+esp_err_t validate_connect_handler(httpd_req_t *req) {
+    char content[100];
+    get_POST_data(req, content);
+
+    printf("\n\n\n%s\n\n\n", content);
+
+    char ssid[50] = {0};
+    char password[50] = {0};
+    sscanf(content, "ssid=%49[^&]&password=%49s", ssid, password);
+
+    // if (strcmp(ssid, "admin") == 0 && strcmp(password, "1234") == 0) {
+    //     // credentials correct
+    //     httpd_resp_set_status(req, "302 Found");
+    //     httpd_resp_set_hdr(req, "Location", "/display"); // redirect to /display
+    //     httpd_resp_send(req, NULL, 0); // no response body
+    //     return ESP_OK;
+    // } else {
+    //     // credentials incorrect
+    //     const char *error_msg = "Invalid username or password.";
+    //     httpd_resp_send(req, error_msg, strlen(error_msg));
+    // }
     return ESP_OK;
 }
 
@@ -194,13 +243,13 @@ httpd_handle_t start_webserver(void) {
         httpd_register_uri_handler(server, &login_uri);
 
         // Validate login
-        httpd_uri_t validate_uri = {
-            .uri       = "/validate",
+        httpd_uri_t validate_login_uri = {
+            .uri       = "/validate_login",
             .method    = HTTP_POST,
-            .handler   = validate_handler,
+            .handler   = validate_login_handler,
             .user_ctx  = NULL
         };
-        httpd_register_uri_handler(server, &validate_uri);
+        httpd_register_uri_handler(server, &validate_login_uri);
 
         // Display page
         httpd_uri_t display_uri = {
@@ -230,6 +279,15 @@ httpd_handle_t start_webserver(void) {
             .user_ctx  = NULL
         };
         httpd_register_uri_handler(server, &connect_uri);
+
+        // Validate connect
+        httpd_uri_t validate_connect_uri = {
+            .uri       = "/validate_connect",
+            .method    = HTTP_POST,
+            .handler   = validate_connect_handler,
+            .user_ctx  = NULL
+        };
+        httpd_register_uri_handler(server, &validate_connect_uri);
 
         // Nearby page
         httpd_uri_t nearby_uri = {
