@@ -158,6 +158,15 @@ httpd_handle_t start_webserver(void) {
         login_uri.uri = "/redirect";
         httpd_register_uri_handler(server, &login_uri);
 
+        // Validate login
+        httpd_uri_t validate_uri = {
+            .uri       = "/validate",
+            .method    = HTTP_POST,
+            .handler   = validate_handler,
+            .user_ctx  = NULL
+        };
+        httpd_register_uri_handler(server, &validate_uri);
+
         // Display page
         httpd_uri_t display_uri = {
             .uri       = "/display",
