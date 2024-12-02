@@ -98,11 +98,11 @@ esp_err_t connect_handler(httpd_req_t *req) {
     return ESP_OK;
 }
 
-esp_err_t get_POST_data(httpd_req_t *req, char* content) {
+esp_err_t get_POST_data(httpd_req_t *req, char* content, size_t content_size) {
     int ret, content_len = req->content_len;
 
     // ensure the content fits in the buffer
-    if (content_len >= sizeof(content)) {
+    if (content_len >= content_size) {
         return ESP_ERR_INVALID_SIZE;
     }
 
@@ -121,7 +121,7 @@ esp_err_t get_POST_data(httpd_req_t *req, char* content) {
 
 esp_err_t validate_connect_handler(httpd_req_t *req) {
     char content[100];
-    get_POST_data(req, content);
+    esp_err_t err = get_POST_data(req, content, sizeof(content));
 
     printf("\n\n\n%s\n\n\n", content);
 
