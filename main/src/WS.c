@@ -62,24 +62,6 @@ esp_err_t connect_handler(httpd_req_t *req) {
     return ESP_OK;
 }
 
-esp_err_t get_POST_data(httpd_req_t *req, char* content, size_t content_size) {
-    int ret, content_len = req->content_len;
-
-    // ensure the content fits in the buffer
-    if (content_len >= content_size) {
-        return ESP_ERR_INVALID_SIZE;
-    }
-
-    // read the POST data
-    ret = httpd_req_recv(req, content, content_len);
-    if (ret <= 0) {
-        return ESP_FAIL;
-    }
-    content[ret] = '\0'; // null-terminate the string
-
-    return ESP_OK;
-}
-
 esp_err_t validate_login_handler(httpd_req_t *req) {
     char content[100];
     esp_err_t err = get_POST_data(req, content, sizeof(content));

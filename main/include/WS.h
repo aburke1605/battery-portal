@@ -26,8 +26,6 @@ esp_err_t websocket_handler(httpd_req_t *req);
 
 esp_err_t connect_handler(httpd_req_t *req);
 
-esp_err_t get_POST_data(httpd_req_t *req, char* content, size_t content_size);
-
 esp_err_t validate_login_handler(httpd_req_t *req);
 
 esp_err_t validate_connect_handler(httpd_req_t *req);
