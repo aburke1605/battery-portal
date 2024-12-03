@@ -2,6 +2,7 @@
 
 #include "include/WS.h"
 #include "include/I2C.h"
+#include "include/utils.h"
 
 #include "html/login_page.h"
 #include "html/display_page.h"
@@ -110,9 +111,13 @@ esp_err_t validate_connect_handler(httpd_req_t *req) {
     char content[100];
     esp_err_t err = get_POST_data(req, content, sizeof(content));
 
+    char ssid_encoded[50] = {0};
     char ssid[50] = {0};
+    char password_encoded[50] = {0};
     char password[50] = {0};
-    sscanf(content, "ssid=%49[^&]&password=%49s", ssid, password);
+    sscanf(content, "ssid=%49[^&]&password=%49s", ssid_encoded, password_encoded);
+    url_decode(ssid, ssid_encoded);
+    url_decode(password, password_encoded);
 
     wifi_config_t wifi_sta_config = {
         .sta = {},
