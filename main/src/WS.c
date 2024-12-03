@@ -39,29 +39,6 @@ esp_err_t login_handler(httpd_req_t *req) {
     return ESP_OK;
 }
 
-esp_err_t display_handler(httpd_req_t *req) {
-    httpd_resp_set_type(req, "text/html");
-    httpd_resp_send(req, display_html, HTTPD_RESP_USE_STRLEN);
-    return ESP_OK;
-}
-
-esp_err_t websocket_handler(httpd_req_t *req) {
-    if (req->method == HTTP_GET) {
-        int fd = httpd_req_to_sockfd(req);
-        ESP_LOGI("WS", "WebSocket handshake complete for client %d", fd);
-        add_client(fd);
-        return ESP_OK;  // WebSocket handshake happens here
-    }
-
-    return ESP_FAIL;
-}
-
-esp_err_t connect_handler(httpd_req_t *req) {
-    httpd_resp_set_type(req, "text/html");
-    httpd_resp_send(req, connect_html, HTTPD_RESP_USE_STRLEN);
-    return ESP_OK;
-}
-
 esp_err_t validate_login_handler(httpd_req_t *req) {
     char content[100];
     esp_err_t err = get_POST_data(req, content, sizeof(content));
@@ -86,6 +63,29 @@ esp_err_t validate_login_handler(httpd_req_t *req) {
         const char *error_msg = "Invalid username or password.";
         httpd_resp_send(req, error_msg, strlen(error_msg));
     }
+    return ESP_OK;
+}
+
+esp_err_t display_handler(httpd_req_t *req) {
+    httpd_resp_set_type(req, "text/html");
+    httpd_resp_send(req, display_html, HTTPD_RESP_USE_STRLEN);
+    return ESP_OK;
+}
+
+esp_err_t websocket_handler(httpd_req_t *req) {
+    if (req->method == HTTP_GET) {
+        int fd = httpd_req_to_sockfd(req);
+        ESP_LOGI("WS", "WebSocket handshake complete for client %d", fd);
+        add_client(fd);
+        return ESP_OK;  // WebSocket handshake happens here
+    }
+
+    return ESP_FAIL;
+}
+
+esp_err_t connect_handler(httpd_req_t *req) {
+    httpd_resp_set_type(req, "text/html");
+    httpd_resp_send(req, connect_html, HTTPD_RESP_USE_STRLEN);
     return ESP_OK;
 }
 
