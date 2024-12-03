@@ -130,7 +130,19 @@ esp_err_t validate_connect_handler(httpd_req_t *req) {
     ESP_ERROR_CHECK(esp_wifi_set_config(ESP_IF_WIFI_STA, &wifi_sta_config));
 
     ESP_LOGI("AP", "Connecting to AP... SSID: %s", wifi_sta_config.sta.ssid);
-    ESP_ERROR_CHECK(esp_wifi_connect());
+
+    // Wait for connection
+    while (true) {
+        vTaskDelay(pdMS_TO_TICKS(3000)); // 3s delay between attempts
+        wifi_ap_record_t ap_info;
+        if (esp_wifi_sta_get_ap_info(&ap_info) == ESP_OK) {
+            ESP_LOGI("WS", "Connected to router. Signal strength: %d dBm", ap_info.rssi);
+            break;
+        } else {
+            ESP_LOGI("WS", "Not connected. Retrying...");
+            esp_wifi_connect();
+        }
+    }
 
     return ESP_OK;
 }
