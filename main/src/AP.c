@@ -157,18 +157,6 @@ void wifi_init(void) {
     ESP_ERROR_CHECK(esp_netif_dhcps_start(ap_netif));
     ESP_LOGI("AP", "AP initialized with IP: %s", IP_buffer);
 
-
-    wifi_config_t wifi_sta_config = {
-        .sta = {
-            .ssid = "AceOn battery",
-            .password = "password",
-        },
-    };
-    ESP_ERROR_CHECK(esp_wifi_set_config(ESP_IF_WIFI_STA, &wifi_sta_config));
-
     ESP_LOGI("AP", "Starting WiFi AP... SSID: %s, Password: %s", WIFI_SSID, WIFI_PASS);
     ESP_ERROR_CHECK(esp_wifi_start());
-
-    ESP_LOGI("AP", "Connecting to AP... SSID: %s", wifi_sta_config.sta.ssid);
-    ESP_ERROR_CHECK(esp_wifi_connect());
 }

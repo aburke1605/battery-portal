@@ -1,3 +1,5 @@
+#include <esp_wifi.h>
+
 #include "include/WS.h"
 #include "include/I2C.h"
 
@@ -112,17 +114,19 @@ esp_err_t validate_connect_handler(httpd_req_t *req) {
     char password[50] = {0};
     sscanf(content, "ssid=%49[^&]&password=%49s", ssid, password);
 
-    // if (strcmp(ssid, "admin") == 0 && strcmp(password, "1234") == 0) {
-    //     // credentials correct
-    //     httpd_resp_set_status(req, "302 Found");
-    //     httpd_resp_set_hdr(req, "Location", "/display"); // redirect to /display
-    //     httpd_resp_send(req, NULL, 0); // no response body
-    //     return ESP_OK;
-    // } else {
-    //     // credentials incorrect
-    //     const char *error_msg = "Invalid username or password.";
-    //     httpd_resp_send(req, error_msg, strlen(error_msg));
-    // }
+    wifi_config_t wifi_sta_config = {
+        .sta = {},
+    };
+    strncpy((char *)wifi_sta_config.sta.ssid, ssid, sizeof(wifi_sta_config.sta.ssid) - 1);
+    strncpy((char *)wifi_sta_config.sta.password, password, sizeof(wifi_sta_config.sta.password) - 1);
+    wifi_sta_config.sta.ssid[sizeof(wifi_sta_config.sta.ssid) - 1] = '\0';
+    wifi_sta_config.sta.password[sizeof(wifi_sta_config.sta.password) - 1] = '\0';
+
+    ESP_ERROR_CHECK(esp_wifi_set_config(ESP_IF_WIFI_STA, &wifi_sta_config));
+
+    ESP_LOGI("AP", "Connecting to AP... SSID: %s", wifi_sta_config.sta.ssid);
+    ESP_ERROR_CHECK(esp_wifi_connect());
+
     return ESP_OK;
 }
 
