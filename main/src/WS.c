@@ -1,8 +1,12 @@
+#include <esp_wifi.h>
+
 #include "include/WS.h"
 #include "include/I2C.h"
+#include "include/utils.h"
 
 #include "html/login_page.h"
 #include "html/display_page.h"
+#include "html/connect_page.h"
 #include "html/nearby_page.h"
 #include "html/about_page.h"
 #include "html/device_page.h"
@@ -35,6 +39,33 @@ esp_err_t login_handler(httpd_req_t *req) {
     return ESP_OK;
 }
 
+esp_err_t validate_login_handler(httpd_req_t *req) {
+    char content[100];
+    esp_err_t err = get_POST_data(req, content, sizeof(content));
+
+    char username[50] = {0};
+    char password[50] = {0};
+    // a correct login gets POSTed as:
+    //    username=admin&password=1234
+    sscanf(content, "username=%49[^&]&password=%49s", username, password);
+    // %49:   read up to 49 characters (including the null terminator) to prevent buffer overflow
+    // [^&]:  a scan set that matches any character except &
+    // s:     reads a sequence of non-whitespace characters until a space, newline, or null terminator is encountered
+
+    if (strcmp(username, "admin") == 0 && strcmp(password, "1234") == 0) {
+        // credentials correct
+        httpd_resp_set_status(req, "302 Found");
+        httpd_resp_set_hdr(req, "Location", "/display"); // redirect to /display
+        httpd_resp_send(req, NULL, 0); // no response body
+        return ESP_OK;
+    } else {
+        // credentials incorrect
+        const char *error_msg = "Invalid username or password.";
+        httpd_resp_send(req, error_msg, strlen(error_msg));
+    }
+    return ESP_OK;
+}
+
 esp_err_t display_handler(httpd_req_t *req) {
     httpd_resp_set_type(req, "text/html");
     httpd_resp_send(req, display_html, HTTPD_RESP_USE_STRLEN);
@@ -50,6 +81,52 @@ esp_err_t websocket_handler(httpd_req_t *req) {
     }
 
     return ESP_FAIL;
+}
+
+esp_err_t connect_handler(httpd_req_t *req) {
+    httpd_resp_set_type(req, "text/html");
+    httpd_resp_send(req, connect_html, HTTPD_RESP_USE_STRLEN);
+    return ESP_OK;
+}
+
+esp_err_t validate_connect_handler(httpd_req_t *req) {
+    char content[100];
+    esp_err_t err = get_POST_data(req, content, sizeof(content));
+
+    char ssid_encoded[50] = {0};
+    char ssid[50] = {0};
+    char password_encoded[50] = {0};
+    char password[50] = {0};
+    sscanf(content, "ssid=%49[^&]&password=%49s", ssid_encoded, password_encoded);
+    url_decode(ssid, ssid_encoded);
+    url_decode(password, password_encoded);
+
+    wifi_config_t wifi_sta_config = {
+        .sta = {},
+    };
+    strncpy((char *)wifi_sta_config.sta.ssid, ssid, sizeof(wifi_sta_config.sta.ssid) - 1);
+    strncpy((char *)wifi_sta_config.sta.password, password, sizeof(wifi_sta_config.sta.password) - 1);
+    wifi_sta_config.sta.ssid[sizeof(wifi_sta_config.sta.ssid) - 1] = '\0';
+    wifi_sta_config.sta.password[sizeof(wifi_sta_config.sta.password) - 1] = '\0';
+
+    ESP_ERROR_CHECK(esp_wifi_set_config(ESP_IF_WIFI_STA, &wifi_sta_config));
+
+    ESP_LOGI("AP", "Connecting to AP... SSID: %s", wifi_sta_config.sta.ssid);
+
+    // Wait for connection
+    while (true) {
+        vTaskDelay(pdMS_TO_TICKS(3000)); // 3s delay between attempts
+        wifi_ap_record_t ap_info;
+        if (esp_wifi_sta_get_ap_info(&ap_info) == ESP_OK) {
+            ESP_LOGI("WS", "Connected to router. Signal strength: %d dBm", ap_info.rssi);
+            break;
+        } else {
+            ESP_LOGI("WS", "Not connected. Retrying...");
+            esp_wifi_connect();
+        }
+    }
+
+    return ESP_OK;
 }
 
 esp_err_t nearby_handler(httpd_req_t *req) {
@@ -122,7 +199,7 @@ httpd_handle_t start_webserver(void) {
 
     httpd_config_t config = HTTPD_DEFAULT_CONFIG();
     config.uri_match_fn = httpd_uri_match_wildcard;
-    config.max_uri_handlers = 16; // Increase this number as needed
+    config.max_uri_handlers = 32; // Increase this number as needed
 
     // Start the httpd server
     ESP_LOGI("WS", "Starting server on port: '%d'", config.server_port);
@@ -151,6 +228,15 @@ httpd_handle_t start_webserver(void) {
         login_uri.uri = "/redirect";
         httpd_register_uri_handler(server, &login_uri);
 
+        // Validate login
+        httpd_uri_t validate_login_uri = {
+            .uri       = "/validate_login",
+            .method    = HTTP_POST,
+            .handler   = validate_login_handler,
+            .user_ctx  = NULL
+        };
+        httpd_register_uri_handler(server, &validate_login_uri);
+
         // Display page
         httpd_uri_t display_uri = {
             .uri       = "/display",
@@ -170,6 +256,24 @@ httpd_handle_t start_webserver(void) {
             .is_websocket = true
         };
         httpd_register_uri_handler(server, &ws_uri);
+
+        // Connect page
+        httpd_uri_t connect_uri = {
+            .uri       = "/connect",
+            .method    = HTTP_GET,
+            .handler   = connect_handler,
+            .user_ctx  = NULL
+        };
+        httpd_register_uri_handler(server, &connect_uri);
+
+        // Validate connect
+        httpd_uri_t validate_connect_uri = {
+            .uri       = "/validate_connect",
+            .method    = HTTP_POST,
+            .handler   = validate_connect_handler,
+            .user_ctx  = NULL
+        };
+        httpd_register_uri_handler(server, &validate_connect_uri);
 
         // Nearby page
         httpd_uri_t nearby_uri = {
