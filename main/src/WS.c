@@ -57,7 +57,6 @@ esp_err_t validate_login_handler(httpd_req_t *req) {
         httpd_resp_set_status(req, "302 Found");
         httpd_resp_set_hdr(req, "Location", "/display"); // redirect to /display
         httpd_resp_send(req, NULL, 0); // no response body
-        return ESP_OK;
     } else {
         // credentials incorrect
         const char *error_msg = "Invalid username or password.";
@@ -125,6 +124,10 @@ esp_err_t validate_connect_handler(httpd_req_t *req) {
             esp_wifi_connect();
         }
     }
+
+    httpd_resp_set_status(req, "302 Found");
+    httpd_resp_set_hdr(req, "Location", "/display"); // redirect back to /display
+    httpd_resp_send(req, NULL, 0); // no response body
 
     return ESP_OK;
 }
