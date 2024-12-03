@@ -138,7 +138,6 @@ void wifi_init(void) {
     ESP_ERROR_CHECK(esp_netif_dhcps_stop(ap_netif));
     char IP_buffer[15];
     snprintf(IP_buffer, sizeof(IP_buffer), "192.168.%u.1", 4 + (SSID_number-1));
-    printf("\n\n%s\n\n", IP_buffer);
     esp_ip4_addr_t ip_info = {
         .addr = esp_ip4addr_aton(IP_buffer),
     };
