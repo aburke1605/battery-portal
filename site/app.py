@@ -13,19 +13,30 @@ ys = [random.randint(1, 50) for x in xs]
 ax.plot(xs, ys)
 plt.savefig('static/plots/plot.png')
 
+data_store = {}
+
 @app.route('/')
 def index():
     print('Request for index page received')
-    return render_template('index.html')
+    Q = data_store["ESP32"]["charge"]
+    V = data_store["ESP32"]["voltage"]
+    I = data_store["ESP32"]["current"]
+    T = data_store["ESP32"]["temperature"]
 
-data_store = []
+    return render_template(
+        'index.html',
+        charge=Q,
+        voltage=f"{V:.2f}",
+        current=f"{I:.2f}",
+        temperature=f"{T:.2f}"
+    )
+
 
 @app.route('/data', methods=['POST'])
 def receive_data():
-    data = request.json  # Expecting JSON payload
+    data = request.json
     if data:
-        data_store.append(data)  # Store or process data as needed
-        print(f"Received: {data}")
+        data_store["ESP32"] = data
         return {"status": "success", "data_received": data}, 200
     return {"status": "error", "message": "No data received"}, 400
 
@@ -37,4 +48,4 @@ with app.test_request_context():
 
 
 if __name__ == '__main__':
-    app.run()
+    app.run(debug=True)
