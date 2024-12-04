@@ -27,9 +27,9 @@
       const socket = io.connect()
       socket.on('update_data', (data) => {
         document.getElementById('charge').textContent = data.charge;
-        document.getElementById('voltage').textContent = data.voltage;
-        document.getElementById('current').textContent = data.current;
-        document.getElementById('temperature').textContent = data.temperature;
+        document.getElementById('voltage').textContent = data.voltage.toFixed(2);
+        document.getElementById('current').textContent = data.current.toFixed(2);
+        document.getElementById('temperature').textContent = data.temperature.toFixed(2);
       })
     </script>
   </body>
