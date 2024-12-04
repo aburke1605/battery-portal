@@ -20,15 +20,35 @@ void send_sensor_data_task(void *pvParameters) {
 
         esp_http_client_handle_t client = esp_http_client_init(&config);
 
-        // Example sensor data
-        char post_data[100];
-        int sensor_value = esp_random() % 100;  // Replace with actual sensor reading
-        snprintf(post_data, sizeof(post_data), "{\"sensor_value\": %d}", sensor_value);
+        // Read sensor data
+        uint16_t iCharge = read_2byte_data(STATE_OF_CHARGE_REG);
 
+        uint16_t iVoltage = read_2byte_data(VOLTAGE_REG);
+        float fVoltage = (float)iVoltage / 1000.0;
+
+        uint16_t iCurrent = read_2byte_data(CURRENT_REG);
+        float fCurrent = (float)iCurrent / 1000.0;
+        if (fCurrent < 65.536 && fCurrent > 32.767) fCurrent = 65.536 - fCurrent;
+
+        uint16_t iTemperature = read_2byte_data(TEMPERATURE_REG);
+        float fTemperature = (float)iTemperature / 10.0 - 273.15;
+
+        // Create JSON object with sensor data
+        cJSON *json = cJSON_CreateObject();
+        cJSON_AddNumberToObject(json, "charge", iCharge);
+        cJSON_AddNumberToObject(json, "voltage", fVoltage);
+        cJSON_AddNumberToObject(json, "current", fCurrent);
+        cJSON_AddNumberToObject(json, "temperature", fTemperature);
+
+        char *json_string = cJSON_PrintUnformatted(json);
+        cJSON_Delete(json);
+
+        // Configure HTTP client for POST
         esp_http_client_set_method(client, HTTP_METHOD_POST);
         esp_http_client_set_header(client, "Content-Type", "application/json");
-        esp_http_client_set_post_field(client, post_data, strlen(post_data));
+        esp_http_client_set_post_field(client, json_string, strlen(json_string));
 
+        // Perform HTTP POST request
         esp_err_t err = esp_http_client_perform(client);
         if (err == ESP_OK) {
             int status_code = esp_http_client_get_status_code(client);
@@ -36,7 +56,7 @@ void send_sensor_data_task(void *pvParameters) {
             int content_length = esp_http_client_read_response(client, response_buf, sizeof(response_buf) - 1);
             if (content_length >= 0) {
                 response_buf[content_length] = '\0';  // Null-terminate the response
-                printf("Sending sensor_value = %d\n", sensor_value);
+                printf("Sent data: %s\n", json_string);
                 // ESP_LOGI("main", "HTTP POST Status = %d, Response = %s", status_code, response_buf);
             } else {
                 ESP_LOGE("main", "Failed to read response");
@@ -46,6 +66,7 @@ void send_sensor_data_task(void *pvParameters) {
         }
 
         esp_http_client_cleanup(client);
+        free(json_string);
 
         vTaskDelay(1000 / portTICK_PERIOD_MS);  // Wait 1 second
     }
