@@ -1,5 +1,7 @@
 #!venv/bin/python
 import os
+from datetime import time, datetime
+
 from flask import Flask, url_for, redirect, render_template, request, abort
 from flask_sqlalchemy import SQLAlchemy
 from flask_security import Security, SQLAlchemyUserDatastore, \
@@ -8,16 +10,17 @@ from flask_security.utils import hash_password
 import flask_admin
 from flask_admin.contrib import sqla
 from flask_admin import helpers as admin_helpers
-from flask_admin import BaseView, expose
+from flask_socketio import SocketIO, emit
+import time
 from wtforms import PasswordField
-import string
-import random
+from flask_login import logout_user
+from flask_security import url_for_security
 
 # Create Flask application
 app = Flask(__name__)
 app.config.from_pyfile('config.py')
 db = SQLAlchemy(app)
-
+socketio = SocketIO(app)
 
 # Define models
 roles_users = db.Table(
@@ -50,7 +53,6 @@ class User(db.Model, UserMixin):
 
     def __str__(self):
         return self.email
-
 
 # Setup Flask-Security
 user_datastore = SQLAlchemyUserDatastore(db, User, Role)
@@ -98,30 +100,49 @@ class UserView(MyModelView):
     form_overrides = {
         'password': PasswordField
     }
-
-
-class CustomView(BaseView):
-    @expose('/')
-    def index(self):
-        return self.render('admin/custom_index.html')
-
-# Flask views
 @app.route('/')
 def index():
-    return render_template('index.html')
+    return render_template('Home/index.html')
+
+@app.route('/admin/dashboard')
+@login_required
+def admin_index():
+    return render_template('admin/dashboard.html')
+
+@app.route('/admin/battery')
+@login_required
+def subpage():
+    return render_template('admin/battery.html')
+
+# Socket connect
+@socketio.on('connect', namespace='/websocket')
+def on_connect():
+    print('Client connected')
+
+@socketio.on('disconnect', namespace='/websocket')
+def on_disconnect():
+    print('Client disconnected')
+
+# Function to send data to the client every 5 seconds
+def send_data():
+    while True:
+        print('send data')
+        current_time = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+        socketio.emit('server_response', {'data': current_time},  namespace='/websocket')
+        time.sleep(1)
+
+# Start background thread to send data
+socketio.start_background_task(send_data)
 
 # Create admin
 admin = flask_admin.Admin(
     app,
-    'My Dashboard',
-    base_template='my_master.html',
-    template_mode='bootstrap4',
+    url = "/admin/dashboard",
 )
 
 # Add model views
 admin.add_view(MyModelView(Role, db.session, menu_icon_type='fa', menu_icon_value='fa-server', name="Roles"))
 admin.add_view(UserView(User, db.session, menu_icon_type='fa', menu_icon_value='fa-users', name="Users"))
-admin.add_view(CustomView(name="Custom view", endpoint='custom', menu_icon_type='fa', menu_icon_value='fa-connectdevelop',))
 
 # define a context processor for merging flask-admin's template context into the
 # flask-security views.
@@ -148,34 +169,13 @@ def build_sample_db():
         db.session.add(super_user_role)
         db.session.commit()
 
-        test_user = user_datastore.create_user(
+        user_datastore.create_user(
             first_name='Admin',
             email='admin@test.com',
             password=hash_password('admin'),
             roles=[user_role, super_user_role]
         )
-        
-        first_names = [
-            'Harry', 'Amelia', 'Oliver', 'Jack', 'Isabella', 'Charlie', 'Sophie', 'Mia',
-            'Jacob', 'Thomas', 'Emily', 'Lily', 'Ava', 'Isla', 'Alfie', 'Olivia', 'Jessica',
-            'Riley', 'William', 'James', 'Geoffrey', 'Lisa', 'Benjamin', 'Stacey', 'Lucy'
-        ]
-        last_names = [
-            'Brown', 'Smith', 'Patel', 'Jones', 'Williams', 'Johnson', 'Taylor', 'Thomas',
-            'Roberts', 'Khan', 'Lewis', 'Jackson', 'Clarke', 'James', 'Phillips', 'Wilson',
-            'Ali', 'Mason', 'Mitchell', 'Rose', 'Davis', 'Davies', 'Rodriguez', 'Cox', 'Alexander'
-        ]
 
-        for i in range(len(first_names)):
-            tmp_email = first_names[i].lower() + "." + last_names[i].lower() + "@example.com"
-            tmp_pass = ''.join(random.choice(string.ascii_lowercase + string.digits) for i in range(10))
-            user_datastore.create_user(
-                first_name=first_names[i],
-                last_name=last_names[i],
-                email=tmp_email,
-                password=hash_password(tmp_pass),
-                roles=[user_role, ]
-            )
         db.session.commit()
     return
 
@@ -186,6 +186,8 @@ if __name__ == '__main__':
     database_path = os.path.join(app_dir, app.config['DATABASE_FILE'])
     if not os.path.exists(database_path):
         build_sample_db()
-    
+    with app.app_context():
+        for rule in app.url_map.iter_rules():
+            print(f"Endpoint: {rule.endpoint}\tMethods: {', '.join(rule.methods)}\tURL: {rule}")
     # Start app
     app.run(debug=True)
