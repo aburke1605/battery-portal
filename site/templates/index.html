@@ -2,6 +2,7 @@
 <head>
     <title>AceOn EV Battery</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+  <script src="https://cdn.socket.io/4.5.0/socket.io.min.js"></script>
 </head>
 <html>
    <body>
@@ -14,11 +15,21 @@
         </div>
         <div>
           <p>Here is a plot</p>
-          <p>Charge: {{charge}}%</p>
-          <p>Voltage: {{voltage}}V</p>
-          <p>Current: {{current}}A</p>
-          <p>Temperature {{temperature}}degC</p>
         </div>
      </main>      
    </body>
+        <p>Charge: <span id="charge">0</span>%</p>
+        <p>Voltage: <span id="voltage">0.00</span>V</p>
+        <p>Current: <span id="current">0.00</span>A</p>
+        <p>Temperature <span id="temperature">0.00</span>°C</p>
+
+    <script>
+      const socket = io.connect()
+      socket.on('update_data', (data) => {
+        document.getElementById('charge').textContent = data.charge;
+        document.getElementById('voltage').textContent = data.voltage;
+        document.getElementById('current').textContent = data.current;
+        document.getElementById('temperature').textContent = data.temperature;
+      })
+    </script>
 </html>
