@@ -29,7 +29,6 @@ roles_users = db.Table(
     db.Column('role_id', db.Integer(), db.ForeignKey('role.id'))
 )
 
-
 class Role(db.Model, RoleMixin):
     id = db.Column(db.Integer(), primary_key=True)
     name = db.Column(db.String(80), unique=True)
@@ -58,7 +57,6 @@ class User(db.Model, UserMixin):
 user_datastore = SQLAlchemyUserDatastore(db, User, Role)
 security = Security(app, user_datastore)
 
-
 # Create customized model view class
 class MyModelView(sqla.ModelView):
     def is_accessible(self):
@@ -81,8 +79,6 @@ class MyModelView(sqla.ModelView):
             else:
                 # login
                 return redirect(url_for('security.login', next=request.url))
-
-
     # can_edit = True
     edit_modal = True
     create_modal = True    
@@ -175,19 +171,13 @@ def build_sample_db():
             password=hash_password('admin'),
             roles=[user_role, super_user_role]
         )
-
         db.session.commit()
     return
 
 if __name__ == '__main__':
-
-    # Build a sample db on the fly, if one does not exist yet.
     app_dir = os.path.realpath(os.path.dirname(__file__))
     database_path = os.path.join(app_dir, app.config['DATABASE_FILE'])
     if not os.path.exists(database_path):
         build_sample_db()
-    with app.app_context():
-        for rule in app.url_map.iter_rules():
-            print(f"Endpoint: {rule.endpoint}\tMethods: {', '.join(rule.methods)}\tURL: {rule}")
     # Start app
     app.run(debug=True)
