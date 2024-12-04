@@ -3,6 +3,7 @@
 
 #include "html/login_page.h"
 #include "html/display_page.h"
+#include "html/change_page.h"
 #include "html/about_page.h"
 #include "html/device_page.h"
 
@@ -49,6 +50,41 @@ esp_err_t websocket_handler(httpd_req_t *req) {
     }
 
     return ESP_FAIL;
+}
+
+esp_err_t change_handler(httpd_req_t *req) {
+    httpd_resp_set_type(req, "text/html");
+    httpd_resp_send(req, change_html, HTTPD_RESP_USE_STRLEN);
+    return ESP_OK;
+}
+// this can be removed later, is defined in another merge request
+esp_err_t get_POST_data(httpd_req_t *req, char* content, size_t content_size) {
+    int ret, content_len = req->content_len;
+
+    // ensure the content fits in the buffer
+    if (content_len >= content_size) {
+        return ESP_ERR_INVALID_SIZE;
+    }
+
+    // read the POST data
+    ret = httpd_req_recv(req, content, content_len);
+    if (ret <= 0) {
+        return ESP_FAIL;
+    }
+    content[ret] = '\0'; // null-terminate the string
+
+    return ESP_OK;
+}
+esp_err_t validate_change_handler(httpd_req_t *req) {
+    char content[100];
+    esp_err_t err = get_POST_data(req, content, sizeof(content));
+
+    char undertemp_charge[50] = {0};
+    sscanf(content, "undertemp_charge=%49s", undertemp_charge);
+
+    printf("undertemp_charge = %s\n", undertemp_charge);
+
+    return ESP_OK;
 }
 
 esp_err_t about_handler(httpd_req_t *req) {
@@ -163,6 +199,22 @@ httpd_handle_t start_webserver(void) {
             .is_websocket = true
         };
         httpd_register_uri_handler(server, &ws_uri);
+
+        httpd_uri_t change_uri = {
+            .uri       = "/change",
+            .method    = HTTP_GET,
+            .handler   = change_handler,
+            .user_ctx  = NULL
+        };
+        httpd_register_uri_handler(server, &change_uri);
+
+        httpd_uri_t validate_change_uri = {
+            .uri       = "/validate_change",
+            .method    = HTTP_POST,
+            .handler   = validate_change_handler,
+            .user_ctx  = NULL
+        };
+        httpd_register_uri_handler(server, &validate_change_uri);
 
         // About page
         httpd_uri_t about_uri = {

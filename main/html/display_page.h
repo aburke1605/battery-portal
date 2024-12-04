@@ -84,6 +84,9 @@ button {
         <button onclick="fetch('/toggle').then(() => alert('LED Toggled'))">Toggle LED</button>
 
         <img src='/image/aceon2.png' style='max-width: 100%; height:auto;'>
+        <form action='/change' method='get'>
+          <button type='Submit'>Change battery properties</button>
+        </form>
         <form action='/about' method='get'>
           <button type='Submit'>About AceOn</button>
         </form>
