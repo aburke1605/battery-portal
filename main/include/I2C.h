@@ -34,7 +34,11 @@ esp_err_t i2c_master_init(void);
 
 void device_scan(void);
 
+esp_err_t read_data(uint8_t reg, uint8_t* data, size_t len);
+
 uint16_t read_2byte_data(uint8_t reg);
+
+uint16_t read_BL();
 
 esp_err_t write_byte(uint8_t reg, uint8_t data);
 
