@@ -127,8 +127,8 @@ esp_err_t set_BL_voltage_threshold(int16_t BL) {
     ret = write_byte(DATA_FLASH_CLASS, CONFIGURATION_DISCHARGE_SUBCLASS_ID);
     ret = write_byte(DATA_FLASH_BLOCK, FIRST_DATA_BLOCK);
 
-    uint16_t value = read_BL();
-    printf("\nvalue at %02X+%02X = 0x%04X (%d mV)\n", BLOCK_DATA_START, BL_OFFSET, value, value);
+    // uint16_t value = read_BL();
+    // printf("\nvalue at %02X+%02X = 0x%04X (%d mV)\n", BLOCK_DATA_START, BL_OFFSET, value, value);
 
     // Read current block data
     uint8_t block_data[32] = {0};
