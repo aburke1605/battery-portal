@@ -36,7 +36,42 @@ void device_scan(void) {
     if (n_devices == 0) ESP_LOGW("I2C", "No devices found.");
 }
 
-uint16_t read_2byte_data(int REG_ADDR) {
+esp_err_t read_data(uint8_t reg, uint8_t* data, size_t len) {
+    if (!data || len == 0) {
+        ESP_LOGE("I2C", "Invalid data buffer or length.");
+        return ESP_ERR_INVALID_ARG;
+        // TODO: error check the rest of this function
+    }
+    i2c_cmd_handle_t cmd = i2c_cmd_link_create();
+    esp_err_t ret;
+
+    // first specify the register to read
+    ret = i2c_master_start(cmd);
+    ret = i2c_master_write_byte(cmd, (I2C_ADDR << 1) | I2C_MASTER_WRITE, true);
+    ret = i2c_master_write_byte(cmd, reg, true);
+
+    // do the reading
+    ret = i2c_master_start(cmd);
+    ret = i2c_master_write_byte(cmd, (I2C_ADDR << 1) | I2C_MASTER_READ, true);
+    ret = i2c_master_read(cmd, data, len, I2C_MASTER_LAST_NACK);
+
+    // clean up
+    ret = i2c_master_stop(cmd);
+    ret = i2c_master_cmd_begin(I2C_MASTER_NUM, cmd, pdMS_TO_TICKS(I2C_MASTER_TIMEOUT_MS));
+    i2c_cmd_link_delete(cmd);
+
+    return ret;
+}
+
+uint16_t read_2byte_data(uint8_t reg) {
+    esp_err_t ret;
+
+    uint8_t data[2] = {0};
+    ret = read_data(reg, data, sizeof(data));
+
+    // is big-endian
+    return (data[1] << 8) | data[0];
+}
 
 uint16_t read_BL() {
     esp_err_t ret;
@@ -52,42 +87,44 @@ uint16_t read_BL() {
     return (data[0] << 8) | data[1];
 }
 
-    // Send command to request the state of charge register
+esp_err_t write_byte(uint8_t reg, uint8_t data) {
     i2c_cmd_handle_t cmd = i2c_cmd_link_create();
-    i2c_master_start(cmd);
-    i2c_master_write_byte(cmd, (I2C_ADDR << 1) | I2C_MASTER_WRITE, true);
-    i2c_master_write_byte(cmd, REG_ADDR, true);
-    i2c_master_stop(cmd);
-
-    esp_err_t err = i2c_master_cmd_begin(I2C_MASTER_NUM, cmd, pdMS_TO_TICKS(I2C_MASTER_TIMEOUT_MS));
-    i2c_cmd_link_delete(cmd);
-    if (err != ESP_OK) {
-        ESP_LOGE("I2C", "Error in I2C transmission: %s", esp_err_to_name(err));
-        return 0;
+    if (!cmd) {
+        ESP_LOGE("I2C i2c_write_block", "Failed to create I2C command link.");
+        return ESP_FAIL;
     }
 
-    // Request 2 bytes from the device
-    cmd = i2c_cmd_link_create();
-    i2c_master_start(cmd);
-    i2c_master_write_byte(cmd, (I2C_ADDR << 1) | I2C_MASTER_READ, true);
-    i2c_master_read(cmd, data, 2, I2C_MASTER_LAST_NACK);
-    i2c_master_stop(cmd);
-
-    err = i2c_master_cmd_begin(I2C_MASTER_NUM, cmd, pdMS_TO_TICKS(I2C_MASTER_TIMEOUT_MS));
-    i2c_cmd_link_delete(cmd);
-    if (err != ESP_OK) {
-        ESP_LOGE("I2C", "Error in I2C read: %s", esp_err_to_name(err));
-        return 0;
+    esp_err_t ret = i2c_master_start(cmd);
+    if (ret != ESP_OK) {
+        ESP_LOGE("I2C i2c_write_block", "Failed to start I2C command: %s", esp_err_to_name(ret));
+        i2c_cmd_link_delete(cmd);
+        return ret;
     }
 
-    uint16_t ret = (data[1] << 8) | data[0];
+    ret |= i2c_master_write_byte(cmd, (I2C_ADDR << 1) | I2C_MASTER_WRITE, true);
+    ret |= i2c_master_write_byte(cmd, reg, true);
+    ret |= i2c_master_write_byte(cmd, data, true);
+    ret |= i2c_master_stop(cmd);
+    if (ret != ESP_OK) {
+        ESP_LOGE("I2C i2c_write_block", "Failed to build I2C write command: %s", esp_err_to_name(ret));
+        i2c_cmd_link_delete(cmd);
+        return ret;
+    }
+
+    ret = i2c_master_cmd_begin(I2C_MASTER_NUM, cmd, pdMS_TO_TICKS(I2C_MASTER_TIMEOUT_MS));
+    i2c_cmd_link_delete(cmd);
+
+    if (ret != ESP_OK) {
+        ESP_LOGE("BQ275XX", "Failed to execute I2C write command: %s", esp_err_to_name(ret));
+    }
+
     return ret;
 }
 
 esp_err_t set_BL_voltage_threshold(int16_t BL) {
     esp_err_t ret;
 
-    ret = write_byte(DATA_FLASH_CLASS, CONFIGURATION_DISCHARGE_SUBCLASS_ID);    
+    ret = write_byte(DATA_FLASH_CLASS, CONFIGURATION_DISCHARGE_SUBCLASS_ID);
     ret = write_byte(DATA_FLASH_BLOCK, FIRST_DATA_BLOCK);
 
     uint16_t value = read_BL();
@@ -100,7 +137,7 @@ esp_err_t set_BL_voltage_threshold(int16_t BL) {
         ESP_LOGE("I2C", "Failed to read Block Data.");
         return ret;
     }
-    
+
     // Modify the Undertemperature Charge value
     block_data[BL_OFFSET]   = (BL >> 8) & 0xFF; // Higher byte (0x0D)
     block_data[BL_OFFSET+1] =  BL       & 0xFF; // Lower byte (0xAC)

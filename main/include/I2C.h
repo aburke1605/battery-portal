@@ -12,6 +12,12 @@
 #define CURRENT_REG CONFIG_CURRENT_REG                 // Register address for AverageCurrent
 #define TEMPERATURE_REG CONFIG_TEMPERATURE_REG         // Register address for Temperature
 
+#define DATA_FLASH_CLASS       0x3E
+#define DATA_FLASH_BLOCK       0x3F
+#define BLOCK_DATA_START       0x40
+#define BLOCK_DATA_CHECKSUM    0x60
+#define BLOCK_DATA_CONTROL     0x61
+
 #define I2C_MASTER_TIMEOUT_MS     1000 // time delay to allow for BMS response
 #define I2C_MASTER_TX_BUF_DISABLE 0    // I2C master doesn't need buffer
 #define I2C_MASTER_RX_BUF_DISABLE 0    // I2C master doesn't need buffer
@@ -28,6 +34,8 @@ esp_err_t i2c_master_init(void);
 
 void device_scan(void);
 
-uint16_t read_2byte_data(int REG_ADDR);
+uint16_t read_2byte_data(uint8_t reg);
+
+esp_err_t write_byte(uint8_t reg, uint8_t data);
 
 esp_err_t set_BL_voltage_threshold(int16_t BL);
