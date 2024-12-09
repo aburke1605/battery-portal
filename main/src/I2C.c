@@ -37,7 +37,20 @@ void device_scan(void) {
 }
 
 uint16_t read_2byte_data(int REG_ADDR) {
+
+uint16_t read_BL() {
+    esp_err_t ret;
+
+    // specify the location in memory
+    ret = write_byte(DATA_FLASH_CLASS, CONFIGURATION_DISCHARGE_SUBCLASS_ID);
+    ret = write_byte(DATA_FLASH_BLOCK, FIRST_DATA_BLOCK);
+
     uint8_t data[2] = {0}; // 2 bytes
+    ret = read_data(BLOCK_DATA_START + BL_OFFSET, data, sizeof(data));
+
+    // is little-endian
+    return (data[0] << 8) | data[1];
+}
 
     // Send command to request the state of charge register
     i2c_cmd_handle_t cmd = i2c_cmd_link_create();
@@ -69,4 +82,52 @@ uint16_t read_2byte_data(int REG_ADDR) {
 
     uint16_t ret = (data[1] << 8) | data[0];
     return ret;
+}
+
+esp_err_t set_BL_voltage_threshold(int16_t BL) {
+    esp_err_t ret;
+
+    ret = write_byte(DATA_FLASH_CLASS, CONFIGURATION_DISCHARGE_SUBCLASS_ID);    
+    ret = write_byte(DATA_FLASH_BLOCK, FIRST_DATA_BLOCK);
+
+    uint16_t value = read_BL();
+    printf("\nvalue at %02X+%02X = 0x%04X (%d mV)\n", BLOCK_DATA_START, BL_OFFSET, value, value);
+
+    // Read current block data
+    uint8_t block_data[32] = {0};
+    ret = read_data(BLOCK_DATA_START, block_data, sizeof(block_data));
+    if (ret != ESP_OK) {
+        ESP_LOGE("I2C", "Failed to read Block Data.");
+        return ret;
+    }
+    
+    // Modify the Undertemperature Charge value
+    block_data[BL_OFFSET]   = (BL >> 8) & 0xFF; // Higher byte (0x0D)
+    block_data[BL_OFFSET+1] =  BL       & 0xFF; // Lower byte (0xAC)
+
+    // Write updated block data back
+    for (int i = 0; i < sizeof(block_data); i++) {
+        ret = write_byte(BLOCK_DATA_START + i, block_data[i]);
+        if (ret != ESP_OK) {
+            ESP_LOGE("I2C", "Failed to write Block Data at index %d.", i);
+            return ret;
+        }
+    }
+
+    // Calculate new checksum
+    uint8_t checksum = 0;
+    for (int i = 0; i < sizeof(block_data); i++) {
+        checksum += block_data[i];
+    }
+    checksum = 0xFF - checksum;
+
+    // Write new checksum
+    ret = write_byte(BLOCK_DATA_CHECKSUM, checksum);
+    if (ret != ESP_OK) {
+        ESP_LOGE("I2C", "Failed to write Block Data Checksum.");
+        return ret;
+    }
+
+    ESP_LOGI("I2C", "BL voltage threshold successfully set to %d mV", BL);
+    return ESP_OK;
 }

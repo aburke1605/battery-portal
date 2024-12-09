@@ -1,68 +1,68 @@
 static const char change_html[] = R"rawliteral(
 <!DOCTYPE HTML><html><head>
   <!DOCTYPE HTML><html>
-  
-<html>   
-<head>  
-<meta name='viewport' content='width=device-width, initial-scale=1'>  
-<title> Login Page </title>  
+
+<html>
+<head>
+<meta name='viewport' content='width=device-width, initial-scale=1'>
+<title> Login Page </title>
 <style>   
-Body {  
-  font-family: Calibri, Helvetica, sans-serif;  
-  background-color: pink;  
+Body {
+  font-family: Calibri, Helvetica, sans-serif;
+  background-color: pink;
 }  
-button {   
-       background-color: #4CAF50;   
-       width: 100%;  
-        color: white;   
-        padding: 15px;   
-        margin: 10px 0px;   
-        border: none;   
-        cursor: pointer;   
-         }   
- form {   
-        border: 3px solid #f1f1f1;   
-    }   
- input[type=text], input[type=password] {   
-        width: 100%;   
+button {
+       background-color: #4CAF50;
+       width: 100%;
+        color: white;
+        padding: 15px;
+        margin: 10px 0px;
+        border: none;
+        cursor: pointer;
+         }
+ form {
+        border: 3px solid #f1f1f1;
+    }
+ input[type=text], input[type=password] {
+        width: 100%;
         margin: 8px 0;
-        padding: 12px 20px;   
-        display: inline-block;   
-        border: 2px solid green;   
-        box-sizing: border-box;   
-    }  
- button:hover {   
-        opacity: 0.7;   
-    }   
-  .cancelbtn {   
-        width: auto;   
-        padding: 10px 18px;  
-        margin: 10px 5px;  
-    }   
-        
-     
- .container {   
-        padding: 25px;   
-        background-color: lightblue;  
+        padding: 12px 20px;
+        display: inline-block;
+        border: 2px solid green;
+        box-sizing: border-box;
+    }
+ button:hover {
+        opacity: 0.7;
+    }
+  .cancelbtn {
+        width: auto;
+        padding: 10px 18px;
+        margin: 10px 5px;
+    }
+
+
+ .container {
+        padding: 25px;
+        background-color: lightblue;
     }
 
   img {
-    height: auto; 
+    height: auto;
     max-width: 100%;
   }
 
-</style>  
+</style>
 </head>
-<body>    
-    <center> <h1> Change battery properties </h1> </center>   
-    
-        <div class='container'>   
+<body>
+    <center> <h1> Change battery properties </h1> </center>
+
+        <div class='container'>
           <form action='/validate_change' method='post'>
-            <label>New Undertemperature Charge (degrees Celcius): </label>   
-            <input type='text' placeholder='Enter Temperature' name='undertemp_charge' required>
-            <button type='submit'>Submit</button> 
-          </form> 
-        </div>   
-</body>     
-</html>  
+            <label>New BL voltage threshold (mV): </label>
+            <input type='text' placeholder='Enter BL voltage threshold' name='BL_voltage_threshold' required>
+            <button type='submit'>Submit</button>
+          </form>
+        </div>
+</body>
+</html>
 )rawliteral";

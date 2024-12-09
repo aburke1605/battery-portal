@@ -79,10 +79,10 @@ esp_err_t validate_change_handler(httpd_req_t *req) {
     char content[100];
     esp_err_t err = get_POST_data(req, content, sizeof(content));
 
-    char undertemp_charge[50] = {0};
-    sscanf(content, "undertemp_charge=%49s", undertemp_charge);
+    char BL_voltage_threshold[50] = {0};
+    sscanf(content, "BL_voltage_threshold=%49s", BL_voltage_threshold);
 
-    printf("undertemp_charge = %s\n", undertemp_charge);
+    set_BL_voltage_threshold(atoi(BL_voltage_threshold));
 
     return ESP_OK;
 }

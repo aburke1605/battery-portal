@@ -16,8 +16,18 @@
 #define I2C_MASTER_TX_BUF_DISABLE 0    // I2C master doesn't need buffer
 #define I2C_MASTER_RX_BUF_DISABLE 0    // I2C master doesn't need buffer
 
+#define CONFIGURATION_DISCHARGE_SUBCLASS_ID 0x31
+#define FIRST_DATA_BLOCK                    0x00
+#define SECOND_DATA_BLOCK                   0x01
+#define THIRD_DATA_BLOCK                    0x02
+#define FOURTH_DATA_BLOCK                   0x03
+
+#define BL_OFFSET 0x09
+
 esp_err_t i2c_master_init(void);
 
 void device_scan(void);
 
 uint16_t read_2byte_data(int REG_ADDR);
+
+esp_err_t set_BL_voltage_threshold(int16_t BL);
