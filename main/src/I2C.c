@@ -90,13 +90,13 @@ uint16_t read_BL() {
 esp_err_t write_byte(uint8_t reg, uint8_t data) {
     i2c_cmd_handle_t cmd = i2c_cmd_link_create();
     if (!cmd) {
-        ESP_LOGE("I2C i2c_write_block", "Failed to create I2C command link.");
+        ESP_LOGE("I2C", "Failed to create I2C command link.");
         return ESP_FAIL;
     }
 
     esp_err_t ret = i2c_master_start(cmd);
     if (ret != ESP_OK) {
-        ESP_LOGE("I2C i2c_write_block", "Failed to start I2C command: %s", esp_err_to_name(ret));
+        ESP_LOGE("I2C", "Failed to start I2C command: %s", esp_err_to_name(ret));
         i2c_cmd_link_delete(cmd);
         return ret;
     }
@@ -106,7 +106,7 @@ esp_err_t write_byte(uint8_t reg, uint8_t data) {
     ret |= i2c_master_write_byte(cmd, data, true);
     ret |= i2c_master_stop(cmd);
     if (ret != ESP_OK) {
-        ESP_LOGE("I2C i2c_write_block", "Failed to build I2C write command: %s", esp_err_to_name(ret));
+        ESP_LOGE("I2C", "Failed to build I2C write command: %s", esp_err_to_name(ret));
         i2c_cmd_link_delete(cmd);
         return ret;
     }
@@ -115,7 +115,7 @@ esp_err_t write_byte(uint8_t reg, uint8_t data) {
     i2c_cmd_link_delete(cmd);
 
     if (ret != ESP_OK) {
-        ESP_LOGE("BQ275XX", "Failed to execute I2C write command: %s", esp_err_to_name(ret));
+        ESP_LOGE("I2C", "Failed to execute I2C write command: %s", esp_err_to_name(ret));
     }
 
     return ret;
