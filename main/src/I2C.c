@@ -1,3 +1,5 @@
+#include <math.h>
+
 #include "include/I2C.h"
 
 esp_err_t i2c_master_init(void) {
@@ -73,19 +75,21 @@ uint16_t read_2byte_data(uint8_t reg) {
     return (data[1] << 8) | data[0];
 }
 
-void test_read(uint8_t subclass, uint8_t block, uint8_t offset) {
+uint16_t test_read(uint8_t subclass, uint8_t offset) {
     esp_err_t ret;
 
     // specify the location in memory
     ret = write_byte(DATA_FLASH_CLASS, subclass);
-    ret = write_byte(DATA_FLASH_BLOCK, block);
+    ret = write_byte(DATA_FLASH_BLOCK, (uint8_t)ceil((float)offset/32.)-1);
 
     uint8_t data[2] = {0}; // 2 bytes
-    ret = read_data(BLOCK_DATA_START + offset, data, sizeof(data));
+    ret = read_data(BLOCK_DATA_START + offset%32, data, sizeof(data));
 
     // is little-endian
     uint16_t val = (data[0] << 8) | data[1];
-    printf("\nvalue at %02X+%02X = 0x%04X (%d mV)\n", BLOCK_DATA_START, offset, val, val);
+    ESP_LOGI("I2C", "Value at 0x%02X + 0x%02X = 0x%04X (%d mV)\n", BLOCK_DATA_START, offset%32, val, val);
+
+    return val;
 }
 
 esp_err_t write_byte(uint8_t reg, uint8_t data) {
@@ -122,13 +126,11 @@ esp_err_t write_byte(uint8_t reg, uint8_t data) {
     return ret;
 }
 
-esp_err_t set_I2_value(uint8_t subclass, uint8_t block, uint8_t offset, int16_t value) {
+esp_err_t set_I2_value(uint8_t subclass, uint8_t offset, int16_t value) {
     esp_err_t ret;
 
-    test_read(subclass, block, offset);
-
     ret = write_byte(DATA_FLASH_CLASS, subclass);
-    ret = write_byte(DATA_FLASH_BLOCK, block);
+    ret = write_byte(DATA_FLASH_BLOCK, (uint8_t)ceil((float)offset/32.)-1);
 
     // read current block data
     uint8_t block_data[32] = {0};
@@ -139,8 +141,8 @@ esp_err_t set_I2_value(uint8_t subclass, uint8_t block, uint8_t offset, int16_t 
     }
 
     // modify the value
-    block_data[offset]   = (value >> 8) & 0xFF; // Higher byte
-    block_data[offset+1] =  value       & 0xFF; // Lower byte
+    block_data[offset%32]   = (value >> 8) & 0xFF; // Higher byte
+    block_data[offset%32+1] =  value       & 0xFF; // Lower byte
 
     // Write updated block data back
     for (int i = 0; i < sizeof(block_data); i++) {

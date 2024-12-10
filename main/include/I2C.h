@@ -22,14 +22,12 @@
 #define I2C_MASTER_TX_BUF_DISABLE 0    // I2C master doesn't need buffer
 #define I2C_MASTER_RX_BUF_DISABLE 0    // I2C master doesn't need buffer
 
-#define CONFIGURATION_DISCHARGE_SUBCLASS_ID 0x31
-#define FIRST_DATA_BLOCK                    0x00
-#define SECOND_DATA_BLOCK                   0x01
-#define THIRD_DATA_BLOCK                    0x02
-#define FOURTH_DATA_BLOCK                   0x03
+#define DISCHARGE_SUBCLASS_ID 49
+#define IT_CFG_SUBCLASS_ID    80
 
-#define BL_OFFSET 0x09
-#define BH_OFFSET 0x0E
+#define BL_OFFSET           9
+#define BH_OFFSET           14
+#define TERM_V_DELTA_OFFSET 69
 
 esp_err_t i2c_master_init(void);
 
@@ -39,8 +37,8 @@ esp_err_t read_data(uint8_t reg, uint8_t* data, size_t len);
 
 uint16_t read_2byte_data(uint8_t reg);
 
-void test_read(uint8_t subclass, uint8_t block, uint8_t offset);
+uint16_t test_read(uint8_t subclass, uint8_t offset);
 
 esp_err_t write_byte(uint8_t reg, uint8_t data);
 
-esp_err_t set_I2_value(uint8_t subclass, uint8_t block, uint8_t offset, int16_t value);
+esp_err_t set_I2_value(uint8_t subclass, uint8_t offset, int16_t value);
