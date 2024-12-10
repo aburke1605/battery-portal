@@ -29,6 +29,7 @@
 #define FOURTH_DATA_BLOCK                   0x03
 
 #define BL_OFFSET 0x09
+#define BH_OFFSET 0x0E
 
 esp_err_t i2c_master_init(void);
 
@@ -43,3 +44,5 @@ uint16_t read_BL();
 esp_err_t write_byte(uint8_t reg, uint8_t data);
 
 esp_err_t set_BL_voltage_threshold(int16_t BL);
+
+esp_err_t set_BH_voltage_threshold(int16_t BH);

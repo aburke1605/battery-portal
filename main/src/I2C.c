@@ -168,3 +168,46 @@ esp_err_t set_BL_voltage_threshold(int16_t BL) {
     ESP_LOGI("I2C", "BL voltage threshold successfully set to %d mV", BL);
     return ESP_OK;
 }
+
+esp_err_t set_BH_voltage_threshold(int16_t BH) {
+    esp_err_t ret;
+
+    ret = write_byte(DATA_FLASH_CLASS, CONFIGURATION_DISCHARGE_SUBCLASS_ID);
+    ret = write_byte(DATA_FLASH_BLOCK, FIRST_DATA_BLOCK);
+
+    // Read current block data
+    uint8_t block_data[32] = {0};
+    ret = read_data(BLOCK_DATA_START, block_data, sizeof(block_data));
+    if (ret != ESP_OK) {
+        ESP_LOGE("I2C", "Failed to read Block Data.");
+        return ret;
+    }
+
+    // Modify the Undertemperature Charge value
+    block_data[BH_OFFSET]   = (BH >> 8) & 0xFF; // Higher byte
+    block_data[BH_OFFSET+1] =  BH       & 0xFF; // Lower byte
+
+    // Write updated block data back
+    for (int i = 0; i < sizeof(block_data); i++) {
+        ret = write_byte(BLOCK_DATA_START + i, block_data[i]);
+        if (ret != ESP_OK) {
+            ESP_LOGE("I2C", "Failed to write Block Data at index %d.", i);
+            return ret;
+        }
+    }
+
+    // Write new checksum
+    uint8_t checksum = 0;
+    for (int i = 0; i < sizeof(block_data); i++) {
+        checksum += block_data[i];
+    }
+    checksum = 0xFF - checksum;
+    ret = write_byte(BLOCK_DATA_CHECKSUM, checksum);
+    if (ret != ESP_OK) {
+        ESP_LOGE("I2C", "Failed to write Block Data Checksum.");
+        return ret;
+    }
+
+    ESP_LOGI("I2C", "BH voltage threshold successfully set to %d mV", BH);
+    return ESP_OK;
+}
