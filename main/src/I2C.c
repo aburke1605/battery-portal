@@ -1,4 +1,5 @@
 #include "include/I2C.h"
+#include "include/utils.h"
 
 esp_err_t i2c_master_init(void) {
     i2c_config_t conf = {
@@ -36,37 +37,142 @@ void device_scan(void) {
     if (n_devices == 0) ESP_LOGW("I2C", "No devices found.");
 }
 
-uint16_t read_2byte_data(int REG_ADDR) {
-    uint8_t data[2] = {0}; // 2 bytes
-
-    // Send command to request the state of charge register
+esp_err_t read_data(uint8_t reg, uint8_t* data, size_t len) {
+    if (!data || len == 0) {
+        ESP_LOGE("I2C", "Invalid data buffer or length.");
+        return ESP_ERR_INVALID_ARG;
+        // TODO: error check the rest of this function
+    }
     i2c_cmd_handle_t cmd = i2c_cmd_link_create();
-    i2c_master_start(cmd);
-    i2c_master_write_byte(cmd, (I2C_ADDR << 1) | I2C_MASTER_WRITE, true);
-    i2c_master_write_byte(cmd, REG_ADDR, true);
-    i2c_master_stop(cmd);
+    esp_err_t ret;
 
-    esp_err_t err = i2c_master_cmd_begin(I2C_MASTER_NUM, cmd, pdMS_TO_TICKS(I2C_MASTER_TIMEOUT_MS));
+    // first specify the register to read
+    ret = i2c_master_start(cmd);
+    ret = i2c_master_write_byte(cmd, (I2C_ADDR << 1) | I2C_MASTER_WRITE, true);
+    ret = i2c_master_write_byte(cmd, reg, true);
+
+    // do the reading
+    ret = i2c_master_start(cmd);
+    ret = i2c_master_write_byte(cmd, (I2C_ADDR << 1) | I2C_MASTER_READ, true);
+    ret = i2c_master_read(cmd, data, len, I2C_MASTER_LAST_NACK);
+
+    // clean up
+    ret = i2c_master_stop(cmd);
+    ret = i2c_master_cmd_begin(I2C_MASTER_NUM, cmd, pdMS_TO_TICKS(I2C_MASTER_TIMEOUT_MS));
     i2c_cmd_link_delete(cmd);
-    if (err != ESP_OK) {
-        ESP_LOGE("I2C", "Error in I2C transmission: %s", esp_err_to_name(err));
-        return 0;
-    }
 
-    // Request 2 bytes from the device
-    cmd = i2c_cmd_link_create();
-    i2c_master_start(cmd);
-    i2c_master_write_byte(cmd, (I2C_ADDR << 1) | I2C_MASTER_READ, true);
-    i2c_master_read(cmd, data, 2, I2C_MASTER_LAST_NACK);
-    i2c_master_stop(cmd);
-
-    err = i2c_master_cmd_begin(I2C_MASTER_NUM, cmd, pdMS_TO_TICKS(I2C_MASTER_TIMEOUT_MS));
-    i2c_cmd_link_delete(cmd);
-    if (err != ESP_OK) {
-        ESP_LOGE("I2C", "Error in I2C read: %s", esp_err_to_name(err));
-        return 0;
-    }
-
-    uint16_t ret = (data[1] << 8) | data[0];
     return ret;
+}
+
+uint16_t read_2byte_data(uint8_t reg) {
+    esp_err_t ret;
+
+    uint8_t data[2] = {0};
+    ret = read_data(reg, data, sizeof(data));
+
+    // is big-endian
+    return (data[1] << 8) | data[0];
+}
+
+uint16_t test_read(uint8_t subclass, uint8_t offset) {
+    esp_err_t ret;
+
+    uint8_t block = get_block(offset);
+
+    // specify the location in memory
+    ret = write_byte(DATA_FLASH_CLASS, subclass);
+    ret = write_byte(DATA_FLASH_BLOCK, block);
+
+    uint8_t data[2] = {0}; // 2 bytes
+    ret = read_data(BLOCK_DATA_START + offset%32, data, sizeof(data));
+
+    // is little-endian
+    uint16_t val = (data[0] << 8) | data[1];
+    ESP_LOGI("I2C", "Value at offset: %d, block: %d, local offset: 0x%02X + 0x%02X = 0x%04X (%d)\n", offset, block, BLOCK_DATA_START, offset%32, val, val);
+
+    return val;
+}
+
+esp_err_t write_byte(uint8_t reg, uint8_t data) {
+    i2c_cmd_handle_t cmd = i2c_cmd_link_create();
+    if (!cmd) {
+        ESP_LOGE("I2C", "Failed to create I2C command link.");
+        return ESP_FAIL;
+    }
+
+    esp_err_t ret = i2c_master_start(cmd);
+    if (ret != ESP_OK) {
+        ESP_LOGE("I2C", "Failed to start I2C command: %s", esp_err_to_name(ret));
+        i2c_cmd_link_delete(cmd);
+        return ret;
+    }
+
+    ret |= i2c_master_write_byte(cmd, (I2C_ADDR << 1) | I2C_MASTER_WRITE, true);
+    ret |= i2c_master_write_byte(cmd, reg, true);
+    ret |= i2c_master_write_byte(cmd, data, true);
+    ret |= i2c_master_stop(cmd);
+    if (ret != ESP_OK) {
+        ESP_LOGE("I2C", "Failed to build I2C write command: %s", esp_err_to_name(ret));
+        i2c_cmd_link_delete(cmd);
+        return ret;
+    }
+
+    ret = i2c_master_cmd_begin(I2C_MASTER_NUM, cmd, pdMS_TO_TICKS(I2C_MASTER_TIMEOUT_MS));
+    i2c_cmd_link_delete(cmd);
+
+    if (ret != ESP_OK) {
+        ESP_LOGE("I2C", "Failed to execute I2C write command: %s", esp_err_to_name(ret));
+    }
+
+    return ret;
+}
+
+esp_err_t set_I2_value(uint8_t subclass, uint8_t offset, int16_t value) {
+    esp_err_t ret;
+
+    uint8_t block = get_block(offset);
+
+    ret = write_byte(DATA_FLASH_CLASS, subclass);
+    ret = write_byte(DATA_FLASH_BLOCK, block);
+
+    // read current block data
+    uint8_t block_data[32] = {0};
+    ret = read_data(BLOCK_DATA_START, block_data, sizeof(block_data));
+    if (ret != ESP_OK) {
+        ESP_LOGE("I2C", "Failed to read Block Data.");
+        return ret;
+    }
+
+    // modify the value
+    block_data[offset%32]   = (value >> 8) & 0xFF; // Higher byte
+    block_data[offset%32+1] =  value       & 0xFF; // Lower byte
+
+    // Write updated block data back
+    for (int i = 0; i < sizeof(block_data); i++) {
+        ret = write_byte(BLOCK_DATA_START + i, block_data[i]);
+        if (ret != ESP_OK) {
+            ESP_LOGE("I2C", "Failed to write Block Data at index %d.", i);
+            return ret;
+        }
+    }
+
+    // Calculate new checksum
+    uint8_t checksum = 0;
+    for (int i = 0; i < sizeof(block_data); i++) {
+        checksum += block_data[i];
+    }
+    checksum = 0xFF - checksum;
+
+    // Write new checksum
+    ret = write_byte(BLOCK_DATA_CHECKSUM, checksum);
+    if (ret != ESP_OK) {
+        ESP_LOGE("I2C", "Failed to write Block Data Checksum.");
+        return ret;
+    }
+
+    ESP_LOGI("I2C", "Value successfully set to %d", value);
+
+    vTaskDelay(pdMS_TO_TICKS(1000));
+
+    return ESP_OK;
 }
