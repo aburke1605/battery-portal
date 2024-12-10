@@ -23,11 +23,11 @@
 #define I2C_MASTER_RX_BUF_DISABLE 0    // I2C master doesn't need buffer
 
 #define DISCHARGE_SUBCLASS_ID 49
-#define IT_CFG_SUBCLASS_ID    80
+#define BL_OFFSET               9
+#define BH_OFFSET               14
 
-#define BL_OFFSET           9
-#define BH_OFFSET           14
-#define TERM_V_DELTA_OFFSET 69
+#define IT_CFG_SUBCLASS_ID  80
+#define TERM_V_DELTA_OFFSET   69
 
 esp_err_t i2c_master_init(void);
 
