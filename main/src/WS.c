@@ -204,6 +204,8 @@ esp_err_t validate_connect_handler(httpd_req_t *req) {
     httpd_resp_set_status(req, "302 Found");
     httpd_resp_set_hdr(req, "Location", "/display"); // redirect back to /display
     httpd_resp_send(req, NULL, 0); // no response body
+
+    return ESP_OK;
 }
 
 esp_err_t nearby_handler(httpd_req_t *req) {
@@ -447,18 +449,37 @@ void websocket_broadcast_task(void *pvParameters) {
         cJSON_AddNumberToObject(json, "current", fCurrent);
         cJSON_AddNumberToObject(json, "temperature", fTemperature);
 
-        uint16_t iBL = test_read(DISCHARGE_SUBCLASS_ID, BL_OFFSET);
-        uint16_t iBH = test_read(DISCHARGE_SUBCLASS_ID, BH_OFFSET);
-        uint16_t iCCT = test_read(CURRENT_THRESHOLDS_SUBCLASS_ID, CHG_CURRENT_THRESHOLD_OFFSET);
-        uint16_t iDCT = test_read(CURRENT_THRESHOLDS_SUBCLASS_ID, DSG_CURRENT_THRESHOLD_OFFSET);
-        uint16_t iCITL = test_read(CHARGE_INHIBIT_CFG_SUBCLASS_ID, CHG_INHIBIT_TEMP_LOW_OFFSET);
-        uint16_t iCITH = test_read(CHARGE_INHIBIT_CFG_SUBCLASS_ID, CHG_INHIBIT_TEMP_HIGH_OFFSET);
-        cJSON_AddNumberToObject(json, "BL", iBL);
-        cJSON_AddNumberToObject(json, "BH", iBH);
-        cJSON_AddNumberToObject(json, "CCT", iCCT);
-        cJSON_AddNumberToObject(json, "DCT", iDCT);
-        cJSON_AddNumberToObject(json, "CITL", iCITL);
-        cJSON_AddNumberToObject(json, "CITH", iCITH);
+        // TODO:
+        //
+        //
+        //
+        //
+
+
+
+        // SOMETHING WRONG IN LINES BELOW
+
+
+
+        //
+        //
+        //
+        //
+        //
+        //
+
+        // uint16_t iBL = test_read(DISCHARGE_SUBCLASS_ID, BL_OFFSET);
+        // uint16_t iBH = test_read(DISCHARGE_SUBCLASS_ID, BH_OFFSET);
+        // uint16_t iCCT = test_read(CURRENT_THRESHOLDS_SUBCLASS_ID, CHG_CURRENT_THRESHOLD_OFFSET);
+        // uint16_t iDCT = test_read(CURRENT_THRESHOLDS_SUBCLASS_ID, DSG_CURRENT_THRESHOLD_OFFSET);
+        // uint16_t iCITL = test_read(CHARGE_INHIBIT_CFG_SUBCLASS_ID, CHG_INHIBIT_TEMP_LOW_OFFSET);
+        // uint16_t iCITH = test_read(CHARGE_INHIBIT_CFG_SUBCLASS_ID, CHG_INHIBIT_TEMP_HIGH_OFFSET);
+        // cJSON_AddNumberToObject(json, "BL", iBL);
+        // cJSON_AddNumberToObject(json, "BH", iBH);
+        // cJSON_AddNumberToObject(json, "CCT", iCCT);
+        // cJSON_AddNumberToObject(json, "DCT", iDCT);
+        // cJSON_AddNumberToObject(json, "CITL", iCITL);
+        // cJSON_AddNumberToObject(json, "CITH", iCITH);
 
         // Add received data if available
         if (xSemaphoreTake(data_mutex, portMAX_DELAY)) {
