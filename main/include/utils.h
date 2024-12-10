@@ -4,3 +4,5 @@
 esp_err_t get_POST_data(httpd_req_t *req, char* content, size_t content_size);
 
 void url_decode(char *dest, const char *src);
+
+uint8_t get_block(uint8_t offset);

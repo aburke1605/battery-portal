@@ -6,6 +6,7 @@
 
 #include "html/login_page.h"
 #include "html/display_page.h"
+#include "html/change_page.h"
 #include "html/connect_page.h"
 #include "html/nearby_page.h"
 #include "html/about_page.h"
@@ -82,6 +83,81 @@ esp_err_t websocket_handler(httpd_req_t *req) {
     return ESP_FAIL;
 }
 
+esp_err_t change_handler(httpd_req_t *req) {
+    httpd_resp_set_type(req, "text/html");
+    httpd_resp_send(req, change_html, HTTPD_RESP_USE_STRLEN);
+    return ESP_OK;
+}
+
+esp_err_t validate_change_handler(httpd_req_t *req) {
+    char content[500];
+    esp_err_t err = get_POST_data(req, content, sizeof(content));
+
+    // Check if each parameter exists and parse it
+    char *BL_start = strstr(content, "BL_voltage_threshold=");
+    char *BH_start = strstr(content, "BH_voltage_threshold=");
+    char *CCT_start = strstr(content, "charge_current_threshold=");
+    char *DCT_start = strstr(content, "discharge_current_threshold=");
+    char *CITL_start = strstr(content, "chg_inhibit_temp_low=");
+    char *CITH_start = strstr(content, "chg_inhibit_temp_high=");
+
+    if (BL_start) {
+        char BL_voltage_threshold[50] = {0};
+        sscanf(BL_start, "BL_voltage_threshold=%49[^&]", BL_voltage_threshold);
+        if (BL_voltage_threshold[0] != '\0') {
+            ESP_LOGI("I2C", "Changing BL voltage...\n");
+            set_I2_value(DISCHARGE_SUBCLASS_ID, BL_OFFSET, atoi(BL_voltage_threshold));
+        }
+    }
+
+    if (BH_start) {
+        char BH_voltage_threshold[50] = {0};
+        sscanf(BH_start, "BH_voltage_threshold=%49[^&]", BH_voltage_threshold);
+        if (BH_voltage_threshold[0] != '\0') {
+            ESP_LOGI("I2C", "Changing BH voltage...\n");
+            set_I2_value(DISCHARGE_SUBCLASS_ID, BH_OFFSET, atoi(BH_voltage_threshold));
+        }
+    }
+
+    if (CCT_start) {
+        char charge_current_threshold[50] = {0};
+        sscanf(CCT_start, "charge_current_threshold=%49[^&]", charge_current_threshold);
+        if (charge_current_threshold[0] != '\0') {
+            ESP_LOGI("I2C", "Changing charge current threshold...\n");
+            set_I2_value(CURRENT_THRESHOLDS_SUBCLASS_ID, CHG_CURRENT_THRESHOLD_OFFSET, atoi(charge_current_threshold));
+        }
+    }
+
+    if (DCT_start) {
+        char discharge_current_threshold[50] = {0};
+        sscanf(DCT_start, "discharge_current_threshold=%49[^&]", discharge_current_threshold);
+        if (discharge_current_threshold[0] != '\0') {
+            ESP_LOGI("I2C", "Changing discharge current threshold...\n");
+            set_I2_value(CURRENT_THRESHOLDS_SUBCLASS_ID, DSG_CURRENT_THRESHOLD_OFFSET, atoi(discharge_current_threshold));
+        }
+    }
+
+    if (CITL_start) {
+        char chg_inhibit_temp_low[50] = {0};
+        sscanf(CITL_start, "chg_inhibit_temp_low=%49[^&]", chg_inhibit_temp_low);
+        if (chg_inhibit_temp_low[0] != '\0') {
+            ESP_LOGI("I2C", "Changing charge inhibit low temperature threshold...\n");
+            set_I2_value(CHARGE_INHIBIT_CFG_SUBCLASS_ID, CHG_INHIBIT_TEMP_LOW_OFFSET, atoi(chg_inhibit_temp_low));
+        }
+    }
+
+    if (CITH_start) {
+        char chg_inhibit_temp_high[50] = {0};
+        sscanf(CITH_start, "chg_inhibit_temp_high=%49s", chg_inhibit_temp_high);
+        if (chg_inhibit_temp_high[0] != '\0') {
+            ESP_LOGI("I2C", "Changing charge inhibit high temperature threshold...\n");
+            set_I2_value(CHARGE_INHIBIT_CFG_SUBCLASS_ID, CHG_INHIBIT_TEMP_HIGH_OFFSET, atoi(chg_inhibit_temp_high));
+        }
+    }
+
+    return ESP_OK;
+}
+
 esp_err_t connect_handler(httpd_req_t *req) {
     httpd_resp_set_type(req, "text/html");
     httpd_resp_send(req, connect_html, HTTPD_RESP_USE_STRLEN);
@@ -128,8 +204,6 @@ esp_err_t validate_connect_handler(httpd_req_t *req) {
     httpd_resp_set_status(req, "302 Found");
     httpd_resp_set_hdr(req, "Location", "/display"); // redirect back to /display
     httpd_resp_send(req, NULL, 0); // no response body
-
-    return ESP_OK;
 }
 
 esp_err_t nearby_handler(httpd_req_t *req) {
@@ -259,6 +333,22 @@ httpd_handle_t start_webserver(void) {
             .is_websocket = true
         };
         httpd_register_uri_handler(server, &ws_uri);
+        
+        httpd_uri_t change_uri = {
+            .uri       = "/change",
+            .method    = HTTP_GET,
+            .handler   = change_handler,
+            .user_ctx  = NULL
+        };
+        httpd_register_uri_handler(server, &change_uri);
+
+        httpd_uri_t validate_change_uri = {
+            .uri       = "/validate_change",
+            .method    = HTTP_POST,
+            .handler   = validate_change_handler,
+            .user_ctx  = NULL
+        };
+        httpd_register_uri_handler(server, &validate_change_uri);
 
         // Connect page
         httpd_uri_t connect_uri = {
@@ -356,6 +446,19 @@ void websocket_broadcast_task(void *pvParameters) {
         cJSON_AddNumberToObject(json, "voltage", fVoltage);
         cJSON_AddNumberToObject(json, "current", fCurrent);
         cJSON_AddNumberToObject(json, "temperature", fTemperature);
+
+        uint16_t iBL = test_read(DISCHARGE_SUBCLASS_ID, BL_OFFSET);
+        uint16_t iBH = test_read(DISCHARGE_SUBCLASS_ID, BH_OFFSET);
+        uint16_t iCCT = test_read(CURRENT_THRESHOLDS_SUBCLASS_ID, CHG_CURRENT_THRESHOLD_OFFSET);
+        uint16_t iDCT = test_read(CURRENT_THRESHOLDS_SUBCLASS_ID, DSG_CURRENT_THRESHOLD_OFFSET);
+        uint16_t iCITL = test_read(CHARGE_INHIBIT_CFG_SUBCLASS_ID, CHG_INHIBIT_TEMP_LOW_OFFSET);
+        uint16_t iCITH = test_read(CHARGE_INHIBIT_CFG_SUBCLASS_ID, CHG_INHIBIT_TEMP_HIGH_OFFSET);
+        cJSON_AddNumberToObject(json, "BL", iBL);
+        cJSON_AddNumberToObject(json, "BH", iBH);
+        cJSON_AddNumberToObject(json, "CCT", iCCT);
+        cJSON_AddNumberToObject(json, "DCT", iDCT);
+        cJSON_AddNumberToObject(json, "CITL", iCITL);
+        cJSON_AddNumberToObject(json, "CITH", iCITH);
 
         // Add received data if available
         if (xSemaphoreTake(data_mutex, portMAX_DELAY)) {
