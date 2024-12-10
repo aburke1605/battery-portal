@@ -59,7 +59,9 @@ button {
         <div class='container'>
           <form action='/validate_change' method='post'>
             <label>New BL voltage threshold (mV): </label>
-            <input type='text' placeholder='Enter BL voltage threshold' name='BL_voltage_threshold' required>
+            <input type='text' placeholder='Enter BL voltage threshold' name='BL_voltage_threshold'>
+            <label>New BH voltage threshold (mV): </label>
+            <input type='text' placeholder='Enter BH voltage threshold' name='BH_voltage_threshold'>
             <button type='submit'>Submit</button>
           </form>
         </div>
