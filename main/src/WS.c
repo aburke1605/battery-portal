@@ -88,12 +88,18 @@ esp_err_t validate_change_handler(httpd_req_t *req) {
 
     if (BL_start) {
         sscanf(BL_start, "BL_voltage_threshold=%49[^&]", BL_voltage_threshold);
-        if (BL_voltage_threshold[0] != '\0') set_BL_voltage_threshold(atoi(BL_voltage_threshold));
+        if (BL_voltage_threshold[0] != '\0') {
+            ESP_LOGI("I2C", "Changing BL voltage...\n");
+            set_I2_value(CONFIGURATION_DISCHARGE_SUBCLASS_ID, FIRST_DATA_BLOCK, BL_OFFSET, atoi(BL_voltage_threshold));
+        }
     }
 
     if (BH_start) {
         sscanf(BH_start, "BH_voltage_threshold=%49s", BH_voltage_threshold);
-        if (BH_voltage_threshold[0] != '\0') set_BH_voltage_threshold(atoi(BH_voltage_threshold));
+        if (BH_voltage_threshold[0] != '\0') {
+            ESP_LOGI("I2C", "Changing BH voltage...\n");
+            set_I2_value(CONFIGURATION_DISCHARGE_SUBCLASS_ID, FIRST_DATA_BLOCK, BH_OFFSET, atoi(BH_voltage_threshold));
+        }
     }
 
     return ESP_OK;

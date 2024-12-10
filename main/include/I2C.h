@@ -43,6 +43,4 @@ void test_read(uint8_t subclass, uint8_t block, uint8_t offset);
 
 esp_err_t write_byte(uint8_t reg, uint8_t data);
 
-esp_err_t set_BL_voltage_threshold(int16_t BL);
-
-esp_err_t set_BH_voltage_threshold(int16_t BH);
+esp_err_t set_I2_value(uint8_t subclass, uint8_t block, uint8_t offset, int16_t value);
