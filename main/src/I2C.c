@@ -139,8 +139,8 @@ esp_err_t set_BL_voltage_threshold(int16_t BL) {
     }
 
     // Modify the Undertemperature Charge value
-    block_data[BL_OFFSET]   = (BL >> 8) & 0xFF; // Higher byte (0x0D)
-    block_data[BL_OFFSET+1] =  BL       & 0xFF; // Lower byte (0xAC)
+    block_data[BL_OFFSET]   = (BL >> 8) & 0xFF; // Higher byte
+    block_data[BL_OFFSET+1] =  BL       & 0xFF; // Lower byte
 
     // Write updated block data back
     for (int i = 0; i < sizeof(block_data); i++) {
