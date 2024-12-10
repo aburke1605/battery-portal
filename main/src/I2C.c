@@ -73,18 +73,19 @@ uint16_t read_2byte_data(uint8_t reg) {
     return (data[1] << 8) | data[0];
 }
 
-uint16_t read_BL() {
+void test_read(uint8_t subclass, uint8_t block, uint8_t offset) {
     esp_err_t ret;
 
     // specify the location in memory
-    ret = write_byte(DATA_FLASH_CLASS, CONFIGURATION_DISCHARGE_SUBCLASS_ID);
-    ret = write_byte(DATA_FLASH_BLOCK, FIRST_DATA_BLOCK);
+    ret = write_byte(DATA_FLASH_CLASS, subclass);
+    ret = write_byte(DATA_FLASH_BLOCK, block);
 
     uint8_t data[2] = {0}; // 2 bytes
-    ret = read_data(BLOCK_DATA_START + BL_OFFSET, data, sizeof(data));
+    ret = read_data(BLOCK_DATA_START + offset, data, sizeof(data));
 
     // is little-endian
-    return (data[0] << 8) | data[1];
+    uint16_t val = (data[0] << 8) | data[1];
+    printf("\nvalue at %02X+%02X = 0x%04X (%d mV)\n", BLOCK_DATA_START, offset, val, val);
 }
 
 esp_err_t write_byte(uint8_t reg, uint8_t data) {
@@ -124,11 +125,10 @@ esp_err_t write_byte(uint8_t reg, uint8_t data) {
 esp_err_t set_BL_voltage_threshold(int16_t BL) {
     esp_err_t ret;
 
+    test_read(CONFIGURATION_DISCHARGE_SUBCLASS_ID, FIRST_DATA_BLOCK, BL_OFFSET);
+
     ret = write_byte(DATA_FLASH_CLASS, CONFIGURATION_DISCHARGE_SUBCLASS_ID);
     ret = write_byte(DATA_FLASH_BLOCK, FIRST_DATA_BLOCK);
-
-    // uint16_t value = read_BL();
-    // printf("\nvalue at %02X+%02X = 0x%04X (%d mV)\n", BLOCK_DATA_START, BL_OFFSET, value, value);
 
     // Read current block data
     uint8_t block_data[32] = {0};
