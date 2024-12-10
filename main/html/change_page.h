@@ -66,6 +66,10 @@ button {
             <input type='text' placeholder='Enter value (mA)' name='charge_current_threshold'>
             <label>Update discharge current threshold (currently <span id='DCT'></span> mA): </label>
             <input type='text' placeholder='Enter value (mA)' name='discharge_current_threshold'>
+            <label>Update charge minimum temperature (currently <span id='CITL'></span> 0.1degC): </label>
+            <input type='text' placeholder='Enter value (0.1degC)' name='chg_inhibit_temp_low'>
+            <label>Update charge maximum temperature (currently <span id='CITH'></span> 0.1degC): </label>
+            <input type='text' placeholder='Enter value (0.1degC)' name='chg_inhibit_temp_high'>
             <button type='submit'>Submit</button>
           </form>
         </div>
@@ -82,6 +86,8 @@ button {
             document.getElementById('BH').innerHTML = data.BH;
             document.getElementById('CCT').innerHTML = data.CCT;
             document.getElementById('DCT').innerHTML = data.DCT;
+            document.getElementById('CITL').innerHTML = data.CITL;
+            document.getElementById('CITH').innerHTML = data.CITH;
         } catch (error) {
             console.error('Error parsing JSON:', error);
         }

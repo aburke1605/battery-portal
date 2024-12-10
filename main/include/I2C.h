@@ -22,6 +22,10 @@
 #define I2C_MASTER_TX_BUF_DISABLE 0    // I2C master doesn't need buffer
 #define I2C_MASTER_RX_BUF_DISABLE 0    // I2C master doesn't need buffer
 
+#define CHARGE_INHIBIT_CFG_SUBCLASS_ID 32
+#define CHG_INHIBIT_TEMP_LOW_OFFSET      0
+#define CHG_INHIBIT_TEMP_HIGH_OFFSET     2
+
 #define DISCHARGE_SUBCLASS_ID 49
 #define BL_OFFSET                9
 #define BH_OFFSET               14
