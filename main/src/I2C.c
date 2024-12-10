@@ -168,5 +168,8 @@ esp_err_t set_I2_value(uint8_t subclass, uint8_t offset, int16_t value) {
     }
 
     ESP_LOGI("I2C", "Value successfully set to %d", value);
+
+    vTaskDelay(pdMS_TO_TICKS(1000));
+
     return ESP_OK;
 }
