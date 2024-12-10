@@ -62,6 +62,10 @@ button {
             <input type='text' placeholder='Enter value (mV)' name='BL_voltage_threshold'>
             <label>Update BH voltage threshold (currently <span id='BH'></span> mV): </label>
             <input type='text' placeholder='Enter value (mV)' name='BH_voltage_threshold'>
+            <label>Update charge current threshold (currently <span id='CCT'></span> mA): </label>
+            <input type='text' placeholder='Enter value (mA)' name='charge_current_threshold'>
+            <label>Update discharge current threshold (currently <span id='DCT'></span> mA): </label>
+            <input type='text' placeholder='Enter value (mA)' name='discharge_current_threshold'>
             <button type='submit'>Submit</button>
           </form>
         </div>
@@ -76,6 +80,8 @@ button {
             let data = JSON.parse(event.data);
             document.getElementById('BL').innerHTML = data.BL;
             document.getElementById('BH').innerHTML = data.BH;
+            document.getElementById('CCT').innerHTML = data.CCT;
+            document.getElementById('DCT').innerHTML = data.DCT;
         } catch (error) {
             console.error('Error parsing JSON:', error);
         }
