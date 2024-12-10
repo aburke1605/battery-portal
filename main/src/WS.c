@@ -305,6 +305,11 @@ void websocket_broadcast_task(void *pvParameters) {
         cJSON_AddNumberToObject(json, "current", fCurrent);
         cJSON_AddNumberToObject(json, "temperature", fTemperature);
 
+        uint16_t iBL = test_read(DISCHARGE_SUBCLASS_ID, BL_OFFSET);
+        uint16_t iBH = test_read(DISCHARGE_SUBCLASS_ID, BH_OFFSET);
+        cJSON_AddNumberToObject(json, "BL", iBL);
+        cJSON_AddNumberToObject(json, "BH", iBH);
+
         char *json_string = cJSON_PrintUnformatted(json);
         cJSON_Delete(json);
 

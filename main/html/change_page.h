@@ -58,13 +58,35 @@ button {
 
         <div class='container'>
           <form action='/validate_change' method='post'>
-            <label>New BL voltage threshold (mV): </label>
-            <input type='text' placeholder='Enter BL voltage threshold' name='BL_voltage_threshold'>
-            <label>New BH voltage threshold (mV): </label>
-            <input type='text' placeholder='Enter BH voltage threshold' name='BH_voltage_threshold'>
+            <label>Update BL voltage threshold (currently <span id='BL'></span> mV): </label>
+            <input type='text' placeholder='Enter value (mV)' name='BL_voltage_threshold'>
+            <label>Update BH voltage threshold (currently <span id='BH'></span> mV): </label>
+            <input type='text' placeholder='Enter value (mV)' name='BH_voltage_threshold'>
             <button type='submit'>Submit</button>
           </form>
         </div>
+
+  <script>
+    let socket = new WebSocket('ws://' + location.host + '/ws');
+    socket.onopen = function() {
+        console.log('WebSocket connection established');
+    };
+    socket.onmessage = function(event) {
+        try {
+            let data = JSON.parse(event.data);
+            document.getElementById('BL').innerHTML = data.BL;
+            document.getElementById('BH').innerHTML = data.BH;
+        } catch (error) {
+            console.error('Error parsing JSON:', error);
+        }
+    };
+    socket.onerror = function(error) {
+        console.error('WebSocket error:', error);
+    };
+    socket.onclose = function() {
+        console.log('WebSocket connection closed');
+    };
+  </script>
 </body>
 </html>
 )rawliteral";
