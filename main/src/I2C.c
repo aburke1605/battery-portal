@@ -1,6 +1,5 @@
-#include <math.h>
-
 #include "include/I2C.h"
+#include "include/utils.h"
 
 esp_err_t i2c_master_init(void) {
     i2c_config_t conf = {
@@ -78,16 +77,18 @@ uint16_t read_2byte_data(uint8_t reg) {
 uint16_t test_read(uint8_t subclass, uint8_t offset) {
     esp_err_t ret;
 
+    uint8_t block = get_block(offset);
+
     // specify the location in memory
     ret = write_byte(DATA_FLASH_CLASS, subclass);
-    ret = write_byte(DATA_FLASH_BLOCK, (uint8_t)ceil((float)offset/32.)-1);
+    ret = write_byte(DATA_FLASH_BLOCK, block);
 
     uint8_t data[2] = {0}; // 2 bytes
     ret = read_data(BLOCK_DATA_START + offset%32, data, sizeof(data));
 
     // is little-endian
     uint16_t val = (data[0] << 8) | data[1];
-    ESP_LOGI("I2C", "Value at 0x%02X + 0x%02X = 0x%04X (%d mV)\n", BLOCK_DATA_START, offset%32, val, val);
+    ESP_LOGI("I2C", "Value at offset: %d, block: %d, local offset: 0x%02X + 0x%02X = 0x%04X (%d)\n", offset, block, BLOCK_DATA_START, offset%32, val, val);
 
     return val;
 }
@@ -129,8 +130,10 @@ esp_err_t write_byte(uint8_t reg, uint8_t data) {
 esp_err_t set_I2_value(uint8_t subclass, uint8_t offset, int16_t value) {
     esp_err_t ret;
 
+    uint8_t block = get_block(offset);
+
     ret = write_byte(DATA_FLASH_CLASS, subclass);
-    ret = write_byte(DATA_FLASH_BLOCK, (uint8_t)ceil((float)offset/32.)-1);
+    ret = write_byte(DATA_FLASH_BLOCK, block);
 
     // read current block data
     uint8_t block_data[32] = {0};
