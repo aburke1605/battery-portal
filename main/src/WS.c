@@ -4,10 +4,8 @@
 #include "include/I2C.h"
 #include "include/utils.h"
 
-#include "html/test_login_page.h"
-#include "html/test_display_page.h"
-// #include "html/login_page.h"
-// #include "html/display_page.h"
+#include "html/login_page.h"
+#include "html/display_page.h"
 #include "html/change_page.h"
 #include "html/connect_page.h"
 #include "html/nearby_page.h"
