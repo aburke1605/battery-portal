@@ -87,6 +87,11 @@ button {
         <form action='/change' method='get'>
           <button type='Submit'>Change battery properties</button>
         </form>
+        <form action='/connect' method='get'>
+          <button type='Submit'>Connect to WiFi access-point</button>
+        </form>
+        <form action='/nearby' method='get'>
+          <button type='Submit'>Nearby batteries</button>
         <form action='/about' method='get'>
           <button type='Submit'>About AceOn</button>
         </form>

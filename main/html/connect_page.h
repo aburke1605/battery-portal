@@ -1,0 +1,70 @@
+static const char connect_html[] = R"rawliteral(
+<!DOCTYPE HTML><html><head>
+  <!DOCTYPE HTML><html>
+
+<html>
+<head>
+<meta name='viewport' content='width=device-width, initial-scale=1'>
+<title> Login Page </title>
+<style>
+Body {
+  font-family: Calibri, Helvetica, sans-serif;
+  background-color: pink;
+}
+button {
+       background-color: #4CAF50;
+       width: 100%;
+        color: white;
+        padding: 15px;
+        margin: 10px 0px;
+        border: none;
+        cursor: pointer;
+         }
+ form {
+        border: 3px solid #f1f1f1;
+    }
+ input[type=text], input[type=password] {
+        width: 100%;
+        margin: 8px 0;
+        padding: 12px 20px;
+        display: inline-block;
+        border: 2px solid green;
+        box-sizing: border-box;
+    }
+ button:hover {
+        opacity: 0.7;
+    }
+  .cancelbtn {
+        width: auto;
+        padding: 10px 18px;
+        margin: 10px 5px;
+    }
+
+
+ .container {
+        padding: 25px;
+        background-color: lightblue;
+    }
+
+  img {
+    height: auto;
+    max-width: 100%;
+  }
+
+</style>
+</head>
+<body>
+    <center> <h1> WiFi connection </h1> </center>
+        <div class='container'>
+          <form action='/validate_connect' method='post'>
+            <label>SSID: </label>
+            <input type='text' placeholder='Enter SSID' name='ssid' required>
+            <label>Password: </label>
+            <input type='password' placeholder='Enter Password' name='password' required>
+            <button type='submit'>Submit</button>
+          </form>
+        </div>
+        <img src='/image/aceon.png'>
+</body>
+</html>
+)rawliteral";

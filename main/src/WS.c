@@ -1,9 +1,14 @@
+#include <esp_wifi.h>
+
 #include "include/WS.h"
 #include "include/I2C.h"
+#include "include/utils.h"
 
 #include "html/login_page.h"
 #include "html/display_page.h"
 #include "html/change_page.h"
+#include "html/connect_page.h"
+#include "html/nearby_page.h"
 #include "html/about_page.h"
 #include "html/device_page.h"
 
@@ -35,6 +40,32 @@ esp_err_t login_handler(httpd_req_t *req) {
     return ESP_OK;
 }
 
+esp_err_t validate_login_handler(httpd_req_t *req) {
+    char content[100];
+    esp_err_t err = get_POST_data(req, content, sizeof(content));
+
+    char username[50] = {0};
+    char password[50] = {0};
+    // a correct login gets POSTed as:
+    //    username=admin&password=1234
+    sscanf(content, "username=%49[^&]&password=%49s", username, password);
+    // %49:   read up to 49 characters (including the null terminator) to prevent buffer overflow
+    // [^&]:  a scan set that matches any character except &
+    // s:     reads a sequence of non-whitespace characters until a space, newline, or null terminator is encountered
+
+    if (strcmp(username, "admin") == 0 && strcmp(password, "1234") == 0) {
+        // credentials correct
+        httpd_resp_set_status(req, "302 Found");
+        httpd_resp_set_hdr(req, "Location", "/display"); // redirect to /display
+        httpd_resp_send(req, NULL, 0); // no response body
+    } else {
+        // credentials incorrect
+        const char *error_msg = "Invalid username or password.";
+        httpd_resp_send(req, error_msg, strlen(error_msg));
+    }
+    return ESP_OK;
+}
+
 esp_err_t display_handler(httpd_req_t *req) {
     httpd_resp_set_type(req, "text/html");
     httpd_resp_send(req, display_html, HTTPD_RESP_USE_STRLEN);
@@ -57,24 +88,7 @@ esp_err_t change_handler(httpd_req_t *req) {
     httpd_resp_send(req, change_html, HTTPD_RESP_USE_STRLEN);
     return ESP_OK;
 }
-// this can be removed later, is defined in another merge request
-esp_err_t get_POST_data(httpd_req_t *req, char* content, size_t content_size) {
-    int ret, content_len = req->content_len;
 
-    // ensure the content fits in the buffer
-    if (content_len >= content_size) {
-        return ESP_ERR_INVALID_SIZE;
-    }
-
-    // read the POST data
-    ret = httpd_req_recv(req, content, content_len);
-    if (ret <= 0) {
-        return ESP_FAIL;
-    }
-    content[ret] = '\0'; // null-terminate the string
-
-    return ESP_OK;
-}
 esp_err_t validate_change_handler(httpd_req_t *req) {
     char content[500];
     esp_err_t err = get_POST_data(req, content, sizeof(content));
@@ -144,6 +158,62 @@ esp_err_t validate_change_handler(httpd_req_t *req) {
     return ESP_OK;
 }
 
+esp_err_t connect_handler(httpd_req_t *req) {
+    httpd_resp_set_type(req, "text/html");
+    httpd_resp_send(req, connect_html, HTTPD_RESP_USE_STRLEN);
+    return ESP_OK;
+}
+
+esp_err_t validate_connect_handler(httpd_req_t *req) {
+    char content[100];
+    esp_err_t err = get_POST_data(req, content, sizeof(content));
+
+    char ssid_encoded[50] = {0};
+    char ssid[50] = {0};
+    char password_encoded[50] = {0};
+    char password[50] = {0};
+    sscanf(content, "ssid=%49[^&]&password=%49s", ssid_encoded, password_encoded);
+    url_decode(ssid, ssid_encoded);
+    url_decode(password, password_encoded);
+
+    wifi_config_t wifi_sta_config = {
+        .sta = {},
+    };
+    strncpy((char *)wifi_sta_config.sta.ssid, ssid, sizeof(wifi_sta_config.sta.ssid) - 1);
+    strncpy((char *)wifi_sta_config.sta.password, password, sizeof(wifi_sta_config.sta.password) - 1);
+    wifi_sta_config.sta.ssid[sizeof(wifi_sta_config.sta.ssid) - 1] = '\0';
+    wifi_sta_config.sta.password[sizeof(wifi_sta_config.sta.password) - 1] = '\0';
+
+    ESP_ERROR_CHECK(esp_wifi_set_config(ESP_IF_WIFI_STA, &wifi_sta_config));
+
+    ESP_LOGI("AP", "Connecting to AP... SSID: %s", wifi_sta_config.sta.ssid);
+
+    // Wait for connection
+    while (true) {
+        vTaskDelay(pdMS_TO_TICKS(3000)); // 3s delay between attempts
+        wifi_ap_record_t ap_info;
+        if (esp_wifi_sta_get_ap_info(&ap_info) == ESP_OK) {
+            ESP_LOGI("WS", "Connected to router. Signal strength: %d dBm", ap_info.rssi);
+            break;
+        } else {
+            ESP_LOGI("WS", "Not connected. Retrying...");
+            esp_wifi_connect();
+        }
+    }
+
+    httpd_resp_set_status(req, "302 Found");
+    httpd_resp_set_hdr(req, "Location", "/display"); // redirect back to /display
+    httpd_resp_send(req, NULL, 0); // no response body
+
+    return ESP_OK;
+}
+
+esp_err_t nearby_handler(httpd_req_t *req) {
+    httpd_resp_set_type(req, "text/html");
+    httpd_resp_send(req, nearby_html, HTTPD_RESP_USE_STRLEN);
+    return ESP_OK;
+}
+
 esp_err_t about_handler(httpd_req_t *req) {
     httpd_resp_set_type(req, "text/html");
     httpd_resp_send(req, about_html, HTTPD_RESP_USE_STRLEN);
@@ -208,7 +278,7 @@ httpd_handle_t start_webserver(void) {
 
     httpd_config_t config = HTTPD_DEFAULT_CONFIG();
     config.uri_match_fn = httpd_uri_match_wildcard;
-    config.max_uri_handlers = 16; // Increase this number as needed
+    config.max_uri_handlers = 32; // Increase this number as needed
 
     // Start the httpd server
     ESP_LOGI("WS", "Starting server on port: '%d'", config.server_port);
@@ -237,6 +307,15 @@ httpd_handle_t start_webserver(void) {
         login_uri.uri = "/redirect";
         httpd_register_uri_handler(server, &login_uri);
 
+        // Validate login
+        httpd_uri_t validate_login_uri = {
+            .uri       = "/validate_login",
+            .method    = HTTP_POST,
+            .handler   = validate_login_handler,
+            .user_ctx  = NULL
+        };
+        httpd_register_uri_handler(server, &validate_login_uri);
+
         // Display page
         httpd_uri_t display_uri = {
             .uri       = "/display",
@@ -256,7 +335,7 @@ httpd_handle_t start_webserver(void) {
             .is_websocket = true
         };
         httpd_register_uri_handler(server, &ws_uri);
-
+        
         httpd_uri_t change_uri = {
             .uri       = "/change",
             .method    = HTTP_GET,
@@ -272,6 +351,33 @@ httpd_handle_t start_webserver(void) {
             .user_ctx  = NULL
         };
         httpd_register_uri_handler(server, &validate_change_uri);
+
+        // Connect page
+        httpd_uri_t connect_uri = {
+            .uri       = "/connect",
+            .method    = HTTP_GET,
+            .handler   = connect_handler,
+            .user_ctx  = NULL
+        };
+        httpd_register_uri_handler(server, &connect_uri);
+
+        // Validate connect
+        httpd_uri_t validate_connect_uri = {
+            .uri       = "/validate_connect",
+            .method    = HTTP_POST,
+            .handler   = validate_connect_handler,
+            .user_ctx  = NULL
+        };
+        httpd_register_uri_handler(server, &validate_connect_uri);
+
+        // Nearby page
+        httpd_uri_t nearby_uri = {
+            .uri       = "/nearby",
+            .method    = HTTP_GET,
+            .handler   = nearby_handler,
+            .user_ctx  = NULL
+        };
+        httpd_register_uri_handler(server, &nearby_uri);
 
         // About page
         httpd_uri_t about_uri = {
@@ -324,9 +430,7 @@ httpd_handle_t start_webserver(void) {
 
 
 void websocket_broadcast_task(void *pvParameters) {
-
     while (true) {
-        // get the battery info
         uint16_t iCharge = read_2byte_data(STATE_OF_CHARGE_REG);
 
         uint16_t iVoltage = read_2byte_data(VOLTAGE_REG);
@@ -334,6 +438,7 @@ void websocket_broadcast_task(void *pvParameters) {
 
         uint16_t iCurrent = read_2byte_data(CURRENT_REG);
         float fCurrent = (float)iCurrent / 1000.0;
+        if (fCurrent<65.536 && fCurrent>32.767) fCurrent = 65.536 - fCurrent;
 
         uint16_t iTemperature = read_2byte_data(TEMPERATURE_REG);
         float fTemperature = (float)iTemperature / 10.0 - 273.15;
@@ -344,20 +449,74 @@ void websocket_broadcast_task(void *pvParameters) {
         cJSON_AddNumberToObject(json, "current", fCurrent);
         cJSON_AddNumberToObject(json, "temperature", fTemperature);
 
-        uint16_t iBL = test_read(DISCHARGE_SUBCLASS_ID, BL_OFFSET);
-        uint16_t iBH = test_read(DISCHARGE_SUBCLASS_ID, BH_OFFSET);
-        uint16_t iCCT = test_read(CURRENT_THRESHOLDS_SUBCLASS_ID, CHG_CURRENT_THRESHOLD_OFFSET);
-        uint16_t iDCT = test_read(CURRENT_THRESHOLDS_SUBCLASS_ID, DSG_CURRENT_THRESHOLD_OFFSET);
-        uint16_t iCITL = test_read(CHARGE_INHIBIT_CFG_SUBCLASS_ID, CHG_INHIBIT_TEMP_LOW_OFFSET);
-        uint16_t iCITH = test_read(CHARGE_INHIBIT_CFG_SUBCLASS_ID, CHG_INHIBIT_TEMP_HIGH_OFFSET);
-        cJSON_AddNumberToObject(json, "BL", iBL);
-        cJSON_AddNumberToObject(json, "BH", iBH);
-        cJSON_AddNumberToObject(json, "CCT", iCCT);
-        cJSON_AddNumberToObject(json, "DCT", iDCT);
-        cJSON_AddNumberToObject(json, "CITL", iCITL);
-        cJSON_AddNumberToObject(json, "CITH", iCITH);
+        // TODO:
+        //
+        //
+        //
+        //
+
+
+
+        // SOMETHING WRONG IN LINES BELOW
+
+
+
+        //
+        //
+        //
+        //
+        //
+        //
+
+        // uint16_t iBL = test_read(DISCHARGE_SUBCLASS_ID, BL_OFFSET);
+        // uint16_t iBH = test_read(DISCHARGE_SUBCLASS_ID, BH_OFFSET);
+        // uint16_t iCCT = test_read(CURRENT_THRESHOLDS_SUBCLASS_ID, CHG_CURRENT_THRESHOLD_OFFSET);
+        // uint16_t iDCT = test_read(CURRENT_THRESHOLDS_SUBCLASS_ID, DSG_CURRENT_THRESHOLD_OFFSET);
+        // uint16_t iCITL = test_read(CHARGE_INHIBIT_CFG_SUBCLASS_ID, CHG_INHIBIT_TEMP_LOW_OFFSET);
+        // uint16_t iCITH = test_read(CHARGE_INHIBIT_CFG_SUBCLASS_ID, CHG_INHIBIT_TEMP_HIGH_OFFSET);
+        // cJSON_AddNumberToObject(json, "BL", iBL);
+        // cJSON_AddNumberToObject(json, "BH", iBH);
+        // cJSON_AddNumberToObject(json, "CCT", iCCT);
+        // cJSON_AddNumberToObject(json, "DCT", iDCT);
+        // cJSON_AddNumberToObject(json, "CITL", iCITL);
+        // cJSON_AddNumberToObject(json, "CITH", iCITH);
+
+        // Add received data if available
+        if (xSemaphoreTake(data_mutex, portMAX_DELAY)) {
+            if (strlen(received_data) > 0) {
+                cJSON *received_json = cJSON_Parse(received_data);
+                if (received_json != NULL) {
+                    // TODO: is the below line actually enough,
+                    //       or do we need all of the lines below?
+                    // cJSON_AddItemToObject(json, "received_data", received_json);
+
+                    // Create a clean / empty object for "received_data"
+                    cJSON *received_data_clean = cJSON_CreateObject();
+                    // Iterate through all keys in the parsed JSON
+                    cJSON *item = received_json->child;
+                    while (item != NULL) {
+                        if (cJSON_IsNumber(item)) {
+                            cJSON_AddNumberToObject(received_data_clean, item->string, item->valuedouble);
+                        } else {
+                            ESP_LOGW("WS", "Support for reading %s from server is not implemented", item->string);
+                        }
+                        item = item->next;
+                    }
+                    cJSON_AddItemToObject(json, "received_data", received_data_clean);
+                    cJSON_Delete(received_json); // Clean up parsed JSON
+                } else {
+                    ESP_LOGE("WS", "Failed to parse received_data as JSON");
+                }
+            } else {
+                cJSON_AddStringToObject(json, "received_data", "No data");
+            }
+            xSemaphoreGive(data_mutex);
+        } else {
+            ESP_LOGE("WS", "Failed to take mutex for broadcast data");
+        }
 
         char *json_string = cJSON_PrintUnformatted(json);
+        ESP_LOGI("WS", "Sending WebSocket data: %.*s", strlen(json_string), (char *)json_string);
         cJSON_Delete(json);
 
         if (json_string != NULL) {
@@ -400,4 +559,74 @@ void websocket_broadcast_task(void *pvParameters) {
 
         vTaskDelay(pdMS_TO_TICKS(1000));  // Update every second
     }
+}
+
+void websocket_event_handler(void *handler_args, esp_event_base_t base, int32_t event_id, void *event_data) {
+    esp_websocket_event_data_t *data = (esp_websocket_event_data_t *)event_data;
+
+    switch (event_id) {
+        case WEBSOCKET_EVENT_ERROR:
+            ESP_LOGE("WS", "WebSocket error occurred");
+            break;
+
+        case WEBSOCKET_EVENT_BEFORE_CONNECT:
+            ESP_LOGI("WS", "WebSocket connecting...");
+            break;
+
+        case WEBSOCKET_EVENT_CONNECTED:
+            ESP_LOGI("WS", "WebSocket connected");
+            break;
+
+        case WEBSOCKET_EVENT_BEGIN:
+            ESP_LOGI("WS", "Websocket beginning...");
+            break;
+
+        case WEBSOCKET_EVENT_DATA:
+            ESP_LOGI("WS", "Receiving WebSocket data: %.*s", data->data_len, (char *)data->data_ptr);
+            if (xSemaphoreTake(data_mutex, portMAX_DELAY)) {
+                strncpy(received_data, data->data_ptr, data->data_len);
+                received_data[data->data_len] = '\0';  // Null-terminate the string
+                xSemaphoreGive(data_mutex);
+            } else {
+                ESP_LOGE("WS", "Failed to take mutex for received data");
+            }
+            break;
+
+        case WEBSOCKET_EVENT_DISCONNECTED:
+            ESP_LOGW("WS", "WebSocket disconnected");
+            break;
+
+        default:
+            ESP_LOGW("WS", "Unhandled WebSocket event ID: %ld", event_id);
+            break;
+    }
+}
+
+void websocket_client_task(void *pvParameters) {
+    QueueHandle_t *queue = (QueueHandle_t *)pvParameters;
+
+    // Configure WebSocket client
+    esp_websocket_client_config_t websocket_cfg = {
+        .uri = "ws://192.168.4.1/ws",
+        .port = 80,
+        .network_timeout_ms = 5000,
+        .reconnect_timeout_ms = 5000,
+    };
+
+    // Initialize WebSocket client
+    esp_websocket_client_handle_t client = esp_websocket_client_init(&websocket_cfg);
+    esp_websocket_register_events(client, ESP_EVENT_ANY_ID, websocket_event_handler, queue);
+
+    // Start WebSocket client
+    esp_websocket_client_start(client);
+
+    // Keep the task running indefinitely
+    while (true) {
+        vTaskDelay(pdMS_TO_TICKS(1000)); // Add a delay to avoid task starvation
+    }
+
+    // Cleanup (this point will not be reached in the current loop)
+    esp_websocket_client_stop(client);
+    esp_websocket_client_destroy(client);
+    vTaskDelete(NULL);
 }
