@@ -57,7 +57,7 @@ button {
     <center> <h1> CUB_00001 Login Form </h1> </center>   
     
         <div class='container'>   
-          <form action='/display' method='get'>
+          <form action='/validate_login' method='post'>
             <label>Username : </label>   
             <input type='text' placeholder='Enter Username' name='username' required>  
             <label>Password : </label>   

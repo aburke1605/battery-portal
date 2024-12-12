@@ -1,7 +1,10 @@
 __pycache__
 .vscode
 **/build/**
-**/sdkconfig.old
+**/sdkconfig*
 .idea
 cmake-build-debug
 .DS_Store
+managed_components/**
+dependencies.lock
+website/static/plots/

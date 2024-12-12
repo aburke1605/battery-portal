@@ -1,0 +1,36 @@
+<!doctype html>
+<head>
+  <title>AceOn EV Battery</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+  <script src="{{ url_for('static', filename='js/socket.io.min.js') }}"></script>
+</head>
+
+<html>
+  <body>
+    <main>
+      <div class="px-4 py-3 my-2 text-center">
+        <h1 class="display-6 fw-bold text-primary">EV battery portal</h1>
+      </div>
+      <div class="px-4 py-3 my-2 text-center">
+        <img class="d-block mx-auto mb-4" src="{{ url_for('static', filename='plots/plot.png') }}" alt="plot"/>
+      </div>
+      <div>
+        <p>Here is a plot</p>
+        <p>Charge: <span id="charge">0</span>%</p>
+        <p>Voltage: <span id="voltage">0.00</span>V</p>
+        <p>Current: <span id="current">0.00</span>A</p>
+        <p>Temperature <span id="temperature">0.00</span>°C</p>
+      </div>
+    </main>
+
+    <script>
+      const socket = io.connect()
+      socket.on('update_data', (data) => {
+        document.getElementById('charge').textContent = data.charge;
+        document.getElementById('voltage').textContent = data.voltage.toFixed(2);
+        document.getElementById('current').textContent = data.current.toFixed(2);
+        document.getElementById('temperature').textContent = data.temperature.toFixed(2);
+      })
+    </script>
+  </body>
+</html>
