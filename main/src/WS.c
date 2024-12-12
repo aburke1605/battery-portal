@@ -459,27 +459,27 @@ void websocket_broadcast_task(void *pvParameters) {
 
         // SOMETHING WRONG IN LINES BELOW
 
+        uint16_t iBL = test_read(DISCHARGE_SUBCLASS_ID, BL_OFFSET);
+        uint16_t iBH = test_read(DISCHARGE_SUBCLASS_ID, BH_OFFSET);
+        uint16_t iCCT = test_read(CURRENT_THRESHOLDS_SUBCLASS_ID, CHG_CURRENT_THRESHOLD_OFFSET);
+        uint16_t iDCT = test_read(CURRENT_THRESHOLDS_SUBCLASS_ID, DSG_CURRENT_THRESHOLD_OFFSET);
+        uint16_t iCITL = test_read(CHARGE_INHIBIT_CFG_SUBCLASS_ID, CHG_INHIBIT_TEMP_LOW_OFFSET);
+        uint16_t iCITH = test_read(CHARGE_INHIBIT_CFG_SUBCLASS_ID, CHG_INHIBIT_TEMP_HIGH_OFFSET);
+        cJSON_AddNumberToObject(json, "BL", iBL);
+        cJSON_AddNumberToObject(json, "BH", iBH);
+        cJSON_AddNumberToObject(json, "CCT", iCCT);
+        cJSON_AddNumberToObject(json, "DCT", iDCT);
+        cJSON_AddNumberToObject(json, "CITL", iCITL);
+        cJSON_AddNumberToObject(json, "CITH", iCITH);
 
 
-        //
-        //
-        //
-        //
-        //
-        //
 
-        // uint16_t iBL = test_read(DISCHARGE_SUBCLASS_ID, BL_OFFSET);
-        // uint16_t iBH = test_read(DISCHARGE_SUBCLASS_ID, BH_OFFSET);
-        // uint16_t iCCT = test_read(CURRENT_THRESHOLDS_SUBCLASS_ID, CHG_CURRENT_THRESHOLD_OFFSET);
-        // uint16_t iDCT = test_read(CURRENT_THRESHOLDS_SUBCLASS_ID, DSG_CURRENT_THRESHOLD_OFFSET);
-        // uint16_t iCITL = test_read(CHARGE_INHIBIT_CFG_SUBCLASS_ID, CHG_INHIBIT_TEMP_LOW_OFFSET);
-        // uint16_t iCITH = test_read(CHARGE_INHIBIT_CFG_SUBCLASS_ID, CHG_INHIBIT_TEMP_HIGH_OFFSET);
-        // cJSON_AddNumberToObject(json, "BL", iBL);
-        // cJSON_AddNumberToObject(json, "BH", iBH);
-        // cJSON_AddNumberToObject(json, "CCT", iCCT);
-        // cJSON_AddNumberToObject(json, "DCT", iDCT);
-        // cJSON_AddNumberToObject(json, "CITL", iCITL);
-        // cJSON_AddNumberToObject(json, "CITH", iCITH);
+        //
+        //
+        //
+        //
+        //
+        //
 
         // Add received data if available
         if (xSemaphoreTake(data_mutex, portMAX_DELAY)) {
