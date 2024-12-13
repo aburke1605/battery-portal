@@ -1,78 +1,78 @@
-.page-bg {
-    background-color: #e0f2fe; /* bg-blue-100 */
-    font-family: 'sans-serif';
+/* General styles */
+body {
+    font-family: ui-sans-serif, system-ui, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol', 'Noto Color Emoji';
+    background-color: rgb(219, 234, 254); /* Light blue background */
+    margin: 0;
 }
 
-.container {
-    max-width: 64rem; /* max-w-4xl */
-    margin: 2.5rem auto; /* mx-auto mt-10 */
-    gap: 2.5rem; /* space-y-10 */
+#main-container {
+    max-width: 56rem; /* Matches the max-w-4xl class */
+    margin: 2.5rem auto; /* Center with top margin */
 }
 
+/* Section container styling */
 .section {
-    background-color: white;
-    padding: 2rem; /* p-8 */
-    border-radius: 0.5rem; /* rounded-lg */
-    box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.1); /* shadow-lg */
+    background-color: white; /* White background */
+    padding: 2rem; /* Matches p-8 */
+    border-radius: 0.5rem; /* Matches rounded-lg */
+    box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -4px rgba(0, 0, 0, 0.1); /* Matches shadow-lg */
+    margin-bottom: 2.5rem; /* Space between sections */
 }
 
-.section-title {
-    font-size: 2.25rem; /* text-4xl */
-    font-weight: bold;
-    text-align: center;
-    margin-bottom: 1.5rem; /* mb-6 */
-    color: #1f2937; /* text-gray-800 */
+/* Header styles */
+h1, h2 {
+    font-size: 2.25rem; /* Matches text-4xl */
+    font-weight: 700; /* Matches font-bold */
+    text-align: center; /* Matches text-center */
+    margin-bottom: 1.5rem; /* Matches mb-6 */
+    color: rgb(31, 41, 55); /* Matches text-gray-800 */
 }
 
-.info {
-    display: flex;
-    flex-direction: column;
-    gap: 1rem; /* gap-4 */
-    font-size: 1.125rem; /* text-lg */
-    color: #374151; /* text-gray-700 */
-}
-
+/* Info section row styles */
 .info-item {
     display: flex;
     justify-content: space-between;
     align-items: center;
+    font-size: 1.125rem; /* Matches text-lg */
+    color: rgb(55, 65, 81); /* Matches text-gray-700 */
 }
 
-.btn-toggle {
-    width: 100%; /* w-full */
-    background-color: #10b981; /* bg-green-500 */
-    color: white;
-    font-weight: 600; /* font-semibold */
-    padding: 0.75rem; /* py-3 */
-    border-radius: 0.5rem; /* rounded-lg */
-    box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.1); /* shadow-md */
-}
-
-.btn-toggle:hover {
-    background-color: #059669; /* hover:bg-green-600 */
-}
-
-.btn-toggle:focus {
+/* Button styling */
+button {
+    width: 100%; /* Matches w-full */
+    background-color: rgb(34, 197, 94); /* Matches bg-green-500 */
+    color: white; /* Matches text-white */
+    font-weight: 600; /* Matches font-semibold */
+    padding: 0.75rem 0; /* Matches py-3 */
+    border-radius: 0.5rem; /* Matches rounded-lg */
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -2px rgba(0, 0, 0, 0.1); /* Matches shadow-md */
+    border: none;
     outline: none;
-    box-shadow: 0 0 0 2px #34d399; /* focus:ring-2 focus:ring-green-400 */
+    cursor: pointer;
 }
 
-.logo {
-    height: 4rem;
+button:hover {
+    background-color: rgb(22, 163, 74); /* Matches hover:bg-green-600 */
+}
+
+button:focus {
+    outline: 2px solid transparent;
+    box-shadow: 0 0 0 4px rgb(74, 222, 128); /* Matches focus:ring-green-400 */
+}
+
+/* Links section styles */
+.links-header img {
+    height: 4rem; /* Matches h-16 */
     width: auto;
 }
 
-.link-list {
-    display: flex;
-    flex-direction: column;
-    gap: 1rem; /* space-y-4 */
-}
-
-.link {
-    color: #1d4ed8; /* text-blue-700 */
+.links a {
+    display: block;
+    color: rgb(29, 78, 216); /* Matches text-blue-700 */
     text-decoration: underline;
+    margin-bottom: 0.5rem;
 }
 
-.link:hover {
-    color: #1e40af; /* hover:text-blue-900 */
+.links a:hover {
+    color: rgb(30, 58, 138); /* Matches hover:text-blue-900 */
 }
