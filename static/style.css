@@ -1,8 +1,25 @@
+/* reset */
+*,
+::before,
+::after {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+    border: 0;
+}
+
+
 /* general background */
 body {
     font-family: ui-sans-serif, system-ui, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol', 'Noto Color Emoji';
     background-color: rgb(219, 234, 254); /* light blue background */
     margin: 0;
+    font-size: 16px;
+    line-height: 1.5;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 100vh;
 }
 
 /* headers */
@@ -17,18 +34,19 @@ h1, h2 {
 /* buttons */
 button {
     width: 100%; /* matches w-full */
-    background-color: rgb(34, 197, 94); /* matches bg-green-500 */
+    background-color: rgb(0, 82, 159); /* #00529f */
     color: white; /* matches text-white */
-    font-weight: 600; /* matches font-semibold */
+    font-weight: 500; /* matches font-semibold */
     padding: 0.75rem 0; /* matches py-3 */
     border-radius: 0.5rem; /* matches rounded-lg */
     box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -2px rgba(0, 0, 0, 0.1); /* matches shadow-md */
     border: none;
     outline: none;
     cursor: pointer;
+    transition: background-color 0.2s ease-in-out;
 }
 button:hover {
-    background-color: rgb(22, 163, 74); /* matches hover:bg-green-600 */
+    background-color: rgb(31, 41, 55); /* gray-800 */
 }
 button:focus {
     outline: 2px solid transparent;
@@ -40,8 +58,14 @@ button:focus {
 /************/
 
 .container {
-    max-width: 56rem; /* matches the max-w-4xl class */
+    max-width: 28rem; /* max-w-md */
     margin: 2.5rem auto; /* centre with top margin */
+    background-color: white;
+    padding: 2rem;
+    border-radius: 0.5rem;
+    box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1); /* shadow-md */
+    width: 100%;
+    text-align: center;
 }
 
 .section {
@@ -74,4 +98,54 @@ button:focus {
 
 .links a:hover {
     color: rgb(30, 58, 138); /* matches hover:text-blue-900 */
+}
+
+
+
+/* Form Elements */
+form label {
+    display: block;
+    font-size: 0.875rem; /* text-sm */
+    font-weight: 500; /* font-medium */
+    margin-bottom: 0.25rem; /* mb-1 */
+}
+
+form input[type="text"],
+form input[type="password"] {
+    width: 100%;
+    border: 1px solid rgb(209, 213, 219); /* gray-300 */
+    border-radius: 0.5rem; /* rounded-lg */
+    padding: 0.5rem; /* p-2 */
+    font-size: 0.875rem; /* text-sm */
+    margin-bottom: 1rem; /* mb-4 */
+}
+
+form input:focus {
+    outline: none;
+    box-shadow: 0 0 0 2px rgb(0 82 159 / 0.5); /* focus:ring-2 */
+}
+
+form .actions {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1.5rem; /* mb-6 */
+}
+
+form .actions input[type="checkbox"] {
+    margin-right: 0.5rem; /* mr-2 */
+}
+
+form .actions a {
+    color: rgb(0, 82, 159); /* #00529f */
+    text-decoration: none;
+}
+
+form .actions a:hover {
+    text-decoration: underline;
+}
+
+/* Footer Image */
+#login-container img {
+    margin-top: 40px;
 }
