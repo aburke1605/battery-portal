@@ -59,28 +59,28 @@ static const char display_html[] = R"rawliteral(
 </body>
 
 <script>
-      document.addEventListener('DOMContentLoaded', function() {
-      let socket = new WebSocket('ws://' + location.host + '/ws');
-      socket.onopen = function() {
-          console.log('WebSocket connection established');
-      };
-      socket.onmessage = function(event) {
-          try {
-              let data = JSON.parse(event.data);
-              document.getElementById('charge').innerHTML = data.charge;
-              document.getElementById('voltage').innerHTML = data.voltage.toFixed(2);
-              document.getElementById('current').innerHTML = data.current.toFixed(2);
-              document.getElementById('temperature').innerHTML = data.temperature.toFixed(2);
-          } catch (error) {
-              console.error('Error parsing JSON:', error);
-          }
-      };
-      socket.onerror = function(error) {
-          console.error('WebSocket error:', error);
-      };
-      socket.onclose = function() {
-          console.log('WebSocket connection closed');
-      };
+    document.addEventListener('DOMContentLoaded', function() {
+        let socket = new WebSocket('ws://' + location.host + '/ws');
+        socket.onopen = function() {
+            console.log('WebSocket connection established');
+        };
+        socket.onmessage = function(event) {
+            try {
+                let data = JSON.parse(event.data);
+                document.getElementById('charge').innerHTML = data.charge;
+                document.getElementById('voltage').innerHTML = data.voltage.toFixed(2);
+                document.getElementById('current').innerHTML = data.current.toFixed(2);
+                document.getElementById('temperature').innerHTML = data.temperature.toFixed(2);
+            } catch (error) {
+                console.error('Error parsing JSON:', error);
+            }
+        };
+        socket.onerror = function(error) {
+            console.error('WebSocket error:', error);
+        };
+        socket.onclose = function() {
+            console.log('WebSocket connection closed');
+        };
     })
 </script>
 </html>
