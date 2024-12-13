@@ -1,4 +1,3 @@
-#include <esp_http_client.h>
 #include <esp_spiffs.h>
 
 #include "include/AP.h"
