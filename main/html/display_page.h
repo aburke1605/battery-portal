@@ -11,7 +11,7 @@ static const char display_html[] = R"rawliteral(
 <body>
     <div class='container'>
         <div class='section'>
-            <h1>Battery Information</h1>
+            <h2>Battery Information</h2>
             <div class='info'>
                 <div class='info-item'>
                     <span>State of charge:</span>
