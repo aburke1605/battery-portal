@@ -12,15 +12,11 @@ static const char login_html[] = R"rawliteral(
     <div class='container'>
         <h2>AP Login Form</h2>
         <form action='/validate_login' method='post'>
-            <div>
-                <label for='username'>Username</label>
-                <input type='text' id='username' name='username' required oninvalid="this.setCustomValidity('Please input your username.')" oninput="setCustomValidity('')">
-            </div>
+            <label for='username'>Username</label>
+            <input type='text' id='username' name='username' required oninvalid="this.setCustomValidity('Please input your username.')" oninput="setCustomValidity('')">
 
-            <div>
-                <label for='password'>Password</label>
-                <input type='password' id='password' name='password' required oninvalid="this.setCustomValidity('Please input your password.')" oninput="setCustomValidity('')">
-            </div>
+            <label for='password'>Password</label>
+            <input type='password' id='password' name='password' required oninvalid="this.setCustomValidity('Please input your password.')" oninput="setCustomValidity('')">
 
             <div class='actions'>
                 <label> <input type='checkbox'> Remember </label>
