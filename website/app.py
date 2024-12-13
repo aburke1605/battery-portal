@@ -116,8 +116,8 @@ plt.savefig('static/plots/plot.png')
 
 data_store = {}
 
-@app.route('/aodhan')
-def index_aodhan():
+@app.route('/live')
+def index_live():
     print('Request for index page received')
     Q = data_store["ESP32"]["charge"]
     V = data_store["ESP32"]["voltage"]
