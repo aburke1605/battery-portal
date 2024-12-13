@@ -410,7 +410,7 @@ httpd_handle_t start_webserver(void) {
             .uri       = "/image/aceon.png",
             .method    = HTTP_GET,
             .handler   = image_handler, // Function to read and send the image
-            .user_ctx  = "/storage/aceon.png" // File path as user context
+            .user_ctx  = "/storage/images/aceon.png" // File path as user context
         };
         httpd_register_uri_handler(server, &image_uri);
 
@@ -418,7 +418,7 @@ httpd_handle_t start_webserver(void) {
             .uri       = "/image/aceon2.png",
             .method    = HTTP_GET,
             .handler   = image_handler, // Function to read and send the image
-            .user_ctx  = "/storage/aceon2.png" // File path as user context
+            .user_ctx  = "/storage/images/aceon2.png" // File path as user context
         };
         httpd_register_uri_handler(server, &image_uri_2);
 
