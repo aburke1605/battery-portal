@@ -44,9 +44,6 @@ static const char display_html[] = R"rawliteral(
 
         <!-- Other Links Section -->
         <div class='section'>
-            <div'>
-                <img src='/image/aceon2.png' alt='Company Logo'>
-            </div>
             <div>
                 <a href='/change'>Change battery pack properties</a>
                 <a href='/connect'>Connect to WiFi access point</a>
@@ -54,6 +51,7 @@ static const char display_html[] = R"rawliteral(
                 <a href='/about'>About AceOn</a>
                 <a href='/device'>Unit Layout</a>
             </div>
+            <img src='/image/aceon2.png' alt='Company Logo'>
         </div>
     </div>
 </body>
