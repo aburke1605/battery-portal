@@ -10,7 +10,7 @@ static const char display_html[] = R"rawliteral(
 
 <body>
     <!-- Container for the whole page -->
-    <div>
+    <div class='container'>
         <!-- Battery Information Section -->
         <div class='section'>
             <h1>Battery Information</h1>

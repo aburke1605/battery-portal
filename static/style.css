@@ -1,78 +1,77 @@
-/* General styles */
+/* general background */
 body {
     font-family: ui-sans-serif, system-ui, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol', 'Noto Color Emoji';
-    background-color: rgb(219, 234, 254); /* Light blue background */
+    background-color: rgb(219, 234, 254); /* light blue background */
     margin: 0;
 }
 
-#main-container {
-    max-width: 56rem; /* Matches the max-w-4xl class */
-    margin: 2.5rem auto; /* Center with top margin */
-}
-
-/* Section container styling */
-.section {
-    background-color: white; /* White background */
-    padding: 2rem; /* Matches p-8 */
-    border-radius: 0.5rem; /* Matches rounded-lg */
-    box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -4px rgba(0, 0, 0, 0.1); /* Matches shadow-lg */
-    margin-bottom: 2.5rem; /* Space between sections */
-}
-
-/* Header styles */
+/* headers */
 h1, h2 {
-    font-size: 2.25rem; /* Matches text-4xl */
-    font-weight: 700; /* Matches font-bold */
-    text-align: center; /* Matches text-center */
-    margin-bottom: 1.5rem; /* Matches mb-6 */
-    color: rgb(31, 41, 55); /* Matches text-gray-800 */
+    font-size: 2.25rem; /* matches text-4xl */
+    font-weight: 700; /* matches font-bold */
+    text-align: center; /* matches text-center */
+    margin-bottom: 1.5rem; /* matches mb-6 */
+    color: rgb(31, 41, 55); /* matches text-gray-800 */
 }
 
-/* Info section row styles */
-.info-item {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    font-size: 1.125rem; /* Matches text-lg */
-    color: rgb(55, 65, 81); /* Matches text-gray-700 */
-}
-
-/* Button styling */
+/* buttons */
 button {
-    width: 100%; /* Matches w-full */
-    background-color: rgb(34, 197, 94); /* Matches bg-green-500 */
-    color: white; /* Matches text-white */
-    font-weight: 600; /* Matches font-semibold */
-    padding: 0.75rem 0; /* Matches py-3 */
-    border-radius: 0.5rem; /* Matches rounded-lg */
-    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -2px rgba(0, 0, 0, 0.1); /* Matches shadow-md */
+    width: 100%; /* matches w-full */
+    background-color: rgb(34, 197, 94); /* matches bg-green-500 */
+    color: white; /* matches text-white */
+    font-weight: 600; /* matches font-semibold */
+    padding: 0.75rem 0; /* matches py-3 */
+    border-radius: 0.5rem; /* matches rounded-lg */
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -2px rgba(0, 0, 0, 0.1); /* matches shadow-md */
     border: none;
     outline: none;
     cursor: pointer;
 }
-
 button:hover {
-    background-color: rgb(22, 163, 74); /* Matches hover:bg-green-600 */
+    background-color: rgb(22, 163, 74); /* matches hover:bg-green-600 */
 }
-
 button:focus {
     outline: 2px solid transparent;
-    box-shadow: 0 0 0 4px rgb(74, 222, 128); /* Matches focus:ring-green-400 */
+    box-shadow: 0 0 0 4px rgb(74, 222, 128); /* matches focus:ring-green-400 */
 }
 
-/* Links section styles */
+/************/
+/* classes: */
+/************/
+
+.container {
+    max-width: 56rem; /* matches the max-w-4xl class */
+    margin: 2.5rem auto; /* centre with top margin */
+}
+
+.section {
+    background-color: white; /* white background */
+    padding: 2rem; /* matches p-8 */
+    border-radius: 0.5rem; /* matches rounded-lg */
+    box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -4px rgba(0, 0, 0, 0.1); /* matches shadow-lg */
+    margin-bottom: 2.5rem; /* space between sections */
+}
+
+.info-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 1.125rem; /* matches text-lg */
+    color: rgb(55, 65, 81); /* matches text-gray-700 */
+}
+
 .links-header img {
-    height: 4rem; /* Matches h-16 */
+    height: 4rem; /* matches h-16 */
     width: auto;
 }
 
 .links a {
     display: block;
-    color: rgb(29, 78, 216); /* Matches text-blue-700 */
+    color: rgb(29, 78, 216); /* matches text-blue-700 */
     text-decoration: underline;
     margin-bottom: 0.5rem;
 }
 
 .links a:hover {
-    color: rgb(30, 58, 138); /* Matches hover:text-blue-900 */
+    color: rgb(30, 58, 138); /* matches hover:text-blue-900 */
 }
