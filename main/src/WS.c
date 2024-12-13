@@ -236,36 +236,33 @@ esp_err_t toggle_handler(httpd_req_t *req) {
 }
 
 esp_err_t css_handler(httpd_req_t *req) {
-    ESP_LOGW("HERE", "\n\n\n");
-    const char *file_path = "/storage/style.css";//(const char *)req->user_ctx;
+    const char *file_path = (const char *)req->user_ctx;
+
     FILE *file = fopen(file_path, "r");
     if (!file) {
-        httpd_resp_send_404(req);
-        printf("\n\nhere1\n\n\n");
+        ESP_LOGE("CSS_HANDLER", "Failed to open file: %s", file_path);
+        httpd_resp_send_err(req, HTTPD_404_NOT_FOUND, "File not found");
         return ESP_FAIL;
     }
-
-    fseek(file, 0, SEEK_END);
-    size_t file_size = ftell(file);
-    fseek(file, 0, SEEK_SET);
-
-    char *buffer = malloc(file_size + 1);
-    if (!buffer) {
-        fclose(file);
-        httpd_resp_send_500(req);
-        printf("\n\nhere2\n\n\n");
-        return ESP_FAIL;
-    }
-
-    fread(buffer, 1, file_size, file);
-    buffer[file_size] = '\0';  // Null-terminate the buffer
 
     httpd_resp_set_type(req, "text/css");
-    httpd_resp_send(req, buffer, file_size);
+
+    char buffer[1024];
+    size_t bytes_read;
+
+    while ((bytes_read = fread(buffer, 1, sizeof(buffer), file)) > 0) {
+        if (httpd_resp_send_chunk(req, buffer, bytes_read) != ESP_OK) {
+            fclose(file);
+            ESP_LOGE("CSS_HANDLER", "Failed to send chunk");
+            httpd_resp_send_err(req, HTTPD_500_INTERNAL_SERVER_ERROR, "Failed to send file");
+            return ESP_FAIL;
+        }
+    }
 
     fclose(file);
-    free(buffer);
-    ESP_LOGW("ESP", "_OKKKK");
+
+    httpd_resp_send_chunk(req, NULL, 0);
+
     return ESP_OK;
 }
 
@@ -279,7 +276,6 @@ esp_err_t image_handler(httpd_req_t *req) {
         httpd_resp_send_404(req);
         return ESP_FAIL;
     }
-    ESP_LOGE("WOOHOO","\n\n\n\n\n\n\n\n");
 
     // Set the response type to indicate it's an image
     httpd_resp_set_type(req, "image/png");
@@ -440,20 +436,13 @@ httpd_handle_t start_webserver(void) {
         };
         httpd_register_uri_handler(server, &toggle_uri);
 
-        ESP_LOGE("HERE","\n\n\n");
         httpd_uri_t css_uri = {
             .uri      = "/style.css",
             .method   = HTTP_GET,
             .handler  = css_handler,
-            .user_ctx = NULL
+            .user_ctx = "/storage/style.css",
         };
-        if (httpd_register_uri_handler(server, &css_uri) != ESP_OK) {
-            ESP_LOGW("PRO", "BLEM");
-        }
-        else {
-            ESP_LOGW("ESP", "_OK");
-        }
-        ESP_LOGE("HERE","\n\n\n");
+        httpd_register_uri_handler(server, &css_uri);
 
         // Add a handler for serving the image
         httpd_uri_t image_uri = {
