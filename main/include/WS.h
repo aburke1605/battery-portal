@@ -11,7 +11,7 @@
 
 extern httpd_handle_t server;
 extern int client_sockets[CONFIG_MAX_CLIENTS];
-extern char received_data[256];
+extern char received_data[1024];
 extern SemaphoreHandle_t data_mutex;
 
 void add_client(int fd);
