@@ -5,15 +5,15 @@ static const char display_html[] = R"rawliteral(
     <meta charset='UTF-8'>
     <meta name='viewport' content='width=device-width, initial-scale=1.0'>
     <title>ESP32 Battery & LED Control</title>
-    <link rel='stylesheet' type='text/css' href='/styles.css'>
+    <link rel='stylesheet' type='text/css' href='/style.css'>
 </head>
 
-<body class='page-bg'>
+<body>
     <!-- Container for the whole page -->
-    <div class='container'>
+    <div>
         <!-- Battery Information Section -->
         <div class='section'>
-            <h1 class='section-title'>Battery Information</h1>
+            <h1>Battery Information</h1>
             <div class='info'>
                 <div class='info-item'>
                     <span>State of charge:</span>
@@ -36,25 +36,23 @@ static const char display_html[] = R"rawliteral(
 
         <!-- ESP32 LED Control Section -->
         <div class='section'>
-            <h2 class='section-title'>ESP32 LED Control</h2>
+            <h2>ESP32 LED Control</h2>
             <div class='button-container'>
-                <button class='btn-toggle' onclick="fetch('/toggle').then(() => alert('LED Toggled'))">
-                    Toggle LED
-                </button>
+                <button onclick="fetch('/toggle').then(() => alert('LED Toggled'))">Toggle LED</button>
             </div>
         </div>
 
-        <!-- Links Section -->
+        <!-- Other Links Section -->
         <div class='section'>
+            <div class='links-header'>
+                <img src='/image/aceon2.png' alt='Company Logo'>
+            </div>
             <div class='links'>
-                <img src='/image/aceon2.png' alt='Company Logo' class='logo'>
-                <div class='link-list'>
-                    <a href='/change' class='link'>Change battery pack properties</a>
-                    <a href='/connect' class='link'>Connect to WiFi access point</a>
-                    <a href='/nearby' class='link'>Nearby battery packs</a>
-                    <a href='/about' class='link'>About AceOn</a>
-                    <a href='/device' class='link'>Unit Layout</a>
-                </div>
+                <a href='/change'>Change battery pack properties</a>
+                <a href='/connect'>Connect to WiFi access point</a>
+                <a href='/nearby'>Nearby battery packs</a>
+                <a href='/about'>About AceOn</a>
+                <a href='/device'>Unit Layout</a>
             </div>
         </div>
     </div>
