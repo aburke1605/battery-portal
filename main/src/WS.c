@@ -235,6 +235,37 @@ esp_err_t toggle_handler(httpd_req_t *req) {
     return ESP_OK;
 }
 
+esp_err_t css_handler(httpd_req_t *req) {
+    const char *file_path = (const char *)req->user_ctx;
+
+    FILE *file = fopen(file_path, "r");
+    if (!file) {
+        ESP_LOGE("CSS_HANDLER", "Failed to open file: %s", file_path);
+        httpd_resp_send_err(req, HTTPD_404_NOT_FOUND, "File not found");
+        return ESP_FAIL;
+    }
+
+    httpd_resp_set_type(req, "text/css");
+
+    char buffer[1024];
+    size_t bytes_read;
+
+    while ((bytes_read = fread(buffer, 1, sizeof(buffer), file)) > 0) {
+        if (httpd_resp_send_chunk(req, buffer, bytes_read) != ESP_OK) {
+            fclose(file);
+            ESP_LOGE("CSS_HANDLER", "Failed to send chunk");
+            httpd_resp_send_err(req, HTTPD_500_INTERNAL_SERVER_ERROR, "Failed to send file");
+            return ESP_FAIL;
+        }
+    }
+
+    fclose(file);
+
+    httpd_resp_send_chunk(req, NULL, 0);
+
+    return ESP_OK;
+}
+
 esp_err_t image_handler(httpd_req_t *req) {
     // Path to the file in the SPIFFS partition
     const char *file_path = (const char *)req->user_ctx;
@@ -405,12 +436,20 @@ httpd_handle_t start_webserver(void) {
         };
         httpd_register_uri_handler(server, &toggle_uri);
 
+        httpd_uri_t css_uri = {
+            .uri      = "/style.css",
+            .method   = HTTP_GET,
+            .handler  = css_handler,
+            .user_ctx = "/storage/style.css",
+        };
+        httpd_register_uri_handler(server, &css_uri);
+
         // Add a handler for serving the image
         httpd_uri_t image_uri = {
             .uri       = "/image/aceon.png",
             .method    = HTTP_GET,
             .handler   = image_handler, // Function to read and send the image
-            .user_ctx  = "/storage/aceon.png" // File path as user context
+            .user_ctx  = "/storage/images/aceon.png" // File path as user context
         };
         httpd_register_uri_handler(server, &image_uri);
 
@@ -418,9 +457,10 @@ httpd_handle_t start_webserver(void) {
             .uri       = "/image/aceon2.png",
             .method    = HTTP_GET,
             .handler   = image_handler, // Function to read and send the image
-            .user_ctx  = "/storage/aceon2.png" // File path as user context
+            .user_ctx  = "/storage/images/aceon2.png" // File path as user context
         };
         httpd_register_uri_handler(server, &image_uri_2);
+
     } else {
         ESP_LOGE("WS", "Error starting server!");
     }

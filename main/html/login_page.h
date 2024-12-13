@@ -1,74 +1,32 @@
 static const char login_html[] = R"rawliteral(
-<!DOCTYPE HTML><html><head>
-  <!DOCTYPE HTML><html>
-  
-<html>   
-<head>  
-<meta name='viewport' content='width=device-width, initial-scale=1'>  
-<title> Login Page </title>  
-<style>   
-Body {  
-  font-family: Calibri, Helvetica, sans-serif;  
-  background-color: pink;  
-}  
-button {   
-       background-color: #4CAF50;   
-       width: 100%;  
-        color: white;   
-        padding: 15px;   
-        margin: 10px 0px;   
-        border: none;   
-        cursor: pointer;   
-         }   
- form {   
-        border: 3px solid #f1f1f1;   
-    }   
- input[type=text], input[type=password] {   
-        width: 100%;   
-        margin: 8px 0;
-        padding: 12px 20px;   
-        display: inline-block;   
-        border: 2px solid green;   
-        box-sizing: border-box;   
-    }  
- button:hover {   
-        opacity: 0.7;   
-    }   
-  .cancelbtn {   
-        width: auto;   
-        padding: 10px 18px;  
-        margin: 10px 5px;  
-    }   
-        
-     
- .container {   
-        padding: 25px;   
-        background-color: lightblue;  
-    }
-
-  img {
-    height: auto; 
-    max-width: 100%;
-  }
-
-</style>  
+<!DOCTYPE html>
+<html lang='en'>
+<head>
+    <meta charset='UTF-8'>
+    <meta name='viewport' content='width=device-width, initial-scale=1.0'>
+    <title>AP Login Form</title>
+    <link rel='stylesheet' type='text/css' href='/style.css'>
 </head>
-<body>    
-    <center> <h1> CUB_00001 Login Form </h1> </center>   
-    
-        <div class='container'>   
-          <form action='/validate_login' method='post'>
-            <label>Username : </label>   
-            <input type='text' placeholder='Enter Username' name='username' required>  
-            <label>Password : </label>   
-            <input type='password' placeholder='Enter Password' name='password' required>  
-            <button type='submit'>Submit</button> 
-            <input type='checkbox' checked='checked'> Remember me   
-            <button type='button' class='cancelbtn'> Cancel</button>   
-            Forgot <a href='#'> password? </a>  
-          </form> 
-        </div>   
-        <img src='/image/aceon.png'>
-</body>     
-</html>  
+
+<body>
+    <div class='container'>
+        <h2>AP Login Form</h2>
+        <form action='/validate_login' method='post'>
+            <label for='username'>Username</label>
+            <input type='text' id='username' name='username' required oninvalid="this.setCustomValidity('Please input your username.')" oninput="setCustomValidity('')">
+
+            <label for='password'>Password</label>
+            <input type='password' id='password' name='password' required oninvalid="this.setCustomValidity('Please input your password.')" oninput="setCustomValidity('')">
+
+            <div class='actions'>
+                <label> <input type='checkbox'> Remember </label>
+                <a href='#'>Forgot password?</a>
+            </div>
+
+            <button type='submit'>Get started</button>
+        </form>
+        <img src='/image/aceon.png' alt='Company Logo'>
+    </div>
+</body>
+</html>
 )rawliteral";
