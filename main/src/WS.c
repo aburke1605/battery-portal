@@ -195,6 +195,7 @@ esp_err_t validate_connect_handler(httpd_req_t *req) {
         wifi_ap_record_t ap_info;
         if (esp_wifi_sta_get_ap_info(&ap_info) == ESP_OK) {
             ESP_LOGI("WS", "Connected to router. Signal strength: %d dBm", ap_info.rssi);
+            connected_to_WiFi = true;
             break;
         } else {
             ESP_LOGI("WS", "Not connected. Retrying...");
@@ -588,6 +589,12 @@ void websocket_broadcast_task(void *pvParameters) {
 
 void website_send_task(void *pvParameters) {
     while (true) {
+        // check if connected to an AP first
+        if (!connected_to_WiFi) {
+            vTaskDelay(1000 / portTICK_PERIOD_MS);
+            continue;
+        }
+
         esp_http_client_config_t config = {
             .url = "http://192.168.137.1:5000/data", // this is the IPv4 address of the PC hotspot
         };

@@ -10,6 +10,7 @@ httpd_handle_t server = NULL;
 int client_sockets[CONFIG_MAX_CLIENTS];
 char received_data[1024];
 SemaphoreHandle_t data_mutex;
+bool connected_to_WiFi = false;
 
 void app_main(void) {
     /*
