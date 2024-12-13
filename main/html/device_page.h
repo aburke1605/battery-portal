@@ -12,7 +12,7 @@ static const char device_html[] = R"rawliteral(
     <div class='container'>
         <h2>Unit layout</h2>
         <p>PUT IMAGE OF UNIT HERE</p>
-        <form action='/return'>
+        <form action='/return', method='get'>
             <button type='Submit'>Back</button>
         </form>
     </div>
