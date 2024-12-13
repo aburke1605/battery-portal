@@ -45,7 +45,3 @@ esp_err_t image_handler(httpd_req_t *req);
 httpd_handle_t start_webserver(void);
 
 void websocket_broadcast_task(void *pvParameters);
-
-void websocket_event_handler(void *handler_args, esp_event_base_t base, int32_t event_id, void *event_data);
-
-void websocket_client_task(void *pvParameters);
