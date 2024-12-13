@@ -20,8 +20,6 @@ static const char connect_html[] = R"rawliteral(
 
             <button type='submit'>Connect</button>
         </form>
-
-        <img src='/image/aceon.png' alt='Company Logo'>
     </div>
 </body>
 </html>

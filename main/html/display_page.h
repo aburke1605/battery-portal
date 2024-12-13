@@ -9,9 +9,7 @@ static const char display_html[] = R"rawliteral(
 </head>
 
 <body>
-    <!-- Container for the whole page -->
     <div class='container'>
-        <!-- Battery Information Section -->
         <div class='section'>
             <h1>Battery Information</h1>
             <div class='info'>
@@ -34,7 +32,6 @@ static const char display_html[] = R"rawliteral(
             </div>
         </div>
 
-        <!-- ESP32 LED Control Section -->
         <div class='section'>
             <h2>ESP32 LED Control</h2>
             <div class='button-container'>
@@ -42,7 +39,6 @@ static const char display_html[] = R"rawliteral(
             </div>
         </div>
 
-        <!-- Other Links Section -->
         <div class='section'>
             <div>
                 <a href='/change'>Change battery pack properties</a>
@@ -51,8 +47,9 @@ static const char display_html[] = R"rawliteral(
                 <a href='/about'>About AceOn</a>
                 <a href='/device'>Unit Layout</a>
             </div>
-            <img src='/image/aceon2.png' alt='Company Logo'>
         </div>
+
+        <img src='/image/aceon2.png' alt='Company Logo'>
     </div>
 </body>
 
