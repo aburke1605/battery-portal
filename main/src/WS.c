@@ -542,7 +542,6 @@ void websocket_broadcast_task(void *pvParameters) {
         }
 
         char *json_string = cJSON_PrintUnformatted(json);
-        ESP_LOGI("WS", "Sending WebSocket data: %.*s", strlen(json_string), (char *)json_string);
         cJSON_Delete(json);
 
         if (json_string != NULL) {
