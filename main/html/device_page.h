@@ -1,51 +1,21 @@
 static const char device_html[] = R"rawliteral(
-<!DOCTYPE HTML><html><head>
-  <!DOCTYPE HTML><html>
-
-<html>
+<!DOCTYPE html>
+<html lang='en'>
 <head>
-<meta name='viewport' content='width=device-width, initial-scale=1'>
-<title> Unit layout </title>
-<style>   
-Body {
-  font-family: Calibri, Helvetica, sans-serif;
-  background-color: lightgreen;
-}  
-button {
-       background-color: #4CAF50;
-       width: 100%;
-        color: white;
-        padding: 15px;
-        margin: 10px 0px;
-        border: none;
-        cursor: pointer;
-         }
- form {
-        border: 3px solid #f1f1f1;
-    }
-
- .container {
-        padding: 25px;
-        background-color: lightblue;
-    }
- .font-style{
-        font-weight:bold;
- }
-
-  img {
-    height: auto;
-    max-width: 100%;
-  }
-
-</style>
+    <meta charset='UTF-8'>
+    <meta name='viewport' content='width=device-width, initial-scale=1.0'>
+    <title> Unit Layout </title>
+    <link rel='stylesheet' type='text/css' href='/style.css'>
 </head>
+
 <body>
-    <center> <h1> Unit layout </h1> </center>
-         <p>PUT IMAGE OF UNIT HERE</p>
-         <form action='/return'>
+    <div class='container'>
+        <h2>Unit layout</h2>
+        <p>PUT IMAGE OF UNIT HERE</p>
+        <form action='/return', method='get'>
             <button type='Submit'>Back</button>
-         </form>
+        </form>
+    </div>
 </body>
-</html>
 </html>
 )rawliteral";

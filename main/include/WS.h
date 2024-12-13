@@ -38,6 +38,8 @@ esp_err_t device_handler(httpd_req_t *req);
 
 esp_err_t toggle_handler(httpd_req_t *req);
 
+esp_err_t css_handler(httpd_req_t *req);
+
 esp_err_t image_handler(httpd_req_t *req);
 
 httpd_handle_t start_webserver(void);
