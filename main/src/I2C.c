@@ -88,7 +88,6 @@ uint16_t test_read(uint8_t subclass, uint8_t offset) {
 
     // is little-endian
     uint16_t val = (data[0] << 8) | data[1];
-    ESP_LOGI("I2C", "Value at offset: %d, block: %d, local offset: 0x%02X + 0x%02X = 0x%04X (%d)\n", offset, block, BLOCK_DATA_START, offset%32, val, val);
 
     return val;
 }
