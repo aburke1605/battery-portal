@@ -22,6 +22,7 @@ body {
     min-height: 100vh;
 }
 
+
 /* headers */
 h1, h2 {
     font-size: 2.25rem; /* matches text-4xl */
@@ -30,6 +31,7 @@ h1, h2 {
     margin-bottom: 1.5rem; /* matches mb-6 */
     color: rgb(31, 41, 55); /* matches text-gray-800 */
 }
+
 
 /* buttons */
 button {
@@ -52,6 +54,66 @@ button:focus {
     outline: 2px solid transparent;
     box-shadow: 0 0 0 4px rgb(74, 222, 128); /* matches focus:ring-green-400 */
 }
+
+
+/* form elements */
+form label {
+    display: block;
+    font-size: 0.875rem; /* text-sm */
+    font-weight: 500; /* font-medium */
+    margin-bottom: 0.25rem; /* mb-1 */
+}
+form input[type="text"],
+form input[type="password"] {
+    width: 100%;
+    border: 1px solid rgb(209, 213, 219); /* gray-300 */
+    border-radius: 0.5rem; /* rounded-lg */
+    padding: 0.5rem; /* p-2 */
+    font-size: 0.875rem; /* text-sm */
+    margin-bottom: 1rem; /* mb-4 */
+}
+form input:focus {
+    outline: none;
+    box-shadow: 0 0 0 2px rgb(0 82 159 / 0.5); /* focus:ring-2 */
+}
+form .actions {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1.5rem; /* mb-6 */
+}
+form .actions input[type="checkbox"] {
+    margin-right: 0.5rem; /* mr-2 */
+}
+form .actions a {
+    color: rgb(0, 82, 159); /* #00529f */
+    text-decoration: none;
+}
+form .actions a:hover {
+    text-decoration: underline;
+}
+
+
+/* images */
+img {
+    width: 100%;
+    height: auto; /* Preserves aspect ratio */
+    display: block; /* Removes inline spacing below image */
+    margin-top: 40px;
+}
+
+
+/* links */
+a {
+    display: block;
+    color: rgb(29, 78, 216); /* matches text-blue-700 */
+    text-decoration: underline;
+    margin-bottom: 0.5rem;
+}
+a:hover {
+    color: rgb(30, 58, 138); /* matches hover:text-blue-900 */
+}
+
 
 /************/
 /* classes: */
@@ -82,70 +144,4 @@ button:focus {
     align-items: center;
     font-size: 1.125rem; /* matches text-lg */
     color: rgb(55, 65, 81); /* matches text-gray-700 */
-}
-
-.links-header img {
-    height: 4rem; /* matches h-16 */
-    width: auto;
-}
-
-.links a {
-    display: block;
-    color: rgb(29, 78, 216); /* matches text-blue-700 */
-    text-decoration: underline;
-    margin-bottom: 0.5rem;
-}
-
-.links a:hover {
-    color: rgb(30, 58, 138); /* matches hover:text-blue-900 */
-}
-
-
-
-/* Form Elements */
-form label {
-    display: block;
-    font-size: 0.875rem; /* text-sm */
-    font-weight: 500; /* font-medium */
-    margin-bottom: 0.25rem; /* mb-1 */
-}
-
-form input[type="text"],
-form input[type="password"] {
-    width: 100%;
-    border: 1px solid rgb(209, 213, 219); /* gray-300 */
-    border-radius: 0.5rem; /* rounded-lg */
-    padding: 0.5rem; /* p-2 */
-    font-size: 0.875rem; /* text-sm */
-    margin-bottom: 1rem; /* mb-4 */
-}
-
-form input:focus {
-    outline: none;
-    box-shadow: 0 0 0 2px rgb(0 82 159 / 0.5); /* focus:ring-2 */
-}
-
-form .actions {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 1.5rem; /* mb-6 */
-}
-
-form .actions input[type="checkbox"] {
-    margin-right: 0.5rem; /* mr-2 */
-}
-
-form .actions a {
-    color: rgb(0, 82, 159); /* #00529f */
-    text-decoration: none;
-}
-
-form .actions a:hover {
-    text-decoration: underline;
-}
-
-/* Footer Image */
-#login-container img {
-    margin-top: 40px;
 }

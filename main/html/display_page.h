@@ -44,10 +44,10 @@ static const char display_html[] = R"rawliteral(
 
         <!-- Other Links Section -->
         <div class='section'>
-            <div class='links-header'>
+            <div'>
                 <img src='/image/aceon2.png' alt='Company Logo'>
             </div>
-            <div class='links'>
+            <div>
                 <a href='/change'>Change battery pack properties</a>
                 <a href='/connect'>Connect to WiFi access point</a>
                 <a href='/nearby'>Nearby battery packs</a>
