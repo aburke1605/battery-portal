@@ -11,8 +11,9 @@
 
 extern httpd_handle_t server;
 extern int client_sockets[CONFIG_MAX_CLIENTS];
-extern char received_data[256];
+extern char received_data[1024];
 extern SemaphoreHandle_t data_mutex;
+extern bool connected_to_WiFi;
 
 void add_client(int fd);
 
@@ -46,6 +47,4 @@ httpd_handle_t start_webserver(void);
 
 void websocket_broadcast_task(void *pvParameters);
 
-void websocket_event_handler(void *handler_args, esp_event_base_t base, int32_t event_id, void *event_data);
-
-void websocket_client_task(void *pvParameters);
+void website_send_task(void *pvParameters);

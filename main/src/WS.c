@@ -1,4 +1,5 @@
 #include <esp_wifi.h>
+#include <esp_http_client.h>
 
 #include "include/WS.h"
 #include "include/I2C.h"
@@ -194,6 +195,7 @@ esp_err_t validate_connect_handler(httpd_req_t *req) {
         wifi_ap_record_t ap_info;
         if (esp_wifi_sta_get_ap_info(&ap_info) == ESP_OK) {
             ESP_LOGI("WS", "Connected to router. Signal strength: %d dBm", ap_info.rssi);
+            connected_to_WiFi = true;
             break;
         } else {
             ESP_LOGI("WS", "Not connected. Retrying...");
@@ -471,6 +473,7 @@ httpd_handle_t start_webserver(void) {
 
 void websocket_broadcast_task(void *pvParameters) {
     while (true) {
+        // base data
         uint16_t iCharge = read_2byte_data(STATE_OF_CHARGE_REG);
 
         uint16_t iVoltage = read_2byte_data(VOLTAGE_REG);
@@ -483,43 +486,26 @@ void websocket_broadcast_task(void *pvParameters) {
         uint16_t iTemperature = read_2byte_data(TEMPERATURE_REG);
         float fTemperature = (float)iTemperature / 10.0 - 273.15;
 
+        // configurable data
+        uint16_t iBL = test_read(DISCHARGE_SUBCLASS_ID, BL_OFFSET);
+        uint16_t iBH = test_read(DISCHARGE_SUBCLASS_ID, BH_OFFSET);
+        uint16_t iCCT = test_read(CURRENT_THRESHOLDS_SUBCLASS_ID, CHG_CURRENT_THRESHOLD_OFFSET);
+        uint16_t iDCT = test_read(CURRENT_THRESHOLDS_SUBCLASS_ID, DSG_CURRENT_THRESHOLD_OFFSET);
+        uint16_t iCITL = test_read(CHARGE_INHIBIT_CFG_SUBCLASS_ID, CHG_INHIBIT_TEMP_LOW_OFFSET);
+        uint16_t iCITH = test_read(CHARGE_INHIBIT_CFG_SUBCLASS_ID, CHG_INHIBIT_TEMP_HIGH_OFFSET);
+
         cJSON *json = cJSON_CreateObject();
         cJSON_AddNumberToObject(json, "charge", iCharge);
         cJSON_AddNumberToObject(json, "voltage", fVoltage);
         cJSON_AddNumberToObject(json, "current", fCurrent);
         cJSON_AddNumberToObject(json, "temperature", fTemperature);
+        cJSON_AddNumberToObject(json, "BL", iBL);
+        cJSON_AddNumberToObject(json, "BH", iBH);
+        cJSON_AddNumberToObject(json, "CCT", iCCT);
+        cJSON_AddNumberToObject(json, "DCT", iDCT);
+        cJSON_AddNumberToObject(json, "CITL", iCITL);
+        cJSON_AddNumberToObject(json, "CITH", iCITH);
 
-        // TODO:
-        //
-        //
-        //
-        //
-
-
-
-        // SOMETHING WRONG IN LINES BELOW
-
-
-
-        //
-        //
-        //
-        //
-        //
-        //
-
-        // uint16_t iBL = test_read(DISCHARGE_SUBCLASS_ID, BL_OFFSET);
-        // uint16_t iBH = test_read(DISCHARGE_SUBCLASS_ID, BH_OFFSET);
-        // uint16_t iCCT = test_read(CURRENT_THRESHOLDS_SUBCLASS_ID, CHG_CURRENT_THRESHOLD_OFFSET);
-        // uint16_t iDCT = test_read(CURRENT_THRESHOLDS_SUBCLASS_ID, DSG_CURRENT_THRESHOLD_OFFSET);
-        // uint16_t iCITL = test_read(CHARGE_INHIBIT_CFG_SUBCLASS_ID, CHG_INHIBIT_TEMP_LOW_OFFSET);
-        // uint16_t iCITH = test_read(CHARGE_INHIBIT_CFG_SUBCLASS_ID, CHG_INHIBIT_TEMP_HIGH_OFFSET);
-        // cJSON_AddNumberToObject(json, "BL", iBL);
-        // cJSON_AddNumberToObject(json, "BH", iBH);
-        // cJSON_AddNumberToObject(json, "CCT", iCCT);
-        // cJSON_AddNumberToObject(json, "DCT", iDCT);
-        // cJSON_AddNumberToObject(json, "CITL", iCITL);
-        // cJSON_AddNumberToObject(json, "CITH", iCITH);
 
         // Add received data if available
         if (xSemaphoreTake(data_mutex, portMAX_DELAY)) {
@@ -556,7 +542,6 @@ void websocket_broadcast_task(void *pvParameters) {
         }
 
         char *json_string = cJSON_PrintUnformatted(json);
-        ESP_LOGI("WS", "Sending WebSocket data: %.*s", strlen(json_string), (char *)json_string);
         cJSON_Delete(json);
 
         if (json_string != NULL) {
@@ -601,72 +586,67 @@ void websocket_broadcast_task(void *pvParameters) {
     }
 }
 
-void websocket_event_handler(void *handler_args, esp_event_base_t base, int32_t event_id, void *event_data) {
-    esp_websocket_event_data_t *data = (esp_websocket_event_data_t *)event_data;
-
-    switch (event_id) {
-        case WEBSOCKET_EVENT_ERROR:
-            ESP_LOGE("WS", "WebSocket error occurred");
-            break;
-
-        case WEBSOCKET_EVENT_BEFORE_CONNECT:
-            ESP_LOGI("WS", "WebSocket connecting...");
-            break;
-
-        case WEBSOCKET_EVENT_CONNECTED:
-            ESP_LOGI("WS", "WebSocket connected");
-            break;
-
-        case WEBSOCKET_EVENT_BEGIN:
-            ESP_LOGI("WS", "Websocket beginning...");
-            break;
-
-        case WEBSOCKET_EVENT_DATA:
-            ESP_LOGI("WS", "Receiving WebSocket data: %.*s", data->data_len, (char *)data->data_ptr);
-            if (xSemaphoreTake(data_mutex, portMAX_DELAY)) {
-                strncpy(received_data, data->data_ptr, data->data_len);
-                received_data[data->data_len] = '\0';  // Null-terminate the string
-                xSemaphoreGive(data_mutex);
-            } else {
-                ESP_LOGE("WS", "Failed to take mutex for received data");
-            }
-            break;
-
-        case WEBSOCKET_EVENT_DISCONNECTED:
-            ESP_LOGW("WS", "WebSocket disconnected");
-            break;
-
-        default:
-            ESP_LOGW("WS", "Unhandled WebSocket event ID: %ld", event_id);
-            break;
-    }
-}
-
-void websocket_client_task(void *pvParameters) {
-    QueueHandle_t *queue = (QueueHandle_t *)pvParameters;
-
-    // Configure WebSocket client
-    esp_websocket_client_config_t websocket_cfg = {
-        .uri = "ws://192.168.4.1/ws",
-        .port = 80,
-        .network_timeout_ms = 5000,
-        .reconnect_timeout_ms = 5000,
-    };
-
-    // Initialize WebSocket client
-    esp_websocket_client_handle_t client = esp_websocket_client_init(&websocket_cfg);
-    esp_websocket_register_events(client, ESP_EVENT_ANY_ID, websocket_event_handler, queue);
-
-    // Start WebSocket client
-    esp_websocket_client_start(client);
-
-    // Keep the task running indefinitely
+void website_send_task(void *pvParameters) {
     while (true) {
-        vTaskDelay(pdMS_TO_TICKS(1000)); // Add a delay to avoid task starvation
-    }
+        // check if connected to an AP first
+        if (!connected_to_WiFi) {
+            vTaskDelay(1000 / portTICK_PERIOD_MS);
+            continue;
+        }
 
-    // Cleanup (this point will not be reached in the current loop)
-    esp_websocket_client_stop(client);
-    esp_websocket_client_destroy(client);
-    vTaskDelete(NULL);
+        esp_http_client_config_t config = {
+            .url = "http://192.168.137.1:5000/data", // this is the IPv4 address of the PC hotspot
+        };
+
+        esp_http_client_handle_t client = esp_http_client_init(&config);
+
+        // Read sensor data
+        uint16_t iCharge = read_2byte_data(STATE_OF_CHARGE_REG);
+
+        uint16_t iVoltage = read_2byte_data(VOLTAGE_REG);
+        float fVoltage = (float)iVoltage / 1000.0;
+
+        uint16_t iCurrent = read_2byte_data(CURRENT_REG);
+        float fCurrent = (float)iCurrent / 1000.0;
+        if (fCurrent < 65.536 && fCurrent > 32.767) fCurrent = 65.536 - fCurrent;
+
+        uint16_t iTemperature = read_2byte_data(TEMPERATURE_REG);
+        float fTemperature = (float)iTemperature / 10.0 - 273.15;
+
+        // Create JSON object with sensor data
+        cJSON *json = cJSON_CreateObject();
+        cJSON_AddNumberToObject(json, "charge", iCharge);
+        cJSON_AddNumberToObject(json, "voltage", fVoltage);
+        cJSON_AddNumberToObject(json, "current", fCurrent);
+        cJSON_AddNumberToObject(json, "temperature", fTemperature);
+
+        char *json_string = cJSON_PrintUnformatted(json);
+        cJSON_Delete(json);
+
+        // Configure HTTP client for POST
+        esp_http_client_set_method(client, HTTP_METHOD_POST);
+        esp_http_client_set_header(client, "Content-Type", "application/json");
+        esp_http_client_set_post_field(client, json_string, strlen(json_string));
+
+        // Perform HTTP POST request
+        esp_err_t err = esp_http_client_perform(client);
+        if (err == ESP_OK) {
+            int status_code = esp_http_client_get_status_code(client);
+            char response_buf[200];
+            int content_length = esp_http_client_read_response(client, response_buf, sizeof(response_buf) - 1);
+            if (content_length >= 0) {
+                response_buf[content_length] = '\0';  // Null-terminate the response
+                ESP_LOGI("main", "HTTP POST Status = %d, Response = %s", status_code, response_buf);
+            } else {
+                ESP_LOGE("main", "Failed to read response");
+            }
+        } else {
+            ESP_LOGE("main", "HTTP POST request failed: %s", esp_err_to_name(err));
+        }
+
+        esp_http_client_cleanup(client);
+        free(json_string);
+
+        vTaskDelay(1000 / portTICK_PERIOD_MS);  // Wait 1 second
+    }
 }

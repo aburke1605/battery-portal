@@ -1,36 +1,49 @@
-<!doctype html>
+<!DOCTYPE html>
+<html lang="en">
 <head>
-  <title>AceOn EV Battery</title>
-  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
-  <script src="{{ url_for('static', filename='js/socket.io.min.js') }}"></script>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AceOn EV Battery</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='portal/style.css') }}">
+    <script src="{{ url_for('static', filename='js/socket.io.min.js') }}"></script>
 </head>
 
 <html>
-  <body>
-    <main>
-      <div class="px-4 py-3 my-2 text-center">
-        <h1 class="display-6 fw-bold text-primary">EV battery portal</h1>
-      </div>
-      <div class="px-4 py-3 my-2 text-center">
-        <img class="d-block mx-auto mb-4" src="{{ url_for('static', filename='plots/plot.png') }}" alt="plot"/>
-      </div>
-      <div>
-        <p>Here is a plot</p>
-        <p>Charge: <span id="charge">0</span>%</p>
-        <p>Voltage: <span id="voltage">0.00</span>V</p>
-        <p>Current: <span id="current">0.00</span>A</p>
-        <p>Temperature <span id="temperature">0.00</span>°C</p>
-      </div>
-    </main>
+    <body>
+        <div class="container">
+            <div class="section">
+                <h2>EV battery portal</h2>
+                <div class="info">
+                    <div class="info-item">
+                        <span>State of charge:</span>
+                        <span><span id="charge"></span> %</span>
+                    </div>
+                    <div class="info-item">
+                        <span>Voltage:</span>
+                        <span><span id="voltage"></span> V</span>
+                    </div>
+                    <div class="info-item">
+                        <span>Current:</span>
+                        <span><span id="current"></span> A</span>
+                    </div>
+                    <div class="info-item">
+                        <span>Temperature:</span>
+                        <span><span id="temperature"></span> °C</span>
+                    </div>
+                </div>
+            </div>
+
+            <img src='{{ url_for("static", filename="portal/images/aceon2.png") }}' alt='Company Logo'>
+        </div>
+    </body>
 
     <script>
-      const socket = io.connect()
-      socket.on('update_data', (data) => {
-        document.getElementById('charge').textContent = data.charge;
-        document.getElementById('voltage').textContent = data.voltage.toFixed(2);
-        document.getElementById('current').textContent = data.current.toFixed(2);
-        document.getElementById('temperature').textContent = data.temperature.toFixed(2);
-      })
+        const socket = io.connect()
+        socket.on('update_data', (data) => {
+            document.getElementById('charge').textContent = data.charge;
+            document.getElementById('voltage').textContent = data.voltage.toFixed(2);
+            document.getElementById('current').textContent = data.current.toFixed(2);
+            document.getElementById('temperature').textContent = data.temperature.toFixed(2);
+        })
     </script>
-  </body>
 </html>
