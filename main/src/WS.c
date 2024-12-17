@@ -5,7 +5,6 @@
 #include "include/I2C.h"
 #include "include/utils.h"
 
-#include "html/login_page.h"
 #include "html/change_page.h"
 #include "html/connect_page.h"
 #include "html/nearby_page.h"
@@ -32,12 +31,6 @@ void remove_client(int fd) {
             return;
         }
     }
-}
-
-esp_err_t login_handler(httpd_req_t *req) {
-    httpd_resp_set_type(req, "text/html");
-    httpd_resp_send(req, login_html, HTTPD_RESP_USE_STRLEN);
-    return ESP_OK;
 }
 
 esp_err_t validate_login_handler(httpd_req_t *req) {
@@ -380,8 +373,8 @@ httpd_handle_t start_webserver(void) {
         httpd_uri_t login_uri = {
             .uri       = "/",
             .method    = HTTP_GET,
-            .handler   = login_handler,
-            .user_ctx  = NULL
+            .handler   = file_serve_handler,
+            .user_ctx  = "/storage/login.html"
         };
         httpd_register_uri_handler(server, &login_uri);
         

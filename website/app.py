@@ -1,5 +1,5 @@
 #!venv/bin/python
-from flask import Flask, render_template, request, jsonify
+from flask import Flask, render_template, request, jsonify, redirect
 from flask_sock import Sock
 
 # Create Flask application
@@ -12,8 +12,18 @@ data_store = {}
 connected_clients = set()  # Keep track of connected WebSocket clients
 
 @app.route('/')
-def index():
-    print('Request for index page received')
+def login():
+    print('Request for login page received')
+    return render_template('login.html')
+
+@app.route('/validate_login', methods=['POST'])
+def validate_login():
+    # TODO: check user name and password is ok
+    return redirect("/display", code=302)
+
+@app.route('/display')
+def display():
+    print('Request for display page received')
     return render_template('display.html')
 
 
