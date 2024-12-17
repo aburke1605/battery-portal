@@ -26,6 +26,22 @@ def display():
     print('Request for display page received')
     return render_template('display.html')
 
+@sock.route('/ws')
+def websocket(ws):
+    # Add the client to the connected clients set
+    connected_clients.add(ws)
+    try:
+        while True:
+            # WebSocket server can listen for incoming messages if needed
+            message = ws.receive()
+            if message:
+                print(f"Received from client: {message}")
+    except Exception as e:
+        print(f"WebSocket error: {e}")
+    finally:
+        # Clean up when the client disconnects
+        connected_clients.remove(ws)
+
 @app.route('/data', methods=['POST'])
 def receive_data():
     data = request.json
@@ -43,31 +59,25 @@ def receive_data():
         return {"status": "success", "data_received": data}, 200
     return {"status": "error", "message": "No data received"}, 400
 
-@sock.route('/ws')
-def websocket(ws):
-    # Add the client to the connected clients set
-    connected_clients.add(ws)
-    try:
-        while True:
-            # WebSocket server can listen for incoming messages if needed
-            message = ws.receive()
-            if message:
-                print(f"Received from client: {message}")
-    except Exception as e:
-        print(f"WebSocket error: {e}")
-    finally:
-        # Clean up when the client disconnects
-        connected_clients.remove(ws)
-
 @app.route('/change')
 def change():
     print('Request for change page received')
     return render_template('change.html')
 
+@app.route('/validate_change', methods=['POST'])
+def validate_change():
+    # TODO: code this
+    return redirect("/display", code=302)
+
 @app.route('/connect')
 def connect():
     print('Request for connect page received')
     return render_template('connect.html')
+
+@app.route('/validate_connect', methods=['POST'])
+def validate_connect():
+    # TODO: code this
+    return redirect("/display", code=302)
 
 @app.route('/nearby')
 def nearby():
@@ -83,6 +93,11 @@ def about():
 def device():
     print('Request for device page received')
     return render_template('device.html')
+
+@app.route('/toggle')
+def toggle():
+    # TODO: code this
+    return redirect("/display", code=302)
 
 if __name__ == '__main__':
     # Start app
