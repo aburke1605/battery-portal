@@ -295,6 +295,70 @@ esp_err_t image_handler(httpd_req_t *req) {
     return ESP_OK;
 }
 
+esp_err_t file_serve_handler(httpd_req_t *req) {
+    const char *file_path = (const char *)req->user_ctx; // Get file path from user_ctx
+    ESP_LOGI("WS", "Serving file: %s", file_path);
+
+    // Open the file
+    FILE *file = fopen(file_path, "r");
+    if (!file) {
+        ESP_LOGE("WS", "Failed to open file: %s", file_path);
+        httpd_resp_send_err(req, HTTPD_404_NOT_FOUND, "File not found");
+        return ESP_FAIL;
+    }
+
+    // Get file size
+    struct stat file_stat;
+    if (stat(file_path, &file_stat) != 0) {
+        ESP_LOGE("WS", "Failed to get file stats: %s", file_path);
+        fclose(file);
+        httpd_resp_send_err(req, HTTPD_500_INTERNAL_SERVER_ERROR, "Failed to retrieve file size");
+        return ESP_FAIL;
+    }
+
+    // Set Content-Type based on file extension
+    const char *ext = strrchr(file_path, '.');
+    if (ext) {
+        if (strcmp(ext, ".html") == 0) {
+            httpd_resp_set_type(req, "text/html");
+        } else if (strcmp(ext, ".css") == 0) {
+            httpd_resp_set_type(req, "text/css");
+        } else if (strcmp(ext, ".js") == 0) {
+            httpd_resp_set_type(req, "application/javascript");
+        } else if (strcmp(ext, ".png") == 0) {
+            httpd_resp_set_type(req, "image/png");
+        } else if (strcmp(ext, ".jpg") == 0 || strcmp(ext, ".jpeg") == 0) {
+            httpd_resp_set_type(req, "image/jpeg");
+        } else if (strcmp(ext, ".ico") == 0) {
+            httpd_resp_set_type(req, "image/x-icon");
+        } else {
+            httpd_resp_set_type(req, "application/octet-stream");
+        }
+    } else {
+        httpd_resp_set_type(req, "application/octet-stream");
+    }
+
+    // Buffer to read file contents
+    char buffer[1024];
+    size_t read_bytes;
+
+    // Send file data in chunks
+    while ((read_bytes = fread(buffer, 1, sizeof(buffer), file)) > 0) {
+        esp_err_t ret = httpd_resp_send_chunk(req, buffer, read_bytes);
+        if (ret != ESP_OK) {
+            ESP_LOGE("WS", "Failed to send file chunk");
+            fclose(file);
+            httpd_resp_send_err(req, HTTPD_500_INTERNAL_SERVER_ERROR, "Failed to send file");
+            return ESP_FAIL;
+        }
+    }
+
+    // End the HTTP response
+    fclose(file);
+    httpd_resp_send_chunk(req, NULL, 0);
+    return ESP_OK;
+}
+
 // Start HTTP server
 httpd_handle_t start_webserver(void) {
     // create sockets for clients
@@ -346,7 +410,7 @@ httpd_handle_t start_webserver(void) {
         httpd_uri_t display_uri = {
             .uri       = "/display",
             .method    = HTTP_GET,
-            .handler   = display_handler,
+            .handler   = file_serve_handler,
             .user_ctx  = "/storage/display.html"
         };
         httpd_register_uri_handler(server, &display_uri);
