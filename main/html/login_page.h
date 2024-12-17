@@ -25,7 +25,7 @@ static const char login_html[] = R"rawliteral(
 
             <button type='submit'>Get started</button>
         </form>
-        <img src='/image/aceon.png' alt='Company Logo'>
+        <img src='/static/images/aceon.png' alt='Company Logo'>
     </div>
 </body>
 </html>

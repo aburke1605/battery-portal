@@ -6,7 +6,6 @@
 #include "include/utils.h"
 
 #include "html/login_page.h"
-#include "html/display_page.h"
 #include "html/change_page.h"
 #include "html/connect_page.h"
 #include "html/nearby_page.h"
@@ -64,12 +63,6 @@ esp_err_t validate_login_handler(httpd_req_t *req) {
         const char *error_msg = "Invalid username or password.";
         httpd_resp_send(req, error_msg, strlen(error_msg));
     }
-    return ESP_OK;
-}
-
-esp_err_t display_handler(httpd_req_t *req) {
-    httpd_resp_set_type(req, "text/html");
-    httpd_resp_send(req, display_html, HTTPD_RESP_USE_STRLEN);
     return ESP_OK;
 }
 
@@ -354,7 +347,7 @@ httpd_handle_t start_webserver(void) {
             .uri       = "/display",
             .method    = HTTP_GET,
             .handler   = display_handler,
-            .user_ctx  = NULL
+            .user_ctx  = "/storage/display.html"
         };
         httpd_register_uri_handler(server, &display_uri);
         display_uri.uri = "/return";
@@ -439,7 +432,7 @@ httpd_handle_t start_webserver(void) {
         httpd_register_uri_handler(server, &toggle_uri);
 
         httpd_uri_t css_uri = {
-            .uri      = "/style.css",
+            .uri      = "/static/style.css",
             .method   = HTTP_GET,
             .handler  = css_handler,
             .user_ctx = "/storage/style.css",
@@ -448,7 +441,7 @@ httpd_handle_t start_webserver(void) {
 
         // Add a handler for serving the image
         httpd_uri_t image_uri = {
-            .uri       = "/image/aceon.png",
+            .uri       = "/static/images/aceon.png",
             .method    = HTTP_GET,
             .handler   = image_handler, // Function to read and send the image
             .user_ctx  = "/storage/images/aceon.png" // File path as user context
@@ -456,7 +449,7 @@ httpd_handle_t start_webserver(void) {
         httpd_register_uri_handler(server, &image_uri);
 
         httpd_uri_t image_uri_2 = {
-            .uri       = "/image/aceon2.png",
+            .uri       = "/static/images/aceon2.png",
             .method    = HTTP_GET,
             .handler   = image_handler, // Function to read and send the image
             .user_ctx  = "/storage/images/aceon2.png" // File path as user context
