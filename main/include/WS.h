@@ -23,15 +23,7 @@ esp_err_t validate_login_handler(httpd_req_t *req);
 
 esp_err_t websocket_handler(httpd_req_t *req);
 
-esp_err_t connect_handler(httpd_req_t *req);
-
 esp_err_t validate_connect_handler(httpd_req_t *req);
-
-esp_err_t nearby_handler(httpd_req_t *req);
-
-esp_err_t about_handler(httpd_req_t *req);
-
-esp_err_t device_handler(httpd_req_t *req);
 
 esp_err_t toggle_handler(httpd_req_t *req);
 

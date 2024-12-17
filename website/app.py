@@ -26,7 +26,6 @@ def display():
     print('Request for display page received')
     return render_template('display.html')
 
-
 @app.route('/data', methods=['POST'])
 def receive_data():
     data = request.json
@@ -59,6 +58,31 @@ def websocket(ws):
     finally:
         # Clean up when the client disconnects
         connected_clients.remove(ws)
+
+@app.route('/change')
+def change():
+    print('Request for change page received')
+    return render_template('change.html')
+
+@app.route('/connect')
+def connect():
+    print('Request for connect page received')
+    return render_template('connect.html')
+
+@app.route('/nearby')
+def nearby():
+    print('Request for nearby page received')
+    return render_template('nearby.html')
+
+@app.route('/about')
+def about():
+    print('Request for about page received')
+    return render_template('about.html')
+
+@app.route('/device')
+def device():
+    print('Request for device page received')
+    return render_template('device.html')
 
 if __name__ == '__main__':
     # Start app

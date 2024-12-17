@@ -5,12 +5,6 @@
 #include "include/I2C.h"
 #include "include/utils.h"
 
-#include "html/change_page.h"
-#include "html/connect_page.h"
-#include "html/nearby_page.h"
-#include "html/about_page.h"
-#include "html/device_page.h"
-
 
 void add_client(int fd) {
     for (int i = 0; i < CONFIG_MAX_CLIENTS; i++) {
@@ -68,12 +62,6 @@ esp_err_t websocket_handler(httpd_req_t *req) {
     }
 
     return ESP_FAIL;
-}
-
-esp_err_t change_handler(httpd_req_t *req) {
-    httpd_resp_set_type(req, "text/html");
-    httpd_resp_send(req, change_html, HTTPD_RESP_USE_STRLEN);
-    return ESP_OK;
 }
 
 esp_err_t validate_change_handler(httpd_req_t *req) {
@@ -145,12 +133,6 @@ esp_err_t validate_change_handler(httpd_req_t *req) {
     return ESP_OK;
 }
 
-esp_err_t connect_handler(httpd_req_t *req) {
-    httpd_resp_set_type(req, "text/html");
-    httpd_resp_send(req, connect_html, HTTPD_RESP_USE_STRLEN);
-    return ESP_OK;
-}
-
 esp_err_t validate_connect_handler(httpd_req_t *req) {
     char content[100];
     esp_err_t err = get_POST_data(req, content, sizeof(content));
@@ -193,24 +175,6 @@ esp_err_t validate_connect_handler(httpd_req_t *req) {
     httpd_resp_set_hdr(req, "Location", "/display"); // redirect back to /display
     httpd_resp_send(req, NULL, 0); // no response body
 
-    return ESP_OK;
-}
-
-esp_err_t nearby_handler(httpd_req_t *req) {
-    httpd_resp_set_type(req, "text/html");
-    httpd_resp_send(req, nearby_html, HTTPD_RESP_USE_STRLEN);
-    return ESP_OK;
-}
-
-esp_err_t about_handler(httpd_req_t *req) {
-    httpd_resp_set_type(req, "text/html");
-    httpd_resp_send(req, about_html, HTTPD_RESP_USE_STRLEN);
-    return ESP_OK;
-}
-
-esp_err_t device_handler(httpd_req_t *req) {
-    httpd_resp_set_type(req, "text/html");
-    httpd_resp_send(req, device_html, HTTPD_RESP_USE_STRLEN);
     return ESP_OK;
 }
 
@@ -407,8 +371,6 @@ httpd_handle_t start_webserver(void) {
             .user_ctx  = "/storage/display.html"
         };
         httpd_register_uri_handler(server, &display_uri);
-        display_uri.uri = "/return";
-        httpd_register_uri_handler(server, &display_uri);
 
         // WebSocket
         httpd_uri_t ws_uri = {
@@ -422,8 +384,8 @@ httpd_handle_t start_webserver(void) {
         httpd_uri_t change_uri = {
             .uri       = "/change",
             .method    = HTTP_GET,
-            .handler   = change_handler,
-            .user_ctx  = NULL
+            .handler   = file_serve_handler,
+            .user_ctx  = "/storage/change.html"
         };
         httpd_register_uri_handler(server, &change_uri);
 
@@ -439,8 +401,8 @@ httpd_handle_t start_webserver(void) {
         httpd_uri_t connect_uri = {
             .uri       = "/connect",
             .method    = HTTP_GET,
-            .handler   = connect_handler,
-            .user_ctx  = NULL
+            .handler   = file_serve_handler,
+            .user_ctx  = "/storage/connect.html"
         };
         httpd_register_uri_handler(server, &connect_uri);
 
@@ -457,8 +419,8 @@ httpd_handle_t start_webserver(void) {
         httpd_uri_t nearby_uri = {
             .uri       = "/nearby",
             .method    = HTTP_GET,
-            .handler   = nearby_handler,
-            .user_ctx  = NULL
+            .handler   = file_serve_handler,
+            .user_ctx  = "/storage/nearby.html"
         };
         httpd_register_uri_handler(server, &nearby_uri);
 
@@ -466,8 +428,8 @@ httpd_handle_t start_webserver(void) {
         httpd_uri_t about_uri = {
             .uri       = "/about",
             .method    = HTTP_GET,
-            .handler   = about_handler,
-            .user_ctx  = NULL
+            .handler   = file_serve_handler,
+            .user_ctx  = "/storage/about.html"
         };
         httpd_register_uri_handler(server, &about_uri);
 
@@ -475,8 +437,8 @@ httpd_handle_t start_webserver(void) {
         httpd_uri_t device_uri = {
             .uri       = "/device",
             .method    = HTTP_GET,
-            .handler   = device_handler,
-            .user_ctx  = NULL
+            .handler   = file_serve_handler,
+            .user_ctx  = "/storage/device.html"
         };
         httpd_register_uri_handler(server, &device_uri);
 
