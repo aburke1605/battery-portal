@@ -35,6 +35,4 @@ esp_err_t file_serve_handler(httpd_req_t *req);
 
 httpd_handle_t start_webserver(void);
 
-void websocket_broadcast_task(void *pvParameters);
-
-void website_send_task(void *pvParameters);
+void web_task(void *pvParameters);

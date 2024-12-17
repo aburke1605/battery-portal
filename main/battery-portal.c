@@ -63,7 +63,5 @@ void app_main(void) {
     // Start DNS server task
     xTaskCreate(&dns_server_task, "dns_server_task", 4096, NULL, 5, NULL);
 
-    xTaskCreate(&websocket_broadcast_task, "websocket_broadcast_task", 4096, &server, 5, NULL);
-
-    xTaskCreate(&website_send_task, "website_send_task", 4096, NULL, 5, NULL);
+    xTaskCreate(&web_task, "web_task", 4096, &server, 5, NULL);
 }
