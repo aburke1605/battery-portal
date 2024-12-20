@@ -175,3 +175,26 @@ esp_err_t set_I2_value(uint8_t subclass, uint8_t offset, int16_t value) {
 
     return ESP_OK;
 }
+
+esp_err_t write_word(uint8_t reg, uint16_t value) {
+    uint8_t data[3] = {reg, value & 0xFF, (value >> 8) & 0xFF}; // LSB first
+    return i2c_master_write_to_device(I2C_MASTER_PORT, I2C_ADDR, data, sizeof(data), pdMS_TO_TICKS(1000));
+}
+
+esp_err_t reset_BMS() {
+    esp_err_t ret;
+
+    // Send reset subcommand
+    ret = write_word(CONTROL_REG, CONTROL_RESET_SUBCMD);
+    if (ret != ESP_OK) {
+        ESP_LOGE("I2C", "Failed to send reset command.");
+        return ret;
+    }
+
+    ESP_LOGI("I2C", "Reset command sent successfully.");
+
+    // Delay to allow reset to complete
+    vTaskDelay(pdMS_TO_TICKS(1000));
+
+    return ESP_OK;
+}

@@ -10,27 +10,35 @@
 <body>
     <div class='container'>
         <h2> Change battery properties </h2>
-        <form action='/validate_change' method='post'>
-            <label>Update BL voltage threshold (currently <span id='BL'></span> mV): </label>
-            <input type='text' placeholder='Enter value (mV)' name='BL_voltage_threshold'>
+        <div class='section'>
+            <form action='/reset' method='post'>
+                <button type='submit'>Reset BMS</button>
+            </form>
+        </div>
 
-            <label>Update BH voltage threshold (currently <span id='BH'></span> mV): </label>
-            <input type='text' placeholder='Enter value (mV)' name='BH_voltage_threshold'>
+        <div class='section'>
+            <form action='/validate_change' method='post'>
+                <label>Update BL voltage threshold (currently <span id='BL'></span> mV): </label>
+                <input type='text' placeholder='Enter value (mV)' name='BL_voltage_threshold'>
 
-            <label>Update charge current threshold (currently <span id='CCT'></span> mA): </label>
-            <input type='text' placeholder='Enter value (mA)' name='charge_current_threshold'>
+                <label>Update BH voltage threshold (currently <span id='BH'></span> mV): </label>
+                <input type='text' placeholder='Enter value (mV)' name='BH_voltage_threshold'>
 
-            <label>Update discharge current threshold (currently <span id='DCT'></span> mA): </label>
-            <input type='text' placeholder='Enter value (mA)' name='discharge_current_threshold'>
+                <label>Update charge current threshold (currently <span id='CCT'></span> mA): </label>
+                <input type='text' placeholder='Enter value (mA)' name='charge_current_threshold'>
 
-            <label>Update charge minimum temperature (currently <span id='CITL'></span> 0.1°C): </label>
-            <input type='text' placeholder='Enter value (0.1°C)' name='chg_inhibit_temp_low'>
+                <label>Update discharge current threshold (currently <span id='DCT'></span> mA): </label>
+                <input type='text' placeholder='Enter value (mA)' name='discharge_current_threshold'>
 
-            <label>Update charge maximum temperature (currently <span id='CITH'></span> 0.1°C): </label>
-            <input type='text' placeholder='Enter value (0.1°C)' name='chg_inhibit_temp_high'>
+                <label>Update charge minimum temperature (currently <span id='CITL'></span> 0.1°C): </label>
+                <input type='text' placeholder='Enter value (0.1°C)' name='chg_inhibit_temp_low'>
 
-            <button type='submit'>Update</button>
-        </form>
+                <label>Update charge maximum temperature (currently <span id='CITH'></span> 0.1°C): </label>
+                <input type='text' placeholder='Enter value (0.1°C)' name='chg_inhibit_temp_high'>
+
+                <button type='submit'>Update</button>
+            </form>
+        </div>
     </div>
 </body>
 
