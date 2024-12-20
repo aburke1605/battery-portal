@@ -159,6 +159,16 @@ esp_err_t validate_change_handler(httpd_req_t *req) {
     return ESP_OK;
 }
 
+esp_err_t reset_handler(httpd_req_t *req) {
+    reset_BMS();
+
+    httpd_resp_set_status(req, "302 Found");
+    httpd_resp_set_hdr(req, "Location", "/change"); // redirect to /change
+    httpd_resp_send(req, NULL, 0); // no response body
+
+    return ESP_OK;
+}
+
 esp_err_t connect_handler(httpd_req_t *req) {
     httpd_resp_set_type(req, "text/html");
     httpd_resp_send(req, connect_html, HTTPD_RESP_USE_STRLEN);
@@ -384,6 +394,14 @@ httpd_handle_t start_webserver(void) {
             .user_ctx  = NULL
         };
         httpd_register_uri_handler(server, &validate_change_uri);
+
+        httpd_uri_t reset_uri = {
+            .uri       = "/reset",
+            .method    = HTTP_POST,
+            .handler   = reset_handler,
+            .user_ctx  = NULL
+        };
+        httpd_register_uri_handler(server, &reset_uri);
 
         // Connect page
         httpd_uri_t connect_uri = {

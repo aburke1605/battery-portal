@@ -12,6 +12,10 @@
 #define CURRENT_REG CONFIG_CURRENT_REG                 // Register address for AverageCurrent
 #define TEMPERATURE_REG CONFIG_TEMPERATURE_REG         // Register address for Temperature
 
+#define CONTROL_REG             0x00  // Control register address
+#define CONTROL_RESET_SUBCMD    0x0041 // Reset subcommand
+#define I2C_MASTER_PORT         0      // I2C port number (adjust as needed)
+
 #define DATA_FLASH_CLASS       0x3E
 #define DATA_FLASH_BLOCK       0x3F
 #define BLOCK_DATA_START       0x40
@@ -47,3 +51,7 @@ uint16_t test_read(uint8_t subclass, uint8_t offset);
 esp_err_t write_byte(uint8_t reg, uint8_t data);
 
 esp_err_t set_I2_value(uint8_t subclass, uint8_t offset, int16_t value);
+
+esp_err_t write_word(uint8_t reg, uint16_t value);
+
+esp_err_t reset_BMS();
