@@ -1,5 +1,6 @@
 #!venv/bin/python
 from flask import Flask, render_template, request, jsonify, redirect
+import requests
 from flask_sock import Sock
 
 # Create Flask application
@@ -66,8 +67,57 @@ def change():
 
 @app.route('/validate_change', methods=['POST'])
 def validate_change():
-    # TODO: code this
-    return redirect("/display", code=302)
+    # Replace this with the ESP32's IP or hostname
+    ESP32_URL = "http://127.0.0.1:5001/update_battery" # this is set up with:
+    # > netsh interface portproxy add v4tov4 listenaddress=0.0.0.0 listenport=5001 connectaddress=192.168.137.143 connectport=5000
+    # (PowerShell)
+
+    # Extract the configuration data from the client request
+    config_data = request.json
+
+    # # Forward the configuration data to the ESP32
+    # try:
+    #     response = requests.post(ESP32_URL, json=config_data)
+    #     return jsonify({
+    #         "status": "success",
+    #         "esp_response": response.json()
+    #     })
+    # except requests.RequestException as e:
+    #     return jsonify({"status": "error", "message": str(e)}), 500
+    if not request.is_json:
+        return {"error": "Content-Type must be application/json"}, 415
+
+    try:
+        data = request.get_json()
+        print("Received configuration:", data)
+        response = requests.post(ESP32_URL, data={'BL_voltage_threshold': 2000})
+
+        if response.status_code == 200:
+            return {"status": "success", "message": "Battery property updated successfully"}
+        else:
+            return {"status": "error", "message": "ESP32 update failed", "esp32_response": response.text}, 500
+    except Exception as e:
+        print(f"Error processing request: {e}")
+        return {"error": "Failed to process request"}, 400
+
+@app.route('/reset', methods=['POST'])
+def reset():
+    ESP32_URL = "http://192.168.137.219:5000/test"
+
+    try:
+        data = request.get_json()
+        print("Received configuration:", data)
+        response = requests.post(ESP32_URL, data={'test': 1})
+
+        if response.status_code == 200:
+            return {"status": "success", "message": "successful"}
+        else:
+            return {"status": "error", "message": "failed", "esp32_response": response.text}, 500
+
+    except Exception as e:
+        print(f"Error processing request: {e}")
+        return {"error": "Failed to process request"}, 400
+
 
 @app.route('/connect')
 def connect():
