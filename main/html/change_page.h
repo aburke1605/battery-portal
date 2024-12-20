@@ -32,6 +32,10 @@ static const char change_html[] = R"rawliteral(
 
             <button type='submit'>Update</button>
         </form>
+
+        <form action='/reset' method='post'>
+            <button type='submit'>Reset BMS</button>
+        </form>
     </div>
 </body>
 
