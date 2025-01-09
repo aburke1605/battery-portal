@@ -11,21 +11,31 @@ sock = Sock(app)
 
 # TODO: need to automatically determine this:
 ESP_IP = "192.168.137.33"
-def forward_request_to_esp32(endpoint):
+def forward_request_to_esp32(endpoint, method="POST", allow_redirects=True):
     """
-    Generic function to forward form data to the ESP32.
+    Generic function to forward requests to the ESP32.
     :param endpoint: ESP32 endpoint to forward the request to.
+    :param method: HTTP method ("GET", "POST", etc.).
+    :param allow_redirects: Whether to allow redirects from the ESP32.
     :return: Response from the ESP32.
     """
     ESP32_URL = f"http://{ESP_IP}/{endpoint}"
     try:
-        # Collect form data from the request
-        form_data = request.form.to_dict()
+        # Handle GET and POST requests
+        if method == "POST":
+            form_data = request.form.to_dict()  # Collect form data for POST
+            response = requests.post(ESP32_URL, data=form_data, allow_redirects=allow_redirects)
+        elif method == "GET":
+            response = requests.get(ESP32_URL, allow_redirects=allow_redirects)
+        else:
+            return jsonify({'error': 'Unsupported HTTP method'}), 400
 
-        # Forward the data to the ESP32
-        response = requests.post(ESP32_URL, data=form_data)
+        # Handle redirect responses (if any)
+        if response.status_code == 302 and not allow_redirects:
+            redirect_url = response.headers.get("Location", "/")
+            return redirect(redirect_url, code=302)
 
-        # Return the ESP32's response
+        # Return the ESP32's response to the client
         return response.text, response.status_code
     except requests.exceptions.RequestException as e:
         return jsonify({'error': f"Failed to communicate with ESP32: {str(e)}"}), 500
@@ -91,20 +101,7 @@ def validate_change():
 
 @app.route('/reset', methods=['POST'])
 def reset():
-    ESP32_URL = f"http://{ESP_IP}/reset"
-    try:
-        # Forward the POST request to the ESP32
-        response = requests.post(ESP32_URL, allow_redirects=False)
-
-        # If ESP32 responds with a redirect, follow the redirect
-        if response.status_code == 302:
-            redirect_url = response.headers.get("Location", "/")
-            return redirect(redirect_url, code=302)
-
-        # Return the ESP32's response to the client
-        return response.text, response.status_code
-    except requests.exceptions.RequestException as e:
-        return jsonify({'error': f"Failed to communicate with ESP32: {str(e)}"}), 500
+    return forward_request_to_esp32("reset", allow_redirects=False)
 
 
 @app.route('/connect')
@@ -131,17 +128,9 @@ def device():
     print('Request for device page received')
     return render_template('device.html')
 
-@app.route('/toggle')
+@app.route('/toggle', methods=['GET'])
 def toggle():
-    ESP32_URL = f"http://{ESP_IP}/toggle"
-    try:
-        # Forward the GET request to the ESP32
-        response = requests.get(ESP32_URL)
-
-        # Return the ESP32's response to the client
-        return response.text, response.status_code
-    except requests.exceptions.RequestException as e:
-        return jsonify({'error': f"Failed to communicate with ESP32: {str(e)}"}), 500
+    return forward_request_to_esp32("toggle", method="GET")
 
 if __name__ == '__main__':
     # Start app
