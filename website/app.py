@@ -68,7 +68,7 @@ def change():
 @app.route('/validate_change', methods=['POST'])
 def validate_change():
     # Replace with the actual IP address of ESP32
-    ESP32_URL = "http://192.168.0.28/validate_change"
+    ESP32_URL = "http://192.168.137.129/validate_change"
     try:
         # Collect form data from the request
         form_data = request.form.to_dict()
@@ -83,21 +83,20 @@ def validate_change():
 
 @app.route('/reset', methods=['POST'])
 def reset():
-    ESP32_URL = "http://192.168.137.219:5000/test"
-
+    ESP32_URL = "http://192.168.137.129/reset"
     try:
-        data = request.get_json()
-        print("Received configuration:", data)
-        response = requests.post(ESP32_URL, data={'test': 1})
+        # Forward the POST request to the ESP32
+        response = requests.post(ESP32_URL, allow_redirects=False)
 
-        if response.status_code == 200:
-            return {"status": "success", "message": "successful"}
-        else:
-            return {"status": "error", "message": "failed", "esp32_response": response.text}, 500
+        # If ESP32 responds with a redirect, follow the redirect
+        if response.status_code == 302:
+            redirect_url = response.headers.get("Location", "/")
+            return redirect(redirect_url, code=302)
 
-    except Exception as e:
-        print(f"Error processing request: {e}")
-        return {"error": "Failed to process request"}, 400
+        # Return the ESP32's response to the client
+        return response.text, response.status_code
+    except requests.exceptions.RequestException as e:
+        return jsonify({'error': f"Failed to communicate with ESP32: {str(e)}"}), 500
 
 
 @app.route('/connect')
