@@ -23,8 +23,18 @@ def login():
 
 @app.route('/validate_login', methods=['POST'])
 def validate_login():
-    # TODO: check user name and password is ok
-    return redirect("/display", code=302)
+    ESP32_URL = f"http://{ESP_IP}/validate_login"
+    try:
+        # Collect form data from the request
+        form_data = request.form.to_dict()
+
+        # Forward the data to the ESP32
+        response = requests.post(ESP32_URL, data=form_data)
+
+        # Handle the response from the ESP32
+        return response.text, response.status_code
+    except requests.exceptions.RequestException as e:
+        return jsonify({'error': f"Failed to communicate with ESP32: {str(e)}"}), 500
 
 @app.route('/display')
 def display():
@@ -71,7 +81,6 @@ def change():
 
 @app.route('/validate_change', methods=['POST'])
 def validate_change():
-    # Replace with the actual IP address of ESP32
     ESP32_URL = f"http://{ESP_IP}/validate_change"
     try:
         # Collect form data from the request
@@ -110,7 +119,6 @@ def connect():
 
 @app.route('/validate_connect', methods=['POST'])
 def validate_connect():
-    # Replace with the actual IP address of ESP32
     ESP32_URL = f"http://{ESP_IP}/validate_connect"
     try:
         # Collect form data from the request
@@ -141,7 +149,6 @@ def device():
 
 @app.route('/toggle')
 def toggle():
-    # Replace with the actual IP address of ESP32
     ESP32_URL = f"http://{ESP_IP}/toggle"
     try:
         # Forward the GET request to the ESP32
