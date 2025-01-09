@@ -68,7 +68,7 @@ def change():
 @app.route('/validate_change', methods=['POST'])
 def validate_change():
     # Replace with the actual IP address of ESP32
-    ESP32_URL = "http://192.168.137.129/validate_change"
+    ESP32_URL = "http://192.168.137.33/validate_change"
     try:
         # Collect form data from the request
         form_data = request.form.to_dict()
@@ -83,7 +83,7 @@ def validate_change():
 
 @app.route('/reset', methods=['POST'])
 def reset():
-    ESP32_URL = "http://192.168.137.129/reset"
+    ESP32_URL = "http://192.168.137.33/reset"
     try:
         # Forward the POST request to the ESP32
         response = requests.post(ESP32_URL, allow_redirects=False)
@@ -106,8 +106,19 @@ def connect():
 
 @app.route('/validate_connect', methods=['POST'])
 def validate_connect():
-    # TODO: code this
-    return redirect("/display", code=302)
+    # Replace with the actual IP address of ESP32
+    ESP32_URL = "http://192.168.137.33/validate_connect"
+    try:
+        # Collect form data from the request
+        form_data = request.form.to_dict()
+
+        # Forward the data to the ESP32
+        response = requests.post(ESP32_URL, data=form_data)
+
+        # Handle the response from the ESP32
+        return response.text, response.status_code
+    except requests.exceptions.RequestException as e:
+        return jsonify({'error': f"Failed to communicate with ESP32: {str(e)}"}), 500
 
 @app.route('/nearby')
 def nearby():
