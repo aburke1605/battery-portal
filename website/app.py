@@ -9,6 +9,10 @@ app.config['SECRET_KEY'] = 'd0ughball$'
 sock = Sock(app)
 
 
+# TODO: need to automatically determine this:
+ESP_IP = "192.168.137.33"
+
+
 data_store = {}
 connected_clients = set()  # Keep track of connected WebSocket clients
 
@@ -68,7 +72,7 @@ def change():
 @app.route('/validate_change', methods=['POST'])
 def validate_change():
     # Replace with the actual IP address of ESP32
-    ESP32_URL = "http://192.168.137.33/validate_change"
+    ESP32_URL = f"http://{ESP_IP}/validate_change"
     try:
         # Collect form data from the request
         form_data = request.form.to_dict()
@@ -83,7 +87,7 @@ def validate_change():
 
 @app.route('/reset', methods=['POST'])
 def reset():
-    ESP32_URL = "http://192.168.137.33/reset"
+    ESP32_URL = f"http://{ESP_IP}/reset"
     try:
         # Forward the POST request to the ESP32
         response = requests.post(ESP32_URL, allow_redirects=False)
@@ -107,7 +111,7 @@ def connect():
 @app.route('/validate_connect', methods=['POST'])
 def validate_connect():
     # Replace with the actual IP address of ESP32
-    ESP32_URL = "http://192.168.137.33/validate_connect"
+    ESP32_URL = f"http://{ESP_IP}/validate_connect"
     try:
         # Collect form data from the request
         form_data = request.form.to_dict()
@@ -138,7 +142,7 @@ def device():
 @app.route('/toggle')
 def toggle():
     # Replace with the actual IP address of ESP32
-    ESP32_URL = "http://192.168.137.33/toggle"
+    ESP32_URL = f"http://{ESP_IP}/toggle"
     try:
         # Forward the GET request to the ESP32
         response = requests.get(ESP32_URL)
