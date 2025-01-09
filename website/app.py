@@ -137,8 +137,16 @@ def device():
 
 @app.route('/toggle')
 def toggle():
-    # TODO: code this
-    return redirect("/display", code=302)
+    # Replace with the actual IP address of ESP32
+    ESP32_URL = "http://192.168.137.33/toggle"
+    try:
+        # Forward the GET request to the ESP32
+        response = requests.get(ESP32_URL)
+
+        # Return the ESP32's response to the client
+        return response.text, response.status_code
+    except requests.exceptions.RequestException as e:
+        return jsonify({'error': f"Failed to communicate with ESP32: {str(e)}"}), 500
 
 if __name__ == '__main__':
     # Start app
