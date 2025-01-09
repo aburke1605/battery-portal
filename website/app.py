@@ -11,7 +11,24 @@ sock = Sock(app)
 
 # TODO: need to automatically determine this:
 ESP_IP = "192.168.137.33"
+def forward_request_to_esp32(endpoint):
+    """
+    Generic function to forward form data to the ESP32.
+    :param endpoint: ESP32 endpoint to forward the request to.
+    :return: Response from the ESP32.
+    """
+    ESP32_URL = f"http://{ESP_IP}/{endpoint}"
+    try:
+        # Collect form data from the request
+        form_data = request.form.to_dict()
 
+        # Forward the data to the ESP32
+        response = requests.post(ESP32_URL, data=form_data)
+
+        # Return the ESP32's response
+        return response.text, response.status_code
+    except requests.exceptions.RequestException as e:
+        return jsonify({'error': f"Failed to communicate with ESP32: {str(e)}"}), 500
 
 data_store = {}
 connected_clients = set()  # Keep track of connected WebSocket clients
@@ -23,18 +40,7 @@ def login():
 
 @app.route('/validate_login', methods=['POST'])
 def validate_login():
-    ESP32_URL = f"http://{ESP_IP}/validate_login"
-    try:
-        # Collect form data from the request
-        form_data = request.form.to_dict()
-
-        # Forward the data to the ESP32
-        response = requests.post(ESP32_URL, data=form_data)
-
-        # Handle the response from the ESP32
-        return response.text, response.status_code
-    except requests.exceptions.RequestException as e:
-        return jsonify({'error': f"Failed to communicate with ESP32: {str(e)}"}), 500
+    return forward_request_to_esp32("validate_login")
 
 @app.route('/display')
 def display():
@@ -81,18 +87,7 @@ def change():
 
 @app.route('/validate_change', methods=['POST'])
 def validate_change():
-    ESP32_URL = f"http://{ESP_IP}/validate_change"
-    try:
-        # Collect form data from the request
-        form_data = request.form.to_dict()
-
-        # Forward the data to the ESP32
-        response = requests.post(ESP32_URL, data=form_data)
-
-        # Handle the response from the ESP32
-        return response.text, response.status_code
-    except requests.exceptions.RequestException as e:
-        return jsonify({'error': f"Failed to communicate with ESP32: {str(e)}"}), 500
+    return forward_request_to_esp32("validate_change")
 
 @app.route('/reset', methods=['POST'])
 def reset():
@@ -119,18 +114,7 @@ def connect():
 
 @app.route('/validate_connect', methods=['POST'])
 def validate_connect():
-    ESP32_URL = f"http://{ESP_IP}/validate_connect"
-    try:
-        # Collect form data from the request
-        form_data = request.form.to_dict()
-
-        # Forward the data to the ESP32
-        response = requests.post(ESP32_URL, data=form_data)
-
-        # Handle the response from the ESP32
-        return response.text, response.status_code
-    except requests.exceptions.RequestException as e:
-        return jsonify({'error': f"Failed to communicate with ESP32: {str(e)}"}), 500
+    return forward_request_to_esp32("validate_connect")
 
 @app.route('/nearby')
 def nearby():
