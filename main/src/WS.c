@@ -617,7 +617,7 @@ void web_task(void *pvParameters) {
             // but first check if connected to an AP
             if (connected_to_WiFi) {
                 esp_http_client_config_t config = {
-                    .url = "http://192.168.137.1:5000/data", // this is the IPv4 address of the PC hotspot
+                    .url = "http://192.168.137.6:5000/data", // this is the IPv4 address of the AP
                 };
                 esp_http_client_handle_t client = esp_http_client_init(&config);
 
