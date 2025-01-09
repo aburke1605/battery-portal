@@ -67,38 +67,19 @@ def change():
 
 @app.route('/validate_change', methods=['POST'])
 def validate_change():
-    # Replace this with the ESP32's IP or hostname
-    ESP32_URL = "http://127.0.0.1:5001/update_battery" # this is set up with:
-    # > netsh interface portproxy add v4tov4 listenaddress=0.0.0.0 listenport=5001 connectaddress=192.168.137.143 connectport=5000
-    # (PowerShell)
-
-    # Extract the configuration data from the client request
-    config_data = request.json
-
-    # # Forward the configuration data to the ESP32
-    # try:
-    #     response = requests.post(ESP32_URL, json=config_data)
-    #     return jsonify({
-    #         "status": "success",
-    #         "esp_response": response.json()
-    #     })
-    # except requests.RequestException as e:
-    #     return jsonify({"status": "error", "message": str(e)}), 500
-    if not request.is_json:
-        return {"error": "Content-Type must be application/json"}, 415
-
+    # Replace with the actual IP address of ESP32
+    ESP32_URL = "http://192.168.0.28/validate_change"
     try:
-        data = request.get_json()
-        print("Received configuration:", data)
-        response = requests.post(ESP32_URL, data={'BL_voltage_threshold': 2000})
+        # Collect form data from the request
+        form_data = request.form.to_dict()
 
-        if response.status_code == 200:
-            return {"status": "success", "message": "Battery property updated successfully"}
-        else:
-            return {"status": "error", "message": "ESP32 update failed", "esp32_response": response.text}, 500
-    except Exception as e:
-        print(f"Error processing request: {e}")
-        return {"error": "Failed to process request"}, 400
+        # Forward the data to the ESP32
+        response = requests.post(ESP32_URL, data=form_data)
+
+        # Handle the response from the ESP32
+        return response.text, response.status_code
+    except requests.exceptions.RequestException as e:
+        return jsonify({'error': f"Failed to communicate with ESP32: {str(e)}"}), 500
 
 @app.route('/reset', methods=['POST'])
 def reset():
