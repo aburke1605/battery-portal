@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AceOn EV Battery</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='portal/style.css') }}">
+    <script src="{{ url_for('static', filename='js/socket.io.min.js') }}"></script>
+</head>
+
+<html>
+    <body>
+        <div class="container">
+            <div class="section">
+                <h2>EV battery portal</h2>
+                <div class="info">
+                    <div class="info-item">
+                        <span>State of charge:</span>
+                        <span><span id="charge"></span> %</span>
+                    </div>
+                    <div class="info-item">
+                        <span>Voltage:</span>
+                        <span><span id="voltage"></span> V</span>
+                    </div>
+                    <div class="info-item">
+                        <span>Current:</span>
+                        <span><span id="current"></span> A</span>
+                    </div>
+                    <div class="info-item">
+                        <span>Temperature:</span>
+                        <span><span id="temperature"></span> °C</span>
+                    </div>
+                </div>
+            </div>
+
+            <img src='{{ url_for("static", filename="portal/images/aceon2.png") }}' alt='Company Logo'>
+        </div>
+    </body>
+
+    <script>
+        const socket = io.connect()
+        socket.on('update_data', (data) => {
+            document.getElementById('charge').textContent = data.charge;
+            document.getElementById('voltage').textContent = data.voltage.toFixed(2);
+            document.getElementById('current').textContent = data.current.toFixed(2);
+            document.getElementById('temperature').textContent = data.temperature.toFixed(2);
+        })
+    </script>
+</html>
