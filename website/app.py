@@ -51,12 +51,10 @@ def homepage():
 @app.route('/login')
 def login():
     print('Request for login page received')
-    # TODO: should validate here in case an ESP is not connected..
     return render_template('login.html')
 
 @app.route('/validate_login', methods=['POST'])
 def validate_login():
-    # return forward_request_to_esp32("validate_login")
     username = request.form.get("username")
     password = request.form.get("password")
     if username == "admin" and password == "1234":
