@@ -44,13 +44,26 @@ data_store = {}
 connected_clients = set()  # Keep track of connected WebSocket clients
 
 @app.route('/')
+def homepage():
+    print('Request for home page received')
+    return render_template('homepage.html')
+
+@app.route('/login')
 def login():
     print('Request for login page received')
+    # TODO: should validate here in case an ESP is not connected..
     return render_template('login.html')
 
 @app.route('/validate_login', methods=['POST'])
 def validate_login():
-    return forward_request_to_esp32("validate_login")
+    # return forward_request_to_esp32("validate_login")
+    username = request.form.get("username")
+    password = request.form.get("password")
+    if username == "admin" and password == "1234":
+        return redirect(url_for("display"), code=302)
+    else:
+        return "<p>Invalid username or password.</p>", 401
+
 
 @app.route('/display')
 def display():
