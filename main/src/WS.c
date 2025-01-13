@@ -76,6 +76,10 @@ esp_err_t validate_change_handler(httpd_req_t *req) {
     char *CITL_start = strstr(content, "chg_inhibit_temp_low=");
     char *CITH_start = strstr(content, "chg_inhibit_temp_high=");
 
+    static bool led_on = false;
+    led_on = !led_on;
+    gpio_set_level(LED_GPIO_PIN, led_on ? 1 : 0);
+
     if (BL_start) {
         char BL_voltage_threshold[50] = {0};
         sscanf(BL_start, "BL_voltage_threshold=%49[^&]", BL_voltage_threshold);
@@ -129,6 +133,9 @@ esp_err_t validate_change_handler(httpd_req_t *req) {
             set_I2_value(CHARGE_INHIBIT_CFG_SUBCLASS_ID, CHG_INHIBIT_TEMP_HIGH_OFFSET, atoi(chg_inhibit_temp_high));
         }
     }
+
+    vTaskDelay(pdMS_TO_TICKS(500));
+    gpio_set_level(LED_GPIO_PIN, led_on ? 0 : 1);
 
     return ESP_OK;
 }
@@ -619,7 +626,7 @@ void web_task(void *pvParameters) {
             // but first check if connected to an AP
             if (connected_to_WiFi) {
                 esp_http_client_config_t config = {
-                    .url = "http://192.168.137.6:5000/data", // this is the IPv4 address of the AP
+                    .url = "http://192.168.0.18:5000/data", // this is the IPv4 address of the AP
                 };
                 esp_http_client_handle_t client = esp_http_client_init(&config);
 

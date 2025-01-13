@@ -1,5 +1,5 @@
 #!venv/bin/python
-from flask import Flask, render_template, request, jsonify, redirect
+from flask import Flask, render_template, request, jsonify, redirect, url_for
 import requests
 from flask_sock import Sock
 
@@ -10,7 +10,7 @@ sock = Sock(app)
 
 
 # TODO: need to automatically determine this:
-ESP_IP = "192.168.137.33"
+ESP_IP = "192.168.0.28"
 def forward_request_to_esp32(endpoint, method="POST", allow_redirects=True):
     """
     Generic function to forward requests to the ESP32.

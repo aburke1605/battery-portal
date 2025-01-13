@@ -7,7 +7,6 @@
 
 
 #define CONFIG_MAX_CLIENTS 5
-#define LED_GPIO_PIN 2
 
 extern httpd_handle_t server;
 extern int client_sockets[CONFIG_MAX_CLIENTS];
