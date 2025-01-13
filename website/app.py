@@ -46,12 +46,12 @@ connected_clients = set()  # Keep track of connected WebSocket clients
 @app.route('/')
 def homepage():
     print('Request for home page received')
-    return render_template('homepage.html')
+    return render_template('portal/homepage.html')
 
 @app.route('/login')
 def login():
     print('Request for login page received')
-    return render_template('login.html')
+    return render_template('portal/login.html')
 
 @app.route('/validate_login', methods=['POST'])
 def validate_login():
@@ -66,7 +66,7 @@ def validate_login():
 @app.route('/display')
 def display():
     print('Request for display page received')
-    return render_template('display.html')
+    return render_template('portal/display.html')
 
 @sock.route('/ws')
 def websocket(ws):
@@ -104,7 +104,7 @@ def receive_data():
 @app.route('/change')
 def change():
     print('Request for change page received')
-    return render_template('change.html')
+    return render_template('portal/change.html')
 
 @app.route('/validate_change', methods=['POST'])
 def validate_change():
@@ -118,7 +118,7 @@ def reset():
 @app.route('/connect')
 def connect():
     print('Request for connect page received')
-    return render_template('connect.html')
+    return render_template('portal/connect.html')
 
 @app.route('/validate_connect', methods=['POST'])
 def validate_connect():
@@ -127,17 +127,17 @@ def validate_connect():
 @app.route('/nearby')
 def nearby():
     print('Request for nearby page received')
-    return render_template('nearby.html')
+    return render_template('portal/nearby.html')
 
 @app.route('/about')
 def about():
     print('Request for about page received')
-    return render_template('about.html')
+    return render_template('portal/about.html')
 
 @app.route('/device')
 def device():
     print('Request for device page received')
-    return render_template('device.html')
+    return render_template('portal/device.html')
 
 @app.route('/toggle', methods=['GET'])
 def toggle():

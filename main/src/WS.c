@@ -478,7 +478,7 @@ httpd_handle_t start_webserver(void) {
         httpd_register_uri_handler(server, &toggle_uri);
 
         httpd_uri_t css_uri = {
-            .uri      = "/static/style.css",
+            .uri      = "/static/portal/style.css",
             .method   = HTTP_GET,
             .handler  = css_handler,
             .user_ctx = "/storage/style.css",
@@ -487,7 +487,7 @@ httpd_handle_t start_webserver(void) {
 
         // Add a handler for serving the image
         httpd_uri_t image_uri = {
-            .uri       = "/static/images/aceon.png",
+            .uri       = "/static/portal/images/aceon.png",
             .method    = HTTP_GET,
             .handler   = image_handler, // Function to read and send the image
             .user_ctx  = "/storage/images/aceon.png" // File path as user context
@@ -495,7 +495,7 @@ httpd_handle_t start_webserver(void) {
         httpd_register_uri_handler(server, &image_uri);
 
         httpd_uri_t image_uri_2 = {
-            .uri       = "/static/images/aceon2.png",
+            .uri       = "/static/portal/images/aceon2.png",
             .method    = HTTP_GET,
             .handler   = image_handler, // Function to read and send the image
             .user_ctx  = "/storage/images/aceon2.png" // File path as user context
