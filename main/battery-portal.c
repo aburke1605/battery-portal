@@ -15,13 +15,24 @@ bool connected_to_WiFi = false;
 void app_main(void) {
     /*
     // initialise SPIFFS
-    esp_vfs_spiffs_conf_t config = {
-        .base_path = "/storage",
-        .partition_label = NULL,
+    esp_err_t result;
+
+    esp_vfs_spiffs_conf_t config_static = {
+        .base_path = "/static",
+        .partition_label = "staticstorage",
         .max_files = 5,
         .format_if_mount_failed = true
     };
-    esp_err_t result = esp_vfs_spiffs_register(&config);
+    result = esp_vfs_spiffs_register(&config_static);
+
+    esp_vfs_spiffs_conf_t config_templates = {
+        .base_path = "/templates",
+        .partition_label = "templatesstorage",
+        .max_files = 5,
+        .format_if_mount_failed = true
+    };
+    result |= esp_vfs_spiffs_register(&config_templates);
+
     if (result != ESP_OK) {
         ESP_LOGE("main", "Failed to initialise SPIFFS (%s)", esp_err_to_name(result));
         return;

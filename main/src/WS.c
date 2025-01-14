@@ -357,7 +357,7 @@ httpd_handle_t start_webserver(void) {
             .uri       = "/",
             .method    = HTTP_GET,
             .handler   = file_serve_handler,
-            .user_ctx  = "/storage/login.html"
+            .user_ctx  = "/templates/login.html"
         };
         httpd_register_uri_handler(server, &login_uri);
         
@@ -387,7 +387,7 @@ httpd_handle_t start_webserver(void) {
             .uri       = "/display",
             .method    = HTTP_GET,
             .handler   = file_serve_handler,
-            .user_ctx  = "/storage/display.html"
+            .user_ctx  = "/templates/display.html"
         };
         httpd_register_uri_handler(server, &display_uri);
 
@@ -404,7 +404,7 @@ httpd_handle_t start_webserver(void) {
             .uri       = "/change",
             .method    = HTTP_GET,
             .handler   = file_serve_handler,
-            .user_ctx  = "/storage/change.html"
+            .user_ctx  = "/templates/change.html"
         };
         httpd_register_uri_handler(server, &change_uri);
 
@@ -429,7 +429,7 @@ httpd_handle_t start_webserver(void) {
             .uri       = "/connect",
             .method    = HTTP_GET,
             .handler   = file_serve_handler,
-            .user_ctx  = "/storage/connect.html"
+            .user_ctx  = "/templates/connect.html"
         };
         httpd_register_uri_handler(server, &connect_uri);
 
@@ -447,7 +447,7 @@ httpd_handle_t start_webserver(void) {
             .uri       = "/nearby",
             .method    = HTTP_GET,
             .handler   = file_serve_handler,
-            .user_ctx  = "/storage/nearby.html"
+            .user_ctx  = "/templates/nearby.html"
         };
         httpd_register_uri_handler(server, &nearby_uri);
 
@@ -456,7 +456,7 @@ httpd_handle_t start_webserver(void) {
             .uri       = "/about",
             .method    = HTTP_GET,
             .handler   = file_serve_handler,
-            .user_ctx  = "/storage/about.html"
+            .user_ctx  = "/templates/about.html"
         };
         httpd_register_uri_handler(server, &about_uri);
 
@@ -465,7 +465,7 @@ httpd_handle_t start_webserver(void) {
             .uri       = "/device",
             .method    = HTTP_GET,
             .handler   = file_serve_handler,
-            .user_ctx  = "/storage/device.html"
+            .user_ctx  = "/templates/device.html"
         };
         httpd_register_uri_handler(server, &device_uri);
 
@@ -481,7 +481,7 @@ httpd_handle_t start_webserver(void) {
             .uri      = "/static/portal/style.css",
             .method   = HTTP_GET,
             .handler  = css_handler,
-            .user_ctx = "/storage/style.css",
+            .user_ctx = "/static/style.css",
         };
         httpd_register_uri_handler(server, &css_uri);
 
@@ -490,7 +490,7 @@ httpd_handle_t start_webserver(void) {
             .uri       = "/static/portal/images/aceon.png",
             .method    = HTTP_GET,
             .handler   = image_handler, // Function to read and send the image
-            .user_ctx  = "/storage/images/aceon.png" // File path as user context
+            .user_ctx  = "/static/images/aceon.png" // File path as user context
         };
         httpd_register_uri_handler(server, &image_uri);
 
@@ -498,7 +498,7 @@ httpd_handle_t start_webserver(void) {
             .uri       = "/static/portal/images/aceon2.png",
             .method    = HTTP_GET,
             .handler   = image_handler, // Function to read and send the image
-            .user_ctx  = "/storage/images/aceon2.png" // File path as user context
+            .user_ctx  = "/static/images/aceon2.png" // File path as user context
         };
         httpd_register_uri_handler(server, &image_uri_2);
 
