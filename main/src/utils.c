@@ -114,6 +114,20 @@ void ping_target(const char *target_ip, uint8_t *ip_tracker) {
         esp_ping_start(ping);
     } else {
         ESP_LOGE("utils", "Failed to create ping session for IP: %s", target_ip);
+
+void suspend_all_except_current() {
+    TaskHandle_t current_task = xTaskGetCurrentTaskHandle();
+    for (size_t i = 0; i < task_count; i++) {
+        if (task_handles[i] != current_task && task_handles[i] != NULL) {
+            vTaskSuspend(task_handles[i]);
+        }
+    }
+}
+void resume_all_tasks() {
+    for (size_t i = 0; i < task_count; i++) {
+        if (task_handles[i] != NULL) {
+            vTaskResume(task_handles[i]);
+        }
     }
 }
 void get_devices() {
