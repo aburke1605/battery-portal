@@ -2,7 +2,7 @@
 #define WIFI_PASS "password"
 #define MAX_STA_CONN 4
 
-static int other_AP_SSIDs[256];
+extern int other_AP_SSIDs[256];
 
 void wifi_scan(void);
 
