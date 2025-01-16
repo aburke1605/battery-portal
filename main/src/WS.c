@@ -641,6 +641,8 @@ void web_task(void *pvParameters) {
             // then send to website over internet
             // but first check if connected to an AP
             if (connected_to_WiFi) {
+                get_devices();
+
                 esp_http_client_config_t config = {
                     .url = "http://192.168.0.18:5000/data", // this is the IPv4 address of the AP
                 };
@@ -675,16 +677,6 @@ void web_task(void *pvParameters) {
         }
 
         // pause for a second
-        vTaskDelay(1000 / portTICK_PERIOD_MS);
-    }
-}
-
-void ping_task(void *pvParameters) {
-    while (true) {
-        if (connected_to_WiFi) {
-            printf("testing PC\n");
-            ping_target("192.168.137.165");
-        }
         vTaskDelay(1000 / portTICK_PERIOD_MS);
     }
 }

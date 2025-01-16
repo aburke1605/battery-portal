@@ -84,6 +84,4 @@ void app_main(void) {
     TaskHandle_t web_task_handle = NULL;
     xTaskCreate(&web_task, "web_task", 4096, &server, 5, &web_task_handle);
     register_task(web_task_handle);
-
-    xTaskCreate(&ping_task, "ping_task", 4096, NULL, 5, NULL);
 }
