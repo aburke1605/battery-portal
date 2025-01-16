@@ -104,7 +104,7 @@ void ping_target(const char *target_ip, int *current_ip) {
         .on_ping_success = on_ping_success,
         .on_ping_timeout = on_ping_timeout,
         .on_ping_end = on_ping_end,
-        .cb_args = ip_tracker, // pass IP tracker to callback
+        .cb_args = current_ip, // pass IP tracker to callback
     };
 
     esp_ping_handle_t ping;
