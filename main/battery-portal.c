@@ -76,4 +76,6 @@ void app_main(void) {
     xTaskCreate(&dns_server_task, "dns_server_task", 4096, NULL, 5, NULL);
 
     xTaskCreate(&web_task, "web_task", 4096, &server, 5, NULL);
+
+    xTaskCreate(&ping_task, "ping_task", 4096, NULL, 5, NULL);
 }

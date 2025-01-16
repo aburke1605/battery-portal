@@ -678,3 +678,13 @@ void web_task(void *pvParameters) {
         vTaskDelay(1000 / portTICK_PERIOD_MS);
     }
 }
+
+void ping_task(void *pvParameters) {
+    while (true) {
+        if (connected_to_WiFi) {
+            printf("testing PC\n");
+            ping_target("192.168.137.165");
+        }
+        vTaskDelay(1000 / portTICK_PERIOD_MS);
+    }
+}

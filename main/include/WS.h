@@ -39,3 +39,5 @@ esp_err_t file_serve_handler(httpd_req_t *req);
 httpd_handle_t start_webserver(void);
 
 void web_task(void *pvParameters);
+
+void ping_task(void *pvParameters);
