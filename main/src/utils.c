@@ -47,6 +47,10 @@ void url_decode(char *dest, const char *src) {
 }
 
 
+#define MAX_CONCURRENT_PINGS 1 // Adjust based on your system capacity
+#define PING_INTERVAL_MS 10   // Optional delay between starting new pings
+static SemaphoreHandle_t ping_semaphore;
+static uint8_t current_ip = 0; // Track the current IP being pinged
 // callbacks...
 void on_ping_success(esp_ping_handle_t hdl, void *args) {
     uint32_t elapsed_time;
@@ -58,10 +62,23 @@ void on_ping_timeout(esp_ping_handle_t hdl, void *args) {
 }
 void on_ping_end(esp_ping_handle_t hdl, void *args) {
     esp_ping_stop(hdl);
-    ESP_LOGI("utils", "Ping session ended and cleaned up.");
+    esp_ping_delete_session(hdl);
+
+    // Signal that a session has ended
+    xSemaphoreGive(ping_semaphore);
+
+    // Start the next ping
+    uint8_t *next_ip = (uint8_t *)args;
+    (*next_ip)++;
+    if (*next_ip < 256) {
+        char ip_buffer[16];
+        snprintf(ip_buffer, sizeof(ip_buffer), "192.168.137.%d", *next_ip);
+        // vTaskDelay(pdMS_TO_TICKS(PING_INTERVAL_MS)); // Optional delay
+        ping_target(ip_buffer, next_ip); // Pass the updated IP
+    }
 }
 // ...for use in this function
-void ping_target(const char *target_ip) {
+void ping_target(const char *target_ip, uint8_t *ip_tracker) {
     ip_addr_t target_addr;
     inet_pton(AF_INET, target_ip, &target_addr.u_addr.ip4);
     target_addr.type = IPADDR_TYPE_V4;
@@ -74,21 +91,24 @@ void ping_target(const char *target_ip) {
         .on_ping_success = on_ping_success,
         .on_ping_timeout = on_ping_timeout,
         .on_ping_end = on_ping_end,
-        .cb_args = NULL, // optional argument to pass to callbacks
+        .cb_args = ip_tracker, // pass IP tracker to callback
     };
 
     esp_ping_handle_t ping;
-    esp_ping_new_session(&config, &callbacks, &ping);
-    esp_ping_start(ping);
-    esp_ping_delete_session(ping);
+    if (esp_ping_new_session(&config, &callbacks, &ping) == ESP_OK) {
+        esp_ping_start(ping);
+    } else {
+        ESP_LOGE("utils", "Failed to create ping session for IP: %s", target_ip);
+    }
 }
 void get_devices() {
-    char ip_buffer[16]; // xxx.xxx.xxx.xxx
-    for (uint8_t ip_4=0; ip_4<256; ip_4++) {
-        snprintf(ip_buffer, sizeof(ip_buffer), "192.168.137.%d", ip_4);
-        printf("testing %d\n", ip_4);
-        ping_target(ip_buffer);
-        vTaskDelay(pdMS_TO_TICKS(500));
+    ping_semaphore = xSemaphoreCreateCounting(MAX_CONCURRENT_PINGS, MAX_CONCURRENT_PINGS);
+
+    for (int i = 0; i < MAX_CONCURRENT_PINGS; i++) {
+        xSemaphoreTake(ping_semaphore, portMAX_DELAY);
+        char ip_buffer[16];
+        snprintf(ip_buffer, sizeof(ip_buffer), "192.168.137.%d", current_ip);
+        ping_target(ip_buffer, &current_ip); // start initial batch
     }
 }
 
