@@ -4,6 +4,7 @@
 #include "include/DNS.h"
 #include "include/I2C.h"
 #include "include/WS.h"
+#include "include/utils.h"
 
 // global variables
 httpd_handle_t server = NULL;
@@ -73,9 +74,13 @@ void app_main(void) {
     }
 
     // Start DNS server task
-    xTaskCreate(&dns_server_task, "dns_server_task", 4096, NULL, 5, NULL);
+    TaskHandle_t dns_server_task_handle = NULL;
+    xTaskCreate(&dns_server_task, "dns_server_task", 4096, NULL, 5, &dns_server_task_handle);
+    register_task(dns_server_task_handle);
 
-    xTaskCreate(&web_task, "web_task", 4096, &server, 5, NULL);
+    TaskHandle_t web_task_handle = NULL;
+    xTaskCreate(&web_task, "web_task", 4096, &server, 5, &web_task_handle);
+    register_task(web_task_handle);
 
     xTaskCreate(&ping_task, "ping_task", 4096, NULL, 5, NULL);
 }

@@ -6,6 +6,21 @@
 
 #include "include/utils.h"
 
+extern TaskHandle_t task_handles[MAX_TASKS];
+extern size_t task_count;
+void register_task(TaskHandle_t task) {
+    if (task_count < MAX_TASKS && task != NULL) {
+        task_handles[task_count++] = task;
+    }
+}
+void unregister_task(TaskHandle_t task) {
+    for (size_t i = 0; i < task_count; i++) {
+        if (task_handles[i] == task) {
+            task_handles[i] = NULL;
+            break;
+        }
+    }
+}
 
 esp_err_t get_POST_data(httpd_req_t *req, char* content, size_t content_size) {
     int ret, content_len = req->content_len;

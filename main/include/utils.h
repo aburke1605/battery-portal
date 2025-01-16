@@ -1,6 +1,10 @@
 #include <esp_log.h>
 #include <esp_http_server.h>
 
+#define MAX_TASKS 10
+void register_task(TaskHandle_t task);
+void unregister_task(TaskHandle_t task);
+
 esp_err_t get_POST_data(httpd_req_t *req, char* content, size_t content_size);
 
 void url_decode(char *dest, const char *src);
