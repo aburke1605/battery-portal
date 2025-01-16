@@ -30,6 +30,10 @@ void remove_client(int fd) {
 esp_err_t validate_login_handler(httpd_req_t *req) {
     char content[100];
     esp_err_t err = get_POST_data(req, content, sizeof(content));
+    if (err != ESP_OK) {
+        ESP_LOGE("WS", "Problem with login POST request");
+        return err;
+    }
 
     char username[50] = {0};
     char password[50] = {0};
@@ -67,6 +71,10 @@ esp_err_t websocket_handler(httpd_req_t *req) {
 esp_err_t validate_change_handler(httpd_req_t *req) {
     char content[500];
     esp_err_t err = get_POST_data(req, content, sizeof(content));
+    if (err != ESP_OK) {
+        ESP_LOGE("WS", "Problem with change POST request");
+        return err;
+    }
 
     // Check if each parameter exists and parse it
     char *BL_start = strstr(content, "BL_voltage_threshold=");
@@ -153,6 +161,10 @@ esp_err_t reset_handler(httpd_req_t *req) {
 esp_err_t validate_connect_handler(httpd_req_t *req) {
     char content[100];
     esp_err_t err = get_POST_data(req, content, sizeof(content));
+    if (err != ESP_OK) {
+        ESP_LOGE("WS", "Problem with connect POST request");
+        return err;
+    }
 
     char ssid_encoded[50] = {0};
     char ssid[50] = {0};
@@ -371,6 +383,10 @@ httpd_handle_t start_webserver(void) {
         login_uri.uri = "/favicon.ico";
         httpd_register_uri_handler(server, &login_uri);
         login_uri.uri = "/redirect";
+        httpd_register_uri_handler(server, &login_uri);
+        login_uri.uri = "/wpad.dat";
+        httpd_register_uri_handler(server, &login_uri);
+        login_uri.uri = "/gen_204";
         httpd_register_uri_handler(server, &login_uri);
 
         // Validate login
