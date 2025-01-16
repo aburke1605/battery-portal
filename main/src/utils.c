@@ -62,8 +62,8 @@ void url_decode(char *dest, const char *src) {
 }
 
 
-#define MAX_CONCURRENT_PINGS 5 // Adjust based on your system capacity
-#define PING_INTERVAL_MS 1000   // Optional delay between starting new pings
+#define MAX_CONCURRENT_PINGS 256 // Adjust based on your system capacity
+#define PING_INTERVAL_MS 400   // Optional delay between starting new pings
 static SemaphoreHandle_t ping_semaphore;
 static uint8_t current_ip = 0; // Track the current IP being pinged
 extern char successful_ips[256][16]; // Array to store successful IPs
