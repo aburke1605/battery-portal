@@ -650,32 +650,36 @@ void web_task(void *pvParameters) {
             // but first check if connected to an AP
             if (connected_to_WiFi) {
 
-                esp_http_client_config_t config = {
-                    .url = "http://192.168.0.18:5000/data", // this is the IPv4 address of the AP
-                };
-                esp_http_client_handle_t client = esp_http_client_init(&config);
+                for (size_t i = 0; i < successful_ip_count; i++) {
+                    char url[33];
+                    snprintf(url, sizeof(url), "http://%s:5000/data", successful_ips[i]);
+                    esp_http_client_config_t config = {
+                        .url = url,
+                    };
+                    esp_http_client_handle_t client = esp_http_client_init(&config);
 
-                // configure HTTP client for POST
-                esp_http_client_set_method(client, HTTP_METHOD_POST);
-                esp_http_client_set_header(client, "Content-Type", "application/json");
-                esp_http_client_set_post_field(client, json_string, strlen(json_string));
+                    // configure HTTP client for POST
+                    esp_http_client_set_method(client, HTTP_METHOD_POST);
+                    esp_http_client_set_header(client, "Content-Type", "application/json");
+                    esp_http_client_set_post_field(client, json_string, strlen(json_string));
 
-                // perform HTTP POST request
-                esp_err_t err = esp_http_client_perform(client);
-                if (err == ESP_OK) {
-                    int status_code = esp_http_client_get_status_code(client);
-                    char response_buf[200];
-                    int content_length = esp_http_client_read_response(client, response_buf, sizeof(response_buf) - 1);
-                    if (content_length >= 0) {
-                        response_buf[content_length] = '\0';
-                        ESP_LOGI("main", "HTTP POST Status = %d, Response = %s", status_code, response_buf);
+                    // perform HTTP POST request
+                    esp_err_t err = esp_http_client_perform(client);
+                    if (err == ESP_OK) {
+                        int status_code = esp_http_client_get_status_code(client);
+                        char response_buf[200];
+                        int content_length = esp_http_client_read_response(client, response_buf, sizeof(response_buf) - 1);
+                        if (content_length >= 0) {
+                            response_buf[content_length] = '\0';
+                            ESP_LOGI("main", "HTTP POST Status = %d, Response = %s", status_code, response_buf);
+                        } else {
+                            ESP_LOGE("main", "Failed to read response");
+                        }
                     } else {
-                        ESP_LOGE("main", "Failed to read response");
+                        ESP_LOGE("main", "HTTP POST request failed: %s", esp_err_to_name(err));
                     }
-                } else {
-                    ESP_LOGE("main", "HTTP POST request failed: %s", esp_err_to_name(err));
+                    esp_http_client_cleanup(client);
                 }
-                esp_http_client_cleanup(client);
             }
 
 
