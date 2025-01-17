@@ -90,7 +90,7 @@ void on_ping_end(esp_ping_handle_t hdl, void *args) {
 void ping_target(ping_context_t *ping_ctx) {
     ip_addr_t target_addr;
     target_addr.type = IPADDR_TYPE_V4;
-    target_addr.u_addr.ip4.addr = htonl(ntohl(ping_ctx->current_ip));
+    target_addr.u_addr.ip4.addr = ping_ctx->current_ip;
 
     esp_ping_config_t config = ESP_PING_DEFAULT_CONFIG();
     config.target_addr = target_addr;
