@@ -1,7 +1,6 @@
 #include <string.h>
 #include <math.h>
 
-#include <esp_http_client.h>
 #include <ping/ping_sock.h>
 
 #include "include/utils.h"
@@ -65,16 +64,19 @@ void url_decode(char *dest, const char *src) {
 #define MAX_CONCURRENT_PINGS 5
 #define PING_INTERVAL_MS 500 // optional delay between starting new pings
 static SemaphoreHandle_t ping_semaphore;
-extern char successful_ips[256][16]; // array to store successful IPs
-extern uint8_t successful_ip_count; // counter for successful IPs
 static bool scanned_devices = false;
 // callbacks...
 void on_ping_success(esp_ping_handle_t hdl, void *args) {
     uint32_t elapsed_time;
     esp_ping_get_profile(hdl, ESP_PING_PROF_TIMEGAP, &elapsed_time, sizeof(elapsed_time));
 
-    uint8_t *current_ip = (uint8_t *)args;
-    snprintf(successful_ips[successful_ip_count++], sizeof(successful_ips[0]), "192.168.137.%d", *current_ip-1);
+    ping_context_t *ctx = (ping_context_t *)args;
+
+    uint32_t prev_ip = htonl(ntohl(ctx->current_ip) - 1);
+    if (ctx->current_ip != ctx->ip_info.ip.addr && ctx->current_ip != ctx->ip_info.gw.addr) {
+        // skip own IP and gateway IP
+        snprintf(successful_ips[successful_ip_count++], sizeof(successful_ips[0]), IPSTR, IP2STR((ip4_addr_t *)&ctx->current_ip));
+    }
 }
 void on_ping_timeout(esp_ping_handle_t hdl, void *args) {
     // uint8_t *current_ip = (uint8_t *)args;
@@ -85,10 +87,10 @@ void on_ping_end(esp_ping_handle_t hdl, void *args) {
     xSemaphoreGive(ping_semaphore); // release the semaphore
 }
 // ...for use in this function
-void ping_target(const char *target_ip, int *current_ip) {
+void ping_target(ping_context_t *ping_ctx) {
     ip_addr_t target_addr;
-    inet_pton(AF_INET, target_ip, &target_addr.u_addr.ip4);
     target_addr.type = IPADDR_TYPE_V4;
+    target_addr.u_addr.ip4.addr = htonl(ntohl(ping_ctx->current_ip));
 
     esp_ping_config_t config = ESP_PING_DEFAULT_CONFIG();
     config.target_addr = target_addr;
@@ -98,16 +100,17 @@ void ping_target(const char *target_ip, int *current_ip) {
         .on_ping_success = on_ping_success,
         .on_ping_timeout = on_ping_timeout,
         .on_ping_end = on_ping_end,
-        .cb_args = current_ip, // pass IP tracker to callback
+        .cb_args = ping_ctx, // pass IP tracker to callback
     };
 
     esp_ping_handle_t ping;
     if (esp_ping_new_session(&config, &callbacks, &ping) == ESP_OK) {
         esp_ping_start(ping);
     } else {
-        ESP_LOGW("utils", "Failed to create ping session for IP: %s", target_ip);
+        // ESP_LOGW("utils", "Failed to create ping session for IP: %s", target_ip);
         xSemaphoreGive(ping_semaphore); // release semaphore on failure
     }
+    vTaskDelay(pdMS_TO_TICKS(PING_INTERVAL_MS)); // optional delay
 }
 
 void suspend_all_except_current() {
@@ -128,18 +131,29 @@ void resume_all_tasks() {
 void get_devices() {
     suspend_all_except_current(); // pause all other tasks
 
+    // get Wi-Fi station gateway
+    esp_netif_t *sta_netif = esp_netif_get_handle_from_ifkey("WIFI_STA_DEF");
+    if (sta_netif == NULL) return;
+
+    // retrieve the IP information
+    esp_netif_ip_info_t ip_info;
+    esp_netif_get_ip_info(sta_netif, &ip_info);
+
+    uint32_t network_addr = ip_info.ip.addr & ip_info.netmask.addr; // network address
+    uint32_t broadcast_addr = network_addr | ~ip_info.netmask.addr; // broadcast address
+
     successful_ip_count = 0; // reset successful IP list
     ping_semaphore = xSemaphoreCreateCounting(MAX_CONCURRENT_PINGS, MAX_CONCURRENT_PINGS);
 
-    int current_ip = 0;
-    while (current_ip < 256) {
+    ping_context_t ping_ctx = {
+        .current_ip = network_addr + htonl(1), // Start with the first usable IP
+        .ip_info = ip_info
+    };
+    while (ping_ctx.current_ip < broadcast_addr) {
         // wait until we can initiate a new ping
         xSemaphoreTake(ping_semaphore, portMAX_DELAY);
-        char ip_buffer[16];
-        snprintf(ip_buffer, sizeof(ip_buffer), "192.168.137.%d", current_ip);
-        vTaskDelay(pdMS_TO_TICKS(PING_INTERVAL_MS)); // optional delay
-        ping_target(ip_buffer, &current_ip);
-        current_ip++;
+        ping_target(&ping_ctx);
+        ping_ctx.current_ip = htonl(ntohl(ping_ctx.current_ip) + 1);
     }
 
     // wait for all remaining pings to finish
