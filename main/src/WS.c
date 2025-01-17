@@ -182,6 +182,7 @@ esp_err_t validate_connect_handler(httpd_req_t *req) {
     wifi_sta_config.sta.ssid[sizeof(wifi_sta_config.sta.ssid) - 1] = '\0';
     wifi_sta_config.sta.password[sizeof(wifi_sta_config.sta.password) - 1] = '\0';
 
+if (!connected_to_WiFi) {
     ESP_ERROR_CHECK(esp_wifi_set_config(ESP_IF_WIFI_STA, &wifi_sta_config));
 
     ESP_ERROR_CHECK(esp_wifi_stop());
@@ -195,6 +196,10 @@ esp_err_t validate_connect_handler(httpd_req_t *req) {
         if (esp_wifi_sta_get_ap_info(&ap_info) == ESP_OK) {
             ESP_LOGI("WS", "Connected to router. Signal strength: %d dBm", ap_info.rssi);
             connected_to_WiFi = true;
+
+            ESP_LOGI("WS", "Finding other devices on network...");
+            get_devices();
+
             break;
         } else {
             ESP_LOGI("WS", "Not connected. Retrying...");
@@ -205,6 +210,9 @@ esp_err_t validate_connect_handler(httpd_req_t *req) {
     httpd_resp_set_status(req, "302 Found");
     httpd_resp_set_hdr(req, "Location", "/display"); // redirect back to /display
     httpd_resp_send(req, NULL, 0); // no response body
+} else {
+    httpd_resp_send(req, "Already connected to Wi-Fi", HTTPD_RESP_USE_STRLEN);
+}
 
     return ESP_OK;
 }
@@ -641,7 +649,6 @@ void web_task(void *pvParameters) {
             // then send to website over internet
             // but first check if connected to an AP
             if (connected_to_WiFi) {
-                get_devices();
 
                 esp_http_client_config_t config = {
                     .url = "http://192.168.0.18:5000/data", // this is the IPv4 address of the AP
