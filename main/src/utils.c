@@ -62,33 +62,27 @@ void url_decode(char *dest, const char *src) {
 }
 
 
-#define MAX_CONCURRENT_PINGS 256 // Adjust based on your system capacity
-#define PING_INTERVAL_MS 400   // Optional delay between starting new pings
+#define MAX_CONCURRENT_PINGS 5
+#define PING_INTERVAL_MS 500 // optional delay between starting new pings
 static SemaphoreHandle_t ping_semaphore;
-static uint8_t current_ip = 0; // Track the current IP being pinged
-extern char successful_ips[256][16]; // Array to store successful IPs
-static uint8_t successful_ip_count = 0; // Counter for successful IPs
+extern char successful_ips[256][16]; // array to store successful IPs
+extern uint8_t successful_ip_count; // counter for successful IPs
+static bool scanned_devices = false;
 // callbacks...
 void on_ping_success(esp_ping_handle_t hdl, void *args) {
     uint32_t elapsed_time;
     esp_ping_get_profile(hdl, ESP_PING_PROF_TIMEGAP, &elapsed_time, sizeof(elapsed_time));
 
-    int *current_ip = (int *)args;
-    snprintf(successful_ips[successful_ip_count++], sizeof(successful_ips[0]), "192.168.137.%d", *current_ip);
-
-    ESP_LOGI("ping", "Ping success! IP: 192.168.137.%d, Time: %ld ms", *current_ip, elapsed_time);
-    // xSemaphoreGive(ping_semaphore); // Release semaphore after success
+    uint8_t *current_ip = (uint8_t *)args;
+    snprintf(successful_ips[successful_ip_count++], sizeof(successful_ips[0]), "192.168.137.%d", *current_ip-1);
 }
 void on_ping_timeout(esp_ping_handle_t hdl, void *args) {
-    int *current_ip = (int *)args;
-    ESP_LOGW("ping", "Ping timeout! IP: 192.168.137.%d", *current_ip);
-    // xSemaphoreGive(ping_semaphore); // Release semaphore on timeout
+    // uint8_t *current_ip = (uint8_t *)args;
 }
 void on_ping_end(esp_ping_handle_t hdl, void *args) {
-    ESP_LOGI("ping", "Ping session ended.");
-    esp_ping_stop(hdl); // Clean up the session
-    esp_ping_delete_session(hdl); // Properly delete the session
-    xSemaphoreGive(ping_semaphore); // Release the semaphore
+    esp_ping_stop(hdl); // clean up the session
+    esp_ping_delete_session(hdl); // properly delete the session
+    xSemaphoreGive(ping_semaphore); // release the semaphore
 }
 // ...for use in this function
 void ping_target(const char *target_ip, int *current_ip) {
@@ -110,10 +104,9 @@ void ping_target(const char *target_ip, int *current_ip) {
     esp_ping_handle_t ping;
     if (esp_ping_new_session(&config, &callbacks, &ping) == ESP_OK) {
         esp_ping_start(ping);
-        ESP_LOGI("ping", "Ping session started for IP: %s", target_ip);
     } else {
-        ESP_LOGW("ping", "Failed to create ping session for IP: %s", target_ip);
-        xSemaphoreGive(ping_semaphore); // Release semaphore on failure
+        ESP_LOGW("utils", "Failed to create ping session for IP: %s", target_ip);
+        xSemaphoreGive(ping_semaphore); // release semaphore on failure
     }
 }
 
@@ -133,35 +126,37 @@ void resume_all_tasks() {
     }
 }
 void get_devices() {
-    suspend_all_except_current(); // Pause all other tasks
+    suspend_all_except_current(); // pause all other tasks
 
-    successful_ip_count = 0; // Reset successful IP list
+    successful_ip_count = 0; // reset successful IP list
     ping_semaphore = xSemaphoreCreateCounting(MAX_CONCURRENT_PINGS, MAX_CONCURRENT_PINGS);
 
     int current_ip = 0;
     while (current_ip < 256) {
-        // Wait until we can initiate a new ping
+        // wait until we can initiate a new ping
         xSemaphoreTake(ping_semaphore, portMAX_DELAY);
         char ip_buffer[16];
         snprintf(ip_buffer, sizeof(ip_buffer), "192.168.137.%d", current_ip);
-        vTaskDelay(pdMS_TO_TICKS(PING_INTERVAL_MS)); // Optional delay
+        vTaskDelay(pdMS_TO_TICKS(PING_INTERVAL_MS)); // optional delay
         ping_target(ip_buffer, &current_ip);
         current_ip++;
     }
 
-    // Wait for all remaining pings to finish
+    // wait for all remaining pings to finish
     for (int i = 0; i < MAX_CONCURRENT_PINGS; i++) {
         xSemaphoreTake(ping_semaphore, portMAX_DELAY);
     }
 
-    vSemaphoreDelete(ping_semaphore); // Clean up the semaphore
-    resume_all_tasks(); // Resume all paused tasks
+    vSemaphoreDelete(ping_semaphore); // clean up the semaphore
+    resume_all_tasks(); // resume all paused tasks
 
-    // Log the discovered devices
-    ESP_LOGI("get_devices", "Discovered devices:");
+    // log the discovered devices
+    ESP_LOGI("utils", "Discovered addresses:");
     for (size_t i = 0; i < successful_ip_count; i++) {
-        ESP_LOGI("get_devices", "  - %s", successful_ips[i]);
+        ESP_LOGI("utils", "  - %s", successful_ips[i]);
     }
+
+    scanned_devices = true;
 }
 
 uint8_t get_block(uint8_t offset) {

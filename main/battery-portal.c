@@ -14,6 +14,7 @@ SemaphoreHandle_t data_mutex;
 bool connected_to_WiFi = false;
 int other_AP_SSIDs[256];
 char successful_ips[256][16];
+uint8_t successful_ip_count = 0;
 TaskHandle_t task_handles[MAX_TASKS];
 size_t task_count = 0;
 
