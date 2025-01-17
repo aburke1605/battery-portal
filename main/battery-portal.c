@@ -17,6 +17,7 @@ char successful_ips[256][16];
 uint8_t successful_ip_count = 0;
 TaskHandle_t task_handles[MAX_TASKS];
 size_t task_count = 0;
+char ESP_IP[16] = "xxx.xxx.xxx.xxx\0";
 
 void app_main(void) {
     /*

@@ -6,6 +6,7 @@
 
 extern char successful_ips[256][16];
 extern uint8_t successful_ip_count;
+extern char ESP_IP[16];
 
 void register_task(TaskHandle_t task);
 

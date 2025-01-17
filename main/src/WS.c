@@ -568,6 +568,7 @@ void web_task(void *pvParameters) {
         cJSON_AddNumberToObject(json, "CITL", iCITL);
         cJSON_AddNumberToObject(json, "CITH", iCITH);
 
+        cJSON_AddStringToObject(json, "IP", ESP_IP);
 
         // add data received from other ESP32s if available
         if (xSemaphoreTake(data_mutex, portMAX_DELAY)) {

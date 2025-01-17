@@ -118,8 +118,13 @@ def subpage():
     return render_template('admin/battery.html')
 
 
-# TODO: need to automatically determine this:
-ESP_IP = "192.168.0.28"
+data_store = {
+    "ESP32": {
+        "IP": "xxx.xxx.xxx.xxx"
+    }
+}
+connected_clients = set()  # Keep track of connected WebSocket clients
+
 def forward_request_to_esp32(endpoint, method="POST", allow_redirects=True):
     """
     Generic function to forward requests to the ESP32.
@@ -128,7 +133,7 @@ def forward_request_to_esp32(endpoint, method="POST", allow_redirects=True):
     :param allow_redirects: Whether to allow redirects from the ESP32.
     :return: Response from the ESP32.
     """
-    ESP32_URL = f"http://{ESP_IP}/{endpoint}"
+    ESP32_URL = f"http://{data_store['ESP32']['IP']}/{endpoint}"
     try:
         # Handle GET and POST requests
         if method == "POST":
@@ -148,9 +153,6 @@ def forward_request_to_esp32(endpoint, method="POST", allow_redirects=True):
         return response.text, response.status_code
     except requests.exceptions.RequestException as e:
         return jsonify({'error': f"Failed to communicate with ESP32: {str(e)}"}), 500
-
-data_store = {}
-connected_clients = set()  # Keep track of connected WebSocket clients
 
 @app.route('/')
 def homepage():

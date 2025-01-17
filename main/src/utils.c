@@ -139,6 +139,8 @@ void get_devices() {
     esp_netif_ip_info_t ip_info;
     esp_netif_get_ip_info(sta_netif, &ip_info);
 
+    esp_ip4addr_ntoa(&ip_info.ip, ESP_IP, 16);
+
     uint32_t network_addr = ip_info.ip.addr & ip_info.netmask.addr; // network address
     uint32_t broadcast_addr = network_addr | ~ip_info.netmask.addr; // broadcast address
 
