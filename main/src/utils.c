@@ -80,7 +80,6 @@ void ping_target(ping_context_t *ping_ctx) {
 
     esp_ping_callbacks_t callbacks = {
         .on_ping_success = on_ping_success,
-        .on_ping_timeout = on_ping_timeout,
         .on_ping_end = on_ping_end,
         .cb_args = ping_ctx, // pass IP tracker to callback
     };
