@@ -668,12 +668,12 @@ void web_task(void *pvParameters) {
                         int content_length = esp_http_client_read_response(client, response_buf, sizeof(response_buf) - 1);
                         if (content_length >= 0) {
                             response_buf[content_length] = '\0';
-                            ESP_LOGI("main", "HTTP POST Status = %d, Response = %s", status_code, response_buf);
+                            ESP_LOGI("WS", "HTTP POST Status = %d, Response = %s", status_code, response_buf);
                         } else {
-                            ESP_LOGE("main", "Failed to read response");
+                            ESP_LOGE("WS", "Failed to read response");
                         }
                     } else {
-                        ESP_LOGE("main", "HTTP POST request failed: %s", esp_err_to_name(err));
+                        ESP_LOGE("WS", "HTTP POST request failed: %s", esp_err_to_name(err));
                     }
                     esp_http_client_cleanup(client);
                 }

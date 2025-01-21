@@ -45,8 +45,8 @@ void url_decode(char *dest, const char *src) {
 }
 
 
-#define MAX_CONCURRENT_PINGS 5
-#define PING_INTERVAL_MS 500 // optional delay between starting new pings
+#define MAX_CONCURRENT_PINGS 1
+#define PING_INTERVAL_MS 400 // optional delay between starting new pings
 static SemaphoreHandle_t ping_semaphore;
 static bool scanned_devices = false;
 // callbacks...
@@ -55,15 +55,13 @@ void on_ping_success(esp_ping_handle_t hdl, void *args) {
     esp_ping_get_profile(hdl, ESP_PING_PROF_TIMEGAP, &elapsed_time, sizeof(elapsed_time));
 
     ping_context_t *ctx = (ping_context_t *)args;
-
-    // uint32_t prev_ip = htonl(ntohl(ctx->current_ip) - 1);
     if (ctx->current_ip != ctx->ip_info.ip.addr && ctx->current_ip != ctx->ip_info.gw.addr) {
         // skip own IP and gateway IP
         snprintf(successful_ips[successful_ip_count++], sizeof(successful_ips[0]), IPSTR, IP2STR((ip4_addr_t *)&ctx->current_ip));
     }
 }
 void on_ping_timeout(esp_ping_handle_t hdl, void *args) {
-    // uint8_t *current_ip = (uint8_t *)args;
+    // optional: log no device found
 }
 void on_ping_end(esp_ping_handle_t hdl, void *args) {
     esp_ping_stop(hdl); // clean up the session
