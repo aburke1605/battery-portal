@@ -3,6 +3,7 @@
 #include "include/AP.h"
 #include "include/DNS.h"
 #include "include/I2C.h"
+#include "include/ping.h"
 #include "include/WS.h"
 #include "include/utils.h"
 
@@ -83,5 +84,5 @@ void app_main(void) {
 
     xTaskCreate(&web_task, "web_task", 4096, &server, 5, NULL);
 
-    xTaskCreate(&get_devices_task, "get_devices", 4096, NULL, 5, NULL);
+    xTaskCreate(&get_devices_task, "get_devices_task", 4096, NULL, 5, NULL);
 }
