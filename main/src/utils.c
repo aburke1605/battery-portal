@@ -117,10 +117,10 @@ void get_devices_task(void *pvParameters) {
             ping_semaphore = xSemaphoreCreateCounting(MAX_CONCURRENT_PINGS, MAX_CONCURRENT_PINGS);
 
             ping_context_t ping_ctx = {
-                .current_ip = network_addr + htonl(153), // Start with the first usable IP
+                .current_ip = network_addr + htonl(1), // Start with the first usable IP
                 .ip_info = ip_info
             };
-            while (ping_ctx.current_ip < broadcast_addr - htonl(88)) {
+            while (ping_ctx.current_ip < broadcast_addr) {
                 // wait until we can initiate a new ping
                 xSemaphoreTake(ping_semaphore, portMAX_DELAY);
                 ping_target(&ping_ctx);
