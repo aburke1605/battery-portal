@@ -91,13 +91,14 @@ void ping_target(ping_context_t *ping_ctx) {
     if (esp_ping_new_session(&config, &callbacks, &ping) == ESP_OK) {
         esp_ping_start(ping);
     } else {
-        // ESP_LOGW("utils", "Failed to create ping session for IP: %s", target_ip);
         xSemaphoreGive(ping_semaphore); // release semaphore on failure
     }
     vTaskDelay(pdMS_TO_TICKS(PING_INTERVAL_MS)); // optional delay
 }
 
-void get_devices() {
+void get_devices_task(void *pvParameters) {
+while (true) {
+if (connected_to_WiFi) {
 
     // get Wi-Fi station gateway
     esp_netif_t *sta_netif = esp_netif_get_handle_from_ifkey("WIFI_STA_DEF");
@@ -134,15 +135,20 @@ void get_devices() {
     }
 
     vSemaphoreDelete(ping_semaphore); // clean up the semaphore
-    resume_all_tasks(); // resume all paused tasks
+    ping_semaphore = NULL;
 
     // log the discovered devices
-    ESP_LOGI("utils", "Discovered addresses:");
+    if (successful_ip_count > 0) ESP_LOGI("utils", "Discovered addresses:");
     for (size_t i = 0; i < successful_ip_count; i++) {
         ESP_LOGI("utils", "  - %s", successful_ips[i]);
     }
 
     scanned_devices = true;
+}
+else {
+    vTaskDelay(1000 / portTICK_PERIOD_MS);
+}
+}
 }
 
 uint8_t get_block(uint8_t offset) {
