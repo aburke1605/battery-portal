@@ -14,7 +14,9 @@ SemaphoreHandle_t data_mutex;
 bool connected_to_WiFi = false;
 int other_AP_SSIDs[256];
 char successful_ips[256][16];
+char old_successful_ips[256][16];
 uint8_t successful_ip_count = 0;
+uint8_t old_successful_ip_count = 0;
 char ESP_IP[16] = "xxx.xxx.xxx.xxx\0";
 
 void app_main(void) {

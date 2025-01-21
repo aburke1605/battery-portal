@@ -650,10 +650,9 @@ void web_task(void *pvParameters) {
             // then send to website over internet
             // but first check if connected to an AP
             if (connected_to_WiFi) {
-
-                for (size_t i = 0; i < successful_ip_count; i++) {
+                for (size_t i = 0; i < old_successful_ip_count; i++) {
                     char url[33];
-                    snprintf(url, sizeof(url), "http://%s:5000/data", successful_ips[i]);
+                    snprintf(url, sizeof(url), "http://%s:5000/data", old_successful_ips[i]);
                     esp_http_client_config_t config = {
                         .url = url,
                     };

@@ -112,6 +112,8 @@ void get_devices() {
     uint32_t network_addr = ip_info.ip.addr & ip_info.netmask.addr; // network address
     uint32_t broadcast_addr = network_addr | ~ip_info.netmask.addr; // broadcast address
 
+    old_successful_ip_count = successful_ip_count;
+    for (size_t i = 0; i < old_successful_ip_count; i++) strcpy(old_successful_ips[i], successful_ips[i]);
     successful_ip_count = 0; // reset successful IP list
     ping_semaphore = xSemaphoreCreateCounting(MAX_CONCURRENT_PINGS, MAX_CONCURRENT_PINGS);
 
