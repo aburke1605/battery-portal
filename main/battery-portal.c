@@ -3,7 +3,9 @@
 #include "include/AP.h"
 #include "include/DNS.h"
 #include "include/I2C.h"
+#include "include/ping.h"
 #include "include/WS.h"
+#include "include/utils.h"
 
 // global variables
 httpd_handle_t server = NULL;
@@ -11,17 +13,34 @@ int client_sockets[CONFIG_MAX_CLIENTS];
 char received_data[1024];
 SemaphoreHandle_t data_mutex;
 bool connected_to_WiFi = false;
+int other_AP_SSIDs[256];
+char successful_ips[256][16];
+char old_successful_ips[256][16];
+uint8_t successful_ip_count = 0;
+uint8_t old_successful_ip_count = 0;
+char ESP_IP[16] = "xxx.xxx.xxx.xxx\0";
 
 void app_main(void) {
     /*
     // initialise SPIFFS
-    esp_vfs_spiffs_conf_t config = {
-        .base_path = "/storage",
-        .partition_label = NULL,
+    esp_err_t result;
+
+    esp_vfs_spiffs_conf_t config_static = {
+        .base_path = "/static",
+        .partition_label = "staticstorage",
         .max_files = 5,
         .format_if_mount_failed = true
     };
-    esp_err_t result = esp_vfs_spiffs_register(&config);
+    result = esp_vfs_spiffs_register(&config_static);
+
+    esp_vfs_spiffs_conf_t config_templates = {
+        .base_path = "/templates",
+        .partition_label = "templatesstorage",
+        .max_files = 5,
+        .format_if_mount_failed = true
+    };
+    result |= esp_vfs_spiffs_register(&config_templates);
+
     if (result != ESP_OK) {
         ESP_LOGE("main", "Failed to initialise SPIFFS (%s)", esp_err_to_name(result));
         return;
@@ -63,7 +82,7 @@ void app_main(void) {
     // Start DNS server task
     xTaskCreate(&dns_server_task, "dns_server_task", 4096, NULL, 5, NULL);
 
-    xTaskCreate(&websocket_broadcast_task, "websocket_broadcast_task", 4096, &server, 5, NULL);
+    xTaskCreate(&web_task, "web_task", 4096, &server, 5, NULL);
 
-    xTaskCreate(&website_send_task, "website_send_task", 4096, NULL, 5, NULL);
+    xTaskCreate(&get_devices_task, "get_devices_task", 4096, NULL, 5, NULL);
 }

@@ -1,28 +1,29 @@
 #!venv/bin/python
 import os
 import string
-from datetime import time, datetime
 import random
-import matplotlib.pyplot as plt
 
-from flask import Flask, url_for, redirect, render_template, request, abort
+import requests
+
+from flask import Flask, render_template, request, jsonify, redirect, url_for, abort
+from flask_sock import Sock
+
 from flask_sqlalchemy import SQLAlchemy
-from flask_security import Security, SQLAlchemyUserDatastore, \
-    UserMixin, RoleMixin, login_required, current_user
+
+from flask_security import Security, SQLAlchemyUserDatastore, UserMixin, RoleMixin, login_required, current_user
 from flask_security.utils import hash_password
+
 import flask_admin
 from flask_admin.contrib import sqla
 from flask_admin import helpers as admin_helpers
-from flask_socketio import SocketIO, emit
-import time
+
 from wtforms import PasswordField
 
 # Create Flask application
 app = Flask(__name__)
-app.config['SECRET_KEY'] = 'd0ughball$'
 app.config.from_pyfile('config.py')
+sock = Sock(app)
 db = SQLAlchemy(app)
-socketio = SocketIO(app)
 
 # Define models
 roles_users = db.Table(
@@ -83,7 +84,7 @@ class MyModelView(sqla.ModelView):
                 return redirect(url_for('security.login', next=request.url))
     # can_edit = True
     edit_modal = True
-    create_modal = True    
+    create_modal = True
     can_export = True
     can_view_details = True
     details_modal = True
@@ -106,36 +107,6 @@ class UserView(MyModelView):
 def index():
     return render_template('Home/index.html')
 
-# this would be done in some other script
-# whether that be on a regular basis or something?
-fig, ax = plt.subplots()
-xs = range(100)
-ys = [random.randint(1, 50) for x in xs]
-ax.plot(xs, ys)
-plt.savefig('static/plots/plot.png')
-
-data_store = {}
-
-@app.route('/live')
-def index_live():
-    print('Request for index page received')
-    Q = data_store["ESP32"]["charge"]
-    V = data_store["ESP32"]["voltage"]
-    I = data_store["ESP32"]["current"]
-    T = data_store["ESP32"]["temperature"]
-
-    return render_template('index.html')
-
-
-@app.route('/data', methods=['POST'])
-def receive_data():
-    data = request.json
-    if data:
-        data_store["ESP32"] = data
-        socketio.emit('update_data', data) # broadcast to websocket clients
-        return {"status": "success", "data_received": data}, 200
-    return {"status": "error", "message": "No data received"}, 400
-
 @app.route('/admin/dashboard')
 @login_required
 def admin_index():
@@ -146,29 +117,143 @@ def admin_index():
 def subpage():
     return render_template('admin/battery.html')
 
-# Socket connect
-@socketio.on('connect', namespace='/websocket')
-def on_connect():
-    print('Client connected')
 
-# @socketio.on('connect')
-# def handle_connect():
-#     print('Client connected')
+data_store = {
+    "ESP32": {
+        "IP": "xxx.xxx.xxx.xxx"
+    }
+}
+connected_clients = set()  # Keep track of connected WebSocket clients
 
-@socketio.on('disconnect', namespace='/websocket')
-def on_disconnect():
-    print('Client disconnected')
+def forward_request_to_esp32(endpoint, method="POST", allow_redirects=True):
+    """
+    Generic function to forward requests to the ESP32.
+    :param endpoint: ESP32 endpoint to forward the request to.
+    :param method: HTTP method ("GET", "POST", etc.).
+    :param allow_redirects: Whether to allow redirects from the ESP32.
+    :return: Response from the ESP32.
+    """
+    ESP32_URL = f"http://{data_store['ESP32']['IP']}/{endpoint}"
+    try:
+        # Handle GET and POST requests
+        if method == "POST":
+            form_data = request.form.to_dict()  # Collect form data for POST
+            response = requests.post(ESP32_URL, data=form_data, allow_redirects=allow_redirects)
+        elif method == "GET":
+            response = requests.get(ESP32_URL, allow_redirects=allow_redirects)
+        else:
+            return jsonify({'error': 'Unsupported HTTP method'}), 400
 
-# Function to send data to the client every 5 seconds
-def send_data():
-    while True:
-        print('send data')
-        current_time = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
-        socketio.emit('server_response', {'data': current_time},  namespace='/websocket')
-        time.sleep(1)
+        # Handle redirect responses (if any)
+        if response.status_code == 302 and not allow_redirects:
+            redirect_url = response.headers.get("Location", "/")
+            return redirect(redirect_url, code=302)
 
-# Start background thread to send data
-socketio.start_background_task(send_data)
+        # Return the ESP32's response to the client
+        return response.text, response.status_code
+    except requests.exceptions.RequestException as e:
+        return jsonify({'error': f"Failed to communicate with ESP32: {str(e)}"}), 500
+
+@app.route('/')
+def homepage():
+    print('Request for home page received')
+    return render_template('portal/homepage.html')
+
+@app.route('/login')
+def login():
+    print('Request for login page received')
+    return render_template('portal/login.html')
+
+@app.route('/validate_login', methods=['POST'])
+def validate_login():
+    username = request.form.get("username")
+    password = request.form.get("password")
+    if username == "admin" and password == "1234":
+        return redirect(url_for("display"), code=302)
+    else:
+        return "<p>Invalid username or password.</p>", 401
+
+
+@app.route('/display')
+def display():
+    print('Request for display page received')
+    return render_template('portal/display.html')
+
+@sock.route('/ws')
+def websocket(ws):
+    # Add the client to the connected clients set
+    connected_clients.add(ws)
+    try:
+        while True:
+            # WebSocket server can listen for incoming messages if needed
+            message = ws.receive()
+            if message:
+                print(f"Received from client: {message}")
+    except Exception as e:
+        print(f"WebSocket error: {e}")
+    finally:
+        # Clean up when the client disconnects
+        connected_clients.remove(ws)
+
+@app.route('/data', methods=['POST'])
+def receive_data():
+    data = request.json
+    if data:
+        data_store["ESP32"] = data
+
+        # Send the data to all connected WebSocket clients
+        for client in connected_clients.copy():
+            try:
+                client.send(jsonify(data).get_data(as_text=True))  # Send as a JSON string
+            except Exception as e:
+                print(f"Error sending data to a client: {e}")
+                connected_clients.remove(client)  # Remove the client if sending fails
+
+        return {"status": "success", "data_received": data}, 200
+    return {"status": "error", "message": "No data received"}, 400
+
+@app.route('/change')
+def change():
+    print('Request for change page received')
+    return render_template('portal/change.html')
+
+@app.route('/validate_change', methods=['POST'])
+def validate_change():
+    return forward_request_to_esp32("validate_change")
+
+@app.route('/reset', methods=['POST'])
+def reset():
+    return forward_request_to_esp32("reset", allow_redirects=False)
+
+
+@app.route('/connect')
+def connect():
+    print('Request for connect page received')
+    return render_template('portal/connect.html')
+
+@app.route('/validate_connect', methods=['POST'])
+def validate_connect():
+    return forward_request_to_esp32("validate_connect")
+
+@app.route('/nearby')
+def nearby():
+    print('Request for nearby page received')
+    return render_template('portal/nearby.html')
+
+@app.route('/about')
+def about():
+    print('Request for about page received')
+    return render_template('portal/about.html')
+
+@app.route('/device')
+def device():
+    print('Request for device page received')
+    return render_template('portal/device.html')
+
+@app.route('/toggle', methods=['GET'])
+def toggle():
+    return forward_request_to_esp32("toggle", method="GET")
+
 
 # Create admin
 admin = flask_admin.Admin(
@@ -198,7 +283,7 @@ def build_sample_db():
     with app.app_context():
         db.drop_all()
         db.create_all()
-        
+
         user_role = Role(name='user')
         super_user_role = Role(name='superuser')
         db.session.add(user_role)
@@ -242,7 +327,8 @@ database_path = os.path.join(app_dir, app.config['DATABASE_FILE'])
 if not os.path.exists(database_path):
     print("Database file not found. Creating tables and populating with sample data.")
     build_sample_db()
-        
+
+
 if __name__ == '__main__':
     # Start app
     app.run(debug=True)

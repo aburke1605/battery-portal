@@ -3,7 +3,6 @@
 
 #include "include/utils.h"
 
-
 esp_err_t get_POST_data(httpd_req_t *req, char* content, size_t content_size) {
     int ret, content_len = req->content_len;
 

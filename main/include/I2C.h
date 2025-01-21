@@ -38,6 +38,8 @@
 #define DSG_CURRENT_THRESHOLD_OFFSET     0
 #define CHG_CURRENT_THRESHOLD_OFFSET     2
 
+#define LED_GPIO_PIN 2
+
 esp_err_t i2c_master_init(void);
 
 void device_scan(void);

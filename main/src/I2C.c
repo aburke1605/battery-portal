@@ -69,6 +69,9 @@ uint16_t read_2byte_data(uint8_t reg) {
 
     uint8_t data[2] = {0};
     ret = read_data(reg, data, sizeof(data));
+    if (ret != ESP_OK) {
+        // TODO: fill out
+    }
 
     // is big-endian
     return (data[1] << 8) | data[0];
@@ -85,6 +88,9 @@ uint16_t test_read(uint8_t subclass, uint8_t offset) {
 
     uint8_t data[2] = {0}; // 2 bytes
     ret = read_data(BLOCK_DATA_START + offset%32, data, sizeof(data));
+    if (ret != ESP_OK) {
+        // TODO: fill out
+    }
 
     // is little-endian
     uint16_t val = (data[0] << 8) | data[1];

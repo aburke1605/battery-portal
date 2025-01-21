@@ -5,14 +5,6 @@
 #include "include/I2C.h"
 #include "include/utils.h"
 
-#include "html/login_page.h"
-#include "html/display_page.h"
-#include "html/change_page.h"
-#include "html/connect_page.h"
-#include "html/nearby_page.h"
-#include "html/about_page.h"
-#include "html/device_page.h"
-
 
 void add_client(int fd) {
     for (int i = 0; i < CONFIG_MAX_CLIENTS; i++) {
@@ -35,15 +27,13 @@ void remove_client(int fd) {
     }
 }
 
-esp_err_t login_handler(httpd_req_t *req) {
-    httpd_resp_set_type(req, "text/html");
-    httpd_resp_send(req, login_html, HTTPD_RESP_USE_STRLEN);
-    return ESP_OK;
-}
-
 esp_err_t validate_login_handler(httpd_req_t *req) {
     char content[100];
     esp_err_t err = get_POST_data(req, content, sizeof(content));
+    if (err != ESP_OK) {
+        ESP_LOGE("WS", "Problem with login POST request");
+        return err;
+    }
 
     char username[50] = {0};
     char password[50] = {0};
@@ -67,12 +57,6 @@ esp_err_t validate_login_handler(httpd_req_t *req) {
     return ESP_OK;
 }
 
-esp_err_t display_handler(httpd_req_t *req) {
-    httpd_resp_set_type(req, "text/html");
-    httpd_resp_send(req, display_html, HTTPD_RESP_USE_STRLEN);
-    return ESP_OK;
-}
-
 esp_err_t websocket_handler(httpd_req_t *req) {
     if (req->method == HTTP_GET) {
         int fd = httpd_req_to_sockfd(req);
@@ -84,15 +68,13 @@ esp_err_t websocket_handler(httpd_req_t *req) {
     return ESP_FAIL;
 }
 
-esp_err_t change_handler(httpd_req_t *req) {
-    httpd_resp_set_type(req, "text/html");
-    httpd_resp_send(req, change_html, HTTPD_RESP_USE_STRLEN);
-    return ESP_OK;
-}
-
 esp_err_t validate_change_handler(httpd_req_t *req) {
     char content[500];
     esp_err_t err = get_POST_data(req, content, sizeof(content));
+    if (err != ESP_OK) {
+        ESP_LOGE("WS", "Problem with change POST request");
+        return err;
+    }
 
     // Check if each parameter exists and parse it
     char *BL_start = strstr(content, "BL_voltage_threshold=");
@@ -101,6 +83,10 @@ esp_err_t validate_change_handler(httpd_req_t *req) {
     char *DCT_start = strstr(content, "discharge_current_threshold=");
     char *CITL_start = strstr(content, "chg_inhibit_temp_low=");
     char *CITH_start = strstr(content, "chg_inhibit_temp_high=");
+
+    static bool led_on = false;
+    led_on = !led_on;
+    gpio_set_level(LED_GPIO_PIN, led_on ? 1 : 0);
 
     if (BL_start) {
         char BL_voltage_threshold[50] = {0};
@@ -156,6 +142,9 @@ esp_err_t validate_change_handler(httpd_req_t *req) {
         }
     }
 
+    vTaskDelay(pdMS_TO_TICKS(500));
+    gpio_set_level(LED_GPIO_PIN, led_on ? 0 : 1);
+
     return ESP_OK;
 }
 
@@ -169,15 +158,13 @@ esp_err_t reset_handler(httpd_req_t *req) {
     return ESP_OK;
 }
 
-esp_err_t connect_handler(httpd_req_t *req) {
-    httpd_resp_set_type(req, "text/html");
-    httpd_resp_send(req, connect_html, HTTPD_RESP_USE_STRLEN);
-    return ESP_OK;
-}
-
 esp_err_t validate_connect_handler(httpd_req_t *req) {
     char content[100];
     esp_err_t err = get_POST_data(req, content, sizeof(content));
+    if (err != ESP_OK) {
+        ESP_LOGE("WS", "Problem with connect POST request");
+        return err;
+    }
 
     char ssid_encoded[50] = {0};
     char ssid[50] = {0};
@@ -195,9 +182,12 @@ esp_err_t validate_connect_handler(httpd_req_t *req) {
     wifi_sta_config.sta.ssid[sizeof(wifi_sta_config.sta.ssid) - 1] = '\0';
     wifi_sta_config.sta.password[sizeof(wifi_sta_config.sta.password) - 1] = '\0';
 
+if (!connected_to_WiFi) {
     ESP_ERROR_CHECK(esp_wifi_set_config(ESP_IF_WIFI_STA, &wifi_sta_config));
 
+    ESP_ERROR_CHECK(esp_wifi_stop());
     ESP_LOGI("AP", "Connecting to AP... SSID: %s", wifi_sta_config.sta.ssid);
+    ESP_ERROR_CHECK(esp_wifi_start());
 
     // Wait for connection
     while (true) {
@@ -206,6 +196,7 @@ esp_err_t validate_connect_handler(httpd_req_t *req) {
         if (esp_wifi_sta_get_ap_info(&ap_info) == ESP_OK) {
             ESP_LOGI("WS", "Connected to router. Signal strength: %d dBm", ap_info.rssi);
             connected_to_WiFi = true;
+
             break;
         } else {
             ESP_LOGI("WS", "Not connected. Retrying...");
@@ -216,25 +207,10 @@ esp_err_t validate_connect_handler(httpd_req_t *req) {
     httpd_resp_set_status(req, "302 Found");
     httpd_resp_set_hdr(req, "Location", "/display"); // redirect back to /display
     httpd_resp_send(req, NULL, 0); // no response body
-
-    return ESP_OK;
+} else {
+    httpd_resp_send(req, "Already connected to Wi-Fi", HTTPD_RESP_USE_STRLEN);
 }
 
-esp_err_t nearby_handler(httpd_req_t *req) {
-    httpd_resp_set_type(req, "text/html");
-    httpd_resp_send(req, nearby_html, HTTPD_RESP_USE_STRLEN);
-    return ESP_OK;
-}
-
-esp_err_t about_handler(httpd_req_t *req) {
-    httpd_resp_set_type(req, "text/html");
-    httpd_resp_send(req, about_html, HTTPD_RESP_USE_STRLEN);
-    return ESP_OK;
-}
-
-esp_err_t device_handler(httpd_req_t *req) {
-    httpd_resp_set_type(req, "text/html");
-    httpd_resp_send(req, device_html, HTTPD_RESP_USE_STRLEN);
     return ESP_OK;
 }
 
@@ -312,6 +288,70 @@ esp_err_t image_handler(httpd_req_t *req) {
     return ESP_OK;
 }
 
+esp_err_t file_serve_handler(httpd_req_t *req) {
+    const char *file_path = (const char *)req->user_ctx; // Get file path from user_ctx
+    ESP_LOGI("WS", "Serving file: %s", file_path);
+
+    // Open the file
+    FILE *file = fopen(file_path, "r");
+    if (!file) {
+        ESP_LOGE("WS", "Failed to open file: %s", file_path);
+        httpd_resp_send_err(req, HTTPD_404_NOT_FOUND, "File not found");
+        return ESP_FAIL;
+    }
+
+    // Get file size
+    struct stat file_stat;
+    if (stat(file_path, &file_stat) != 0) {
+        ESP_LOGE("WS", "Failed to get file stats: %s", file_path);
+        fclose(file);
+        httpd_resp_send_err(req, HTTPD_500_INTERNAL_SERVER_ERROR, "Failed to retrieve file size");
+        return ESP_FAIL;
+    }
+
+    // Set Content-Type based on file extension
+    const char *ext = strrchr(file_path, '.');
+    if (ext) {
+        if (strcmp(ext, ".html") == 0) {
+            httpd_resp_set_type(req, "text/html");
+        } else if (strcmp(ext, ".css") == 0) {
+            httpd_resp_set_type(req, "text/css");
+        } else if (strcmp(ext, ".js") == 0) {
+            httpd_resp_set_type(req, "application/javascript");
+        } else if (strcmp(ext, ".png") == 0) {
+            httpd_resp_set_type(req, "image/png");
+        } else if (strcmp(ext, ".jpg") == 0 || strcmp(ext, ".jpeg") == 0) {
+            httpd_resp_set_type(req, "image/jpeg");
+        } else if (strcmp(ext, ".ico") == 0) {
+            httpd_resp_set_type(req, "image/x-icon");
+        } else {
+            httpd_resp_set_type(req, "application/octet-stream");
+        }
+    } else {
+        httpd_resp_set_type(req, "application/octet-stream");
+    }
+
+    // Buffer to read file contents
+    char buffer[1024];
+    size_t read_bytes;
+
+    // Send file data in chunks
+    while ((read_bytes = fread(buffer, 1, sizeof(buffer), file)) > 0) {
+        esp_err_t ret = httpd_resp_send_chunk(req, buffer, read_bytes);
+        if (ret != ESP_OK) {
+            ESP_LOGE("WS", "Failed to send file chunk");
+            fclose(file);
+            httpd_resp_send_err(req, HTTPD_500_INTERNAL_SERVER_ERROR, "Failed to send file");
+            return ESP_FAIL;
+        }
+    }
+
+    // End the HTTP response
+    fclose(file);
+    httpd_resp_send_chunk(req, NULL, 0);
+    return ESP_OK;
+}
+
 // Start HTTP server
 httpd_handle_t start_webserver(void) {
     // create sockets for clients
@@ -333,8 +373,8 @@ httpd_handle_t start_webserver(void) {
         httpd_uri_t login_uri = {
             .uri       = "/",
             .method    = HTTP_GET,
-            .handler   = login_handler,
-            .user_ctx  = NULL
+            .handler   = file_serve_handler,
+            .user_ctx  = "/templates/login.html"
         };
         httpd_register_uri_handler(server, &login_uri);
         
@@ -348,6 +388,10 @@ httpd_handle_t start_webserver(void) {
         login_uri.uri = "/favicon.ico";
         httpd_register_uri_handler(server, &login_uri);
         login_uri.uri = "/redirect";
+        httpd_register_uri_handler(server, &login_uri);
+        login_uri.uri = "/wpad.dat";
+        httpd_register_uri_handler(server, &login_uri);
+        login_uri.uri = "/gen_204";
         httpd_register_uri_handler(server, &login_uri);
 
         // Validate login
@@ -363,11 +407,9 @@ httpd_handle_t start_webserver(void) {
         httpd_uri_t display_uri = {
             .uri       = "/display",
             .method    = HTTP_GET,
-            .handler   = display_handler,
-            .user_ctx  = NULL
+            .handler   = file_serve_handler,
+            .user_ctx  = "/templates/display.html"
         };
-        httpd_register_uri_handler(server, &display_uri);
-        display_uri.uri = "/return";
         httpd_register_uri_handler(server, &display_uri);
 
         // WebSocket
@@ -382,8 +424,8 @@ httpd_handle_t start_webserver(void) {
         httpd_uri_t change_uri = {
             .uri       = "/change",
             .method    = HTTP_GET,
-            .handler   = change_handler,
-            .user_ctx  = NULL
+            .handler   = file_serve_handler,
+            .user_ctx  = "/templates/change.html"
         };
         httpd_register_uri_handler(server, &change_uri);
 
@@ -407,8 +449,8 @@ httpd_handle_t start_webserver(void) {
         httpd_uri_t connect_uri = {
             .uri       = "/connect",
             .method    = HTTP_GET,
-            .handler   = connect_handler,
-            .user_ctx  = NULL
+            .handler   = file_serve_handler,
+            .user_ctx  = "/templates/connect.html"
         };
         httpd_register_uri_handler(server, &connect_uri);
 
@@ -425,8 +467,8 @@ httpd_handle_t start_webserver(void) {
         httpd_uri_t nearby_uri = {
             .uri       = "/nearby",
             .method    = HTTP_GET,
-            .handler   = nearby_handler,
-            .user_ctx  = NULL
+            .handler   = file_serve_handler,
+            .user_ctx  = "/templates/nearby.html"
         };
         httpd_register_uri_handler(server, &nearby_uri);
 
@@ -434,8 +476,8 @@ httpd_handle_t start_webserver(void) {
         httpd_uri_t about_uri = {
             .uri       = "/about",
             .method    = HTTP_GET,
-            .handler   = about_handler,
-            .user_ctx  = NULL
+            .handler   = file_serve_handler,
+            .user_ctx  = "/templates/about.html"
         };
         httpd_register_uri_handler(server, &about_uri);
 
@@ -443,8 +485,8 @@ httpd_handle_t start_webserver(void) {
         httpd_uri_t device_uri = {
             .uri       = "/device",
             .method    = HTTP_GET,
-            .handler   = device_handler,
-            .user_ctx  = NULL
+            .handler   = file_serve_handler,
+            .user_ctx  = "/templates/device.html"
         };
         httpd_register_uri_handler(server, &device_uri);
 
@@ -457,27 +499,27 @@ httpd_handle_t start_webserver(void) {
         httpd_register_uri_handler(server, &toggle_uri);
 
         httpd_uri_t css_uri = {
-            .uri      = "/style.css",
+            .uri      = "/static/portal/style.css",
             .method   = HTTP_GET,
             .handler  = css_handler,
-            .user_ctx = "/storage/style.css",
+            .user_ctx = "/static/style.css",
         };
         httpd_register_uri_handler(server, &css_uri);
 
         // Add a handler for serving the image
         httpd_uri_t image_uri = {
-            .uri       = "/image/aceon.png",
+            .uri       = "/static/portal/images/aceon.png",
             .method    = HTTP_GET,
             .handler   = image_handler, // Function to read and send the image
-            .user_ctx  = "/storage/images/aceon.png" // File path as user context
+            .user_ctx  = "/static/images/aceon.png" // File path as user context
         };
         httpd_register_uri_handler(server, &image_uri);
 
         httpd_uri_t image_uri_2 = {
-            .uri       = "/image/aceon2.png",
+            .uri       = "/static/portal/images/aceon2.png",
             .method    = HTTP_GET,
             .handler   = image_handler, // Function to read and send the image
-            .user_ctx  = "/storage/images/aceon2.png" // File path as user context
+            .user_ctx  = "/static/images/aceon2.png" // File path as user context
         };
         httpd_register_uri_handler(server, &image_uri_2);
 
@@ -489,22 +531,20 @@ httpd_handle_t start_webserver(void) {
 
 
 
-void websocket_broadcast_task(void *pvParameters) {
+void web_task(void *pvParameters) {
     while (true) {
-        // base data
-        uint16_t iCharge = read_2byte_data(STATE_OF_CHARGE_REG);
 
+        // read sensor data
+        uint16_t iCharge = read_2byte_data(STATE_OF_CHARGE_REG);
         uint16_t iVoltage = read_2byte_data(VOLTAGE_REG);
         float fVoltage = (float)iVoltage / 1000.0;
-
         uint16_t iCurrent = read_2byte_data(CURRENT_REG);
         float fCurrent = (float)iCurrent / 1000.0;
-        if (fCurrent<65.536 && fCurrent>32.767) fCurrent = 65.536 - fCurrent;
-
+        if (fCurrent < 65.536 && fCurrent > 32.767) fCurrent = 65.536 - fCurrent; // this is something to do with 16 bit binary
         uint16_t iTemperature = read_2byte_data(TEMPERATURE_REG);
         float fTemperature = (float)iTemperature / 10.0 - 273.15;
 
-        // configurable data
+        // configurable data too
         uint16_t iBL = test_read(DISCHARGE_SUBCLASS_ID, BL_OFFSET);
         uint16_t iBH = test_read(DISCHARGE_SUBCLASS_ID, BH_OFFSET);
         uint16_t iCCT = test_read(CURRENT_THRESHOLDS_SUBCLASS_ID, CHG_CURRENT_THRESHOLD_OFFSET);
@@ -512,6 +552,7 @@ void websocket_broadcast_task(void *pvParameters) {
         uint16_t iCITL = test_read(CHARGE_INHIBIT_CFG_SUBCLASS_ID, CHG_INHIBIT_TEMP_LOW_OFFSET);
         uint16_t iCITH = test_read(CHARGE_INHIBIT_CFG_SUBCLASS_ID, CHG_INHIBIT_TEMP_HIGH_OFFSET);
 
+        // create JSON object with sensor data
         cJSON *json = cJSON_CreateObject();
         cJSON_AddNumberToObject(json, "charge", iCharge);
         cJSON_AddNumberToObject(json, "voltage", fVoltage);
@@ -524,8 +565,9 @@ void websocket_broadcast_task(void *pvParameters) {
         cJSON_AddNumberToObject(json, "CITL", iCITL);
         cJSON_AddNumberToObject(json, "CITH", iCITH);
 
+        cJSON_AddStringToObject(json, "IP", ESP_IP);
 
-        // Add received data if available
+        // add data received from other ESP32s if available
         if (xSemaphoreTake(data_mutex, portMAX_DELAY)) {
             if (strlen(received_data) > 0) {
                 cJSON *received_json = cJSON_Parse(received_data);
@@ -559,11 +601,14 @@ void websocket_broadcast_task(void *pvParameters) {
             ESP_LOGE("WS", "Failed to take mutex for broadcast data");
         }
 
+
+        // now process the json
         char *json_string = cJSON_PrintUnformatted(json);
         cJSON_Delete(json);
-
         if (json_string != NULL) {
-            // Send the JSON data to all connected WebSocket clients
+
+
+            // first send to all connected WebSocket clients
             for (int i = 0; i < CONFIG_MAX_CLIENTS; i++) {
                 if (client_sockets[i] != -1) {
                     ESP_LOGI("WS", "Attempting to send frame to client %d", client_sockets[i]);
@@ -597,74 +642,49 @@ void websocket_broadcast_task(void *pvParameters) {
                     }
                 }
             }
+
+
+            // then send to website over internet
+            // but first check if connected to an AP
+            if (connected_to_WiFi) {
+                for (size_t i = 0; i < old_successful_ip_count; i++) {
+                    char url[33];
+                    snprintf(url, sizeof(url), "http://%s:5000/data", old_successful_ips[i]);
+                    esp_http_client_config_t config = {
+                        .url = url,
+                    };
+                    esp_http_client_handle_t client = esp_http_client_init(&config);
+
+                    // configure HTTP client for POST
+                    esp_http_client_set_method(client, HTTP_METHOD_POST);
+                    esp_http_client_set_header(client, "Content-Type", "application/json");
+                    esp_http_client_set_post_field(client, json_string, strlen(json_string));
+
+                    // perform HTTP POST request
+                    esp_err_t err = esp_http_client_perform(client);
+                    if (err == ESP_OK) {
+                        int status_code = esp_http_client_get_status_code(client);
+                        char response_buf[200];
+                        int content_length = esp_http_client_read_response(client, response_buf, sizeof(response_buf) - 1);
+                        if (content_length >= 0) {
+                            response_buf[content_length] = '\0';
+                            ESP_LOGI("WS", "HTTP POST Status = %d, Response = %s", status_code, response_buf);
+                        } else {
+                            ESP_LOGE("WS", "Failed to read response");
+                        }
+                    } else {
+                        ESP_LOGE("WS", "HTTP POST request failed: %s", esp_err_to_name(err));
+                    }
+                    esp_http_client_cleanup(client);
+                }
+            }
+
+
+            // clean up
             free(json_string);
         }
 
-        vTaskDelay(pdMS_TO_TICKS(1000));  // Update every second
-    }
-}
-
-void website_send_task(void *pvParameters) {
-    while (true) {
-        // check if connected to an AP first
-        if (!connected_to_WiFi) {
-            vTaskDelay(1000 / portTICK_PERIOD_MS);
-            continue;
-        }
-
-        esp_http_client_config_t config = {
-            .url = "http://192.168.137.1:5000/data", // this is the IPv4 address of the PC hotspot
-        };
-
-        esp_http_client_handle_t client = esp_http_client_init(&config);
-
-        // Read sensor data
-        uint16_t iCharge = read_2byte_data(STATE_OF_CHARGE_REG);
-
-        uint16_t iVoltage = read_2byte_data(VOLTAGE_REG);
-        float fVoltage = (float)iVoltage / 1000.0;
-
-        uint16_t iCurrent = read_2byte_data(CURRENT_REG);
-        float fCurrent = (float)iCurrent / 1000.0;
-        if (fCurrent < 65.536 && fCurrent > 32.767) fCurrent = 65.536 - fCurrent;
-
-        uint16_t iTemperature = read_2byte_data(TEMPERATURE_REG);
-        float fTemperature = (float)iTemperature / 10.0 - 273.15;
-
-        // Create JSON object with sensor data
-        cJSON *json = cJSON_CreateObject();
-        cJSON_AddNumberToObject(json, "charge", iCharge);
-        cJSON_AddNumberToObject(json, "voltage", fVoltage);
-        cJSON_AddNumberToObject(json, "current", fCurrent);
-        cJSON_AddNumberToObject(json, "temperature", fTemperature);
-
-        char *json_string = cJSON_PrintUnformatted(json);
-        cJSON_Delete(json);
-
-        // Configure HTTP client for POST
-        esp_http_client_set_method(client, HTTP_METHOD_POST);
-        esp_http_client_set_header(client, "Content-Type", "application/json");
-        esp_http_client_set_post_field(client, json_string, strlen(json_string));
-
-        // Perform HTTP POST request
-        esp_err_t err = esp_http_client_perform(client);
-        if (err == ESP_OK) {
-            int status_code = esp_http_client_get_status_code(client);
-            char response_buf[200];
-            int content_length = esp_http_client_read_response(client, response_buf, sizeof(response_buf) - 1);
-            if (content_length >= 0) {
-                response_buf[content_length] = '\0';  // Null-terminate the response
-                ESP_LOGI("main", "HTTP POST Status = %d, Response = %s", status_code, response_buf);
-            } else {
-                ESP_LOGE("main", "Failed to read response");
-            }
-        } else {
-            ESP_LOGE("main", "HTTP POST request failed: %s", esp_err_to_name(err));
-        }
-
-        esp_http_client_cleanup(client);
-        free(json_string);
-
-        vTaskDelay(1000 / portTICK_PERIOD_MS);  // Wait 1 second
+        // pause for a second
+        vTaskDelay(1000 / portTICK_PERIOD_MS);
     }
 }
