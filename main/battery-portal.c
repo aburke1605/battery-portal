@@ -15,8 +15,6 @@ bool connected_to_WiFi = false;
 int other_AP_SSIDs[256];
 char successful_ips[256][16];
 uint8_t successful_ip_count = 0;
-TaskHandle_t task_handles[MAX_TASKS];
-size_t task_count = 0;
 char ESP_IP[16] = "xxx.xxx.xxx.xxx\0";
 
 void app_main(void) {
@@ -79,11 +77,7 @@ void app_main(void) {
     }
 
     // Start DNS server task
-    TaskHandle_t dns_server_task_handle = NULL;
-    xTaskCreate(&dns_server_task, "dns_server_task", 4096, NULL, 5, &dns_server_task_handle);
-    register_task(dns_server_task_handle);
+    xTaskCreate(&dns_server_task, "dns_server_task", 4096, NULL, 5, NULL);
 
-    TaskHandle_t web_task_handle = NULL;
-    xTaskCreate(&web_task, "web_task", 4096, &server, 5, &web_task_handle);
-    register_task(web_task_handle);
+    xTaskCreate(&web_task, "web_task", 4096, &server, 5, NULL);
 }
