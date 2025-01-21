@@ -197,9 +197,6 @@ if (!connected_to_WiFi) {
             ESP_LOGI("WS", "Connected to router. Signal strength: %d dBm", ap_info.rssi);
             connected_to_WiFi = true;
 
-            ESP_LOGI("WS", "Finding other devices on network...");
-            get_devices();
-
             break;
         } else {
             ESP_LOGI("WS", "Not connected. Retrying...");

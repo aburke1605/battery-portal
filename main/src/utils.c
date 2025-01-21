@@ -56,7 +56,7 @@ void on_ping_success(esp_ping_handle_t hdl, void *args) {
 
     ping_context_t *ctx = (ping_context_t *)args;
 
-    uint32_t prev_ip = htonl(ntohl(ctx->current_ip) - 1);
+    // uint32_t prev_ip = htonl(ntohl(ctx->current_ip) - 1);
     if (ctx->current_ip != ctx->ip_info.ip.addr && ctx->current_ip != ctx->ip_info.gw.addr) {
         // skip own IP and gateway IP
         snprintf(successful_ips[successful_ip_count++], sizeof(successful_ips[0]), IPSTR, IP2STR((ip4_addr_t *)&ctx->current_ip));
