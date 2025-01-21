@@ -97,58 +97,58 @@ void ping_target(ping_context_t *ping_ctx) {
 }
 
 void get_devices_task(void *pvParameters) {
-while (true) {
-if (connected_to_WiFi) {
+    while (true) {
+        if (connected_to_WiFi) {
 
-    // get Wi-Fi station gateway
-    esp_netif_t *sta_netif = esp_netif_get_handle_from_ifkey("WIFI_STA_DEF");
-    if (sta_netif == NULL) return;
+            // get Wi-Fi station gateway
+            esp_netif_t *sta_netif = esp_netif_get_handle_from_ifkey("WIFI_STA_DEF");
+            if (sta_netif == NULL) return;
 
-    // retrieve the IP information
-    esp_netif_ip_info_t ip_info;
-    esp_netif_get_ip_info(sta_netif, &ip_info);
+            // retrieve the IP information
+            esp_netif_ip_info_t ip_info;
+            esp_netif_get_ip_info(sta_netif, &ip_info);
 
-    esp_ip4addr_ntoa(&ip_info.ip, ESP_IP, 16);
+            esp_ip4addr_ntoa(&ip_info.ip, ESP_IP, 16);
 
-    uint32_t network_addr = ip_info.ip.addr & ip_info.netmask.addr; // network address
-    uint32_t broadcast_addr = network_addr | ~ip_info.netmask.addr; // broadcast address
+            uint32_t network_addr = ip_info.ip.addr & ip_info.netmask.addr; // network address
+            uint32_t broadcast_addr = network_addr | ~ip_info.netmask.addr; // broadcast address
 
-    old_successful_ip_count = successful_ip_count;
-    for (size_t i = 0; i < old_successful_ip_count; i++) strcpy(old_successful_ips[i], successful_ips[i]);
-    successful_ip_count = 0; // reset successful IP list
-    ping_semaphore = xSemaphoreCreateCounting(MAX_CONCURRENT_PINGS, MAX_CONCURRENT_PINGS);
+            old_successful_ip_count = successful_ip_count;
+            for (size_t i = 0; i < old_successful_ip_count; i++) strcpy(old_successful_ips[i], successful_ips[i]);
+            successful_ip_count = 0; // reset successful IP list
+            ping_semaphore = xSemaphoreCreateCounting(MAX_CONCURRENT_PINGS, MAX_CONCURRENT_PINGS);
 
-    ping_context_t ping_ctx = {
-        .current_ip = network_addr + htonl(1), // Start with the first usable IP
-        .ip_info = ip_info
-    };
-    while (ping_ctx.current_ip < broadcast_addr) {
-        // wait until we can initiate a new ping
-        xSemaphoreTake(ping_semaphore, portMAX_DELAY);
-        ping_target(&ping_ctx);
-        ping_ctx.current_ip = htonl(ntohl(ping_ctx.current_ip) + 1);
+            ping_context_t ping_ctx = {
+                .current_ip = network_addr + htonl(153), // Start with the first usable IP
+                .ip_info = ip_info
+            };
+            while (ping_ctx.current_ip < broadcast_addr - htonl(88)) {
+                // wait until we can initiate a new ping
+                xSemaphoreTake(ping_semaphore, portMAX_DELAY);
+                ping_target(&ping_ctx);
+                ping_ctx.current_ip = htonl(ntohl(ping_ctx.current_ip) + 1);
+            }
+
+            // wait for all remaining pings to finish
+            for (int i = 0; i < MAX_CONCURRENT_PINGS; i++) {
+                xSemaphoreTake(ping_semaphore, portMAX_DELAY);
+            }
+
+            vSemaphoreDelete(ping_semaphore); // clean up the semaphore
+            ping_semaphore = NULL;
+
+            // log the discovered devices
+            if (successful_ip_count > 0) ESP_LOGI("utils", "Discovered addresses:");
+            for (size_t i = 0; i < successful_ip_count; i++) {
+                ESP_LOGI("utils", "  - %s", successful_ips[i]);
+            }
+
+            scanned_devices = true;
+        }
+        else {
+            vTaskDelay(1000 / portTICK_PERIOD_MS);
+        }
     }
-
-    // wait for all remaining pings to finish
-    for (int i = 0; i < MAX_CONCURRENT_PINGS; i++) {
-        xSemaphoreTake(ping_semaphore, portMAX_DELAY);
-    }
-
-    vSemaphoreDelete(ping_semaphore); // clean up the semaphore
-    ping_semaphore = NULL;
-
-    // log the discovered devices
-    if (successful_ip_count > 0) ESP_LOGI("utils", "Discovered addresses:");
-    for (size_t i = 0; i < successful_ip_count; i++) {
-        ESP_LOGI("utils", "  - %s", successful_ips[i]);
-    }
-
-    scanned_devices = true;
-}
-else {
-    vTaskDelay(1000 / portTICK_PERIOD_MS);
-}
-}
 }
 
 uint8_t get_block(uint8_t offset) {
