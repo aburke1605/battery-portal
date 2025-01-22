@@ -189,24 +189,37 @@ if (!connected_to_WiFi) {
     ESP_LOGI("AP", "Connecting to AP... SSID: %s", wifi_sta_config.sta.ssid);
     ESP_ERROR_CHECK(esp_wifi_start());
 
-    // Wait for connection
+    // give some time to connect
+    vTaskDelay(pdMS_TO_TICKS(5000));
     while (true) {
-        vTaskDelay(pdMS_TO_TICKS(3000)); // 3s delay between attempts
         wifi_ap_record_t ap_info;
         if (esp_wifi_sta_get_ap_info(&ap_info) == ESP_OK) {
-            ESP_LOGI("WS", "Connected to router. Signal strength: %d dBm", ap_info.rssi);
-            connected_to_WiFi = true;
 
-            break;
+            esp_netif_t *sta_netif = esp_netif_get_handle_from_ifkey("WIFI_STA_DEF");
+            if (sta_netif != NULL) {
+                esp_netif_ip_info_t ip_info;
+                esp_netif_get_ip_info(sta_netif, &ip_info);
+
+                if (ip_info.ip.addr != IPADDR_ANY) {
+                    connected_to_WiFi = true;
+
+                    ESP_LOGI("WS", "Connected to router. Signal strength: %d dBm", ap_info.rssi);
+                    httpd_resp_set_status(req, "302 Found");
+                    httpd_resp_set_hdr(req, "Location", "/display"); // redirect back to /display
+                    httpd_resp_send(req, NULL, 0); // no response body
+
+                    break;
+                }
+            }
+
         } else {
             ESP_LOGI("WS", "Not connected. Retrying...");
             esp_wifi_connect();
         }
+
+        vTaskDelay(pdMS_TO_TICKS(1000));
     }
 
-    httpd_resp_set_status(req, "302 Found");
-    httpd_resp_set_hdr(req, "Location", "/display"); // redirect back to /display
-    httpd_resp_send(req, NULL, 0); // no response body
 } else {
     httpd_resp_send(req, "Already connected to Wi-Fi", HTTPD_RESP_USE_STRLEN);
 }
