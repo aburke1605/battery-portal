@@ -174,6 +174,9 @@ esp_err_t validate_connect_handler(httpd_req_t *req) {
     url_decode(ssid, ssid_encoded);
     url_decode(password, password_encoded);
 
+    int tries = 0;
+    int max_tries = 10;
+
     if (!connected_to_WiFi) {
         wifi_config_t *wifi_sta_config = malloc(sizeof(wifi_config_t));
         memset(wifi_sta_config, 0, sizeof(wifi_config_t));
@@ -190,6 +193,7 @@ esp_err_t validate_connect_handler(httpd_req_t *req) {
         // give some time to connect
         vTaskDelay(pdMS_TO_TICKS(5000));
         while (true) {
+            if (tries > max_tries) break;
             wifi_ap_record_t ap_info;
             if (esp_wifi_sta_get_ap_info(&ap_info) == ESP_OK) {
 
@@ -209,11 +213,11 @@ esp_err_t validate_connect_handler(httpd_req_t *req) {
                         break;
                     }
                 }
-
             } else {
-                ESP_LOGI("WS", "Not connected. Retrying...");
+                ESP_LOGI("WS", "Not connected. Retrying... %d", tries);
                 esp_wifi_connect();
             }
+            tries++;
 
             vTaskDelay(pdMS_TO_TICKS(1000));
         }
