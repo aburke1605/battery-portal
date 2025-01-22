@@ -704,3 +704,14 @@ void web_task(void *pvParameters) {
         vTaskDelay(1000 / portTICK_PERIOD_MS);
     }
 }
+
+void check_wifi_task(void* pvParameters) {
+    while(true) {
+        wifi_ap_record_t ap_info;
+        if (esp_wifi_sta_get_ap_info(&ap_info) != ESP_OK) {
+            connected_to_WiFi = false;
+        }
+
+        vTaskDelay(1000 / portTICK_PERIOD_MS);
+    }
+}
