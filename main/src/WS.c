@@ -219,9 +219,10 @@ esp_err_t validate_connect_handler(httpd_req_t *req) {
 
             vTaskDelay(pdMS_TO_TICKS(1000));
         }
-
     } else {
-        httpd_resp_send(req, "Already connected to Wi-Fi", HTTPD_RESP_USE_STRLEN);
+        const char *html_response = "<!DOCTYPE html><html><head><script>alert('Already connected to Wi-Fi');window.location.href = '/display';</script></head></html>";
+        httpd_resp_set_type(req, "text/html");
+        httpd_resp_send(req, html_response, HTTPD_RESP_USE_STRLEN);
     }
 
     return ESP_OK;
