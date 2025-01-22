@@ -185,9 +185,7 @@ esp_err_t validate_connect_handler(httpd_req_t *req) {
     if (!connected_to_WiFi) {
         ESP_ERROR_CHECK(esp_wifi_set_config(ESP_IF_WIFI_STA, &wifi_sta_config));
 
-        ESP_ERROR_CHECK(esp_wifi_stop());
         ESP_LOGI("AP", "Connecting to AP... SSID: %s", wifi_sta_config.sta.ssid);
-        ESP_ERROR_CHECK(esp_wifi_start());
 
         // give some time to connect
         vTaskDelay(pdMS_TO_TICKS(5000));
