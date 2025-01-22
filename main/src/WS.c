@@ -181,10 +181,8 @@ esp_err_t validate_connect_handler(httpd_req_t *req) {
         wifi_config_t *wifi_sta_config = malloc(sizeof(wifi_config_t));
         memset(wifi_sta_config, 0, sizeof(wifi_config_t));
 
-        // strncpy((char *)wifi_sta_config->sta.ssid, ssid, sizeof(wifi_sta_config->sta.ssid) - 1);
-        // strncpy((char *)wifi_sta_config->sta.password, password, sizeof(wifi_sta_config->sta.password) - 1);
-        strncpy((char *)wifi_sta_config->sta.ssid, "Aodhan's Laptop", sizeof(wifi_sta_config->sta.ssid) - 1);
-        strncpy((char *)wifi_sta_config->sta.password, "32mF+669", sizeof(wifi_sta_config->sta.password) - 1);
+        strncpy((char *)wifi_sta_config->sta.ssid, ssid, sizeof(wifi_sta_config->sta.ssid) - 1);
+        strncpy((char *)wifi_sta_config->sta.password, password, sizeof(wifi_sta_config->sta.password) - 1);
 
         ESP_ERROR_CHECK(esp_wifi_set_config(ESP_IF_WIFI_STA, wifi_sta_config));
 
