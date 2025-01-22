@@ -174,18 +174,18 @@ esp_err_t validate_connect_handler(httpd_req_t *req) {
     url_decode(ssid, ssid_encoded);
     url_decode(password, password_encoded);
 
-    wifi_config_t wifi_sta_config = {
-        .sta = {},
-    };
-    strncpy((char *)wifi_sta_config.sta.ssid, ssid, sizeof(wifi_sta_config.sta.ssid) - 1);
-    strncpy((char *)wifi_sta_config.sta.password, password, sizeof(wifi_sta_config.sta.password) - 1);
-    wifi_sta_config.sta.ssid[sizeof(wifi_sta_config.sta.ssid) - 1] = '\0';
-    wifi_sta_config.sta.password[sizeof(wifi_sta_config.sta.password) - 1] = '\0';
-
     if (!connected_to_WiFi) {
-        ESP_ERROR_CHECK(esp_wifi_set_config(ESP_IF_WIFI_STA, &wifi_sta_config));
+        wifi_config_t *wifi_sta_config = malloc(sizeof(wifi_config_t));
+        memset(wifi_sta_config, 0, sizeof(wifi_config_t));
 
-        ESP_LOGI("AP", "Connecting to AP... SSID: %s", wifi_sta_config.sta.ssid);
+        // strncpy((char *)wifi_sta_config->sta.ssid, ssid, sizeof(wifi_sta_config->sta.ssid) - 1);
+        // strncpy((char *)wifi_sta_config->sta.password, password, sizeof(wifi_sta_config->sta.password) - 1);
+        strncpy((char *)wifi_sta_config->sta.ssid, "Aodhan's Laptop", sizeof(wifi_sta_config->sta.ssid) - 1);
+        strncpy((char *)wifi_sta_config->sta.password, "32mF+669", sizeof(wifi_sta_config->sta.password) - 1);
+
+        ESP_ERROR_CHECK(esp_wifi_set_config(ESP_IF_WIFI_STA, wifi_sta_config));
+
+        ESP_LOGI("AP", "Connecting to AP... SSID: %s", wifi_sta_config->sta.ssid);
 
         // give some time to connect
         vTaskDelay(pdMS_TO_TICKS(5000));
