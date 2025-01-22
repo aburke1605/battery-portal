@@ -91,9 +91,9 @@ void get_devices_task(void *pvParameters) {
             ping_semaphore = NULL;
 
             // log the discovered devices
-            if (successful_ip_count > 0) ESP_LOGI("utils", "Discovered addresses:");
+            if (successful_ip_count > 0) ESP_LOGI("ping", "Discovered addresses:");
             for (size_t i = 0; i < successful_ip_count; i++) {
-                ESP_LOGI("utils", "  - %s", successful_ips[i]);
+                ESP_LOGI("ping", "  - %s", successful_ips[i]);
             }
 
             scanned_devices = true;
