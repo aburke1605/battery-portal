@@ -21,7 +21,6 @@ uint8_t old_successful_ip_count = 0;
 char ESP_IP[16] = "xxx.xxx.xxx.xxx\0";
 
 void app_main(void) {
-    /*
     // initialise SPIFFS
     esp_err_t result;
 
@@ -45,7 +44,6 @@ void app_main(void) {
         ESP_LOGE("main", "Failed to initialise SPIFFS (%s)", esp_err_to_name(result));
         return;
     }
-    */
 
     ESP_ERROR_CHECK(i2c_master_init());
     ESP_LOGI("main", "I2C initialized successfully");
