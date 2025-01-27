@@ -2,6 +2,8 @@
 import os
 import string
 import random
+import json
+from threading import Lock
 
 import requests
 
@@ -123,7 +125,8 @@ data_store = {
         "IP": "xxx.xxx.xxx.xxx"
     }
 }
-connected_clients = set()  # Keep track of connected WebSocket clients
+connected_clients = []  # Keep track of connected WebSocket clients
+lock = Lock()
 
 def forward_request_to_esp32(endpoint, method="POST", allow_redirects=True):
     """
@@ -181,19 +184,44 @@ def display():
 
 @sock.route('/ws')
 def websocket(ws):
-    # Add the client to the connected clients set
-    connected_clients.add(ws)
+    global connected_clients
+
+    with lock:
+        # Add the client to the connected clients set
+        connected_clients.append(ws)
+        print(f"Client connected. Total clients: {len(connected_clients)}")
+
     try:
         while True:
-            # WebSocket server can listen for incoming messages if needed
+            # Receive a message from the client
             message = ws.receive()
+
             if message:
-                print(f"Received from client: {message}")
+                print(f"Received data: {message}")
+
+                try:
+                    data = json.loads(message)
+                    device_id = data.get("device_id", "unknown")
+                    ws.send(json.dumps({"status": "success", "device_id": device_id}))
+
+                except json.JSONDecodeError:
+                    print("Error: Received data is not valid JSON.")
+                    ws.send(json.dumps({"status": "error", "message": "invalid JSON"}))
+
+                # Send a response back to the client
+                ws.send(f"Echo: {message}")
+            else:
+                # If no data received, break the loop
+                break
+
     except Exception as e:
         print(f"WebSocket error: {e}")
+
     finally:
-        # Clean up when the client disconnects
-        connected_clients.remove(ws)
+        with lock:
+            if ws in connected_clients:
+                connected_clients.remove(ws)
+            print(f"Client disconnected. Total clients: {len(connected_clients)}")
 
 @app.route('/data', methods=['POST'])
 def receive_data():
