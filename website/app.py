@@ -125,37 +125,48 @@ data_store = {
         "IP": "xxx.xxx.xxx.xxx"
     }
 }
-connected_clients = []  # Keep track of connected WebSocket clients
+connected_clients = []  # Keep track of connected WebSocket clients:  [{ "ws": ws, "device_id": "esp32_1" }]
 lock = Lock()
 
-def forward_request_to_esp32(endpoint, method="POST", allow_redirects=True):
+def forward_request_to_esp32(endpoint, method="POST", device_id=None):
     """
-    Generic function to forward requests to the ESP32.
+    Generic function to forward requests to the ESP32 via WebSocket.
     :param endpoint: ESP32 endpoint to forward the request to.
     :param method: HTTP method ("GET", "POST", etc.).
-    :param allow_redirects: Whether to allow redirects from the ESP32.
-    :return: Response from the ESP32.
+    :return: Response from the ESP32 WebSocket.
     """
-    ESP32_URL = f"http://{data_store['ESP32']['IP']}/{endpoint}"
-    try:
-        # Handle GET and POST requests
-        if method == "POST":
-            form_data = request.form.to_dict()  # Collect form data for POST
-            response = requests.post(ESP32_URL, data=form_data, allow_redirects=allow_redirects)
-        elif method == "GET":
-            response = requests.get(ESP32_URL, allow_redirects=allow_redirects)
-        else:
-            return jsonify({'error': 'Unsupported HTTP method'}), 400
 
-        # Handle redirect responses (if any)
-        if response.status_code == 302 and not allow_redirects:
-            redirect_url = response.headers.get("Location", "/")
-            return redirect(redirect_url, code=302)
+    message = {
+        "type": "request",
+        "content": {
+            "endpoint": endpoint,
+            "method": method
+        }
+    }
 
-        # Return the ESP32's response to the client
-        return response.text, response.status_code
-    except requests.exceptions.RequestException as e:
-        return jsonify({'error': f"Failed to communicate with ESP32: {str(e)}"}), 500
+    with lock:
+        for c in connected_clients:
+            print(c['device_id'])
+
+        target_clients = [c for c in connected_clients if not device_id or c["device_id"] == device_id]
+
+        if not target_clients:
+            return 'No matching ESP32 connected', 404
+
+        for client in target_clients:
+            print(len(target_clients))
+            try:
+                ws = client["ws"]
+                if method == "POST":
+                    message["content"]["data"] = request.form.to_dict()
+                ws.send(json.dumps(message))
+
+                response = ws.receive()
+                if response:
+                    return response.text, response.status_code
+
+            except Exception as e:
+                print(f"Error communicating with {client['device_id']}: {e}")
 
 @app.route('/')
 def homepage():
@@ -185,11 +196,7 @@ def display():
 @sock.route('/ws')
 def websocket(ws):
     global connected_clients
-
-    with lock:
-        # Add the client to the connected clients set
-        connected_clients.append(ws)
-        print(f"Client connected. Total clients: {len(connected_clients)}")
+    metadata = {"ws": ws, "device_id": "unknown"}
 
     try:
         while True:
@@ -197,21 +204,30 @@ def websocket(ws):
             message = ws.receive()
 
             if message:
+                response = {
+                    "type": "response",
+                    "content": {}
+                }
                 print(f"Received data: {message}")
 
                 try:
                     data = json.loads(message)
-                    device_id = data.get("device_id", "unknown")
-                    ws.send(json.dumps({"status": "success", "device_id": device_id}))
+                    metadata["device_id"] = data.get("device_id", "unknown")
+                    response["content"]["status"] = "success"
+                    response["content"]["device_id"] = metadata["device_id"]
+
+                    with lock:
+                        # Add the client to the connected clients set
+                        connected_clients.append(metadata)
+                        print(f"Client connected. Total clients: {len(connected_clients)}")
 
                 except json.JSONDecodeError:
-                    print("Error: Received data is not valid JSON.")
-                    ws.send(json.dumps({"status": "error", "message": "invalid JSON"}))
+                    response["content"]["status"] = "error"
+                    response["content"]["message"] = "invalid json"
 
-                # Send a response back to the client
-                ws.send(f"Echo: {message}")
+                ws.send(json.dumps(response))
+                ws.send(f"echo: {message}")
             else:
-                # If no data received, break the loop
                 break
 
     except Exception as e:
@@ -219,8 +235,7 @@ def websocket(ws):
 
     finally:
         with lock:
-            if ws in connected_clients:
-                connected_clients.remove(ws)
+            connected_clients = [c for c in connected_clients if c["ws"] != ws]
             print(f"Client disconnected. Total clients: {len(connected_clients)}")
 
 @app.route('/data', methods=['POST'])
@@ -261,7 +276,8 @@ def connect():
 
 @app.route('/validate_connect', methods=['POST'])
 def validate_connect():
-    return forward_request_to_esp32("validate_connect")
+    device_id = request.args.get("device_id")
+    return forward_request_to_esp32("validate_connect", device_id=device_id)
 
 @app.route('/nearby')
 def nearby():
