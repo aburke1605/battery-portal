@@ -7,7 +7,7 @@ from threading import Lock
 
 import requests
 
-from flask import Flask, render_template, request, jsonify, redirect, url_for, abort
+from flask import Flask, Response, render_template, request, jsonify, redirect, url_for, abort
 from flask_sock import Sock
 
 from flask_sqlalchemy import SQLAlchemy
@@ -144,17 +144,14 @@ def forward_request_to_esp32(endpoint, method="POST", device_id=None):
         }
     }
 
-    with lock:
-        for c in connected_clients:
-            print(c['device_id'])
+    responses = []
 
+    with lock:
         target_clients = [c for c in connected_clients if not device_id or c["device_id"] == device_id]
 
         if not target_clients:
             return 'No matching ESP32 connected', 404
-
         for client in target_clients:
-            print(len(target_clients))
             try:
                 ws = client["ws"]
                 if method == "POST":
@@ -163,10 +160,13 @@ def forward_request_to_esp32(endpoint, method="POST", device_id=None):
 
                 response = ws.receive()
                 if response:
-                    return response.text, response.status_code
+                    responses.append({"device_id": client["device_id"], "response": response})
 
             except Exception as e:
                 print(f"Error communicating with {client['device_id']}: {e}")
+                responses.append({"device_id": client["device_id"], "error": str(e)})
+
+    return responses
 
 @app.route('/')
 def homepage():
@@ -277,7 +277,15 @@ def connect():
 @app.route('/validate_connect', methods=['POST'])
 def validate_connect():
     device_id = request.args.get("device_id")
-    return forward_request_to_esp32("validate_connect", device_id=device_id)
+    responses = forward_request_to_esp32("validate_connect", device_id=device_id)
+
+    response = json.loads(responses[0]["response"]) # TODO: check all responses?
+    if response["content"]["response"] == "already connected":
+        html_response = "<!DOCTYPE html><html><head><script>alert('Already connected to Wi-Fi');window.location.href = '/display';</script></head></html>"
+        return Response(html_response, content_type='text/html')
+
+    return redirect("/display")
+
 
 @app.route('/nearby')
 def nearby():
