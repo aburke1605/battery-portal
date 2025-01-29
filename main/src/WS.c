@@ -5,6 +5,7 @@
 #include "include/I2C.h"
 #include "include/utils.h"
 
+esp_websocket_client_handle_t ws_client;
 
 void add_client(int fd) {
     for (int i = 0; i < CONFIG_MAX_CLIENTS; i++) {
@@ -160,11 +161,22 @@ esp_err_t reset_handler(httpd_req_t *req) {
 
 esp_err_t validate_connect_handler(httpd_req_t *req) {
     char content[100];
-    esp_err_t err = get_POST_data(req, content, sizeof(content));
-    if (err != ESP_OK) {
-        ESP_LOGE("WS", "Problem with connect POST request");
-        return err;
+    esp_err_t err;
+
+    if (req->user_ctx != NULL) {
+        // request came from a WebSocket
+        strncpy(content, (const char *)req->user_ctx, sizeof(content) - 1);
+        content[sizeof(content) - 1] = '\0';
+    } else{
+        // request is a real HTTP POST
+        err = get_POST_data(req, content, sizeof(content));
+        if (err != ESP_OK) {
+            ESP_LOGE("WS", "Problem with connect POST request");
+            return err;
+        }
     }
+
+    printf("%s\n", content);
 
     char ssid_encoded[50] = {0};
     char ssid[50] = {0};
@@ -204,9 +216,13 @@ esp_err_t validate_connect_handler(httpd_req_t *req) {
                         connected_to_WiFi = true;
 
                         ESP_LOGI("WS", "Connected to router. Signal strength: %d dBm", ap_info.rssi);
-                        httpd_resp_set_status(req, "302 Found");
-                        httpd_resp_set_hdr(req, "Location", "/display"); // redirect back to /display
-                        httpd_resp_send(req, NULL, 0); // no response body
+                        if (req->handle) {
+                            httpd_resp_set_status(req, "302 Found");
+                            httpd_resp_set_hdr(req, "Location", "/display"); // redirect back to /display
+                            httpd_resp_send(req, NULL, 0); // no response body
+                        } else {
+                            req->user_ctx = "success";
+                        }
 
                         break;
                     }
@@ -221,9 +237,13 @@ esp_err_t validate_connect_handler(httpd_req_t *req) {
         }
     } else {
         ESP_LOGW("WS", "Already connected to Wi-Fi. Redirecting...");
-        const char *html_response = "<!DOCTYPE html><html><head><script>alert('Already connected to Wi-Fi');window.location.href = '/display';</script></head></html>";
-        httpd_resp_set_type(req, "text/html");
-        httpd_resp_send(req, html_response, HTTPD_RESP_USE_STRLEN);
+        if (req->handle) {
+            const char *html_response = "<!DOCTYPE html><html><head><script>alert('Already connected to Wi-Fi');window.location.href = '/display';</script></head></html>";
+            httpd_resp_set_type(req, "text/html");
+            httpd_resp_send(req, html_response, HTTPD_RESP_USE_STRLEN);
+        } else {
+            req->user_ctx = "already connected";
+        }
     }
 
     return ESP_OK;
