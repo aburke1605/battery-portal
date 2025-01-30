@@ -823,11 +823,13 @@ void websocket_event_handler(void *arg, esp_event_base_t event_base, int32_t eve
             ESP_LOGI("WS", "WebSocket connected");
             // Send a device registration message (e.g., device_id)
             esp_websocket_client_send_text(ws_client, "{\"device_id\": \"ESP32_12345\"}", strlen("{\"device_id\": \"ESP32_12345\"}"), portMAX_DELAY);
+            connected_to_website = true;
             break;
 
         case WEBSOCKET_EVENT_DISCONNECTED:
             ESP_LOGI("WS", "WebSocket disconnected");
             esp_websocket_client_stop(ws_client);
+            connected_to_website = false;
             break;
 
         case WEBSOCKET_EVENT_DATA:

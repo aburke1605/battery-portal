@@ -13,6 +13,7 @@ extern int client_sockets[CONFIG_MAX_CLIENTS];
 extern char received_data[1024];
 extern SemaphoreHandle_t data_mutex;
 extern bool connected_to_WiFi;
+extern bool connected_to_website;
 extern char successful_ips[256][16];
 extern char old_successful_ips[256][16];
 extern uint8_t successful_ip_count;
