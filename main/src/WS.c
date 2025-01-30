@@ -809,8 +809,9 @@ void websocket_event_handler(void *arg, esp_event_base_t event_base, int32_t eve
     switch (event_id) {
         case WEBSOCKET_EVENT_CONNECTED:
             ESP_LOGI("WS", "WebSocket connected");
-            // Send a device registration message (e.g., device_id)
-            esp_websocket_client_send_text(ws_client, "{\"device_id\": \"ESP32_12345\"}", strlen("{\"device_id\": \"ESP32_12345\"}"), portMAX_DELAY);
+            char websocket_connect_message[128];
+            snprintf(websocket_connect_message, sizeof(websocket_connect_message), "{'ESP_ID': '%s'}", ESP_ID);
+            esp_websocket_client_send_text(ws_client, websocket_connect_message, strlen(websocket_connect_message), portMAX_DELAY);
             connected_to_website = true;
             break;
 

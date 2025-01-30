@@ -126,10 +126,10 @@ data_store = {
         "IP": "xxx.xxx.xxx.xxx"
     }
 }
-connected_clients = []  # Keep track of connected WebSocket clients:  [{ "ws": ws, "device_id": "esp32_1" }]
+connected_clients = []  # Keep track of connected WebSocket clients:  [{ "ws": ws, "ESP_ID": "esp32_1" }]
 lock = Lock()
 
-def forward_request_to_esp32(endpoint, method="POST", device_id=None):
+def forward_request_to_esp32(endpoint, method="POST", ESP_ID=None):
     """
     Generic function to forward requests to the ESP32 via WebSocket.
     :param endpoint: ESP32 endpoint to forward the request to.
@@ -148,7 +148,7 @@ def forward_request_to_esp32(endpoint, method="POST", device_id=None):
     responses = []
 
     with lock:
-        target_clients = [c for c in connected_clients if not device_id or c["device_id"] == device_id]
+        target_clients = [c for c in connected_clients if not ESP_ID or c["ESP_ID"] == ESP_ID]
 
         if not target_clients:
             return 'No matching ESP32 connected', 404
@@ -161,11 +161,11 @@ def forward_request_to_esp32(endpoint, method="POST", device_id=None):
 
                 response = ws.receive()
                 if response:
-                    responses.append({"device_id": client["device_id"], "response": response})
+                    responses.append({"ESP_ID": client["ESP_ID"], "response": response})
 
             except Exception as e:
-                print(f"Error communicating with {client['device_id']}: {e}")
-                responses.append({"device_id": client["device_id"], "error": str(e)})
+                print(f"Error communicating with {client['ESP_ID']}: {e}")
+                responses.append({"ESP_ID": client["ESP_ID"], "error": str(e)})
 
     return responses
 
@@ -201,7 +201,7 @@ def alert():
 @sock.route('/ws')
 def websocket(ws):
     global connected_clients
-    metadata = {"ws": ws, "device_id": "unknown"}
+    metadata = {"ws": ws, "ESP_ID": "unknown"}
 
     try:
         while True:
@@ -217,9 +217,9 @@ def websocket(ws):
 
                 try:
                     data = json.loads(message)
-                    metadata["device_id"] = data.get("device_id", "unknown")
+                    metadata["ESP_ID"] = data.get("ESP_ID", "unknown")
                     response["content"]["status"] = "success"
-                    response["content"]["device_id"] = metadata["device_id"]
+                    response["content"]["ESP_ID"] = metadata["ESP_ID"]
 
                     with lock:
                         # Add the client to the connected clients set
@@ -284,8 +284,8 @@ def connect():
 
 @app.route('/validate_connect', methods=['POST'])
 def validate_connect():
-    device_id = request.args.get("device_id")
-    responses = forward_request_to_esp32("validate_connect", device_id=device_id)
+    ESP_ID = request.args.get("ESP_ID")
+    responses = forward_request_to_esp32("validate_connect", ESP_ID=ESP_ID)
 
     response = json.loads(responses[0]["response"]) # TODO: check all responses?
     if response["content"]["response"] == "already connected":

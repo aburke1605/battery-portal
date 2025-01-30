@@ -5,9 +5,11 @@
 #include <lwip/sockets.h>
 #include <driver/gpio.h>
 
+#include "include/utils.h"
 
 #define CONFIG_MAX_CLIENTS 5
 
+extern char ESP_ID[KEY_LENGTH + 1];
 extern httpd_handle_t server;
 extern int client_sockets[CONFIG_MAX_CLIENTS];
 extern char received_data[1024];
