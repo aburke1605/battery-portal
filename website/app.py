@@ -6,6 +6,7 @@ import json
 from threading import Lock
 
 import requests
+import urllib.parse
 
 from flask import Flask, Response, render_template, request, jsonify, redirect, url_for, abort
 from flask_sock import Sock
@@ -193,6 +194,10 @@ def display():
     print('Request for display page received')
     return render_template('portal/display.html')
 
+@app.route("/alert")
+def alert():
+    return render_template("portal/alert.html")
+
 @sock.route('/ws')
 def websocket(ws):
     global connected_clients
@@ -281,7 +286,9 @@ def validate_connect():
 
     response = json.loads(responses[0]["response"]) # TODO: check all responses?
     if response["content"]["response"] == "already connected":
-        return render_template("portal/alert.html", message="Already connected to Wi-Fi")
+        message = "Already connected to Wi-Fi"
+        encoded_message = urllib.parse.quote(message)
+        return redirect(f"/alert?message={encoded_message}")
 
     return redirect("/display")
 
