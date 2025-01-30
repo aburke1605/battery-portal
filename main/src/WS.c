@@ -213,6 +213,18 @@ esp_err_t validate_connect_handler(httpd_req_t *req) {
                     if (ip_info.ip.addr != IPADDR_ANY) {
                         connected_to_WiFi = true;
 
+                        const esp_websocket_client_config_t websocket_cfg = {
+                            .uri = "ws://192.168.137.249:5000/ws",
+                            .reconnect_timeout_ms = 1000,
+                            .network_timeout_ms = 10000,
+                        };
+
+                        ESP_LOGI("WS", "Connecting to WebSocket server: %s", websocket_cfg.uri);
+
+                        ws_client = esp_websocket_client_init(&websocket_cfg);
+                        esp_websocket_register_events(ws_client, WEBSOCKET_EVENT_ANY, websocket_event_handler, NULL);
+                        esp_websocket_client_start(ws_client);
+
                         ESP_LOGI("WS", "Connected to router. Signal strength: %d dBm", ap_info.rssi);
                         if (req->handle) {
                             httpd_resp_set_status(req, "302 Found");
