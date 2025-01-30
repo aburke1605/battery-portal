@@ -231,7 +231,10 @@ def websocket(ws):
                     response["content"]["message"] = "invalid json"
 
                 ws.send(json.dumps(response))
-                ws.send(f"echo: {message}")
+
+                response["type"] = "echo"
+                response["content"] = message
+                ws.send(json.dumps(response))
             else:
                 break
 
