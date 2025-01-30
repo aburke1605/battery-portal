@@ -814,3 +814,106 @@ void check_wifi_task(void* pvParameters) {
         vTaskDelay(1000 / portTICK_PERIOD_MS);
     }
 }
+
+void websocket_event_handler(void *arg, esp_event_base_t event_base, int32_t event_id, void *event_data) {
+    esp_websocket_event_data_t *ws_event_data = (esp_websocket_event_data_t *)event_data;
+
+    switch (event_id) {
+        case WEBSOCKET_EVENT_CONNECTED:
+            ESP_LOGI("WS", "WebSocket connected");
+            // Send a device registration message (e.g., device_id)
+            esp_websocket_client_send_text(ws_client, "{\"device_id\": \"ESP32_12345\"}", strlen("{\"device_id\": \"ESP32_12345\"}"), portMAX_DELAY);
+            break;
+
+        case WEBSOCKET_EVENT_DISCONNECTED:
+            ESP_LOGI("WS", "WebSocket disconnected");
+            esp_websocket_client_stop(ws_client);
+            break;
+
+        case WEBSOCKET_EVENT_DATA:
+            ESP_LOGI("WS", "WebSocket data received: %.*s", ws_event_data->data_len, (char *)ws_event_data->data_ptr);
+            // Handle commands sent by the server
+            // Parse the WebSocket message
+            cJSON *message = cJSON_Parse((char *)ws_event_data->data_ptr);
+            if (!message) {
+                ESP_LOGE("WS", "invalid json");
+                cJSON_Delete(message);
+                break;
+            }
+
+            const char *type = cJSON_GetObjectItem(message, "type")->valuestring;
+            if (strcmp(type, "response") == 0) {
+
+            } else if (strcmp(type, "request") == 0) {
+                cJSON *content = cJSON_GetObjectItem(message, "content");
+                if (!content) {
+                    ESP_LOGE("WS", "invalid request content");
+                    cJSON_Delete(message);
+                    break;
+                }
+
+                const char *endpoint = cJSON_GetObjectItem(content, "endpoint")->valuestring;
+                const char *method = cJSON_GetObjectItem(content, "method")->valuestring;
+                cJSON *data = cJSON_GetObjectItem(content, "data");
+                if (strcmp(endpoint, "validate_connect") == 0 && strcmp(method, "POST") == 0) {
+                    // Create a mock HTTP request
+                    cJSON *ssid = cJSON_GetObjectItem(data, "ssid");
+                    cJSON *password = cJSON_GetObjectItem(data, "password");
+
+                    size_t req_len = snprintf(NULL, 0, "ssid=%s&password=%s", ssid->valuestring, password->valuestring);
+                    char *req_content = malloc(req_len + 1);
+                    snprintf(req_content, req_len + 1, "ssid=%s&password=%s", ssid->valuestring, password->valuestring);
+
+                    httpd_req_t req = {0};
+                    req.content_len = req_len;
+                    req.user_ctx = req_content;
+
+                    // Call the validate_connect_handler
+                    esp_err_t err = validate_connect_handler(&req);
+                    if (err != ESP_OK) {
+                        ESP_LOGE("WS", "Error in validate_connect_handler: %d", err);
+                    }
+                    free(req_content);
+
+                    cJSON *response_content = cJSON_CreateObject();
+                    cJSON_AddStringToObject(response_content, "endpoint", endpoint);
+                    cJSON_AddStringToObject(response_content, "status", err == ESP_OK ? "success" : "error");
+                    cJSON_AddNumberToObject(response_content, "error_code", err);
+                    cJSON_AddStringToObject(response_content, "response", req.user_ctx);
+
+                    cJSON *response = cJSON_CreateObject();
+                    cJSON_AddStringToObject(response, "type", "response");
+                    cJSON_AddItemToObject(response, "content", response_content);
+
+                    char *response_str = cJSON_PrintUnformatted(response);
+                    cJSON_Delete(response);
+                    esp_err_t send_err = esp_websocket_client_send_text(ws_client, response_str, strlen(response_str), portMAX_DELAY);
+                    if (send_err != ESP_OK) {
+                        ESP_LOGE("WS", "Failed to send WebSocket response: %d", send_err);
+                    }
+                    free(response_str);
+                }
+            }
+
+            cJSON_Delete(message);
+            break;
+
+        case WEBSOCKET_EVENT_ERROR:
+            ESP_LOGE("WS", "WebSocket error occurred");
+            break;
+
+        default:
+            ESP_LOGI("WS", "WebSocket event ID: %ld", event_id);
+            break;
+    }
+}
+
+void websocket_reconnect_task(void *param) {
+    while (true) {
+        if (connected_to_WiFi && !esp_websocket_client_is_connected(ws_client)) {
+            ESP_LOGW("WS", "WebSocket disconnected, reconnecting...");
+            esp_websocket_client_start(ws_client);
+        }
+        vTaskDelay(pdMS_TO_TICKS(5000)); // Retry every 5 seconds
+    }
+}

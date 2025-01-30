@@ -46,3 +46,7 @@ httpd_handle_t start_webserver(void);
 void web_task(void *pvParameters);
 
 void check_wifi_task(void* pvParameters);
+
+void websocket_event_handler(void *arg, esp_event_base_t event_base, int32_t event_id, void *event_data);
+
+void websocket_reconnect_task(void *param);
