@@ -213,18 +213,6 @@ esp_err_t validate_connect_handler(httpd_req_t *req) {
                     if (ip_info.ip.addr != IPADDR_ANY) {
                         connected_to_WiFi = true;
 
-                        const esp_websocket_client_config_t websocket_cfg = {
-                            .uri = "ws://192.168.137.249:5000/ws",
-                            .reconnect_timeout_ms = 1000,
-                            .network_timeout_ms = 10000,
-                        };
-
-                        ESP_LOGI("WS", "Connecting to WebSocket server: %s", websocket_cfg.uri);
-
-                        ws_client = esp_websocket_client_init(&websocket_cfg);
-                        esp_websocket_register_events(ws_client, WEBSOCKET_EVENT_ANY, websocket_event_handler, NULL);
-                        esp_websocket_client_start(ws_client);
-
                         ESP_LOGI("WS", "Connected to router. Signal strength: %d dBm", ap_info.rssi);
                         if (req->handle) {
                             httpd_resp_set_status(req, "302 Found");
@@ -912,10 +900,25 @@ void websocket_event_handler(void *arg, esp_event_base_t event_base, int32_t eve
 
 void websocket_reconnect_task(void *param) {
     while (true) {
-        if (connected_to_WiFi && !esp_websocket_client_is_connected(ws_client)) {
-            ESP_LOGW("WS", "WebSocket disconnected, reconnecting...");
-            esp_websocket_client_start(ws_client);
+        if (connected_to_WiFi) {
+            if (!connected_to_website) {
+                const esp_websocket_client_config_t websocket_cfg = {
+                    .uri = "ws://192.168.137.249:5000/ws",
+                    .reconnect_timeout_ms = 1000,
+                    .network_timeout_ms = 10000,
+                };
+
+                ESP_LOGI("WS", "Connecting to WebSocket server: %s", websocket_cfg.uri);
+
+                ws_client = esp_websocket_client_init(&websocket_cfg);
+                esp_websocket_register_events(ws_client, WEBSOCKET_EVENT_ANY, websocket_event_handler, NULL);
+                esp_websocket_client_start(ws_client);
+            } else if (!esp_websocket_client_is_connected(ws_client)) {
+                ESP_LOGW("WS", "WebSocket disconnected, reconnecting...");
+                esp_websocket_client_start(ws_client);
+            }
         }
+
         vTaskDelay(pdMS_TO_TICKS(5000)); // Retry every 5 seconds
     }
 }
