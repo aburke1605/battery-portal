@@ -821,9 +821,8 @@ void websocket_event_handler(void *arg, esp_event_base_t event_base, int32_t eve
             break;
 
         case WEBSOCKET_EVENT_DATA:
-            ESP_LOGI("WS", "WebSocket data received: %.*s", ws_event_data->data_len, (char *)ws_event_data->data_ptr);
-            // Handle commands sent by the server
-            // Parse the WebSocket message
+            if (ws_event_data->data_len == 0) break;
+
             cJSON *message = cJSON_Parse((char *)ws_event_data->data_ptr);
             if (!message) {
                 ESP_LOGE("WS", "invalid json");
@@ -837,6 +836,8 @@ void websocket_event_handler(void *arg, esp_event_base_t event_base, int32_t eve
                 break;
             }
             const char *type = typeItem->valuestring;
+
+            ESP_LOGI("WS", "WebSocket data received: %.*s", ws_event_data->data_len, (char *)ws_event_data->data_ptr);
 
             if (strcmp(type, "response") == 0) {
 
