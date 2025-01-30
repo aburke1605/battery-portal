@@ -831,7 +831,13 @@ void websocket_event_handler(void *arg, esp_event_base_t event_base, int32_t eve
                 break;
             }
 
-            const char *type = cJSON_GetObjectItem(message, "type")->valuestring;
+            cJSON *typeItem = cJSON_GetObjectItem(message, "type");
+            if (!typeItem) {
+                ESP_LOGE("WS", "ilformatted json");
+                break;
+            }
+            const char *type = typeItem->valuestring;
+
             if (strcmp(type, "response") == 0) {
 
             } else if (strcmp(type, "request") == 0) {
