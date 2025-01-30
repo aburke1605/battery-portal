@@ -913,9 +913,6 @@ void websocket_reconnect_task(void *param) {
                 ws_client = esp_websocket_client_init(&websocket_cfg);
                 esp_websocket_register_events(ws_client, WEBSOCKET_EVENT_ANY, websocket_event_handler, NULL);
                 esp_websocket_client_start(ws_client);
-            } else if (!esp_websocket_client_is_connected(ws_client)) {
-                ESP_LOGW("WS", "WebSocket disconnected, reconnecting...");
-                esp_websocket_client_start(ws_client);
             }
         }
 
