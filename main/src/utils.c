@@ -3,6 +3,18 @@
 
 #include "include/utils.h"
 
+#include <esp_random.h>
+
+void random_key(char *key) {
+    const char charset[] = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
+    size_t charset_size = sizeof(charset) - 1;
+
+    for (size_t i = 0; i < KEY_LENGTH; i++) {
+        key[i] = charset[esp_random() % charset_size];
+    }
+    key[KEY_LENGTH] = '\0';
+}
+
 esp_err_t get_POST_data(httpd_req_t *req, char* content, size_t content_size) {
     int ret, content_len = req->content_len;
 

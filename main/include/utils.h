@@ -2,6 +2,9 @@
 #include <esp_wifi.h>
 #include <esp_http_server.h>
 
+#define KEY_LENGTH 16
+void random_key(char *key);
+
 esp_err_t get_POST_data(httpd_req_t *req, char* content, size_t content_size);
 
 void url_decode(char *dest, const char *src);
