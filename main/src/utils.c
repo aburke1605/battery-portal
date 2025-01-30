@@ -42,6 +42,29 @@ void url_decode(char *dest, const char *src) {
     *d = '\0';
 }
 
+void url_encode(char *dest, const char *src, size_t dest_size) {
+    const char *hex = "0123456789ABCDEF";
+    size_t i, j = 0;
+
+    for (i = 0; src[i] && j < dest_size - 1; i++) {
+        if (('a' <= src[i] && src[i] <= 'z') ||
+            ('A' <= src[i] && src[i] <= 'Z') ||
+            ('0' <= src[i] && src[i] <= '9') ||
+            (src[i] == '-' || src[i] == '_' || src[i] == '.' || src[i] == '~')) {
+            dest[j++] = src[i];  // Keep safe characters unchanged
+        } else {
+            if (j + 3 < dest_size - 1) {  // Ensure enough space
+                dest[j++] = '%';
+                dest[j++] = hex[(src[i] >> 4) & 0xF];
+                dest[j++] = hex[src[i] & 0xF];
+            } else {
+                break;  // Stop if out of space
+            }
+        }
+    }
+    dest[j] = '\0';  // Null-terminate
+}
+
 uint8_t get_block(uint8_t offset) {
     uint8_t block = (uint8_t)ceil((float)offset / 32.);
     if (block != 0) block -= 1;

@@ -176,8 +176,6 @@ esp_err_t validate_connect_handler(httpd_req_t *req) {
         }
     }
 
-    printf("%s\n", content);
-
     char ssid_encoded[50] = {0};
     char ssid[50] = {0};
     char password_encoded[50] = {0};
@@ -238,9 +236,15 @@ esp_err_t validate_connect_handler(httpd_req_t *req) {
     } else {
         ESP_LOGW("WS", "Already connected to Wi-Fi. Redirecting...");
         if (req->handle) {
-            const char *html_response = "<!DOCTYPE html><html><head><script>alert('Already connected to Wi-Fi');window.location.href = '/display';</script></head></html>";
-            httpd_resp_set_type(req, "text/html");
-            httpd_resp_send(req, html_response, HTTPD_RESP_USE_STRLEN);
+            char message[] = "Already connected to Wi-Fi";
+            char encoded_message[64];
+            url_encode(encoded_message, message, sizeof(encoded_message));
+
+            char redirect_url[128];
+            snprintf(redirect_url, sizeof(redirect_url), "/alert?message=%s", encoded_message);
+            httpd_resp_set_status(req, "302 Found");
+            httpd_resp_set_hdr(req, "Location", redirect_url);
+            httpd_resp_send(req, NULL, 0);
         } else {
             req->user_ctx = "already connected";
         }
@@ -387,6 +391,62 @@ esp_err_t file_serve_handler(httpd_req_t *req) {
     return ESP_OK;
 }
 
+esp_err_t alert_handler(httpd_req_t *req) {
+    char message[100] = "Missing message";
+
+    // extract message from query params if available
+    char query[200];
+    if (httpd_req_get_url_query_str(req, query, sizeof(query)) == ESP_OK) {
+        httpd_query_key_value(query, "message", message, sizeof(message));
+    }
+
+    // Open the file
+    char *html_buffer = (char *)malloc(512);  // adjust based on file size
+    if (!html_buffer) {
+        return httpd_resp_send_500(req);
+    }
+    FILE *file = fopen("/templates/alert.html", "r");
+    if (!file) {
+        ESP_LOGE("WS", "Failed to open file: /templates/alert.html");
+        httpd_resp_send_err(req, HTTPD_404_NOT_FOUND, "File not found");
+        free(html_buffer);
+        return ESP_FAIL;
+    }
+    fread(html_buffer, 1, 511, file);
+    html_buffer[511] = '\0';
+    fclose(file);
+
+    // Find and replace {{message}}
+    char *placeholder = strstr(html_buffer, "{{message}}");
+    if (placeholder) {
+        char *final_html = (char *)malloc(512);// Adjust based on expected output size
+        if (!final_html) {
+            free(html_buffer);
+            return httpd_resp_send_500(req);
+        }
+        size_t before_len = placeholder - html_buffer;
+        snprintf(final_html, 512, "%.*s%s%s",
+                 (int)before_len, html_buffer, message, placeholder + 11); // Skip `{{message}}`
+
+        // Send the modified HTML response
+        httpd_resp_set_type(req, "text/html");
+        httpd_resp_send(req, final_html, HTTPD_RESP_USE_STRLEN);
+
+        free(html_buffer);
+        free(final_html);
+
+        return ESP_OK;
+    }
+
+    // If no placeholder found, send the original file
+    httpd_resp_set_type(req, "text/html");
+    httpd_resp_send(req, html_buffer, HTTPD_RESP_USE_STRLEN);
+
+    free(html_buffer);
+
+    return ESP_OK;
+}
+
 // Start HTTP server
 httpd_handle_t start_webserver(void) {
     // create sockets for clients
@@ -446,6 +506,14 @@ httpd_handle_t start_webserver(void) {
             .user_ctx  = "/templates/display.html"
         };
         httpd_register_uri_handler(server, &display_uri);
+
+        httpd_uri_t alert_uri = {
+            .uri       = "/alert",
+            .method    = HTTP_GET,
+            .handler   = alert_handler,
+            .user_ctx  = "/templates/alert.html"
+        };
+        httpd_register_uri_handler(server, &alert_uri);
 
         // WebSocket
         httpd_uri_t ws_uri = {

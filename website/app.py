@@ -281,8 +281,7 @@ def validate_connect():
 
     response = json.loads(responses[0]["response"]) # TODO: check all responses?
     if response["content"]["response"] == "already connected":
-        html_response = "<!DOCTYPE html><html><head><script>alert('Already connected to Wi-Fi');window.location.href = '/display';</script></head></html>"
-        return Response(html_response, content_type='text/html')
+        return render_template("portal/alert.html", message="Already connected to Wi-Fi")
 
     return redirect("/display")
 
