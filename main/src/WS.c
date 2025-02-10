@@ -956,8 +956,8 @@ void websocket_reconnect_task(void *param) {
                 char *json_string = cJSON_PrintUnformatted(json);
                 cJSON_Delete(json);
                 if (json_string != NULL) {
-                    char message[128];
-                    snprintf(message, sizeof(message), "{\"ESP_ID\": \"%s\", \"content\": \"%s\"}", ESP_ID, json_string);
+                    char message[1024];
+                    snprintf(message, sizeof(message), "{\"ESP_ID\": \"%s\", \"content\": %s}", ESP_ID, json_string);
                     printf("%s\n", message);
                     esp_websocket_client_send_text(ws_client, message, strlen(message), portMAX_DELAY);
 
