@@ -907,6 +907,16 @@ void websocket_event_handler(void *arg, esp_event_base_t event_base, int32_t eve
 void websocket_reconnect_task(void *param) {
     while (true) {
         if (connected_to_WiFi) {
+            // get Wi-Fi station gateway
+            esp_netif_t *sta_netif = esp_netif_get_handle_from_ifkey("WIFI_STA_DEF");
+            if (sta_netif == NULL) return;
+
+            // retrieve the IP information
+            esp_netif_ip_info_t ip_info;
+            esp_netif_get_ip_info(sta_netif, &ip_info);
+
+            esp_ip4addr_ntoa(&ip_info.ip, ESP_IP, 16);
+
             if (!esp_websocket_client_is_connected(ws_client)) {
                 const esp_websocket_client_config_t websocket_cfg = {
                     .uri = "ws://192.168.137.249:5000/ws",
