@@ -85,10 +85,10 @@ void app_main(void) {
 
     xTaskCreate(&web_task, "web_task", 4096, &server, 5, NULL);
 
-    xTaskCreate(&get_devices_task, "get_devices_task", 4096, NULL, 5, NULL);
+    // xTaskCreate(&get_devices_task, "get_devices_task", 4096, NULL, 5, NULL);
 
     esp_log_level_set("wifi", ESP_LOG_ERROR);
     xTaskCreate(&check_wifi_task, "check_wifi_task", 4096, NULL, 5, NULL);
 
-    xTaskCreate(&websocket_reconnect_task, "websocket_reconnect_task", 4096, NULL, 5, NULL);
+    xTaskCreate(&websocket_task, "websocket_task", 4096, NULL, 5, NULL);
 }
