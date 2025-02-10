@@ -632,166 +632,6 @@ httpd_handle_t start_webserver(void) {
     return server;
 }
 
-
-
-void web_task(void *pvParameters) {
-    while (true) {
-
-        // read sensor data
-        uint16_t iCharge = read_2byte_data(STATE_OF_CHARGE_REG);
-        uint16_t iVoltage = read_2byte_data(VOLTAGE_REG);
-        float fVoltage = (float)iVoltage / 1000.0;
-        uint16_t iCurrent = read_2byte_data(CURRENT_REG);
-        float fCurrent = (float)iCurrent / 1000.0;
-        if (fCurrent < 65.536 && fCurrent > 32.767) fCurrent = 65.536 - fCurrent; // this is something to do with 16 bit binary
-        uint16_t iTemperature = read_2byte_data(TEMPERATURE_REG);
-        float fTemperature = (float)iTemperature / 10.0 - 273.15;
-
-        // configurable data too
-        uint16_t iBL = test_read(DISCHARGE_SUBCLASS_ID, BL_OFFSET);
-        uint16_t iBH = test_read(DISCHARGE_SUBCLASS_ID, BH_OFFSET);
-        uint16_t iCCT = test_read(CURRENT_THRESHOLDS_SUBCLASS_ID, CHG_CURRENT_THRESHOLD_OFFSET);
-        uint16_t iDCT = test_read(CURRENT_THRESHOLDS_SUBCLASS_ID, DSG_CURRENT_THRESHOLD_OFFSET);
-        uint16_t iCITL = test_read(CHARGE_INHIBIT_CFG_SUBCLASS_ID, CHG_INHIBIT_TEMP_LOW_OFFSET);
-        uint16_t iCITH = test_read(CHARGE_INHIBIT_CFG_SUBCLASS_ID, CHG_INHIBIT_TEMP_HIGH_OFFSET);
-
-        // create JSON object with sensor data
-        cJSON *json = cJSON_CreateObject();
-        cJSON_AddNumberToObject(json, "charge", iCharge);
-        cJSON_AddNumberToObject(json, "voltage", fVoltage);
-        cJSON_AddNumberToObject(json, "current", fCurrent);
-        cJSON_AddNumberToObject(json, "temperature", fTemperature);
-        cJSON_AddNumberToObject(json, "BL", iBL);
-        cJSON_AddNumberToObject(json, "BH", iBH);
-        cJSON_AddNumberToObject(json, "CCT", iCCT);
-        cJSON_AddNumberToObject(json, "DCT", iDCT);
-        cJSON_AddNumberToObject(json, "CITL", iCITL);
-        cJSON_AddNumberToObject(json, "CITH", iCITH);
-
-        cJSON_AddStringToObject(json, "IP", ESP_IP);
-
-        // add data received from other ESP32s if available
-        if (xSemaphoreTake(data_mutex, portMAX_DELAY)) {
-            if (strlen(received_data) > 0) {
-                cJSON *received_json = cJSON_Parse(received_data);
-                if (received_json != NULL) {
-                    // TODO: is the below line actually enough,
-                    //       or do we need all of the lines below?
-                    // cJSON_AddItemToObject(json, "received_data", received_json);
-
-                    // Create a clean / empty object for "received_data"
-                    cJSON *received_data_clean = cJSON_CreateObject();
-                    // Iterate through all keys in the parsed JSON
-                    cJSON *item = received_json->child;
-                    while (item != NULL) {
-                        if (cJSON_IsNumber(item)) {
-                            cJSON_AddNumberToObject(received_data_clean, item->string, item->valuedouble);
-                        } else {
-                            ESP_LOGW("WS", "Support for reading %s from server is not implemented", item->string);
-                        }
-                        item = item->next;
-                    }
-                    cJSON_AddItemToObject(json, "received_data", received_data_clean);
-                    cJSON_Delete(received_json); // Clean up parsed JSON
-                } else {
-                    ESP_LOGE("WS", "Failed to parse received_data as JSON");
-                }
-            } else {
-                cJSON_AddStringToObject(json, "received_data", "No data");
-            }
-            xSemaphoreGive(data_mutex);
-        } else {
-            ESP_LOGE("WS", "Failed to take mutex for broadcast data");
-        }
-
-
-        // now process the json
-        char *json_string = cJSON_PrintUnformatted(json);
-        cJSON_Delete(json);
-        if (json_string != NULL) {
-
-
-            // first send to all connected WebSocket clients
-            for (int i = 0; i < CONFIG_MAX_CLIENTS; i++) {
-                if (client_sockets[i] != -1) {
-                    ESP_LOGI("WS", "Attempting to send frame to client %d", client_sockets[i]);
-                    /*
-                    // Validate WebSocket connection with a PING
-                    esp_err_t ping_status = httpd_ws_send_frame_async(server, client_sockets[i], &(httpd_ws_frame_t){
-                        .payload = NULL,
-                        .len = 0,
-                        .type = HTTPD_WS_TYPE_PING
-                    });
-                    ESP_LOGE("WS", "ping error: %s", esp_err_to_name(ping_status));
-
-                    if (ping_status != ESP_OK) {
-                        ESP_LOGE("WS", "Client %d disconnected. Removing.", client_sockets[i]);
-                        remove_client(client_sockets[i]);
-                        continue;
-                    }
-                    */
-
-                    httpd_ws_frame_t ws_pkt = {
-                        .payload = (uint8_t *)json_string,
-                        .len = strlen(json_string),
-                        .type = HTTPD_WS_TYPE_TEXT,
-                    };
-                    esp_err_t err = httpd_ws_send_frame_async(server, client_sockets[i], &ws_pkt);
-                    if (err != ESP_OK) {
-                        ESP_LOGE("WS", "Failed to send frame to client %d: %s", client_sockets[i], esp_err_to_name(err));
-                        remove_client(client_sockets[i]);  // Clean up disconnected clients
-                    } else {
-                        ESP_LOGI("WS", "Frame sent to client %d", client_sockets[i]);
-                    }
-                }
-            }
-
-
-            // then send to website over internet
-            // but first check if connected to an AP
-            if (connected_to_WiFi) {
-                for (size_t i = 0; i < old_successful_ip_count; i++) {
-                    char url[33];
-                    snprintf(url, sizeof(url), "http://%s:5000/data", old_successful_ips[i]);
-                    esp_http_client_config_t config = {
-                        .url = url,
-                    };
-                    esp_http_client_handle_t client = esp_http_client_init(&config);
-
-                    // configure HTTP client for POST
-                    esp_http_client_set_method(client, HTTP_METHOD_POST);
-                    esp_http_client_set_header(client, "Content-Type", "application/json");
-                    esp_http_client_set_post_field(client, json_string, strlen(json_string));
-
-                    // perform HTTP POST request
-                    esp_err_t err = esp_http_client_perform(client);
-                    if (err == ESP_OK) {
-                        int status_code = esp_http_client_get_status_code(client);
-                        char response_buf[200];
-                        int content_length = esp_http_client_read_response(client, response_buf, sizeof(response_buf) - 1);
-                        if (content_length >= 0) {
-                            response_buf[content_length] = '\0';
-                            ESP_LOGI("WS", "HTTP POST Status = %d, Response = %s", status_code, response_buf);
-                        } else {
-                            ESP_LOGE("WS", "Failed to read response");
-                        }
-                    } else {
-                        ESP_LOGE("WS", "HTTP POST request failed: %s", esp_err_to_name(err));
-                    }
-                    esp_http_client_cleanup(client);
-                }
-            }
-
-
-            // clean up
-            free(json_string);
-        }
-
-        // pause for a second
-        vTaskDelay(1000 / portTICK_PERIOD_MS);
-    }
-}
-
 void check_wifi_task(void* pvParameters) {
     while(true) {
         wifi_ap_record_t ap_info;
@@ -899,85 +739,122 @@ void websocket_event_handler(void *arg, esp_event_base_t event_base, int32_t eve
             break;
 
         default:
-            ESP_LOGI("WS", "WebSocket event ID: %ld", event_id);
+            // ESP_LOGI("WS", "WebSocket event ID: %ld", event_id);
             break;
     }
 }
 
-void websocket_reconnect_task(void *param) {
+void websocket_task(void *pvParameters) {
     while (true) {
-        if (connected_to_WiFi) {
-            // get Wi-Fi station gateway
-            esp_netif_t *sta_netif = esp_netif_get_handle_from_ifkey("WIFI_STA_DEF");
-            if (sta_netif == NULL) return;
 
-            // retrieve the IP information
-            esp_netif_ip_info_t ip_info;
-            esp_netif_get_ip_info(sta_netif, &ip_info);
+        // read sensor data
+        uint16_t iCharge = read_2byte_data(STATE_OF_CHARGE_REG);
+        uint16_t iVoltage = read_2byte_data(VOLTAGE_REG);
+        float fVoltage = (float)iVoltage / 1000.0;
+        uint16_t iCurrent = read_2byte_data(CURRENT_REG);
+        float fCurrent = (float)iCurrent / 1000.0;
+        if (fCurrent < 65.536 && fCurrent > 32.767) fCurrent = 65.536 - fCurrent; // this is something to do with 16 bit binary
+        uint16_t iTemperature = read_2byte_data(TEMPERATURE_REG);
+        float fTemperature = (float)iTemperature / 10.0 - 273.15;
 
-            esp_ip4addr_ntoa(&ip_info.ip, ESP_IP, 16);
+        // configurable data too
+        uint16_t iBL = test_read(DISCHARGE_SUBCLASS_ID, BL_OFFSET);
+        uint16_t iBH = test_read(DISCHARGE_SUBCLASS_ID, BH_OFFSET);
+        uint16_t iCCT = test_read(CURRENT_THRESHOLDS_SUBCLASS_ID, CHG_CURRENT_THRESHOLD_OFFSET);
+        uint16_t iDCT = test_read(CURRENT_THRESHOLDS_SUBCLASS_ID, DSG_CURRENT_THRESHOLD_OFFSET);
+        uint16_t iCITL = test_read(CHARGE_INHIBIT_CFG_SUBCLASS_ID, CHG_INHIBIT_TEMP_LOW_OFFSET);
+        uint16_t iCITH = test_read(CHARGE_INHIBIT_CFG_SUBCLASS_ID, CHG_INHIBIT_TEMP_HIGH_OFFSET);
 
-            if (!esp_websocket_client_is_connected(ws_client)) {
-                const esp_websocket_client_config_t websocket_cfg = {
-                    .uri = "ws://192.168.137.249:5000/ws",
-                    .reconnect_timeout_ms = 1000,
-                    .network_timeout_ms = 10000,
-                };
+        // create JSON object with sensor data
+        cJSON *json = cJSON_CreateObject();
+        cJSON_AddNumberToObject(json, "charge", iCharge);
+        cJSON_AddNumberToObject(json, "voltage", fVoltage);
+        cJSON_AddNumberToObject(json, "current", fCurrent);
+        cJSON_AddNumberToObject(json, "temperature", fTemperature);
+        cJSON_AddNumberToObject(json, "BL", iBL);
+        cJSON_AddNumberToObject(json, "BH", iBH);
+        cJSON_AddNumberToObject(json, "CCT", iCCT);
+        cJSON_AddNumberToObject(json, "DCT", iDCT);
+        cJSON_AddNumberToObject(json, "CITL", iCITL);
+        cJSON_AddNumberToObject(json, "CITH", iCITH);
 
-                ESP_LOGI("WS", "Connecting to WebSocket server: %s", websocket_cfg.uri);
+        cJSON_AddStringToObject(json, "IP", ESP_IP);
 
-                ws_client = esp_websocket_client_init(&websocket_cfg);
-                esp_websocket_register_events(ws_client, WEBSOCKET_EVENT_ANY, websocket_event_handler, NULL);
-                esp_websocket_client_start(ws_client);
-            } else {
-                // read sensor data
-                uint16_t iCharge = read_2byte_data(STATE_OF_CHARGE_REG);
-                uint16_t iVoltage = read_2byte_data(VOLTAGE_REG);
-                float fVoltage = (float)iVoltage / 1000.0;
-                uint16_t iCurrent = read_2byte_data(CURRENT_REG);
-                float fCurrent = (float)iCurrent / 1000.0;
-                if (fCurrent < 65.536 && fCurrent > 32.767) fCurrent = 65.536 - fCurrent; // this is something to do with 16 bit binary
-                uint16_t iTemperature = read_2byte_data(TEMPERATURE_REG);
-                float fTemperature = (float)iTemperature / 10.0 - 273.15;
+        char *json_string = cJSON_PrintUnformatted(json);
+        cJSON_Delete(json);
 
-                // configurable data too
-                uint16_t iBL = test_read(DISCHARGE_SUBCLASS_ID, BL_OFFSET);
-                uint16_t iBH = test_read(DISCHARGE_SUBCLASS_ID, BH_OFFSET);
-                uint16_t iCCT = test_read(CURRENT_THRESHOLDS_SUBCLASS_ID, CHG_CURRENT_THRESHOLD_OFFSET);
-                uint16_t iDCT = test_read(CURRENT_THRESHOLDS_SUBCLASS_ID, DSG_CURRENT_THRESHOLD_OFFSET);
-                uint16_t iCITL = test_read(CHARGE_INHIBIT_CFG_SUBCLASS_ID, CHG_INHIBIT_TEMP_LOW_OFFSET);
-                uint16_t iCITH = test_read(CHARGE_INHIBIT_CFG_SUBCLASS_ID, CHG_INHIBIT_TEMP_HIGH_OFFSET);
+        if (json_string != NULL) {
+            // first send to all connected WebSocket clients
+            for (int i = 0; i < CONFIG_MAX_CLIENTS; i++) {
+                if (client_sockets[i] != -1) {
+                    ESP_LOGI("WS", "Attempting to send frame to client %d", client_sockets[i]);
+                    /*
+                    // Validate WebSocket connection with a PING
+                    esp_err_t ping_status = httpd_ws_send_frame_async(server, client_sockets[i], &(httpd_ws_frame_t){
+                        .payload = NULL,
+                        .len = 0,
+                        .type = HTTPD_WS_TYPE_PING
+                    });
+                    ESP_LOGE("WS", "ping error: %s", esp_err_to_name(ping_status));
 
-                // create JSON object with sensor data
-                cJSON *json = cJSON_CreateObject();
-                cJSON_AddNumberToObject(json, "charge", iCharge);
-                cJSON_AddNumberToObject(json, "voltage", fVoltage);
-                cJSON_AddNumberToObject(json, "current", fCurrent);
-                cJSON_AddNumberToObject(json, "temperature", fTemperature);
-                cJSON_AddNumberToObject(json, "BL", iBL);
-                cJSON_AddNumberToObject(json, "BH", iBH);
-                cJSON_AddNumberToObject(json, "CCT", iCCT);
-                cJSON_AddNumberToObject(json, "DCT", iDCT);
-                cJSON_AddNumberToObject(json, "CITL", iCITL);
-                cJSON_AddNumberToObject(json, "CITH", iCITH);
+                    if (ping_status != ESP_OK) {
+                        ESP_LOGE("WS", "Client %d disconnected. Removing.", client_sockets[i]);
+                        remove_client(client_sockets[i]);
+                        continue;
+                    }
+                    */
 
-                cJSON_AddStringToObject(json, "IP", ESP_IP);
-
-                char *json_string = cJSON_PrintUnformatted(json);
-                cJSON_Delete(json);
-                if (json_string != NULL) {
-                    char message[1024];
-                    snprintf(message, sizeof(message), "{\"ESP_ID\": \"%s\", \"content\": %s}", ESP_ID, json_string);
-                    printf("%s\n", message);
-                    esp_websocket_client_send_text(ws_client, message, strlen(message), portMAX_DELAY);
-
-
-                    // clean up
-                    free(json_string);
+                    httpd_ws_frame_t ws_pkt = {
+                        .payload = (uint8_t *)json_string,
+                        .len = strlen(json_string),
+                        .type = HTTPD_WS_TYPE_TEXT,
+                    };
+                    esp_err_t err = httpd_ws_send_frame_async(server, client_sockets[i], &ws_pkt);
+                    if (err != ESP_OK) {
+                        ESP_LOGE("WS", "Failed to send frame to client %d: %s", client_sockets[i], esp_err_to_name(err));
+                        remove_client(client_sockets[i]);  // Clean up disconnected clients
+                    } else {
+                        ESP_LOGI("WS", "Frame sent to client %d", client_sockets[i]);
+                    }
                 }
             }
+
+            // then to website over internet
+            if (connected_to_WiFi) {
+                // get Wi-Fi station gateway
+                esp_netif_t *sta_netif = esp_netif_get_handle_from_ifkey("WIFI_STA_DEF");
+                if (sta_netif == NULL) return;
+
+                // retrieve the IP information
+                esp_netif_ip_info_t ip_info;
+                esp_netif_get_ip_info(sta_netif, &ip_info);
+
+                // add correct ESP32 IP info to message
+                esp_ip4addr_ntoa(&ip_info.ip, ESP_IP, 16);
+
+                if (!esp_websocket_client_is_connected(ws_client)) {
+                    const esp_websocket_client_config_t websocket_cfg = {
+                        .uri = "ws://192.168.137.249:5000/ws",
+                        .reconnect_timeout_ms = 1000,
+                        .network_timeout_ms = 10000,
+                    };
+
+                    ESP_LOGI("WS", "Connecting to WebSocket server: %s", websocket_cfg.uri);
+
+                    ws_client = esp_websocket_client_init(&websocket_cfg);
+                    esp_websocket_register_events(ws_client, WEBSOCKET_EVENT_ANY, websocket_event_handler, NULL);
+                    esp_websocket_client_start(ws_client);
+                } else {
+                        char message[1024];
+                        snprintf(message, sizeof(message), "{\"ESP_ID\": \"%s\", \"content\": %s}", ESP_ID, json_string);
+                        esp_websocket_client_send_text(ws_client, message, strlen(message), portMAX_DELAY);
+                }
+            }
+
+            // clean up
+            free(json_string);
         }
 
-        vTaskDelay(pdMS_TO_TICKS(5000)); // Retry every 5 seconds
+        vTaskDelay(pdMS_TO_TICKS(1000));
     }
 }
