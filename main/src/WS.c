@@ -810,7 +810,7 @@ void websocket_event_handler(void *arg, esp_event_base_t event_base, int32_t eve
         case WEBSOCKET_EVENT_CONNECTED:
             ESP_LOGI("WS", "WebSocket connected");
             char websocket_connect_message[128];
-            snprintf(websocket_connect_message, sizeof(websocket_connect_message), "{'ESP_ID': '%s'}", ESP_ID);
+            snprintf(websocket_connect_message, sizeof(websocket_connect_message), "{\"ESP_ID\": \"%s\", \"content\": \"register\"}", ESP_ID);
             esp_websocket_client_send_text(ws_client, websocket_connect_message, strlen(websocket_connect_message), portMAX_DELAY);
             break;
 

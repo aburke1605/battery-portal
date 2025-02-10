@@ -221,10 +221,14 @@ def websocket(ws):
                     response["content"]["status"] = "success"
                     response["content"]["ESP_ID"] = metadata["ESP_ID"]
 
-                    with lock:
-                        # Add the client to the connected clients set
-                        connected_clients.append(metadata)
-                        print(f"Client connected. Total clients: {len(connected_clients)}")
+                    if data["content"] == "register":
+                        with lock:
+                            # Add the client to the connected clients set
+                            connected_clients.append(metadata)
+                            print(f"Client connected. Total clients: {len(connected_clients)}")
+                    else:
+                        with lock:
+                            pass
 
                 except json.JSONDecodeError:
                     response["content"]["status"] = "error"
