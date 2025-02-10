@@ -14,7 +14,6 @@ int client_sockets[CONFIG_MAX_CLIENTS];
 char received_data[1024];
 SemaphoreHandle_t data_mutex;
 bool connected_to_WiFi = false;
-bool connected_to_website = false;
 int other_AP_SSIDs[256];
 char successful_ips[256][16];
 char old_successful_ips[256][16];

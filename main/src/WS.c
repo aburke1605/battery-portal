@@ -812,13 +812,11 @@ void websocket_event_handler(void *arg, esp_event_base_t event_base, int32_t eve
             char websocket_connect_message[128];
             snprintf(websocket_connect_message, sizeof(websocket_connect_message), "{'ESP_ID': '%s'}", ESP_ID);
             esp_websocket_client_send_text(ws_client, websocket_connect_message, strlen(websocket_connect_message), portMAX_DELAY);
-            connected_to_website = true;
             break;
 
         case WEBSOCKET_EVENT_DISCONNECTED:
             ESP_LOGI("WS", "WebSocket disconnected");
             esp_websocket_client_stop(ws_client);
-            connected_to_website = false;
             break;
 
         case WEBSOCKET_EVENT_DATA:
@@ -909,7 +907,7 @@ void websocket_event_handler(void *arg, esp_event_base_t event_base, int32_t eve
 void websocket_reconnect_task(void *param) {
     while (true) {
         if (connected_to_WiFi) {
-            if (!connected_to_website) {
+            if (!esp_websocket_client_is_connected(ws_client)) {
                 const esp_websocket_client_config_t websocket_cfg = {
                     .uri = "ws://192.168.137.249:5000/ws",
                     .reconnect_timeout_ms = 1000,
