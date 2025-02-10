@@ -919,6 +919,52 @@ void websocket_reconnect_task(void *param) {
                 ws_client = esp_websocket_client_init(&websocket_cfg);
                 esp_websocket_register_events(ws_client, WEBSOCKET_EVENT_ANY, websocket_event_handler, NULL);
                 esp_websocket_client_start(ws_client);
+            } else {
+                // read sensor data
+                uint16_t iCharge = read_2byte_data(STATE_OF_CHARGE_REG);
+                uint16_t iVoltage = read_2byte_data(VOLTAGE_REG);
+                float fVoltage = (float)iVoltage / 1000.0;
+                uint16_t iCurrent = read_2byte_data(CURRENT_REG);
+                float fCurrent = (float)iCurrent / 1000.0;
+                if (fCurrent < 65.536 && fCurrent > 32.767) fCurrent = 65.536 - fCurrent; // this is something to do with 16 bit binary
+                uint16_t iTemperature = read_2byte_data(TEMPERATURE_REG);
+                float fTemperature = (float)iTemperature / 10.0 - 273.15;
+
+                // configurable data too
+                uint16_t iBL = test_read(DISCHARGE_SUBCLASS_ID, BL_OFFSET);
+                uint16_t iBH = test_read(DISCHARGE_SUBCLASS_ID, BH_OFFSET);
+                uint16_t iCCT = test_read(CURRENT_THRESHOLDS_SUBCLASS_ID, CHG_CURRENT_THRESHOLD_OFFSET);
+                uint16_t iDCT = test_read(CURRENT_THRESHOLDS_SUBCLASS_ID, DSG_CURRENT_THRESHOLD_OFFSET);
+                uint16_t iCITL = test_read(CHARGE_INHIBIT_CFG_SUBCLASS_ID, CHG_INHIBIT_TEMP_LOW_OFFSET);
+                uint16_t iCITH = test_read(CHARGE_INHIBIT_CFG_SUBCLASS_ID, CHG_INHIBIT_TEMP_HIGH_OFFSET);
+
+                // create JSON object with sensor data
+                cJSON *json = cJSON_CreateObject();
+                cJSON_AddNumberToObject(json, "charge", iCharge);
+                cJSON_AddNumberToObject(json, "voltage", fVoltage);
+                cJSON_AddNumberToObject(json, "current", fCurrent);
+                cJSON_AddNumberToObject(json, "temperature", fTemperature);
+                cJSON_AddNumberToObject(json, "BL", iBL);
+                cJSON_AddNumberToObject(json, "BH", iBH);
+                cJSON_AddNumberToObject(json, "CCT", iCCT);
+                cJSON_AddNumberToObject(json, "DCT", iDCT);
+                cJSON_AddNumberToObject(json, "CITL", iCITL);
+                cJSON_AddNumberToObject(json, "CITH", iCITH);
+
+                cJSON_AddStringToObject(json, "IP", ESP_IP);
+
+                char *json_string = cJSON_PrintUnformatted(json);
+                cJSON_Delete(json);
+                if (json_string != NULL) {
+                    char message[128];
+                    snprintf(message, sizeof(message), "{\"ESP_ID\": \"%s\", \"content\": \"%s\"}", ESP_ID, json_string);
+                    printf("%s\n", message);
+                    esp_websocket_client_send_text(ws_client, message, strlen(message), portMAX_DELAY);
+
+
+                    // clean up
+                    free(json_string);
+                }
             }
         }
 
