@@ -121,12 +121,8 @@ def subpage():
     return render_template('admin/battery.html')
 
 
-data_store = {
-    "ESP32": {
-        "IP": "xxx.xxx.xxx.xxx"
-    }
-}
-connected_clients = []  # Keep track of connected WebSocket clients:  [{ "ws": ws, "ESP_ID": "esp32_1" }]
+connected_esp_clients = []  # Keep track of connected WebSocket clients:  [{ "ws": ws, "ESP_ID": "esp32_1" }]
+connected_browser_clients = []
 lock = Lock()
 
 def forward_request_to_esp32(endpoint, method="POST", ESP_ID=None):
@@ -148,7 +144,7 @@ def forward_request_to_esp32(endpoint, method="POST", ESP_ID=None):
     responses = []
 
     with lock:
-        target_clients = [c for c in connected_clients if not ESP_ID or c["ESP_ID"] == ESP_ID]
+        target_clients = [c for c in connected_esp_clients if not ESP_ID or c["ESP_ID"] == ESP_ID]
 
         if not target_clients:
             return 'No matching ESP32 connected', 404
@@ -200,8 +196,11 @@ def alert():
 
 @sock.route('/ws')
 def websocket(ws):
-    global connected_clients
+    global connected_esp_clients, connected_browser_clients
     metadata = {"ws": ws, "ESP_ID": "unknown"}
+
+    with lock:
+        connected_browser_clients.append(ws) # assume it's a browser client initially
 
     try:
         while True:
@@ -223,12 +222,18 @@ def websocket(ws):
 
                     if data["content"] == "register":
                         with lock:
+                            connected_browser_clients.pop()
                             # Add the client to the connected clients set
-                            connected_clients.append(metadata)
-                            print(f"Client connected. Total clients: {len(connected_clients)}")
+                            connected_esp_clients.append(metadata)
+                            print(f"Client connected. Total clients: {len(connected_esp_clients)}")
                     else:
                         with lock:
-                            pass
+                            for client in connected_browser_clients:
+                                try:
+                                    client.send(json.dumps(data["content"]))
+                                except Exception as e:
+                                    print(f"Error sending to browser: {e}")
+                                    connected_browser_clients.remove(client)  # Remove the client if sending fails
 
                 except json.JSONDecodeError:
                     response["content"]["status"] = "error"
@@ -247,25 +252,8 @@ def websocket(ws):
 
     finally:
         with lock:
-            connected_clients = [c for c in connected_clients if c["ws"] != ws]
-            print(f"Client disconnected. Total clients: {len(connected_clients)}")
-
-@app.route('/data', methods=['POST'])
-def receive_data():
-    data = request.json
-    if data:
-        data_store["ESP32"] = data
-
-        # Send the data to all connected WebSocket clients
-        for client in connected_clients.copy():
-            try:
-                client.send(jsonify(data).get_data(as_text=True))  # Send as a JSON string
-            except Exception as e:
-                print(f"Error sending data to a client: {e}")
-                connected_clients.remove(client)  # Remove the client if sending fails
-
-        return {"status": "success", "data_received": data}, 200
-    return {"status": "error", "message": "No data received"}, 400
+            connected_esp_clients = [c for c in connected_esp_clients if c["ws"] != ws]
+            print(f"Client disconnected. Total clients: {len(connected_esp_clients)}")
 
 @app.route('/change')
 def change():
