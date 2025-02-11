@@ -832,23 +832,28 @@ void websocket_task(void *pvParameters) {
                 // add correct ESP32 IP info to message
                 esp_ip4addr_ntoa(&ip_info.ip, ESP_IP, 16);
 
-                const esp_websocket_client_config_t websocket_cfg = {
-                    .uri = "ws://192.168.137.249:5000/ws",
-                    .reconnect_timeout_ms = 5000,
-                    .network_timeout_ms = 10000,
-                };
-                if (!esp_websocket_client_is_connected(ws_client)) {
-                    if (ws_client) {
-                        esp_websocket_client_stop(ws_client);
-                        esp_websocket_client_destroy(ws_client);
+                for (size_t i = 0; i < old_successful_ip_count; i++) {
+                    char uri[33];
+                    snprintf(uri, sizeof(uri), "ws://%s:5000/ws", old_successful_ips[i]);
+
+                    const esp_websocket_client_config_t websocket_cfg = {
+                        .uri = uri,
+                        .reconnect_timeout_ms = 10000,
+                        .network_timeout_ms = 10000,
+                    };
+                    if (!esp_websocket_client_is_connected(ws_client)) {
+                        if (ws_client) {
+                            esp_websocket_client_stop(ws_client);
+                            esp_websocket_client_destroy(ws_client);
+                        }
+                        ws_client = esp_websocket_client_init(&websocket_cfg);
+                        esp_websocket_register_events(ws_client, WEBSOCKET_EVENT_ANY, websocket_event_handler, NULL);
+                        esp_websocket_client_start(ws_client);
+                    } else {
+                        char message[1024];
+                        snprintf(message, sizeof(message), "{\"ESP_ID\": \"%s\", \"content\": %s}", ESP_ID, json_string);
+                        esp_websocket_client_send_text(ws_client, message, strlen(message), portMAX_DELAY);
                     }
-                    ws_client = esp_websocket_client_init(&websocket_cfg);
-                    esp_websocket_register_events(ws_client, WEBSOCKET_EVENT_ANY, websocket_event_handler, NULL);
-                    esp_websocket_client_start(ws_client);
-                } else {
-                    char message[1024];
-                    snprintf(message, sizeof(message), "{\"ESP_ID\": \"%s\", \"content\": %s}", ESP_ID, json_string);
-                    esp_websocket_client_send_text(ws_client, message, strlen(message), portMAX_DELAY);
                 }
             }
 
