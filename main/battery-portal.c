@@ -88,5 +88,8 @@ void app_main(void) {
     esp_log_level_set("wifi", ESP_LOG_ERROR);
     xTaskCreate(&check_wifi_task, "check_wifi_task", 4096, NULL, 5, NULL);
 
+    esp_log_level_set("websocket_client", ESP_LOG_WARN);
+    esp_log_level_set("transport_ws", ESP_LOG_WARN);
+    esp_log_level_set("transport_base", ESP_LOG_WARN);
     xTaskCreate(&websocket_task, "websocket_task", 4096, NULL, 5, NULL);
 }
