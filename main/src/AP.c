@@ -7,6 +7,7 @@
 
 #include "include/AP.h"
 #include "include/I2C.h"
+#include "include/config.h"
 
 void wifi_scan(void) {
     // Configure Wi-Fi scan settings
@@ -89,6 +90,10 @@ void wifi_init(void) {
     //     ESP_ERROR_CHECK(nvs_flash_erase());
     //     ESP_ERROR_CHECK(nvs_flash_init());
     // }
+    char ap_wifi_ssid[64];
+    char ap_wifi_pass[64];
+    read_global_config(KEY_AP_WIFI_SSID, ap_wifi_ssid, sizeof(ap_wifi_ssid));
+    read_global_config(KEY_AP_WIFI_PASS, ap_wifi_pass, sizeof(ap_wifi_pass));
 
     // Initialize the Wi-Fi stack
     ESP_ERROR_CHECK(esp_netif_init());
@@ -114,23 +119,25 @@ void wifi_init(void) {
     wifi_config_t wifi_ap_config = {
         .ap = {
             .channel = 1,
-            .password = WIFI_PASS,
             .max_connection = MAX_STA_CONN,
             .authmode = WIFI_AUTH_WPA_WPA2_PSK
         },
     };
     // set the SSID as well
-    char buffer[strlen(WIFI_SSID) + 4 + 2 + 16 + 1 + 1]; // "AceOn battery" + " xxx" + ": " + uint16_t, + "%" + "\0"
+    char buffer[strlen(ap_wifi_ssid) + 4 + 2 + 16 + 1 + 1]; // "AceOn battery" + " xxx" + ": " + uint16_t, + "%" + "\0"
     int SSID_number = find_unique_SSID();
     uint16_t iCharge = read_2byte_data(STATE_OF_CHARGE_REG);
-    snprintf(buffer, sizeof(buffer), "%s %u: %d%%", WIFI_SSID, SSID_number, iCharge);
+    snprintf(buffer, sizeof(buffer), "%s %u: %d%%", ap_wifi_ssid, SSID_number, iCharge);
 
     strncpy((char *)wifi_ap_config.ap.ssid, buffer, sizeof(wifi_ap_config.ap.ssid) - 1);
     wifi_ap_config.ap.ssid[sizeof(wifi_ap_config.ap.ssid) - 1] = '\0'; // Ensure null-termination
     wifi_ap_config.ap.ssid_len = strlen((char *)wifi_ap_config.ap.ssid); // Set SSID length
 
-    if (strlen(WIFI_PASS) == 0) {
+    if (strlen(ap_wifi_pass) == 0) {
         wifi_ap_config.ap.authmode = WIFI_AUTH_OPEN;
+    } else {
+        strncpy((char *)wifi_ap_config.ap.password, ap_wifi_pass, sizeof(wifi_ap_config.ap.password) - 1);
+        wifi_ap_config.ap.password[sizeof(wifi_ap_config.ap.password) - 1] = '\0';
     }
     ESP_ERROR_CHECK(esp_wifi_set_config(ESP_IF_WIFI_AP, &wifi_ap_config));
 
@@ -157,6 +164,6 @@ void wifi_init(void) {
     ESP_ERROR_CHECK(esp_netif_dhcps_start(ap_netif));
     ESP_LOGI("AP", "AP initialized with IP: %s", IP_buffer);
 
-    ESP_LOGI("AP", "Starting WiFi AP... SSID: %s, Password: %s", WIFI_SSID, WIFI_PASS);
+    ESP_LOGI("AP", "Starting WiFi AP... SSID: %s, Password: %s", ap_wifi_ssid, ap_wifi_pass);
     ESP_ERROR_CHECK(esp_wifi_start());
 }

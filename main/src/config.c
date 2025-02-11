@@ -9,15 +9,27 @@
 const char *KEY_AP_LOGIN_USERNAME = "username";
 const char *KEY_AP_LOGIN_PASSWORD = "password";
 
+const char *KEY_AP_WIFI_SSID = "ap_ssid";
+const char *KEY_AP_WIFI_PASS = "ap_pass";
+
 static const char *TAG = "GLOBAL_CONFIG";
 
-void nvs_init(void) {
+void nvs_config_init(void) {
     // Initialize NVS
     esp_err_t ret = nvs_flash_init();
     if (ret == ESP_ERR_NVS_NO_FREE_PAGES || ret == ESP_ERR_NVS_NEW_VERSION_FOUND) {
         ESP_ERROR_CHECK(nvs_flash_erase());
         ESP_ERROR_CHECK(nvs_flash_init());
     }
+    // Initialize config
+    // Should come from remote server TODO
+    // AP login 
+    save_global_config(KEY_AP_LOGIN_USERNAME, "admin");
+    save_global_config(KEY_AP_LOGIN_PASSWORD, "123");
+    // AP wifi
+    save_global_config(KEY_AP_WIFI_SSID, "AceOn battery");
+    save_global_config(KEY_AP_WIFI_PASS, "password");
+    // 
 }
 
 void save_global_config(const char *key, const char *value) {

@@ -1,5 +1,3 @@
-#define WIFI_SSID "AceOn battery"
-#define WIFI_PASS "password"
 #define MAX_STA_CONN 4
 
 extern int other_AP_SSIDs[256];

@@ -4,7 +4,7 @@
 #include "include/WS.h"
 #include "include/I2C.h"
 #include "include/utils.h"
-#include "include/config.h"~
+#include "include/config.h"
 
 esp_websocket_client_handle_t ws_client;
 

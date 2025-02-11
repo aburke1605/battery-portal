@@ -24,11 +24,8 @@ char ESP_IP[16] = "xxx.xxx.xxx.xxx\0";
 
 void app_main(void) {
 
-    // init nvs from config.c
-    nvs_init();
-    // should come from remote server TODO
-    save_global_config(KEY_AP_LOGIN_USERNAME, "admin");
-    save_global_config(KEY_AP_LOGIN_PASSWORD, "123");
+    // Init nvs&config from config.c
+    nvs_config_init();
 
     random_key(ESP_ID);
 
