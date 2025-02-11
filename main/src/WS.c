@@ -4,6 +4,7 @@
 #include "include/WS.h"
 #include "include/I2C.h"
 #include "include/utils.h"
+#include "include/config.h"~
 
 esp_websocket_client_handle_t ws_client;
 
@@ -45,7 +46,15 @@ esp_err_t validate_login_handler(httpd_req_t *req) {
     // [^&]:  a scan set that matches any character except &
     // s:     reads a sequence of non-whitespace characters until a space, newline, or null terminator is encountered
 
-    if (strcmp(username, "admin") == 0 && strcmp(password, "1234") == 0) {
+    // read username&password from global config
+    char config_username[64];
+    char config_password[64];
+    read_global_config(KEY_AP_LOGIN_USERNAME, config_username, sizeof(config_username));
+    read_global_config(KEY_AP_LOGIN_PASSWORD, config_password, sizeof(config_password));
+    ESP_LOGI("WS", "test user name %s", config_username);
+    ESP_LOGI("WS", "test user password %s", config_password);
+
+    if (strcmp(username, config_username) == 0 && strcmp(password, config_password) == 0) {
         // credentials correct
         httpd_resp_set_status(req, "302 Found");
         httpd_resp_set_hdr(req, "Location", "/display"); // redirect to /display

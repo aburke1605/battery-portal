@@ -6,6 +6,7 @@
 #include "include/ping.h"
 #include "include/WS.h"
 #include "include/utils.h"
+#include "include/config.h"
 
 // global variables
 char ESP_ID[KEY_LENGTH + 1];
@@ -22,6 +23,13 @@ uint8_t old_successful_ip_count = 0;
 char ESP_IP[16] = "xxx.xxx.xxx.xxx\0";
 
 void app_main(void) {
+
+    // init nvs from config.c
+    nvs_init();
+    // should come from remote server TODO
+    save_global_config(KEY_AP_LOGIN_USERNAME, "admin");
+    save_global_config(KEY_AP_LOGIN_PASSWORD, "123");
+
     random_key(ESP_ID);
 
     // initialise SPIFFS
@@ -89,4 +97,5 @@ void app_main(void) {
     xTaskCreate(&check_wifi_task, "check_wifi_task", 4096, NULL, 5, NULL);
 
     xTaskCreate(&websocket_task, "websocket_task", 4096, NULL, 5, NULL);
+
 }
