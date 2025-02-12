@@ -121,11 +121,11 @@ def subpage():
     return render_template('admin/battery.html')
 
 
-connected_esp_clients = []  # Keep track of connected WebSocket clients:  [{ "ws": ws, "ESP_ID": "esp32_1" }]
+connected_esp_clients = []
 connected_browser_clients = []
 lock = Lock()
 
-def forward_request_to_esp32(endpoint, method="POST", ESP_ID=None):
+def forward_request_to_esp32(endpoint, method="POST", id=None):
     """
     Generic function to forward requests to the ESP32 via WebSocket.
     :param endpoint: ESP32 endpoint to forward the request to.
@@ -144,7 +144,7 @@ def forward_request_to_esp32(endpoint, method="POST", ESP_ID=None):
     responses = []
 
     with lock:
-        target_clients = [c for c in connected_esp_clients if not ESP_ID or c["ESP_ID"] == ESP_ID]
+        target_clients = [c for c in connected_esp_clients if not id or c["id"] == id]
 
         if not target_clients:
             return 'No matching ESP32 connected', 404
@@ -155,13 +155,17 @@ def forward_request_to_esp32(endpoint, method="POST", ESP_ID=None):
                     message["content"]["data"] = request.form.to_dict()
                 ws.send(json.dumps(message))
 
-                response = ws.receive()
-                if response:
-                    responses.append({"ESP_ID": client["ESP_ID"], "response": response})
+                while True:
+                    response = ws.receive()
+                    if response:
+                        response = json.loads(response)
+                        if response["type"] == "response":
+                            responses.append({"id": client["id"], "response": response["content"]})
+                            break
 
             except Exception as e:
-                print(f"Error communicating with {client['ESP_ID']}: {e}")
-                responses.append({"ESP_ID": client["ESP_ID"], "error": str(e)})
+                print(f"Error communicating with {client['id']}: {e}")
+                responses.append({"id": client["id"], "error": str(e)})
 
     return responses
 
@@ -197,7 +201,7 @@ def alert():
 @sock.route('/ws')
 def websocket(ws):
     global connected_esp_clients, connected_browser_clients
-    metadata = {"ws": ws, "ESP_ID": "unknown"}
+    metadata = {"ws": ws, "id": "unknown"}
 
     with lock:
         connected_browser_clients.append(ws) # assume it's a browser client initially
@@ -212,20 +216,17 @@ def websocket(ws):
                     "type": "response",
                     "content": {}
                 }
-                print(f"Received data: {message}")
 
                 try:
                     data = json.loads(message)
-                    metadata["ESP_ID"] = data.get("ESP_ID", "unknown")
-                    response["content"]["status"] = "success"
-                    response["content"]["ESP_ID"] = metadata["ESP_ID"]
 
-                    if data["content"] == "register":
+                    if data["type"] == "register":
                         with lock:
+                            metadata["id"] = data["id"]
+                            # move the client to the connected clients set
                             connected_browser_clients.pop()
-                            # Add the client to the connected clients set
                             connected_esp_clients.append(metadata)
-                            print(f"Client connected. Total clients: {len(connected_esp_clients)}")
+                            print(f"Client connected: {metadata}. Total clients: {len(connected_esp_clients)}")
                     else:
                         with lock:
                             for client in connected_browser_clients:
@@ -234,6 +235,9 @@ def websocket(ws):
                                 except Exception as e:
                                     print(f"Error sending to browser: {e}")
                                     connected_browser_clients.remove(client)  # Remove the client if sending fails
+
+                    response["content"]["status"] = "success"
+                    response["content"]["id"] = metadata["id"]
 
                 except json.JSONDecodeError:
                     response["content"]["status"] = "error"
@@ -276,14 +280,12 @@ def connect():
 
 @app.route('/validate_connect', methods=['POST'])
 def validate_connect():
-    ESP_ID = request.args.get("ESP_ID")
-    responses = forward_request_to_esp32("validate_connect", ESP_ID=ESP_ID)
-
-    response = json.loads(responses[0]["response"]) # TODO: check all responses?
-    if response["content"]["response"] == "already connected":
-        message = "Already connected to Wi-Fi"
-        encoded_message = urllib.parse.quote(message)
-        return redirect(f"/alert?message={encoded_message}")
+    responses = forward_request_to_esp32("validate_connect", id=connected_esp_clients[-1]["id"]) # TODO: fix this hardcoding
+    for response in responses:
+        if response["response"]["response"] == "already connected":
+            message = "One or more ESP32s already connected to Wi-Fi"
+            encoded_message = urllib.parse.quote(message)
+            return redirect(f"/alert?message={encoded_message}")
 
     return redirect("/display")
 

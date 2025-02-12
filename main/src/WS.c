@@ -650,7 +650,7 @@ void websocket_event_handler(void *arg, esp_event_base_t event_base, int32_t eve
         case WEBSOCKET_EVENT_CONNECTED:
             // ESP_LOGI("WS", "WebSocket connected");
             char websocket_connect_message[128];
-            snprintf(websocket_connect_message, sizeof(websocket_connect_message), "{\"ESP_ID\": \"%s\", \"content\": \"register\"}", ESP_ID);
+            snprintf(websocket_connect_message, sizeof(websocket_connect_message), "{\"type\": \"register\", \"id\": \"%s\"}", ESP_ID);
             esp_websocket_client_send_text(ws_client, websocket_connect_message, strlen(websocket_connect_message), portMAX_DELAY);
             break;
 
@@ -852,7 +852,7 @@ void websocket_task(void *pvParameters) {
                         esp_websocket_client_start(ws_client);
                     } else {
                         char message[1024];
-                        snprintf(message, sizeof(message), "{\"ESP_ID\": \"%s\", \"content\": %s}", ESP_ID, json_string);
+                        snprintf(message, sizeof(message), "{\"type\": \"data\", \"id\": \"%s\", \"content\": %s}", ESP_ID, json_string);
                         esp_websocket_client_send_text(ws_client, message, strlen(message), portMAX_DELAY);
                     }
                 }
