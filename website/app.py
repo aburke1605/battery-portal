@@ -211,6 +211,7 @@ def websocket(ws):
             message = ws.receive()
 
             if message:
+                print("\n`websocket` message received:", message)
                 response = {
                     "type": "response",
                     "content": {}
@@ -285,7 +286,10 @@ def connect():
 
 @app.route('/validate_connect', methods=['POST'])
 def validate_connect():
+    print("\n")
     id = request.args.get("id")
+    print(f"id: {id}, hardcoded: {list(connected_esp_clients.keys())[0]}")
+    print("\n")
     responses = forward_request_to_esp32("validate_connect", id=list(connected_esp_clients.keys())[0]) # TODO: fix this hardcoding
     for response in responses:
         if response["response"]["response"] == "already connected":
