@@ -219,6 +219,7 @@ def change():
 
 @app.route('/validate_change', methods=['POST'])
 def validate_change():
+    # TODO
     return forward_request_to_esp32("validate_change")
 
 @app.route('/reset', methods=['POST'])
