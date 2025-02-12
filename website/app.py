@@ -160,7 +160,7 @@ def forward_request_to_esp32(endpoint, method="POST", id=None):
                         response = json.loads(response)
                         if response["type"] == "response":
                             responses.append({"id": ID, "response": response["content"]})
-                            break
+                        break
 
             except Exception as e:
                 print(f"Error communicating with {ID}: {e}")

@@ -723,9 +723,10 @@ void websocket_event_handler(void *arg, esp_event_base_t event_base, int32_t eve
 
                     char *response_str = cJSON_PrintUnformatted(response);
                     cJSON_Delete(response);
+
                     esp_err_t send_err = esp_websocket_client_send_text(ws_client, response_str, strlen(response_str), portMAX_DELAY);
                     if (send_err != ESP_OK) {
-                        ESP_LOGE("WS", "Failed to send WebSocket response: %d", send_err);
+                        ESP_LOGE("WS", "Failed to send WebSocket response: %s (%d)", esp_err_to_name(send_err), send_err);
                     }
                     free(response_str);
                 }
