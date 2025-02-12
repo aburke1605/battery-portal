@@ -4,20 +4,18 @@
 
 #include "include/ping.h"
 
-#define TAG "ARP_TABLE"
-
 void send_arp_request(ip4_addr_t target_ip) {
     struct netif *netif = netif_default;  // Use default network interface
     if (!netif) {
-        ESP_LOGE(TAG, "No default network interface!");
+        ESP_LOGE("ARP", "No default network interface!");
         return;
     }
 
-    ESP_LOGI(TAG, "Sending ARP request for: " IPSTR, IP2STR(&target_ip));
+    ESP_LOGI("ARP", "Sending ARP request for: " IPSTR, IP2STR(&target_ip));
 
     err_t res = etharp_request(netif, &target_ip);
     if (res != ERR_OK) {
-        ESP_LOGE(TAG, "Failed to send ARP request: %d", res);
+        ESP_LOGE("ARP", "Failed to send ARP request: %d", res);
     }
 }
 
@@ -38,12 +36,12 @@ void print_arp_table() {
     struct eth_addr *eth_ret;
     struct netif *netif_ret;
     ip4_addr_t *ip_ret;
-    
-    ESP_LOGI(TAG, "Printing ARP Table:");
+
+    ESP_LOGI("ARP", "Printing ARP Table:");
     for (size_t i = 0; i < ARP_TABLE_SIZE; i++) {
         if (etharp_get_entry(i, &ip_ret, &netif_ret, &eth_ret)) {
             printf("%s\n", ESP_IP);
-            ESP_LOGI(TAG, "IP: " IPSTR ", MAC: %02X:%02X:%02X:%02X:%02X:%02X",
+            ESP_LOGI("ARP", "IP: " IPSTR ", MAC: %02X:%02X:%02X:%02X:%02X:%02X",
                 IP2STR(ip_ret),
                 eth_ret->addr[0], eth_ret->addr[1], eth_ret->addr[2],
                 eth_ret->addr[3], eth_ret->addr[4], eth_ret->addr[5]);
