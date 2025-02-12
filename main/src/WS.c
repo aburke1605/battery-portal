@@ -648,14 +648,14 @@ void websocket_event_handler(void *arg, esp_event_base_t event_base, int32_t eve
 
     switch (event_id) {
         case WEBSOCKET_EVENT_CONNECTED:
-            ESP_LOGI("WS", "WebSocket connected");
+            // ESP_LOGI("WS", "WebSocket connected");
             char websocket_connect_message[128];
             snprintf(websocket_connect_message, sizeof(websocket_connect_message), "{\"ESP_ID\": \"%s\", \"content\": \"register\"}", ESP_ID);
             esp_websocket_client_send_text(ws_client, websocket_connect_message, strlen(websocket_connect_message), portMAX_DELAY);
             break;
 
         case WEBSOCKET_EVENT_DISCONNECTED:
-            ESP_LOGI("WS", "WebSocket disconnected");
+            // ESP_LOGI("WS", "WebSocket disconnected");
             esp_websocket_client_stop(ws_client);
             break;
 
@@ -671,12 +671,12 @@ void websocket_event_handler(void *arg, esp_event_base_t event_base, int32_t eve
 
             cJSON *typeItem = cJSON_GetObjectItem(message, "type");
             if (!typeItem) {
-                ESP_LOGE("WS", "ilformatted json");
+                ESP_LOGE("WS", "ilformatted json: %.*s", ws_event_data->data_len, (char *)ws_event_data->data_ptr);
                 break;
             }
             const char *type = typeItem->valuestring;
 
-            ESP_LOGI("WS", "WebSocket data received: %.*s", ws_event_data->data_len, (char *)ws_event_data->data_ptr);
+            // ESP_LOGI("WS", "WebSocket data received: %.*s", ws_event_data->data_len, (char *)ws_event_data->data_ptr);
 
             if (strcmp(type, "response") == 0) {
 
@@ -735,7 +735,7 @@ void websocket_event_handler(void *arg, esp_event_base_t event_base, int32_t eve
             break;
 
         case WEBSOCKET_EVENT_ERROR:
-            ESP_LOGE("WS", "WebSocket error occurred");
+            // ESP_LOGE("WS", "WebSocket error occurred");
             break;
 
         default:
