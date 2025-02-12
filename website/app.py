@@ -121,8 +121,8 @@ def subpage():
     return render_template('admin/battery.html')
 
 
-connected_esp_clients = []
-connected_browser_clients = []
+connected_esp_clients = dict()
+connected_browser_clients = dict()
 lock = Lock()
 
 def forward_request_to_esp32(endpoint, method="POST", id=None):
@@ -144,13 +144,12 @@ def forward_request_to_esp32(endpoint, method="POST", id=None):
     responses = []
 
     with lock:
-        target_clients = [c for c in connected_esp_clients if not id or c["id"] == id]
+        target_clients = connected_esp_clients if not id else {id: connected_esp_clients[id]}
 
         if not target_clients:
             return 'No matching ESP32 connected', 404
-        for client in target_clients:
+        for ID, ws in target_clients.items():
             try:
-                ws = client["ws"]
                 if method == "POST":
                     message["content"]["data"] = request.form.to_dict()
                 ws.send(json.dumps(message))
@@ -160,12 +159,12 @@ def forward_request_to_esp32(endpoint, method="POST", id=None):
                     if response:
                         response = json.loads(response)
                         if response["type"] == "response":
-                            responses.append({"id": client["id"], "response": response["content"]})
+                            responses.append({"id": ID, "response": response["content"]})
                             break
 
             except Exception as e:
-                print(f"Error communicating with {client['id']}: {e}")
-                responses.append({"id": client["id"], "error": str(e)})
+                print(f"Error communicating with {ID}: {e}")
+                responses.append({"id": ID, "error": str(e)})
 
     return responses
 
@@ -204,7 +203,7 @@ def websocket(ws):
     metadata = {"ws": ws, "id": "unknown"}
 
     with lock:
-        connected_browser_clients.append(ws) # assume it's a browser client initially
+        connected_browser_clients["unknown"] = ws # assume it's a browser client initially
 
     try:
         while True:
@@ -224,17 +223,18 @@ def websocket(ws):
                         with lock:
                             metadata["id"] = data["id"]
                             # move the client to the connected clients set
-                            connected_browser_clients.pop()
-                            connected_esp_clients.append(metadata)
-                            print(f"Client connected: {metadata}. Total clients: {len(connected_esp_clients)}")
+                            connected_browser_clients.pop("unknown")
+                            connected_esp_clients[data["id"]] = ws
+                            print(f"Client connected: {ws} with id: {data['id']}.")
+                            print(f"Total clients: {len(connected_esp_clients.keys())}")
                     else:
                         with lock:
-                            for client in connected_browser_clients:
+                            for id, client in connected_browser_clients.items():
                                 try:
                                     client.send(json.dumps(data["content"]))
                                 except Exception as e:
                                     print(f"Error sending to browser: {e}")
-                                    connected_browser_clients.remove(client)  # Remove the client if sending fails
+                                    connected_browser_clients.pop("unknown")
 
                     response["content"]["status"] = "success"
                     response["content"]["id"] = metadata["id"]
@@ -256,8 +256,13 @@ def websocket(ws):
 
     finally:
         with lock:
-            connected_esp_clients = [c for c in connected_esp_clients if c["ws"] != ws]
-            print(f"Client disconnected. Total clients: {len(connected_esp_clients)}")
+            if ws in connected_esp_clients.values():
+                connected_esp_clients.pop(data["id"])
+                print(f"Client disconnected. Total clients: {len(connected_esp_clients.keys())}")
+            elif ws in connected_browser_clients.values():
+                connected_browser_clients.pop("unknown")
+
+# TODO: add some code which periodically checks if ESP32s are still connected
 
 @app.route('/change')
 def change():
@@ -280,7 +285,8 @@ def connect():
 
 @app.route('/validate_connect', methods=['POST'])
 def validate_connect():
-    responses = forward_request_to_esp32("validate_connect", id=connected_esp_clients[-1]["id"]) # TODO: fix this hardcoding
+    id = request.args.get("id")
+    responses = forward_request_to_esp32("validate_connect", id=list(connected_esp_clients.keys())[0]) # TODO: fix this hardcoding
     for response in responses:
         if response["response"]["response"] == "already connected":
             message = "One or more ESP32s already connected to Wi-Fi"
