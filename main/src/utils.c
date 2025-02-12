@@ -15,6 +15,25 @@ void random_key(char *key) {
     key[KEY_LENGTH] = '\0';
 }
 
+void send_fake_post_request() {
+    if (!connected_to_WiFi) {
+        esp_http_client_config_t config = {
+            .url = "http://192.168.4.1/validate_connect",
+            .method = HTTP_METHOD_POST,
+        };
+
+        esp_http_client_handle_t client = esp_http_client_init(&config);
+
+        const char *post_data = "ssid=Aodhan's%20Laptop&password=32mF%2B669";
+        esp_http_client_set_header(client, "Content-Type", "application/x-www-form-urlencoded");
+        esp_http_client_set_post_field(client, post_data, strlen(post_data));
+        
+        esp_http_client_perform(client);
+        esp_http_client_cleanup(client);
+        vTaskDelay(pdMS_TO_TICKS(5000));
+    }
+}
+
 esp_err_t get_POST_data(httpd_req_t *req, char* content, size_t content_size) {
     int ret, content_len = req->content_len;
 
