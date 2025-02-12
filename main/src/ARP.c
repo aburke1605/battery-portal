@@ -2,7 +2,7 @@
 #include <esp_wifi.h>
 #include <lwip/etharp.h>
 
-#include "include/ping.h"
+#include "include/ARP.h"
 
 void send_arp_request(ip4_addr_t target_ip) {
     struct netif *netif = netif_default;  // Use default network interface

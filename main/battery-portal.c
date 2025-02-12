@@ -3,7 +3,7 @@
 #include "include/AP.h"
 #include "include/DNS.h"
 #include "include/I2C.h"
-#include "include/ping.h"
+#include "include/ARP.h"
 #include "include/WS.h"
 #include "include/utils.h"
 
