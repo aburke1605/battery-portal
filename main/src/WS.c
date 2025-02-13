@@ -71,10 +71,19 @@ esp_err_t websocket_handler(httpd_req_t *req) {
 
 esp_err_t validate_change_handler(httpd_req_t *req) {
     char content[500];
-    esp_err_t err = get_POST_data(req, content, sizeof(content));
-    if (err != ESP_OK) {
-        ESP_LOGE("WS", "Problem with change POST request");
-        return err;
+    esp_err_t err;
+
+    if (req->user_ctx != NULL) {
+        // request came from a WebSocket
+        strncpy(content, (const char *)req->user_ctx, sizeof(content) - 1);
+        content[sizeof(content) - 1] = '\0';
+    } else{
+        // request is a real HTTP POST
+        err = get_POST_data(req, content, sizeof(content));
+        if (err != ESP_OK) {
+            ESP_LOGE("WS", "Problem with connect POST request");
+            return err;
+        }
     }
 
     // Check if each parameter exists and parse it
@@ -700,7 +709,7 @@ void websocket_event_handler(void *arg, esp_event_base_t event_base, int32_t eve
                 esp_err_t err = ESP_OK;
 
                 if (strcmp(endpoint, "validate_connect") == 0 && strcmp(method, "POST") == 0) {
-                    // Create a mock HTTP request
+                    // create a mock HTTP request
                     cJSON *ssid = cJSON_GetObjectItem(data, "ssid");
                     cJSON *password = cJSON_GetObjectItem(data, "password");
 
@@ -711,7 +720,7 @@ void websocket_event_handler(void *arg, esp_event_base_t event_base, int32_t eve
                     req.content_len = req_len;
                     req.user_ctx = req_content;
 
-                    // Call the validate_connect_handler
+                    // call the validate_connect_handler
                     err = validate_connect_handler(&req);
                     if (err != ESP_OK) {
                         ESP_LOGE("WS", "Error in validate_connect_handler: %d", err);
@@ -720,6 +729,41 @@ void websocket_event_handler(void *arg, esp_event_base_t event_base, int32_t eve
                 }
 
                 else if (strcmp(endpoint, "validate_change") == 0 && strcmp(method, "POST") == 0) {
+                    // create a mock HTTP request
+                    cJSON *BL_voltage_threshold = cJSON_GetObjectItem(data, "BL_voltage_threshold");
+                    cJSON *BH_voltage_threshold = cJSON_GetObjectItem(data, "BH_voltage_threshold");
+                    cJSON *charge_current_threshold = cJSON_GetObjectItem(data, "charge_current_threshold");
+                    cJSON *discharge_current_threshold = cJSON_GetObjectItem(data, "discharge_current_threshold");
+                    cJSON *chg_inhibit_temp_low = cJSON_GetObjectItem(data, "chg_inhibit_temp_low");
+                    cJSON *chg_inhibit_temp_high = cJSON_GetObjectItem(data, "chg_inhibit_temp_high");
+
+                    req_len = snprintf(NULL, 0,
+                        "BL_voltage_threshold=%s&BH_voltage_threshold=%s&charge_current_threshold=%s&discharge_current_threshold=%s&chg_inhibit_temp_low=%s&chg_inhibit_temp_high=%s",
+                        BL_voltage_threshold->valuestring,
+                        BH_voltage_threshold->valuestring,
+                        charge_current_threshold->valuestring,
+                        discharge_current_threshold->valuestring,
+                        chg_inhibit_temp_low->valuestring,
+                        chg_inhibit_temp_high->valuestring);
+                    req_content = malloc(req_len + 1);
+                    snprintf(req_content, req_len + 1,
+                        "BL_voltage_threshold=%s&BH_voltage_threshold=%s&charge_current_threshold=%s&discharge_current_threshold=%s&chg_inhibit_temp_low=%s&chg_inhibit_temp_high=%s",
+                        BL_voltage_threshold->valuestring,
+                        BH_voltage_threshold->valuestring,
+                        charge_current_threshold->valuestring,
+                        discharge_current_threshold->valuestring,
+                        chg_inhibit_temp_low->valuestring,
+                        chg_inhibit_temp_high->valuestring);
+
+                    req.content_len = req_len;
+                    req.user_ctx = req_content;
+
+                    // call the validate_change_handler
+                    err = validate_change_handler(&req);
+                    if (err != ESP_OK) {
+                        ESP_LOGE("WS", "Error in validate_change_handler: %d", err);
+                    }
+                    free(req_content);
                 }
 
 
