@@ -60,14 +60,21 @@ void get_devices_task(void *pvParameters) {
             ip4_addr_t *ip_ret;
             for (size_t i = 0; i < ARP_TABLE_SIZE; i++) {
                 if (etharp_get_entry(i, &ip_ret, &netif_ret, &eth_ret)) {
+                    // skip gateway IP and any in the ESP32's own subnet
                     if (ip4_addr_get_u32(ip_ret) != network_addr + htonl(1) && (ip4_addr_get_u32(ip_ret) & htonl(0xFFFFFF00)) != (ap_ip_info.ip.addr & htonl(0xFFFFFF00))) {
-                        // skip gateway IP and any in the ESP32's own subnet
-                        ESP_LOGI("ARP", "discovered device with IP address " IPSTR, IP2STR(ip_ret));
                         snprintf(successful_ips[successful_ip_count++], sizeof(successful_ips[0]), IPSTR, IP2STR(ip_ret));
+                        bool undiscovered_ip = true;
+                        for (int j = 0; j < old_successful_ip_count; j++) {
+                            if (strcmp(successful_ips[successful_ip_count - 1], old_successful_ips[j]) == 0) {
+                                undiscovered_ip = false;
+                                break;
+                            }
+                        }
+                        if (undiscovered_ip) ESP_LOGI("ARP", "discovered new device with IP address " IPSTR, IP2STR(ip_ret));
                     }
                 }
             }
         }
-        vTaskDelay(pdMS_TO_TICKS(5000));  // Print every 5 seconds
+        vTaskDelay(pdMS_TO_TICKS(1000));
     }
 }
