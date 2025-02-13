@@ -11,8 +11,6 @@ void send_arp_request(ip4_addr_t target_ip) {
         return;
     }
 
-    ESP_LOGI("ARP", "Sending ARP request for: " IPSTR, IP2STR(&target_ip));
-
     err_t res = etharp_request(netif, &target_ip);
     if (res != ERR_OK) {
         ESP_LOGE("ARP", "Failed to send ARP request: %d", res);
