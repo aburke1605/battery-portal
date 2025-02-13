@@ -273,13 +273,12 @@ def change():
 @app.route('/validate_change', methods=['POST'])
 def validate_change():
     forward_request_to_esp32("validate_change", id=list(connected_esp_clients.keys())[0])
-    return redirect("/change")
+    return "", 204
 
 @app.route('/reset', methods=['POST'])
 def reset():
     forward_request_to_esp32("reset", id=list(connected_esp_clients.keys())[0])
-    return redirect("/change")
-
+    return "", 204
 
 @app.route('/connect')
 def connect():
