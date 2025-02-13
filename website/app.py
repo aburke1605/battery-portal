@@ -277,7 +277,8 @@ def validate_change():
 
 @app.route('/reset', methods=['POST'])
 def reset():
-    return forward_request_to_esp32("reset", allow_redirects=False)
+    forward_request_to_esp32("reset", id=list(connected_esp_clients.keys())[0])
+    return redirect("/change")
 
 
 @app.route('/connect')
