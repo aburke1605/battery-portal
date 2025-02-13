@@ -55,7 +55,7 @@ void wifi_scan(void) {
                 digits[k] = '\0'; // Null-terminate the string
                 other_AP_SSIDs[j++] = atoi(digits);
             } else {
-                ESP_LOGW("AP", "AP with SSID: %s contains '%s' but no trailing number", ssid, target_substring);
+                ESP_LOGW("AP", "AP with SSID: '%s' contains '%s' but no trailing number", ssid, target_substring);
             }
         }
     }

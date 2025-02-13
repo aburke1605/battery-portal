@@ -40,6 +40,12 @@ void ping_target(ping_context_t *ping_ctx) {
         .cb_args = ping_ctx, // pass IP tracker to callback
     };
 
+    if (true) {
+        char ESP_IP[16];
+        snprintf(ESP_IP, sizeof(ESP_IP), IPSTR, IP2STR((ip4_addr_t *)&ping_ctx->current_ip));
+        printf("pinging %s\n", ESP_IP);
+    }
+
     esp_ping_handle_t ping;
     if (esp_ping_new_session(&config, &callbacks, &ping) == ESP_OK) {
         esp_ping_start(ping);
@@ -72,10 +78,10 @@ void get_devices_task(void *pvParameters) {
             ping_semaphore = xSemaphoreCreateCounting(MAX_CONCURRENT_PINGS, MAX_CONCURRENT_PINGS);
 
             ping_context_t ping_ctx = {
-                .current_ip = network_addr + htonl(1), // Start with the first usable IP
+                .current_ip = network_addr + htonl(249), // Start with the first usable IP
                 .ip_info = ip_info
             };
-            while (ping_ctx.current_ip < broadcast_addr) {
+            while (ping_ctx.current_ip < broadcast_addr - htonl(5)) {
                 // wait until we can initiate a new ping
                 xSemaphoreTake(ping_semaphore, portMAX_DELAY);
                 ping_target(&ping_ctx);

@@ -5,9 +5,11 @@
 #include <lwip/sockets.h>
 #include <driver/gpio.h>
 
+#include "include/utils.h"
 
 #define CONFIG_MAX_CLIENTS 5
 
+extern char ESP_ID[KEY_LENGTH + 1];
 extern httpd_handle_t server;
 extern int client_sockets[CONFIG_MAX_CLIENTS];
 extern char received_data[1024];
@@ -43,6 +45,8 @@ esp_err_t file_serve_handler(httpd_req_t *req);
 
 httpd_handle_t start_webserver(void);
 
-void web_task(void *pvParameters);
-
 void check_wifi_task(void* pvParameters);
+
+void websocket_event_handler(void *arg, esp_event_base_t event_base, int32_t event_id, void *event_data);
+
+void websocket_task(void *pvParameters);
