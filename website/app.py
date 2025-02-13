@@ -2,10 +2,13 @@
 import os
 import string
 import random
+import json
+from threading import Lock
 
 import requests
+import urllib.parse
 
-from flask import Flask, render_template, request, jsonify, redirect, url_for, abort
+from flask import Flask, Response, render_template, request, jsonify, redirect, url_for, abort
 from flask_sock import Sock
 
 from flask_sqlalchemy import SQLAlchemy
@@ -118,41 +121,52 @@ def subpage():
     return render_template('admin/battery.html')
 
 
-data_store = {
-    "ESP32": {
-        "IP": "xxx.xxx.xxx.xxx"
-    }
-}
-connected_clients = set()  # Keep track of connected WebSocket clients
+connected_esp_clients = dict()
+connected_browser_clients = dict()
+lock = Lock()
 
-def forward_request_to_esp32(endpoint, method="POST", allow_redirects=True):
+def forward_request_to_esp32(endpoint, method="POST", id=None):
     """
-    Generic function to forward requests to the ESP32.
+    Generic function to forward requests to the ESP32 via WebSocket.
     :param endpoint: ESP32 endpoint to forward the request to.
     :param method: HTTP method ("GET", "POST", etc.).
-    :param allow_redirects: Whether to allow redirects from the ESP32.
-    :return: Response from the ESP32.
+    :return: Response from the ESP32 WebSocket.
     """
-    ESP32_URL = f"http://{data_store['ESP32']['IP']}/{endpoint}"
-    try:
-        # Handle GET and POST requests
-        if method == "POST":
-            form_data = request.form.to_dict()  # Collect form data for POST
-            response = requests.post(ESP32_URL, data=form_data, allow_redirects=allow_redirects)
-        elif method == "GET":
-            response = requests.get(ESP32_URL, allow_redirects=allow_redirects)
-        else:
-            return jsonify({'error': 'Unsupported HTTP method'}), 400
 
-        # Handle redirect responses (if any)
-        if response.status_code == 302 and not allow_redirects:
-            redirect_url = response.headers.get("Location", "/")
-            return redirect(redirect_url, code=302)
+    message = {
+        "type": "request",
+        "content": {
+            "endpoint": endpoint,
+            "method": method
+        }
+    }
 
-        # Return the ESP32's response to the client
-        return response.text, response.status_code
-    except requests.exceptions.RequestException as e:
-        return jsonify({'error': f"Failed to communicate with ESP32: {str(e)}"}), 500
+    responses = []
+
+    with lock:
+        target_clients = connected_esp_clients if not id else {id: connected_esp_clients[id]}
+
+        if not target_clients:
+            return 'No matching ESP32 connected', 404
+        for ID, ws in target_clients.items():
+            try:
+                if method == "POST":
+                    message["content"]["data"] = request.form.to_dict()
+                ws.send(json.dumps(message))
+
+                while True:
+                    response = ws.receive()
+                    if response:
+                        response = json.loads(response)
+                        if response["type"] == "response":
+                            responses.append({"id": ID, "response": response["content"]})
+                        break
+
+            except Exception as e:
+                print(f"Error communicating with {ID}: {e}")
+                responses.append({"id": ID, "error": str(e)})
+
+    return responses
 
 @app.route('/')
 def homepage():
@@ -179,38 +193,77 @@ def display():
     print('Request for display page received')
     return render_template('portal/display.html')
 
+@app.route("/alert")
+def alert():
+    return render_template("portal/alert.html")
+
 @sock.route('/ws')
 def websocket(ws):
-    # Add the client to the connected clients set
-    connected_clients.add(ws)
+    global connected_esp_clients, connected_browser_clients
+    metadata = {"ws": ws, "id": "unknown"}
+
+    with lock:
+        connected_browser_clients["unknown"] = ws # assume it's a browser client initially
+
     try:
         while True:
-            # WebSocket server can listen for incoming messages if needed
+            # Receive a message from the client
             message = ws.receive()
+
             if message:
-                print(f"Received from client: {message}")
+                print("\n`websocket` message received:", message)
+                response = {
+                    "type": "response",
+                    "content": {}
+                }
+
+                try:
+                    data = json.loads(message)
+
+                    if data["type"] == "register":
+                        with lock:
+                            metadata["id"] = data["id"]
+                            # move the client to the connected clients set
+                            connected_browser_clients.pop("unknown")
+                            connected_esp_clients[data["id"]] = ws
+                            print(f"Client connected: {ws} with id: {data['id']}.")
+                            print(f"Total clients: {len(connected_esp_clients.keys())}")
+                    else:
+                        with lock:
+                            for id, client in connected_browser_clients.items():
+                                try:
+                                    client.send(json.dumps(data["content"]))
+                                except Exception as e:
+                                    print(f"Error sending to browser: {e}")
+                                    connected_browser_clients.pop("unknown")
+
+                    response["content"]["status"] = "success"
+                    response["content"]["id"] = metadata["id"]
+
+                except json.JSONDecodeError:
+                    response["content"]["status"] = "error"
+                    response["content"]["message"] = "invalid json"
+
+                ws.send(json.dumps(response))
+
+                response["type"] = "echo"
+                response["content"] = message
+                ws.send(json.dumps(response))
+            else:
+                break
+
     except Exception as e:
         print(f"WebSocket error: {e}")
+
     finally:
-        # Clean up when the client disconnects
-        connected_clients.remove(ws)
+        with lock:
+            if ws in connected_esp_clients.values():
+                connected_esp_clients.pop(data["id"])
+                print(f"Client disconnected. Total clients: {len(connected_esp_clients.keys())}")
+            elif ws in connected_browser_clients.values():
+                connected_browser_clients.pop("unknown")
 
-@app.route('/data', methods=['POST'])
-def receive_data():
-    data = request.json
-    if data:
-        data_store["ESP32"] = data
-
-        # Send the data to all connected WebSocket clients
-        for client in connected_clients.copy():
-            try:
-                client.send(jsonify(data).get_data(as_text=True))  # Send as a JSON string
-            except Exception as e:
-                print(f"Error sending data to a client: {e}")
-                connected_clients.remove(client)  # Remove the client if sending fails
-
-        return {"status": "success", "data_received": data}, 200
-    return {"status": "error", "message": "No data received"}, 400
+# TODO: add some code which periodically checks if ESP32s are still connected
 
 @app.route('/change')
 def change():
@@ -234,7 +287,19 @@ def connect():
 
 @app.route('/validate_connect', methods=['POST'])
 def validate_connect():
-    return forward_request_to_esp32("validate_connect")
+    print("\n")
+    id = request.args.get("id")
+    print(f"id: {id}, hardcoded: {list(connected_esp_clients.keys())[0]}")
+    print("\n")
+    responses = forward_request_to_esp32("validate_connect", id=list(connected_esp_clients.keys())[0]) # TODO: fix this hardcoding
+    for response in responses:
+        if response["response"]["response"] == "already connected":
+            message = "One or more ESP32s already connected to Wi-Fi"
+            encoded_message = urllib.parse.quote(message)
+            return redirect(f"/alert?message={encoded_message}")
+
+    return redirect("/display")
+
 
 @app.route('/nearby')
 def nearby():
