@@ -844,7 +844,6 @@ void websocket_task(void *pvParameters) {
             // first send to all connected WebSocket clients
             for (int i = 0; i < CONFIG_MAX_CLIENTS; i++) {
                 if (client_sockets[i] != -1) {
-                    ESP_LOGI("WS", "Attempting to send frame to client %d", client_sockets[i]);
                     /*
                     // Validate WebSocket connection with a PING
                     esp_err_t ping_status = httpd_ws_send_frame_async(server, client_sockets[i], &(httpd_ws_frame_t){
@@ -870,8 +869,6 @@ void websocket_task(void *pvParameters) {
                     if (err != ESP_OK) {
                         ESP_LOGE("WS", "Failed to send frame to client %d: %s", client_sockets[i], esp_err_to_name(err));
                         remove_client(client_sockets[i]);  // Clean up disconnected clients
-                    } else {
-                        ESP_LOGI("WS", "Frame sent to client %d", client_sockets[i]);
                     }
                 }
             }
