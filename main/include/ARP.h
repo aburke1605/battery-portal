@@ -9,6 +9,4 @@ extern char ESP_IP[16];
 
 void send_arp_request(ip4_addr_t target_ip);
 
-void print_arp_table();
-
 void get_devices_task(void *pvParameters);
