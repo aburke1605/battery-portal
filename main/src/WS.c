@@ -691,45 +691,52 @@ void websocket_event_handler(void *arg, esp_event_base_t event_base, int32_t eve
                 const char *endpoint = cJSON_GetObjectItem(content, "endpoint")->valuestring;
                 const char *method = cJSON_GetObjectItem(content, "method")->valuestring;
                 cJSON *data = cJSON_GetObjectItem(content, "data");
+
+                httpd_req_t req = {0};
+                size_t req_len;
+                char *req_content;
+                esp_err_t err = ESP_OK;
+
                 if (strcmp(endpoint, "validate_connect") == 0 && strcmp(method, "POST") == 0) {
                     // Create a mock HTTP request
                     cJSON *ssid = cJSON_GetObjectItem(data, "ssid");
                     cJSON *password = cJSON_GetObjectItem(data, "password");
 
-                    size_t req_len = snprintf(NULL, 0, "ssid=%s&password=%s", ssid->valuestring, password->valuestring);
-                    char *req_content = malloc(req_len + 1);
+                    req_len = snprintf(NULL, 0, "ssid=%s&password=%s", ssid->valuestring, password->valuestring);
+                    req_content = malloc(req_len + 1);
                     snprintf(req_content, req_len + 1, "ssid=%s&password=%s", ssid->valuestring, password->valuestring);
 
-                    httpd_req_t req = {0};
                     req.content_len = req_len;
                     req.user_ctx = req_content;
 
                     // Call the validate_connect_handler
-                    esp_err_t err = validate_connect_handler(&req);
+                    err = validate_connect_handler(&req);
                     if (err != ESP_OK) {
                         ESP_LOGE("WS", "Error in validate_connect_handler: %d", err);
                     }
                     free(req_content);
-
-                    cJSON *response_content = cJSON_CreateObject();
-                    cJSON_AddStringToObject(response_content, "endpoint", endpoint);
-                    cJSON_AddStringToObject(response_content, "status", err == ESP_OK ? "success" : "error");
-                    cJSON_AddNumberToObject(response_content, "error_code", err);
-                    cJSON_AddStringToObject(response_content, "response", req.user_ctx);
-
-                    cJSON *response = cJSON_CreateObject();
-                    cJSON_AddStringToObject(response, "type", "response");
-                    cJSON_AddItemToObject(response, "content", response_content);
-
-                    char *response_str = cJSON_PrintUnformatted(response);
-                    cJSON_Delete(response);
-
-                    esp_err_t send_err = esp_websocket_client_send_text(ws_client, response_str, strlen(response_str), portMAX_DELAY);
-                    if (send_err != ESP_OK) {
-                        ESP_LOGE("WS", "Failed to send WebSocket response: %s (%d)", esp_err_to_name(send_err), send_err);
-                    }
-                    free(response_str);
                 }
+
+
+
+                cJSON *response_content = cJSON_CreateObject();
+                cJSON_AddStringToObject(response_content, "endpoint", endpoint);
+                cJSON_AddStringToObject(response_content, "status", err == ESP_OK ? "success" : "error");
+                cJSON_AddNumberToObject(response_content, "error_code", err);
+                cJSON_AddStringToObject(response_content, "response", req.user_ctx);
+
+                cJSON *response = cJSON_CreateObject();
+                cJSON_AddStringToObject(response, "type", "response");
+                cJSON_AddItemToObject(response, "content", response_content);
+
+                char *response_str = cJSON_PrintUnformatted(response);
+                cJSON_Delete(response);
+
+                esp_err_t send_err = esp_websocket_client_send_text(ws_client, response_str, strlen(response_str), portMAX_DELAY);
+                if (send_err != ESP_OK) {
+                    ESP_LOGE("WS", "Failed to send WebSocket response: %s (%d)", esp_err_to_name(send_err), send_err);
+                }
+                free(response_str);
             }
 
             cJSON_Delete(message);
