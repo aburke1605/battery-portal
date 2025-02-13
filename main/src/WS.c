@@ -161,9 +161,12 @@ esp_err_t validate_change_handler(httpd_req_t *req) {
 esp_err_t reset_handler(httpd_req_t *req) {
     reset_BMS();
 
-    httpd_resp_set_status(req, "302 Found");
-    httpd_resp_set_hdr(req, "Location", "/change"); // redirect to /change
-    httpd_resp_send(req, NULL, 0); // no response body
+    if (req->user_ctx == NULL) {
+        // request is a real HTTP POST
+        httpd_resp_set_status(req, "302 Found");
+        httpd_resp_set_hdr(req, "Location", "/change"); // redirect to /change
+        httpd_resp_send(req, NULL, 0); // no response body
+    }
 
     return ESP_OK;
 }
@@ -766,6 +769,16 @@ void websocket_event_handler(void *arg, esp_event_base_t event_base, int32_t eve
                     free(req_content);
                 }
 
+                else if (strcmp(endpoint, "reset") == 0 && strcmp(method, "POST") == 0) {
+                    req.content_len = 1;
+                    req.user_ctx = ".";
+
+                    // call reset_handler
+                    err = reset_handler(&req);
+                    if (err != ESP_OK) {
+                        ESP_LOGE("WS", "Error in reset_handler: %d", err);
+                    }
+                }
 
                 cJSON *response_content = cJSON_CreateObject();
                 cJSON_AddStringToObject(response_content, "endpoint", endpoint);
