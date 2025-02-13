@@ -680,7 +680,9 @@ void websocket_event_handler(void *arg, esp_event_base_t event_base, int32_t eve
 
             if (strcmp(type, "response") == 0) {
 
-            } else if (strcmp(type, "request") == 0) {
+            }
+
+            else if (strcmp(type, "request") == 0) {
                 cJSON *content = cJSON_GetObjectItem(message, "content");
                 if (!content) {
                     ESP_LOGE("WS", "invalid request content");
@@ -717,6 +719,8 @@ void websocket_event_handler(void *arg, esp_event_base_t event_base, int32_t eve
                     free(req_content);
                 }
 
+                else if (strcmp(endpoint, "validate_change") == 0 && strcmp(method, "POST") == 0) {
+                }
 
 
                 cJSON *response_content = cJSON_CreateObject();
