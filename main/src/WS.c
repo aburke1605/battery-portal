@@ -723,7 +723,7 @@ void websocket_event_handler(void *arg, esp_event_base_t event_base, int32_t eve
                     req.content_len = req_len;
                     req.user_ctx = req_content;
 
-                    // call the validate_connect_handler
+                    // call validate_connect_handler
                     err = validate_connect_handler(&req);
                     if (err != ESP_OK) {
                         ESP_LOGE("WS", "Error in validate_connect_handler: %d", err);
@@ -761,7 +761,7 @@ void websocket_event_handler(void *arg, esp_event_base_t event_base, int32_t eve
                     req.content_len = req_len;
                     req.user_ctx = req_content;
 
-                    // call the validate_change_handler
+                    // call validate_change_handler
                     err = validate_change_handler(&req);
                     if (err != ESP_OK) {
                         ESP_LOGE("WS", "Error in validate_change_handler: %d", err);
