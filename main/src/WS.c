@@ -161,7 +161,7 @@ esp_err_t validate_change_handler(httpd_req_t *req) {
 esp_err_t reset_handler(httpd_req_t *req) {
     reset_BMS();
 
-    if (req->user_ctx == NULL) {
+    if (req->handle) {
         // request is a real HTTP POST
         httpd_resp_set_status(req, "302 Found");
         httpd_resp_set_hdr(req, "Location", "/change"); // redirect to /change
