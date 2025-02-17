@@ -770,9 +770,6 @@ void websocket_event_handler(void *arg, esp_event_base_t event_base, int32_t eve
                 }
 
                 else if (strcmp(endpoint, "reset") == 0 && strcmp(method, "POST") == 0) {
-                    req.content_len = 1;
-                    req.user_ctx = ".";
-
                     // call reset_handler
                     err = reset_handler(&req);
                     if (err != ESP_OK) {
