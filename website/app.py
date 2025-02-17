@@ -211,7 +211,6 @@ def websocket(ws):
             message = ws.receive()
 
             if message:
-                print("\n`websocket` message received:", message)
                 response = {
                     "type": "response",
                     "content": {}
