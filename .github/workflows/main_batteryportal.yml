@@ -7,7 +7,7 @@ name: Build and deploy Python app to Azure Web App - BatteryPortal
 on:
   push:
     branches:
-      - azure_new
+      - main
   workflow_dispatch:
 
 jobs:
