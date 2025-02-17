@@ -5,7 +5,6 @@ import random
 import json
 from threading import Lock
 
-import requests
 import urllib.parse
 
 from flask import Flask, Response, render_template, request, jsonify, redirect, url_for, abort
