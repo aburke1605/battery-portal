@@ -120,13 +120,13 @@ a:hover {
 /************/
 
 .container {
-    max-width: 28rem; /* max-w-md */
+    width: 95%;
+    max-width: 50rem; /* max-w-md */
     margin: 2.5rem auto; /* centre with top margin */
     background-color: white;
     padding: 2rem;
     border-radius: 0.5rem;
     box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1); /* shadow-md */
-    width: 100%;
     text-align: center;
 }
 
