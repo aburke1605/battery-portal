@@ -270,7 +270,31 @@ esp_err_t toggle_handler(httpd_req_t *req) {
     led_on = !led_on;
     gpio_set_level(LED_GPIO_PIN, led_on ? 1 : 0);
     ESP_LOGI("WS", "LED is now %s", led_on ? "ON" : "OFF");
-    httpd_resp_send(req, "LED Toggled", HTTPD_RESP_USE_STRLEN);
+
+    // httpd_resp_send(req, "LED Toggled", HTTPD_RESP_USE_STRLEN);
+    /*
+    *
+    *
+    *
+    *
+    *
+    */
+    char message[] = "LED Toggggggled";
+    char encoded_message[64];
+    url_encode(encoded_message, message, sizeof(encoded_message));
+
+    char redirect_url[128];
+    snprintf(redirect_url, sizeof(redirect_url), "/alert?message=%s", encoded_message);
+    httpd_resp_set_status(req, "302 Found");
+    httpd_resp_set_hdr(req, "Location", redirect_url);
+    httpd_resp_send(req, NULL, 0);
+    /*
+    *
+    *
+    *
+    *
+    *
+    */
     return ESP_OK;
 }
 
@@ -775,6 +799,10 @@ void websocket_event_handler(void *arg, esp_event_base_t event_base, int32_t eve
                     if (err != ESP_OK) {
                         ESP_LOGE("WS", "Error in reset_handler: %d", err);
                     }
+                }
+
+                else if (strcmp(endpoint, "toggle") == 0 && strcmp(method, "GET") == 0) {
+                    printf("here\n");
                 }
 
                 cJSON *response_content = cJSON_CreateObject();
