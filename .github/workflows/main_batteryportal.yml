@@ -72,3 +72,4 @@ jobs:
           app-name: 'BatteryPortal'
           slot-name: 'Production'
           publish-profile: ${{ secrets.AZUREAPPSERVICE_PUBLISHPROFILE_961B555B3A254B308372AF29982CA753 }}
+          package: ./website
