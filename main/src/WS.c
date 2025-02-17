@@ -1,5 +1,6 @@
 #include <esp_wifi.h>
 #include <esp_http_client.h>
+#include <esp_crt_bundle.h>
 
 #include "include/WS.h"
 #include "include/I2C.h"
