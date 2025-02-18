@@ -55,7 +55,6 @@
 <script>
     document.addEventListener('DOMContentLoaded', function() {
         let protocol = (window.location.protocol === 'https:') ? 'wss://' : 'ws://';
-        console.log('protocol: ', protocol);
         let socket = new WebSocket(protocol + location.host + '/ws');
         socket.onopen = function() {
             console.log('WebSocket connection established');
