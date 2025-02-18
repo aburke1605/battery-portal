@@ -6,7 +6,6 @@
 #include "include/I2C.h"
 #include "include/utils.h"
 
-esp_websocket_client_handle_t ws_client;
 
 void add_client(int fd) {
     for (int i = 0; i < CONFIG_MAX_CLIENTS; i++) {
@@ -841,18 +840,38 @@ void websocket_task(void *pvParameters) {
                     .network_timeout_ms = 10000,
                     .crt_bundle_attach = esp_crt_bundle_attach,
                 };
-                if (!esp_websocket_client_is_connected(ws_client)) {
-                    if (ws_client) {
-                        esp_websocket_client_stop(ws_client);
-                        esp_websocket_client_destroy(ws_client);
-                    }
+
+                if (ws_client == NULL) {
                     ws_client = esp_websocket_client_init(&websocket_cfg);
+                    if (ws_client == NULL) {
+                        ESP_LOGE("WS", "Failed to initialize WebSocket client");
+                        vTaskDelay(pdMS_TO_TICKS(1000));
+                        continue;
+                    }
                     esp_websocket_register_events(ws_client, WEBSOCKET_EVENT_ANY, websocket_event_handler, NULL);
-                    esp_websocket_client_start(ws_client);
+                    if (esp_websocket_client_start(ws_client) == ESP_OK) {
+                        ESP_LOGI("WS", "WebSocket connection established");
+                        vTaskDelay(pdMS_TO_TICKS(1000));
+                    } else {
+                        ESP_LOGE("WS", "Failed to start WebSocket client");
+                        esp_websocket_client_destroy(ws_client);
+                        ws_client = NULL;
+                        vTaskDelay(pdMS_TO_TICKS(1000));
+                        continue;
+                    }
+                }
+
+
+                if (!esp_websocket_client_is_connected(ws_client)) {
+                    esp_websocket_client_stop(ws_client);
+                    esp_websocket_client_destroy(ws_client);
+                    ws_client = NULL;
+                    ESP_LOGI("WS", "WebSocket connection lost, attempting to reconnect...");
                 } else {
                     char message[1024];
                     snprintf(message, sizeof(message), "{\"type\": \"data\", \"id\": \"%s\", \"content\": %s}", ESP_ID, json_string);
                     esp_websocket_client_send_text(ws_client, message, strlen(message), portMAX_DELAY);
+                    ESP_LOGI("WS", "Sent: %s", message);
                 }
             }
 
