@@ -1,11 +1,13 @@
 #include <esp_wifi.h>
 #include <esp_http_client.h>
 #include <esp_crt_bundle.h>
+#include <esp_tls.h>
 
 #include "include/WS.h"
 #include "include/I2C.h"
 #include "include/utils.h"
 
+#include "include/ca_cert.h"
 
 void add_client(int fd) {
     for (int i = 0; i < CONFIG_MAX_CLIENTS; i++) {
@@ -835,10 +837,11 @@ void websocket_task(void *pvParameters) {
                 esp_ip4addr_ntoa(&ip_info.ip, ESP_IP, 16);
 
                 const esp_websocket_client_config_t websocket_cfg = {
-                    .uri = "wss://batteryportal-e9czhgamgferavf7.ukwest-01.azurewebsites.net/ws",
+                    .uri = "wss://192.168.137.249:5000/ws",
                     .reconnect_timeout_ms = 10000,
                     .network_timeout_ms = 10000,
-                    .crt_bundle_attach = esp_crt_bundle_attach,
+                    .cert_pem = (const char *)ca_cert_pem,
+                    .skip_cert_common_name_check = true,
                 };
 
                 if (ws_client == NULL) {

@@ -394,5 +394,4 @@ if not os.path.exists(database_path):
 
 
 if __name__ == '__main__':
-    # Start app
-    app.run(debug=True)
+    app.run(debug=True, ssl_context=('cert.pem', 'key.pem'), host="0.0.0.0", port=5000)
