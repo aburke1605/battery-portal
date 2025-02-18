@@ -851,10 +851,7 @@ void websocket_task(void *pvParameters) {
                         continue;
                     }
                     esp_websocket_register_events(ws_client, WEBSOCKET_EVENT_ANY, websocket_event_handler, NULL);
-                    if (esp_websocket_client_start(ws_client) == ESP_OK) {
-                        ESP_LOGI("WS", "WebSocket connection established");
-                        vTaskDelay(pdMS_TO_TICKS(5000));
-                    } else {
+                    if (esp_websocket_client_start(ws_client) != ESP_OK) {
                         ESP_LOGE("WS", "Failed to start WebSocket client");
                         esp_websocket_client_destroy(ws_client);
                         ws_client = NULL;
@@ -863,12 +860,12 @@ void websocket_task(void *pvParameters) {
                     }
                 }
 
+                vTaskDelay(pdMS_TO_TICKS(5000));
 
                 if (!esp_websocket_client_is_connected(ws_client)) {
                     esp_websocket_client_stop(ws_client);
                     esp_websocket_client_destroy(ws_client);
                     ws_client = NULL;
-                    ESP_LOGI("WS", "WebSocket connection lost, attempting to reconnect...");
                 } else {
                     char message[1024];
                     snprintf(message, sizeof(message), "{\"type\": \"data\", \"id\": \"%s\", \"content\": %s}", ESP_ID, json_string);
