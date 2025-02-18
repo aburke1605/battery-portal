@@ -7,7 +7,7 @@
 #include "include/I2C.h"
 #include "include/utils.h"
 
-#include "include/ca_cert.h"
+#include "include/cert.h"
 
 void add_client(int fd) {
     for (int i = 0; i < CONFIG_MAX_CLIENTS; i++) {
@@ -840,8 +840,7 @@ void websocket_task(void *pvParameters) {
                     .uri = "wss://192.168.137.249:5000/ws",
                     .reconnect_timeout_ms = 10000,
                     .network_timeout_ms = 10000,
-                    .cert_pem = (const char *)ca_cert_pem,
-                    .skip_cert_common_name_check = true,
+                    .cert_pem = (const char *)website_cert_pem,
                 };
 
                 if (ws_client == NULL) {
@@ -854,7 +853,7 @@ void websocket_task(void *pvParameters) {
                     esp_websocket_register_events(ws_client, WEBSOCKET_EVENT_ANY, websocket_event_handler, NULL);
                     if (esp_websocket_client_start(ws_client) == ESP_OK) {
                         ESP_LOGI("WS", "WebSocket connection established");
-                        vTaskDelay(pdMS_TO_TICKS(1000));
+                        vTaskDelay(pdMS_TO_TICKS(5000));
                     } else {
                         ESP_LOGE("WS", "Failed to start WebSocket client");
                         esp_websocket_client_destroy(ws_client);

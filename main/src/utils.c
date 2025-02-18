@@ -24,7 +24,7 @@ void send_fake_post_request() {
 
         esp_http_client_handle_t client = esp_http_client_init(&config);
 
-        const char *post_data = "ssid=Aodhan's%20Laptop&password=32mF%2B669";
+        const char *post_data = "ssid=Aodhan's%20Laptop&password=uFft671rRf";
         esp_http_client_set_header(client, "Content-Type", "application/x-www-form-urlencoded");
         esp_http_client_set_post_field(client, post_data, strlen(post_data));
 
