@@ -837,7 +837,7 @@ void websocket_task(void *pvParameters) {
                 esp_ip4addr_ntoa(&ip_info.ip, ESP_IP, 16);
 
                 const esp_websocket_client_config_t websocket_cfg = {
-                    .uri = "wss://192.168.137.249:5000/ws",
+                    .uri = "wss://batteryportal-e9czhgamgferavf7.ukwest-01.azurewebsites.net/ws",
                     .reconnect_timeout_ms = 10000,
                     .network_timeout_ms = 10000,
                     .cert_pem = (const char *)website_cert_pem,
