@@ -20,6 +20,7 @@ extern char old_successful_ips[256][16];
 extern uint8_t successful_ip_count;
 extern uint8_t old_successful_ip_count;
 extern char ESP_IP[16];
+extern esp_websocket_client_handle_t ws_client;
 
 void add_client(int fd);
 
