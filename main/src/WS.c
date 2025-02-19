@@ -631,7 +631,7 @@ httpd_handle_t start_webserver(void) {
 
         httpd_uri_t toggle_uri = {
             .uri = "/toggle",
-            .method = HTTP_GET,
+            .method = HTTP_POST,
             .handler = toggle_handler,
             .user_ctx = NULL
         };
