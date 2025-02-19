@@ -71,10 +71,19 @@ esp_err_t websocket_handler(httpd_req_t *req) {
 
 esp_err_t validate_change_handler(httpd_req_t *req) {
     char content[500];
-    esp_err_t err = get_POST_data(req, content, sizeof(content));
-    if (err != ESP_OK) {
-        ESP_LOGE("WS", "Problem with change POST request");
-        return err;
+    esp_err_t err;
+
+    if (req->user_ctx != NULL) {
+        // request came from a WebSocket
+        strncpy(content, (const char *)req->user_ctx, sizeof(content) - 1);
+        content[sizeof(content) - 1] = '\0';
+    } else{
+        // request is a real HTTP POST
+        err = get_POST_data(req, content, sizeof(content));
+        if (err != ESP_OK) {
+            ESP_LOGE("WS", "Problem with connect POST request");
+            return err;
+        }
     }
 
     // Check if each parameter exists and parse it
@@ -93,7 +102,7 @@ esp_err_t validate_change_handler(httpd_req_t *req) {
         char BL_voltage_threshold[50] = {0};
         sscanf(BL_start, "BL_voltage_threshold=%49[^&]", BL_voltage_threshold);
         if (BL_voltage_threshold[0] != '\0') {
-            ESP_LOGI("I2C", "Changing BL voltage...\n");
+            ESP_LOGI("I2C", "Changing BL voltage...");
             set_I2_value(DISCHARGE_SUBCLASS_ID, BL_OFFSET, atoi(BL_voltage_threshold));
         }
     }
@@ -102,7 +111,7 @@ esp_err_t validate_change_handler(httpd_req_t *req) {
         char BH_voltage_threshold[50] = {0};
         sscanf(BH_start, "BH_voltage_threshold=%49[^&]", BH_voltage_threshold);
         if (BH_voltage_threshold[0] != '\0') {
-            ESP_LOGI("I2C", "Changing BH voltage...\n");
+            ESP_LOGI("I2C", "Changing BH voltage...");
             set_I2_value(DISCHARGE_SUBCLASS_ID, BH_OFFSET, atoi(BH_voltage_threshold));
         }
     }
@@ -111,7 +120,7 @@ esp_err_t validate_change_handler(httpd_req_t *req) {
         char charge_current_threshold[50] = {0};
         sscanf(CCT_start, "charge_current_threshold=%49[^&]", charge_current_threshold);
         if (charge_current_threshold[0] != '\0') {
-            ESP_LOGI("I2C", "Changing charge current threshold...\n");
+            ESP_LOGI("I2C", "Changing charge current threshold...");
             set_I2_value(CURRENT_THRESHOLDS_SUBCLASS_ID, CHG_CURRENT_THRESHOLD_OFFSET, atoi(charge_current_threshold));
         }
     }
@@ -120,7 +129,7 @@ esp_err_t validate_change_handler(httpd_req_t *req) {
         char discharge_current_threshold[50] = {0};
         sscanf(DCT_start, "discharge_current_threshold=%49[^&]", discharge_current_threshold);
         if (discharge_current_threshold[0] != '\0') {
-            ESP_LOGI("I2C", "Changing discharge current threshold...\n");
+            ESP_LOGI("I2C", "Changing discharge current threshold...");
             set_I2_value(CURRENT_THRESHOLDS_SUBCLASS_ID, DSG_CURRENT_THRESHOLD_OFFSET, atoi(discharge_current_threshold));
         }
     }
@@ -129,7 +138,7 @@ esp_err_t validate_change_handler(httpd_req_t *req) {
         char chg_inhibit_temp_low[50] = {0};
         sscanf(CITL_start, "chg_inhibit_temp_low=%49[^&]", chg_inhibit_temp_low);
         if (chg_inhibit_temp_low[0] != '\0') {
-            ESP_LOGI("I2C", "Changing charge inhibit low temperature threshold...\n");
+            ESP_LOGI("I2C", "Changing charge inhibit low temperature threshold...");
             set_I2_value(CHARGE_INHIBIT_CFG_SUBCLASS_ID, CHG_INHIBIT_TEMP_LOW_OFFSET, atoi(chg_inhibit_temp_low));
         }
     }
@@ -138,7 +147,7 @@ esp_err_t validate_change_handler(httpd_req_t *req) {
         char chg_inhibit_temp_high[50] = {0};
         sscanf(CITH_start, "chg_inhibit_temp_high=%49s", chg_inhibit_temp_high);
         if (chg_inhibit_temp_high[0] != '\0') {
-            ESP_LOGI("I2C", "Changing charge inhibit high temperature threshold...\n");
+            ESP_LOGI("I2C", "Changing charge inhibit high temperature threshold...");
             set_I2_value(CHARGE_INHIBIT_CFG_SUBCLASS_ID, CHG_INHIBIT_TEMP_HIGH_OFFSET, atoi(chg_inhibit_temp_high));
         }
     }
@@ -152,9 +161,14 @@ esp_err_t validate_change_handler(httpd_req_t *req) {
 esp_err_t reset_handler(httpd_req_t *req) {
     reset_BMS();
 
-    httpd_resp_set_status(req, "302 Found");
-    httpd_resp_set_hdr(req, "Location", "/change"); // redirect to /change
-    httpd_resp_send(req, NULL, 0); // no response body
+    if (req->handle) {
+        // request is a real HTTP POST
+        httpd_resp_set_status(req, "302 Found");
+        httpd_resp_set_hdr(req, "Location", "/change"); // redirect to /change
+        httpd_resp_send(req, NULL, 0); // no response body
+    } else {
+        req->user_ctx = "success";
+    }
 
     return ESP_OK;
 }
@@ -258,7 +272,20 @@ esp_err_t toggle_handler(httpd_req_t *req) {
     led_on = !led_on;
     gpio_set_level(LED_GPIO_PIN, led_on ? 1 : 0);
     ESP_LOGI("WS", "LED is now %s", led_on ? "ON" : "OFF");
-    httpd_resp_send(req, "LED Toggled", HTTPD_RESP_USE_STRLEN);
+
+    if (req->handle) {
+        char message[] = "LED Toggled";
+        char encoded_message[64];
+        url_encode(encoded_message, message, sizeof(encoded_message));
+
+        char redirect_url[128];
+        snprintf(redirect_url, sizeof(redirect_url), "/alert?message=%s", encoded_message);
+        httpd_resp_set_status(req, "302 Found");
+        httpd_resp_set_hdr(req, "Location", redirect_url);
+        httpd_resp_send(req, NULL, 0);
+    } else {
+        req->user_ctx = "led toggled";
+    }
     return ESP_OK;
 }
 
@@ -595,7 +622,7 @@ httpd_handle_t start_webserver(void) {
 
         httpd_uri_t toggle_uri = {
             .uri = "/toggle",
-            .method = HTTP_GET,
+            .method = HTTP_POST,
             .handler = toggle_handler,
             .user_ctx = NULL
         };
@@ -680,7 +707,9 @@ void websocket_event_handler(void *arg, esp_event_base_t event_base, int32_t eve
 
             if (strcmp(type, "response") == 0) {
 
-            } else if (strcmp(type, "request") == 0) {
+            }
+
+            else if (strcmp(type, "request") == 0) {
                 cJSON *content = cJSON_GetObjectItem(message, "content");
                 if (!content) {
                     ESP_LOGE("WS", "invalid request content");
@@ -691,45 +720,105 @@ void websocket_event_handler(void *arg, esp_event_base_t event_base, int32_t eve
                 const char *endpoint = cJSON_GetObjectItem(content, "endpoint")->valuestring;
                 const char *method = cJSON_GetObjectItem(content, "method")->valuestring;
                 cJSON *data = cJSON_GetObjectItem(content, "data");
+
+                httpd_req_t req = {0};
+                size_t req_len;
+                char *req_content;
+                esp_err_t err = ESP_OK;
+
                 if (strcmp(endpoint, "validate_connect") == 0 && strcmp(method, "POST") == 0) {
-                    // Create a mock HTTP request
+                    // create a mock HTTP request
                     cJSON *ssid = cJSON_GetObjectItem(data, "ssid");
                     cJSON *password = cJSON_GetObjectItem(data, "password");
 
-                    size_t req_len = snprintf(NULL, 0, "ssid=%s&password=%s", ssid->valuestring, password->valuestring);
-                    char *req_content = malloc(req_len + 1);
+                    req_len = snprintf(NULL, 0, "ssid=%s&password=%s", ssid->valuestring, password->valuestring);
+                    req_content = malloc(req_len + 1);
                     snprintf(req_content, req_len + 1, "ssid=%s&password=%s", ssid->valuestring, password->valuestring);
 
-                    httpd_req_t req = {0};
                     req.content_len = req_len;
                     req.user_ctx = req_content;
 
-                    // Call the validate_connect_handler
-                    esp_err_t err = validate_connect_handler(&req);
+                    // call validate_connect_handler
+                    err = validate_connect_handler(&req);
                     if (err != ESP_OK) {
                         ESP_LOGE("WS", "Error in validate_connect_handler: %d", err);
                     }
                     free(req_content);
-
-                    cJSON *response_content = cJSON_CreateObject();
-                    cJSON_AddStringToObject(response_content, "endpoint", endpoint);
-                    cJSON_AddStringToObject(response_content, "status", err == ESP_OK ? "success" : "error");
-                    cJSON_AddNumberToObject(response_content, "error_code", err);
-                    cJSON_AddStringToObject(response_content, "response", req.user_ctx);
-
-                    cJSON *response = cJSON_CreateObject();
-                    cJSON_AddStringToObject(response, "type", "response");
-                    cJSON_AddItemToObject(response, "content", response_content);
-
-                    char *response_str = cJSON_PrintUnformatted(response);
-                    cJSON_Delete(response);
-
-                    esp_err_t send_err = esp_websocket_client_send_text(ws_client, response_str, strlen(response_str), portMAX_DELAY);
-                    if (send_err != ESP_OK) {
-                        ESP_LOGE("WS", "Failed to send WebSocket response: %s (%d)", esp_err_to_name(send_err), send_err);
-                    }
-                    free(response_str);
                 }
+
+                else if (strcmp(endpoint, "validate_change") == 0 && strcmp(method, "POST") == 0) {
+                    // create a mock HTTP request
+                    cJSON *BL_voltage_threshold = cJSON_GetObjectItem(data, "BL_voltage_threshold");
+                    cJSON *BH_voltage_threshold = cJSON_GetObjectItem(data, "BH_voltage_threshold");
+                    cJSON *charge_current_threshold = cJSON_GetObjectItem(data, "charge_current_threshold");
+                    cJSON *discharge_current_threshold = cJSON_GetObjectItem(data, "discharge_current_threshold");
+                    cJSON *chg_inhibit_temp_low = cJSON_GetObjectItem(data, "chg_inhibit_temp_low");
+                    cJSON *chg_inhibit_temp_high = cJSON_GetObjectItem(data, "chg_inhibit_temp_high");
+
+                    req_len = snprintf(NULL, 0,
+                        "BL_voltage_threshold=%s&BH_voltage_threshold=%s&charge_current_threshold=%s&discharge_current_threshold=%s&chg_inhibit_temp_low=%s&chg_inhibit_temp_high=%s",
+                        BL_voltage_threshold->valuestring,
+                        BH_voltage_threshold->valuestring,
+                        charge_current_threshold->valuestring,
+                        discharge_current_threshold->valuestring,
+                        chg_inhibit_temp_low->valuestring,
+                        chg_inhibit_temp_high->valuestring);
+                    req_content = malloc(req_len + 1);
+                    snprintf(req_content, req_len + 1,
+                        "BL_voltage_threshold=%s&BH_voltage_threshold=%s&charge_current_threshold=%s&discharge_current_threshold=%s&chg_inhibit_temp_low=%s&chg_inhibit_temp_high=%s",
+                        BL_voltage_threshold->valuestring,
+                        BH_voltage_threshold->valuestring,
+                        charge_current_threshold->valuestring,
+                        discharge_current_threshold->valuestring,
+                        chg_inhibit_temp_low->valuestring,
+                        chg_inhibit_temp_high->valuestring);
+
+                    req.content_len = req_len;
+                    req.user_ctx = req_content;
+
+                    // call validate_change_handler
+                    err = validate_change_handler(&req);
+                    if (err != ESP_OK) {
+                        ESP_LOGE("WS", "Error in validate_change_handler: %d", err);
+                    }
+                    free(req_content);
+                }
+
+                else if (strcmp(endpoint, "reset") == 0 && strcmp(method, "POST") == 0) {
+                    // call reset_handler
+                    err = reset_handler(&req);
+                    if (err != ESP_OK) {
+                        ESP_LOGE("WS", "Error in reset_handler: %d", err);
+                    }
+                }
+
+                else if (strcmp(endpoint, "toggle") == 0 && strcmp(method, "POST") == 0) {
+                    // call toggle_handler
+                    err = toggle_handler(&req);
+                    if (err != ESP_OK) {
+                        ESP_LOGE("WS", "Error in toggle_handler: %d", err);
+                    }
+                }
+
+                cJSON *response_content = cJSON_CreateObject();
+                cJSON_AddStringToObject(response_content, "endpoint", endpoint);
+                cJSON_AddStringToObject(response_content, "status", err == ESP_OK ? "success" : "error");
+                cJSON_AddNumberToObject(response_content, "error_code", err);
+                cJSON_AddStringToObject(response_content, "response", req.user_ctx);
+
+                cJSON *response = cJSON_CreateObject();
+                cJSON_AddStringToObject(response, "type", "response");
+                cJSON_AddItemToObject(response, "content", response_content);
+
+                char *response_str = cJSON_PrintUnformatted(response);
+                cJSON_Delete(response);
+
+                esp_err_t send_err = esp_websocket_client_send_text(ws_client, response_str, strlen(response_str), portMAX_DELAY);
+                if (send_err != ESP_OK) {
+                    ESP_LOGE("WS", "Failed to send WebSocket response: %s (%d)", esp_err_to_name(send_err), send_err);
+                    // TODO : check and fix this error when all recent pull requests are merged
+                }
+                free(response_str);
             }
 
             cJSON_Delete(message);
@@ -789,7 +878,6 @@ void websocket_task(void *pvParameters) {
             // first send to all connected WebSocket clients
             for (int i = 0; i < CONFIG_MAX_CLIENTS; i++) {
                 if (client_sockets[i] != -1) {
-                    ESP_LOGI("WS", "Attempting to send frame to client %d", client_sockets[i]);
                     /*
                     // Validate WebSocket connection with a PING
                     esp_err_t ping_status = httpd_ws_send_frame_async(server, client_sockets[i], &(httpd_ws_frame_t){
@@ -815,8 +903,6 @@ void websocket_task(void *pvParameters) {
                     if (err != ESP_OK) {
                         ESP_LOGE("WS", "Failed to send frame to client %d: %s", client_sockets[i], esp_err_to_name(err));
                         remove_client(client_sockets[i]);  // Clean up disconnected clients
-                    } else {
-                        ESP_LOGI("WS", "Frame sent to client %d", client_sockets[i]);
                     }
                 }
             }
