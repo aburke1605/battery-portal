@@ -1,6 +1,5 @@
 ## IDF Component Manager Manifest File
 dependencies:
-  espressif/esp-cryptoauthlib: "*"
   espressif/esp_websocket_client: "*"
   ## Required IDF version
   idf:
