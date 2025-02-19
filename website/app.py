@@ -196,6 +196,13 @@ def display():
 def alert():
     return render_template("portal/alert.html")
 
+@app.route("/purge")
+def purge():
+    global connected_esp_clients
+    connected_esp_clients = dict()
+
+    return "", 204
+
 @sock.route('/ws')
 def websocket(ws):
     global connected_esp_clients, connected_browser_clients
