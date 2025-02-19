@@ -670,6 +670,31 @@ void check_wifi_task(void* pvParameters) {
     }
 }
 
+void send_ws_message(const char *message) {
+    if (xQueueSend(ws_queue, message, portMAX_DELAY) != pdPASS) {
+        ESP_LOGE("WS", "WebSocket queue full! Dropping message: %s", message);
+    }
+}
+
+void message_queue_task(void *pvParameters) {
+    char message[WS_MESSAGE_MAX_LEN];
+
+    while (true) {
+        if (xQueueReceive(ws_queue, message, portMAX_DELAY) == pdPASS) {
+            if (esp_websocket_client_is_connected(ws_client)) {
+                esp_err_t err = esp_websocket_client_send_text(ws_client, message, strlen(message), portMAX_DELAY);
+                if (err != ESP_OK) {
+                    ESP_LOGE("WS", "Failed to send WebSocket message: %s (%#x)", esp_err_to_name(err), err);
+                } else {
+                    ESP_LOGI("WS", "Sent: %s", message);
+                }
+            } else {
+                ESP_LOGW("WS", "WebSocket not connected, dropping message: %s", message);
+            }
+        }
+    }
+}
+
 void websocket_event_handler(void *arg, esp_event_base_t event_base, int32_t event_id, void *event_data) {
     esp_websocket_event_data_t *ws_event_data = (esp_websocket_event_data_t *)event_data;
 
@@ -678,7 +703,7 @@ void websocket_event_handler(void *arg, esp_event_base_t event_base, int32_t eve
             // ESP_LOGI("WS", "WebSocket connected");
             char websocket_connect_message[128];
             snprintf(websocket_connect_message, sizeof(websocket_connect_message), "{\"type\": \"register\", \"id\": \"%s\"}", ESP_ID);
-            esp_websocket_client_send_text(ws_client, websocket_connect_message, strlen(websocket_connect_message), portMAX_DELAY);
+            send_ws_message(websocket_connect_message);
             break;
 
         case WEBSOCKET_EVENT_DISCONNECTED:
@@ -813,11 +838,8 @@ void websocket_event_handler(void *arg, esp_event_base_t event_base, int32_t eve
                 char *response_str = cJSON_PrintUnformatted(response);
                 cJSON_Delete(response);
 
-                esp_err_t send_err = esp_websocket_client_send_text(ws_client, response_str, strlen(response_str), portMAX_DELAY);
-                if (send_err != ESP_OK) {
-                    ESP_LOGE("WS", "Failed to send WebSocket response: %s (%#x)", esp_err_to_name(send_err), send_err);
-                    // TODO : check and fix this error when all recent pull requests are merged
-                }
+                send_ws_message(response_str);
+
                 free(response_str);
             }
 
@@ -953,8 +975,7 @@ void websocket_task(void *pvParameters) {
                 } else {
                     char message[1024];
                     snprintf(message, sizeof(message), "{\"type\": \"data\", \"id\": \"%s\", \"content\": %s}", ESP_ID, json_string);
-                    esp_websocket_client_send_text(ws_client, message, strlen(message), portMAX_DELAY);
-                    ESP_LOGI("WS", "Sent: %s", message);
+                    send_ws_message(message);
                 }
             }
 

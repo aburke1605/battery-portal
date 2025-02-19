@@ -1,5 +1,6 @@
 #include <esp_spiffs.h>
 
+#include "include/config.h"
 #include "include/AP.h"
 #include "include/DNS.h"
 #include "include/I2C.h"
@@ -20,7 +21,9 @@ char old_successful_ips[256][16];
 uint8_t successful_ip_count = 0;
 uint8_t old_successful_ip_count = 0;
 char ESP_IP[16] = "xxx.xxx.xxx.xxx\0";
+
 esp_websocket_client_handle_t ws_client = NULL;
+QueueHandle_t ws_queue;
 
 void app_main(void) {
     random_key(ESP_ID);
@@ -86,6 +89,9 @@ void app_main(void) {
 
     esp_log_level_set("wifi", ESP_LOG_ERROR);
     xTaskCreate(&check_wifi_task, "check_wifi_task", 4096, NULL, 5, NULL);
+
+    ws_queue = xQueueCreate(WS_QUEUE_SIZE, WS_MESSAGE_MAX_LEN);
+    xTaskCreate(message_queue_task, "message_queue_task", 4096, NULL, 5, NULL);
 
     esp_log_level_set("websocket_client", ESP_LOG_WARN);
     esp_log_level_set("transport_ws", ESP_LOG_WARN);
