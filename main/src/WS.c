@@ -166,6 +166,8 @@ esp_err_t reset_handler(httpd_req_t *req) {
         httpd_resp_set_status(req, "302 Found");
         httpd_resp_set_hdr(req, "Location", "/change"); // redirect to /change
         httpd_resp_send(req, NULL, 0); // no response body
+    } else {
+        req->user_ctx = "success";
     }
 
     return ESP_OK;
@@ -281,6 +283,8 @@ esp_err_t toggle_handler(httpd_req_t *req) {
         httpd_resp_set_status(req, "302 Found");
         httpd_resp_set_hdr(req, "Location", redirect_url);
         httpd_resp_send(req, NULL, 0);
+    } else {
+        req->user_ctx = "led toggled";
     }
     return ESP_OK;
 }
