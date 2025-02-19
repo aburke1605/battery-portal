@@ -4,6 +4,7 @@
 #include <esp_http_client.h>
 
 extern bool connected_to_WiFi;
+extern char ESP_subnet_IP[15];
 
 #define KEY_LENGTH 16
 void random_key(char *key);

@@ -136,17 +136,16 @@ void wifi_init(void) {
 
     // manually set the netmask and gateway as something different from first ESP
     ESP_ERROR_CHECK(esp_netif_dhcps_stop(ap_netif));
-    char IP_buffer[15];
-    snprintf(IP_buffer, sizeof(IP_buffer), "192.168.%u.1", 4 + (SSID_number-1));
+    snprintf(ESP_subnet_IP, sizeof(ESP_subnet_IP), "192.168.%u.1", 4 + (SSID_number-1));
     esp_ip4_addr_t ip_info = {
-        .addr = esp_ip4addr_aton(IP_buffer),
+        .addr = esp_ip4addr_aton(ESP_subnet_IP),
     };
     esp_ip4_addr_t netmask = {
         .addr = esp_ip4addr_aton("255.255.255.0"),
     };
 
     esp_ip4_addr_t gateway = {
-        .addr = esp_ip4addr_aton(IP_buffer),
+        .addr = esp_ip4addr_aton(ESP_subnet_IP),
     };
     esp_netif_ip_info_t ip_info_struct;
     ip_info_struct.ip = ip_info;
@@ -154,7 +153,7 @@ void wifi_init(void) {
     ip_info_struct.gw = gateway;
     ESP_ERROR_CHECK(esp_netif_set_ip_info(ap_netif, &ip_info_struct));
     ESP_ERROR_CHECK(esp_netif_dhcps_start(ap_netif));
-    ESP_LOGI("AP", "AP initialized with IP: %s", IP_buffer);
+    ESP_LOGI("AP", "AP initialized with IP: %s", ESP_subnet_IP);
 
     ESP_LOGI("AP", "Starting WiFi AP... SSID: %s, Password: %s", WIFI_SSID, WIFI_PASS);
     ESP_ERROR_CHECK(esp_wifi_start());
