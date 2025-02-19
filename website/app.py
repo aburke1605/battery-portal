@@ -211,7 +211,6 @@ def websocket(ws):
             message = ws.receive()
 
             if message:
-                print("\n`websocket` message received:", message)
                 response = {
                     "type": "response",
                     "content": {}
@@ -272,12 +271,17 @@ def change():
 
 @app.route('/validate_change', methods=['POST'])
 def validate_change():
-    return forward_request_to_esp32("validate_change")
+    forward_request_to_esp32("validate_change", id=list(connected_esp_clients.keys())[0])
+    return "", 204
 
 @app.route('/reset', methods=['POST'])
 def reset():
-    return forward_request_to_esp32("reset", allow_redirects=False)
-
+    id = request.args.get("id")
+    responses = forward_request_to_esp32("reset", id=list(connected_esp_clients.keys())[0])
+    for response in responses:
+        if response["response"]["response"] == "success":
+            return redirect("/change")
+    return "", 204
 
 @app.route('/connect')
 def connect():
@@ -316,9 +320,16 @@ def device():
     print('Request for device page received')
     return render_template('portal/device.html')
 
-@app.route('/toggle', methods=['GET'])
+@app.route('/toggle', methods=['POST'])
 def toggle():
-    return forward_request_to_esp32("toggle", method="GET")
+    id = request.args.get("id")
+    responses = forward_request_to_esp32("toggle", id=list(connected_esp_clients.keys())[0])
+    for response in responses:
+        if response["response"]["response"] == "led toggled":
+            message = "One or more ESP32 LEDs toggled"
+            encoded_message = urllib.parse.quote(message)
+            return redirect(f"/alert?message={encoded_message}")
+    return "", 204
 
 
 # Create admin
