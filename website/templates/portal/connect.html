@@ -9,16 +9,22 @@
 
 <body>
     <div class='container'>
-        <h2>WiFi router connection</h2>
-        <form action='/validate_connect?id=None' method='post'>
-            <label>SSID: </label>
-            <input type='text' placeholder='Enter SSID' name='ssid' required>
+        <div class='section'>
+            <h2>WiFi router connection</h2>
+            <form action='/validate_connect?id=None' method='post'>
+                <label>SSID: </label>
+                <input type='text' placeholder='Enter SSID' name='ssid' required>
 
-            <label>Password: </label>
-            <input type='password' placeholder='Enter Password' name='password' required>
+                <label>Password: </label>
+                <input type='password' placeholder='Enter Password' name='password' required>
 
-            <button type='submit'>Connect</button>
-        </form>
+                <button type='submit'>Connect</button>
+            </form>
+        </div>
+
+        <div class='section'>
+            <button onclick="location.href='eduroam'">Connect to eduroam</button>
+        </div>
     </div>
 </body>
 </html>
