@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html lang='en'>
+<head>
+    <meta charset='UTF-8'>
+    <meta name='viewport' content='width=device-width, initial-scale=1.0'>
+    <title>{% block title %}{% endblock %}</title>
+    <link rel='stylesheet' type='text/css' href='/static/portal/style.css'>
+</head>
+
+<body>
+    <div class="overlay" id="overlay">Loading...</div>
+
+    {% block content %}{% endblock %}
+
+    <script>
+        let protocol = (window.location.protocol === 'https:') ? 'wss://' : 'ws://';
+        let monitoring_socket = new WebSocket(protocol + window.location.host + "/monitor");
+        monitoring_socket.onmessage = function(event) {
+            document.getElementById('overlay').innerText = event.data;
+        };
+    </script>
+    {% block script %}{% endblock %}
+</body>
+</html>
