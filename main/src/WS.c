@@ -764,7 +764,7 @@ void websocket_event_handler(void *arg, esp_event_base_t event_base, int32_t eve
                     free(req_content);
                 }
 
-                else if (strcmp(endpoint, "validate_change") == 0 && strcmp(method, "POST") == 0) {
+                else if (strcmp(endpoint, "/validate_change") == 0 && strcmp(method, "POST") == 0) {
                     // create a mock HTTP request
                     cJSON *BL_voltage_threshold = cJSON_GetObjectItem(data, "BL_voltage_threshold");
                     cJSON *BH_voltage_threshold = cJSON_GetObjectItem(data, "BH_voltage_threshold");
@@ -802,7 +802,7 @@ void websocket_event_handler(void *arg, esp_event_base_t event_base, int32_t eve
                     free(req_content);
                 }
 
-                else if (strcmp(endpoint, "reset") == 0 && strcmp(method, "POST") == 0) {
+                else if (strcmp(endpoint, "/reset") == 0 && strcmp(method, "POST") == 0) {
                     // call reset_handler
                     err = reset_handler(&req);
                     if (err != ESP_OK) {
@@ -810,7 +810,7 @@ void websocket_event_handler(void *arg, esp_event_base_t event_base, int32_t eve
                     }
                 }
 
-                else if (strcmp(endpoint, "toggle") == 0 && strcmp(method, "POST") == 0) {
+                else if (strcmp(endpoint, "/toggle") == 0 && strcmp(method, "POST") == 0) {
                     // call toggle_handler
                     err = toggle_handler(&req);
                     if (err != ESP_OK) {
