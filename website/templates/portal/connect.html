@@ -1,13 +1,10 @@
-<!DOCTYPE html>
-<html lang='en'>
-<head>
-    <meta charset='UTF-8'>
-    <meta name='viewport' content='width=device-width, initial-scale=1.0'>
-    <title> Connect to WiFi </title>
-    <link rel='stylesheet' type='text/css' href='/static/portal/style.css'>
-</head>
+{% extends "portal/base.html" %}
 
-<body>
+
+{% block title %} Connect to WiFi {% endblock %}
+
+
+{% block content %}
     <div class='container'>
         <div class='section'>
             <h2>WiFi router connection</h2>
@@ -26,5 +23,4 @@
             <button onclick="location.href='eduroam'">Connect to eduroam</button>
         </div>
     </div>
-</body>
-</html>
+{% endblock %}
