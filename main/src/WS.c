@@ -1,5 +1,6 @@
 #include <esp_wifi.h>
 #include <esp_http_client.h>
+#include <esp_eap_client.h>
 
 #include "include/WS.h"
 #include "include/I2C.h"
@@ -201,12 +202,24 @@ esp_err_t validate_connect_handler(httpd_req_t *req) {
     int tries = 0;
     int max_tries = 10;
 
-    if (!connected_to_WiFi) {
+    if (!connected_to_WiFi || reconnect) {
+        if (reconnect) {
+            connected_to_WiFi = false;
+        }
+
         wifi_config_t *wifi_sta_config = malloc(sizeof(wifi_config_t));
         memset(wifi_sta_config, 0, sizeof(wifi_config_t));
 
-        strncpy((char *)wifi_sta_config->sta.ssid, ssid, sizeof(wifi_sta_config->sta.ssid) - 1);
-        strncpy((char *)wifi_sta_config->sta.password, password, sizeof(wifi_sta_config->sta.password) - 1);
+        if (strcmp(req->uri, "/validate_connect?id=eduroam") == 0) {
+            strncpy((char *)wifi_sta_config->sta.ssid, "eduroam", 8);
+
+            esp_wifi_sta_enterprise_enable();
+            esp_eap_client_set_username((uint8_t *)ssid, strlen(ssid));
+            esp_eap_client_set_password((uint8_t *)password, strlen(password));
+        } else {
+            strncpy((char *)wifi_sta_config->sta.ssid, ssid, sizeof(wifi_sta_config->sta.ssid) - 1);
+            strncpy((char *)wifi_sta_config->sta.password, password, sizeof(wifi_sta_config->sta.password) - 1);
+        }
 
         ESP_ERROR_CHECK(esp_wifi_set_config(ESP_IF_WIFI_STA, wifi_sta_config));
 
@@ -584,6 +597,15 @@ httpd_handle_t start_webserver(void) {
         };
         httpd_register_uri_handler(server, &connect_uri);
 
+        // Eduroam page
+        httpd_uri_t eduroam_uri = {
+            .uri       = "/eduroam",
+            .method    = HTTP_GET,
+            .handler   = file_serve_handler,
+            .user_ctx  = "/templates/eduroam.html"
+        };
+        httpd_register_uri_handler(server, &eduroam_uri);
+
         // Validate connect
         httpd_uri_t validate_connect_uri = {
             .uri       = "/validate_connect",
@@ -751,7 +773,8 @@ void websocket_event_handler(void *arg, esp_event_base_t event_base, int32_t eve
                 char *req_content;
                 esp_err_t err = ESP_OK;
 
-                if (strcmp(endpoint, "validate_connect") == 0 && strcmp(method, "POST") == 0) {
+                if ((strcmp(endpoint, "/validate_connect") == 0 || strcmp(endpoint, "/validate_connect?id=eduroam") == 0) && strcmp(method, "POST") == 0) {
+                    reconnect = true;
                     // create a mock HTTP request
                     cJSON *ssid = cJSON_GetObjectItem(data, "ssid");
                     cJSON *password = cJSON_GetObjectItem(data, "password");
@@ -763,6 +786,8 @@ void websocket_event_handler(void *arg, esp_event_base_t event_base, int32_t eve
                     req.content_len = req_len;
                     req.user_ctx = req_content;
 
+                    strncpy(req.uri, endpoint, HTTPD_MAX_URI_LEN);
+
                     // call validate_connect_handler
                     err = validate_connect_handler(&req);
                     if (err != ESP_OK) {
@@ -771,7 +796,7 @@ void websocket_event_handler(void *arg, esp_event_base_t event_base, int32_t eve
                     free(req_content);
                 }
 
-                else if (strcmp(endpoint, "validate_change") == 0 && strcmp(method, "POST") == 0) {
+                else if (strcmp(endpoint, "/validate_change") == 0 && strcmp(method, "POST") == 0) {
                     // create a mock HTTP request
                     cJSON *BL_voltage_threshold = cJSON_GetObjectItem(data, "BL_voltage_threshold");
                     cJSON *BH_voltage_threshold = cJSON_GetObjectItem(data, "BH_voltage_threshold");
@@ -809,7 +834,7 @@ void websocket_event_handler(void *arg, esp_event_base_t event_base, int32_t eve
                     free(req_content);
                 }
 
-                else if (strcmp(endpoint, "reset") == 0 && strcmp(method, "POST") == 0) {
+                else if (strcmp(endpoint, "/reset") == 0 && strcmp(method, "POST") == 0) {
                     // call reset_handler
                     err = reset_handler(&req);
                     if (err != ESP_OK) {
@@ -817,7 +842,7 @@ void websocket_event_handler(void *arg, esp_event_base_t event_base, int32_t eve
                     }
                 }
 
-                else if (strcmp(endpoint, "toggle") == 0 && strcmp(method, "POST") == 0) {
+                else if (strcmp(endpoint, "/toggle") == 0 && strcmp(method, "POST") == 0) {
                     // call toggle_handler
                     err = toggle_handler(&req);
                     if (err != ESP_OK) {

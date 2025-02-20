@@ -49,3 +49,20 @@ config TEMPERATURE_REG
       Set the register address for the BMS to read the battery temperature.
 
 endmenu
+
+
+menu "[CUSTOM] Eduroam Configuration"
+
+config EDUROAM_USERNAME
+    string "Username"
+    default USERNAME
+    help
+      University account username (without @liverpool.ac.uk).
+
+config EDUROAM_PASSWORD
+    string "Password"
+    default PASSWORD
+    help
+      University account password.
+
+endmenu
