@@ -222,6 +222,7 @@ esp_err_t validate_connect_handler(httpd_req_t *req) {
         }
 
         ESP_ERROR_CHECK(esp_wifi_set_config(ESP_IF_WIFI_STA, wifi_sta_config));
+        // TODO: if reconnecting, it doesn't actually seem to drop the old connection in favour of the new one
 
         ESP_LOGI("AP", "Connecting to AP... SSID: %s", wifi_sta_config->sta.ssid);
 
