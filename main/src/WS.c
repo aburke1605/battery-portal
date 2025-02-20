@@ -585,6 +585,15 @@ httpd_handle_t start_webserver(void) {
         };
         httpd_register_uri_handler(server, &connect_uri);
 
+        // Eduroam page
+        httpd_uri_t eduroam_uri = {
+            .uri       = "/eduroam",
+            .method    = HTTP_GET,
+            .handler   = file_serve_handler,
+            .user_ctx  = "/templates/eduroam.html"
+        };
+        httpd_register_uri_handler(server, &eduroam_uri);
+
         // Validate connect
         httpd_uri_t validate_connect_uri = {
             .uri       = "/validate_connect",
