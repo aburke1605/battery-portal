@@ -202,7 +202,11 @@ esp_err_t validate_connect_handler(httpd_req_t *req) {
     int tries = 0;
     int max_tries = 10;
 
-    if (!connected_to_WiFi) {
+    if (!connected_to_WiFi || reconnect) {
+        if (reconnect) {
+            connected_to_WiFi = false;
+        }
+
         wifi_config_t *wifi_sta_config = malloc(sizeof(wifi_config_t));
         memset(wifi_sta_config, 0, sizeof(wifi_config_t));
 
@@ -744,7 +748,8 @@ void websocket_event_handler(void *arg, esp_event_base_t event_base, int32_t eve
                 char *req_content;
                 esp_err_t err = ESP_OK;
 
-                if (strcmp(endpoint, "validate_connect") == 0 && strcmp(method, "POST") == 0) {
+                if ((strcmp(endpoint, "/validate_connect") == 0 || strcmp(endpoint, "/validate_connect?id=eduroam") == 0) && strcmp(method, "POST") == 0) {
+                    reconnect = true;
                     // create a mock HTTP request
                     cJSON *ssid = cJSON_GetObjectItem(data, "ssid");
                     cJSON *password = cJSON_GetObjectItem(data, "password");
@@ -755,6 +760,8 @@ void websocket_event_handler(void *arg, esp_event_base_t event_base, int32_t eve
 
                     req.content_len = req_len;
                     req.user_ctx = req_content;
+
+                    strncpy(req.uri, endpoint, HTTPD_MAX_URI_LEN);
 
                     // call validate_connect_handler
                     err = validate_connect_handler(&req);
