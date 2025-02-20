@@ -287,6 +287,11 @@ def connect():
     print('Request for connect page received')
     return render_template('portal/connect.html')
 
+@app.route('/eduroam')
+def eduroam():
+    print('Request for eduroam page received')
+    return render_template('portal/eduroam.html')
+
 @app.route('/validate_connect', methods=['POST'])
 def validate_connect():
     print("\n")
