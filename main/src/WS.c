@@ -206,8 +206,16 @@ esp_err_t validate_connect_handler(httpd_req_t *req) {
         wifi_config_t *wifi_sta_config = malloc(sizeof(wifi_config_t));
         memset(wifi_sta_config, 0, sizeof(wifi_config_t));
 
-        strncpy((char *)wifi_sta_config->sta.ssid, ssid, sizeof(wifi_sta_config->sta.ssid) - 1);
-        strncpy((char *)wifi_sta_config->sta.password, password, sizeof(wifi_sta_config->sta.password) - 1);
+        if (strcmp(req->uri, "/validate_connect?id=eduroam") == 0) {
+            strncpy((char *)wifi_sta_config->sta.ssid, "eduroam", 8);
+
+            esp_wifi_sta_enterprise_enable();
+            esp_eap_client_set_username((uint8_t *)ssid, strlen(ssid));
+            esp_eap_client_set_password((uint8_t *)password, strlen(password));
+        } else {
+            strncpy((char *)wifi_sta_config->sta.ssid, ssid, sizeof(wifi_sta_config->sta.ssid) - 1);
+            strncpy((char *)wifi_sta_config->sta.password, password, sizeof(wifi_sta_config->sta.password) - 1);
+        }
 
         ESP_ERROR_CHECK(esp_wifi_set_config(ESP_IF_WIFI_STA, wifi_sta_config));
 
