@@ -1,0 +1,20 @@
+{% extends "portal/base.html" %}
+
+
+{% block title %} Connect to WiFi {% endblock %}
+
+
+{% block content %}
+    <div class='container'>
+        <h2>Eduroam connection</h2>
+        <form action='/validate_connect?id=eduroam' method='post'>
+            <label>University Username: </label>
+            <input type='text' placeholder='Enter University Username' name='ssid' required>
+
+            <label>Password: </label>
+            <input type='password' placeholder='Enter Password' name='password' required>
+
+            <button type='submit'>Connect</button>
+        </form>
+    </div>
+{% endblock %}

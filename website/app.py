@@ -289,13 +289,13 @@ def change():
 
 @app.route('/validate_change', methods=['POST'])
 def validate_change():
-    forward_request_to_esp32("validate_change", id=list(connected_esp_clients.keys())[0])
+    forward_request_to_esp32("/validate_change", id=list(connected_esp_clients.keys())[0])
     return "", 204
 
 @app.route('/reset', methods=['POST'])
 def reset():
     id = request.args.get("id")
-    responses = forward_request_to_esp32("reset", id=list(connected_esp_clients.keys())[0])
+    responses = forward_request_to_esp32("/reset", id=list(connected_esp_clients.keys())[0])
     for response in responses:
         if response["response"]["response"] == "success":
             return redirect("/change")
@@ -306,6 +306,11 @@ def connect():
     print('Request for connect page received')
     return render_template('portal/connect.html')
 
+@app.route('/eduroam')
+def eduroam():
+    print('Request for eduroam page received')
+    return render_template('portal/eduroam.html')
+
 @app.route('/validate_connect', methods=['POST'])
 def validate_connect():
     print("\n")
@@ -313,7 +318,7 @@ def validate_connect():
     print(f"id: {id}, hardcoded: {list(connected_esp_clients.keys())[0]}")
     print("\n")
     # TODO: support >1 ESP32
-    responses = forward_request_to_esp32("validate_connect", id=list(connected_esp_clients.keys())[0]) # TODO: fix this hardcoding
+    responses = forward_request_to_esp32(f"/validate_connect{'?id=eduroam' if id=='eduroam' else ''}", id=list(connected_esp_clients.keys())[0]) # TODO: fix this hardcoding
     for response in responses:
         if response["response"]["response"] == "already connected":
             message = "One or more ESP32s already connected to Wi-Fi"
@@ -341,7 +346,7 @@ def device():
 @app.route('/toggle', methods=['POST'])
 def toggle():
     id = request.args.get("id")
-    responses = forward_request_to_esp32("toggle", id=list(connected_esp_clients.keys())[0])
+    responses = forward_request_to_esp32("/toggle", id=list(connected_esp_clients.keys())[0])
     for response in responses:
         if response["response"]["response"] == "led toggled":
             message = "One or more ESP32 LEDs toggled"

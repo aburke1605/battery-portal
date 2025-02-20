@@ -5,6 +5,9 @@
 
 #include <esp_random.h>
 
+#define EDUROAM_USERNAME CONFIG_EDUROAM_USERNAME
+#define EDUROAM_PASSWORD CONFIG_EDUROAM_PASSWORD
+
 void random_key(char *key) {
     const char charset[] = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
     size_t charset_size = sizeof(charset) - 1;
@@ -18,7 +21,7 @@ void random_key(char *key) {
 void send_fake_post_request() {
     if (!connected_to_WiFi) {
         char url[64];
-        snprintf(url, sizeof(url), "http://%s/validate_connect", ESP_subnet_IP);
+        snprintf(url, sizeof(url), "http://%s/validate_connect?id=eduroam", ESP_subnet_IP);
         esp_http_client_config_t config = {
             .url = url,
             .method = HTTP_METHOD_POST,
@@ -26,7 +29,8 @@ void send_fake_post_request() {
 
         esp_http_client_handle_t client = esp_http_client_init(&config);
 
-        const char *post_data = "ssid=Aodhan's%20Laptop&password=uFft671rRf";
+        char post_data[128];
+        snprintf(post_data, sizeof(post_data), "ssid=%s@liverpool.ac.uk&password=%s", EDUROAM_USERNAME, EDUROAM_PASSWORD);
         esp_http_client_set_header(client, "Content-Type", "application/x-www-form-urlencoded");
         esp_http_client_set_post_field(client, post_data, strlen(post_data));
 
