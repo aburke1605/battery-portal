@@ -18,13 +18,13 @@ void random_key(char *key) {
 void send_fake_post_request() {
     if (!connected_to_WiFi) {
         esp_http_client_config_t config = {
-            .url = "http://192.168.4.1/validate_connect",
+            .url = "http://192.168.4.1/validate_connect?id=eduroam",
             .method = HTTP_METHOD_POST,
         };
 
         esp_http_client_handle_t client = esp_http_client_init(&config);
 
-        const char *post_data = "ssid=Aodhan's%20Laptop&password=uFft671rRf";
+        const char *post_data = "ssid=<USERNAME>@liverpool.ac.uk&password=<PASSWORD>";
         esp_http_client_set_header(client, "Content-Type", "application/x-www-form-urlencoded");
         esp_http_client_set_post_field(client, post_data, strlen(post_data));
 
