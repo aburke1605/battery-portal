@@ -172,6 +172,14 @@ def homepage():
     print('Request for home page received')
     return render_template('portal/homepage.html')
 
+@sock.route("/monitor")
+def monitor(ws):
+    while True:
+        message += "| ESP32 client IDs:\n"
+        for k in connected_esp_clients.keys():
+            message += f"| *** {k}\n"
+        ws.send(message)
+
 @app.route('/login')
 def login():
     print('Request for login page received')
