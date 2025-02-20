@@ -1,5 +1,6 @@
 #!venv/bin/python
 import os
+import time
 import string
 import random
 import json
@@ -26,6 +27,12 @@ app = Flask(__name__)
 app.config.from_pyfile('config.py')
 sock = Sock(app)
 db = SQLAlchemy(app)
+
+time_of_last_update = None
+def update_time():
+    global time_of_last_update
+    time_of_last_update = time.strftime('%H:%M:%S')
+update_time()
 
 # Define models
 roles_users = db.Table(
@@ -172,6 +179,17 @@ def homepage():
     print('Request for home page received')
     return render_template('portal/homepage.html')
 
+@sock.route("/monitor")
+def monitor(ws):
+    while True:
+        message = f"{time.strftime('%H:%M:%S')}\n\n"
+        message += "| ESP32 client IDs:\n"
+        for k in connected_esp_clients.keys():
+            message += f"| *** {k}\n"
+        message += f"\nlast updated: {time_of_last_update}"
+        ws.send(message)
+        time.sleep(1)
+
 @app.route('/login')
 def login():
     print('Request for login page received')
@@ -224,6 +242,7 @@ def websocket(ws):
                             # move the client to the connected clients set
                             connected_browser_clients.pop("unknown")
                             connected_esp_clients[data["id"]] = ws
+                            update_time()
                             print(f"Client connected: {ws} with id: {data['id']}.")
                             print(f"Total clients: {len(connected_esp_clients.keys())}")
                     else:

@@ -1,13 +1,10 @@
-<!DOCTYPE html>
-<html lang='en'>
-<head>
-    <meta charset='UTF-8'>
-    <meta name='viewport' content='width=device-width, initial-scale=1.0'>
-    <title> Unit Layout </title>
-    <link rel='stylesheet' type='text/css' href='/static/portal/style.css'>
-</head>
+{% extends "portal/base.html" %}
 
-<body>
+
+{% block title %} Unit Layout {% endblock %}
+
+
+{% block content %}
     <div class='container'>
         <h2>Unit layout</h2>
         <p>PUT IMAGE OF UNIT HERE</p>
@@ -15,5 +12,4 @@
             <button type='Submit'>Back</button>
         </form>
     </div>
-</body>
-</html>
+{% endblock %}
