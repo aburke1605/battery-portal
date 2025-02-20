@@ -1,13 +1,10 @@
-<!DOCTYPE html>
-<html lang='en'>
-<head>
-    <meta charset='UTF-8'>
-    <meta name='viewport' content='width=device-width, initial-scale=1.0'>
-    <title>ESP32 Battery & LED Control</title>
-    <link rel='stylesheet' type='text/css' href='/static/portal/style.css'>
-</head>
+{% extends "portal/base.html" %}
 
-<body>
+
+{% block title %} ESP32 Battery & LED Control {% endblock %}
+
+
+{% block content %}
     <div class='container'>
         <div class='section'>
             <h2>Battery Information</h2>
@@ -52,31 +49,34 @@
 
         <img src='/static/portal/images/aceon2.png' alt='Company Logo'>
     </div>
-</body>
+{% endblock %}
 
-<script>
-    document.addEventListener('DOMContentLoaded', function() {
-        let socket = new WebSocket('ws://' + location.host + '/ws');
-        socket.onopen = function() {
-            console.log('WebSocket connection established');
-        };
-        socket.onmessage = function(event) {
-            try {
-                let data = JSON.parse(event.data);
-                document.getElementById('charge').innerHTML = data.charge;
-                document.getElementById('voltage').innerHTML = data.voltage.toFixed(2);
-                document.getElementById('current').innerHTML = data.current.toFixed(2);
-                document.getElementById('temperature').innerHTML = data.temperature.toFixed(2);
-            } catch (error) {
-                console.error('Error parsing JSON:', error);
-            }
-        };
-        socket.onerror = function(error) {
-            console.error('WebSocket error:', error);
-        };
-        socket.onclose = function() {
-            console.log('WebSocket connection closed');
-        };
-    })
-</script>
-</html>
+
+{% block script %}
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            let protocol = (window.location.protocol === 'https:') ? 'wss://' : 'ws://';
+            let socket = new WebSocket(protocol + location.host + '/ws');
+            socket.onopen = function() {
+                console.log('WebSocket connection established');
+            };
+            socket.onmessage = function(event) {
+                try {
+                    let data = JSON.parse(event.data);
+                    document.getElementById('charge').innerHTML = data.charge;
+                    document.getElementById('voltage').innerHTML = data.voltage.toFixed(2);
+                    document.getElementById('current').innerHTML = data.current.toFixed(2);
+                    document.getElementById('temperature').innerHTML = data.temperature.toFixed(2);
+                } catch (error) {
+                    console.error('Error parsing JSON:', error);
+                }
+            };
+            socket.onerror = function(error) {
+                console.error('WebSocket error:', error);
+            };
+            socket.onclose = function() {
+                console.log('WebSocket connection closed');
+            };
+        })
+    </script>
+{% endblock %}

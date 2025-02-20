@@ -21,6 +21,7 @@ uint8_t successful_ip_count = 0;
 uint8_t old_successful_ip_count = 0;
 char ESP_IP[16] = "xxx.xxx.xxx.xxx\0";
 char ESP_subnet_IP[15];
+esp_websocket_client_handle_t ws_client = NULL;
 
 void app_main(void) {
     random_key(ESP_ID);
@@ -83,8 +84,6 @@ void app_main(void) {
 
     // Start DNS server task
     xTaskCreate(&dns_server_task, "dns_server_task", 4096, NULL, 5, NULL);
-
-    xTaskCreate(&get_devices_task, "get_devices_task", 4096, NULL, 5, NULL);
 
     esp_log_level_set("wifi", ESP_LOG_ERROR);
     xTaskCreate(&check_wifi_task, "check_wifi_task", 4096, NULL, 5, NULL);
