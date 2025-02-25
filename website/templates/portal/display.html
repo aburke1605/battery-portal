@@ -28,7 +28,7 @@
         <div class='section'>
             <h2>ESP32 LED Control</h2>
             <div class='button-container'>
-                <form action='/toggle' method='post'>
+                <form action='{{ prefix }}/toggle' method='post'>
                     <button type='submit'>Toggle LED</button>
                 </form>
             </div>
@@ -36,11 +36,11 @@
 
         <div class='section'>
             <div>
-                <a href='/change'>Change battery pack properties</a>
-                <a href='/connect'>Connect to WiFi access point</a>
-                <a href='/nearby'>Nearby battery packs</a>
-                <a href='/about'>About AceOn</a>
-                <a href='/device'>Unit Layout</a>
+                <a href='{{ prefix }}/change'>Change battery pack properties</a>
+                <a href='{{ prefix }}/connect'>Connect to WiFi access point</a>
+                <a href='{{ prefix }}/nearby'>Nearby battery packs</a>
+                <a href='{{ prefix }}/about'>About AceOn</a>
+                <a href='{{ prefix }}/device'>Unit Layout</a>
             </div>
         </div>
 
