@@ -1,9 +1,6 @@
 {% extends "portal/base.html" %}
 
 
-{% block title %} Battery Control {% endblock %}
-
-
 {% block content %}
     <div class='container'>
         <h2> Change battery properties </h2>
@@ -37,10 +34,8 @@
             </form>
         </div>
     </div>
-{% endblock %}
 
 
-{% block script %}
     <script>
         document.addEventListener('DOMContentLoaded', function() {
             let protocol = (window.location.protocol === 'https:') ? 'wss://' : 'ws://';
