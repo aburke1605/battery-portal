@@ -367,11 +367,103 @@ esp_err_t image_handler(httpd_req_t *req) {
     return ESP_OK;
 }
 
+char* read_file(const char* path) {
+    FILE* f = fopen(path, "r");
+    if (!f) return NULL;
+
+    fseek(f, 0, SEEK_END);
+    size_t file_size = ftell(f);
+    fseek(f, 0, SEEK_SET);
+
+    char* buffer = (char*)malloc(file_size + 1);
+    if (!buffer){
+        fclose(f);
+        return NULL;
+    }
+
+    size_t bytes_read = fread(buffer, 1, file_size, f);
+    if (bytes_read != file_size) {
+        free(buffer);
+        fclose(f);
+        return NULL;
+    }
+    buffer[bytes_read] = '\0';
+
+    fclose(f);
+    return buffer;
+}
+
 esp_err_t file_serve_handler(httpd_req_t *req) {
     const char *file_path = (const char *)req->user_ctx; // Get file path from user_ctx
     ESP_LOGI("WS", "Serving file: %s", file_path);
 
-    // Open the file
+    const char *ext = strrchr(file_path, '.');
+    bool is_html = (ext && strcmp(ext, ".html") == 0);
+
+    // for HTML files, remove jinja lines
+    // and do merging with base.html by hand
+    if (is_html) {
+        char *base_html = read_file("/templates/base.html");
+        char *content_html = read_file(file_path);
+        if (!base_html || !content_html) {
+            ESP_LOGE("WS", "Failed to read base or content HTML file");
+            httpd_resp_send_err(req, HTTPD_404_NOT_FOUND, "File not found");
+            return ESP_FAIL;
+        }
+
+        if (strlen(base_html) + strlen(content_html) + 1 >= MAX_HTML_SIZE) {
+            ESP_LOGE("WS", "Response buffer overflow risk!");
+            httpd_resp_send_err(req, HTTPD_500_INTERNAL_SERVER_ERROR, "Buffer overflow");
+            return ESP_FAIL;
+        }
+
+
+        char *page = malloc(MAX_HTML_SIZE);
+        if (!page) {
+            ESP_LOGE("WS", "Failed to allocate memory for page");
+            httpd_resp_send_err(req, HTTPD_500_INTERNAL_SERVER_ERROR, "Memory allocation failed");
+            return ESP_FAIL;
+        }
+
+
+        const char* base_jinja_string;
+        char* base_insert_pos;
+        const char* content_jinja_string_1;
+        const char* content_jinja_string_2;
+
+        // remove jinja from base and add to page
+        base_jinja_string = "    {% block content %}{% endblock %}";
+        base_insert_pos = strstr(base_html, base_jinja_string);
+        if (!base_insert_pos) {
+            ESP_LOGE("WS", "Template placeholder not found in base.html");
+            httpd_resp_send_err(req, HTTPD_500_INTERNAL_SERVER_ERROR, "Template error");
+            return ESP_FAIL;
+        }
+
+        // add start section of base to rendered page
+        size_t base_start_len = base_insert_pos - base_html;
+        strncpy(page, base_html, base_start_len);
+        page[base_start_len-1] = '\0';
+
+        // remove jinja from content first and add to page
+        content_jinja_string_1 = "{% extends \"portal/base.html\" %}\n\n\n{% block content %}";
+        content_jinja_string_2 = "{% endblock %}";
+        strncat(page, content_html + strlen(content_jinja_string_1), strlen(content_html) - strlen(content_jinja_string_1) - strlen(content_jinja_string_2) - 1);
+
+        // add end section of base to rendered page
+        // strncat(page, base_insert_pos + strlen(base_jinja_string), sizeof(page) - strlen(page) - 1);
+        strcat(page, "</body>\n</html>\n\n");
+
+        httpd_resp_set_type(req, "text/html");
+        httpd_resp_send(req, page, HTTPD_RESP_USE_STRLEN);
+
+        free(page);
+
+        return ESP_OK;
+    }
+
+
+    // for non-HTML files, serve normally
     FILE *file = fopen(file_path, "r");
     if (!file) {
         ESP_LOGE("WS", "Failed to open file: %s", file_path);
@@ -389,11 +481,8 @@ esp_err_t file_serve_handler(httpd_req_t *req) {
     }
 
     // Set Content-Type based on file extension
-    const char *ext = strrchr(file_path, '.');
     if (ext) {
-        if (strcmp(ext, ".html") == 0) {
-            httpd_resp_set_type(req, "text/html");
-        } else if (strcmp(ext, ".css") == 0) {
+        if (strcmp(ext, ".css") == 0) {
             httpd_resp_set_type(req, "text/css");
         } else if (strcmp(ext, ".js") == 0) {
             httpd_resp_set_type(req, "application/javascript");

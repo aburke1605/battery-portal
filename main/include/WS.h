@@ -7,6 +7,7 @@
 
 #include "include/utils.h"
 
+#define MAX_HTML_SIZE 4096
 #define CONFIG_MAX_CLIENTS 5
 
 extern char ESP_ID[KEY_LENGTH + 1];
@@ -42,6 +43,8 @@ esp_err_t toggle_handler(httpd_req_t *req);
 esp_err_t css_handler(httpd_req_t *req);
 
 esp_err_t image_handler(httpd_req_t *req);
+
+char* read_file(const char* path);
 
 esp_err_t file_serve_handler(httpd_req_t *req);
 
