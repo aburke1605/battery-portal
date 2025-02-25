@@ -585,22 +585,33 @@ esp_err_t alert_handler(httpd_req_t *req) {
     html_buffer[511] = '\0';
     fclose(file);
 
+    // remove {{ prefix }} jinja bits too
+    // (replace with nothing)
+    char *modified_page = remove_prefix(html_buffer);
+    if (!modified_page) {
+        ESP_LOGE("WS", "Could not replace {{ prefix }} in %s", "/templates/alert.html");
+        httpd_resp_send_err(req, HTTPD_500_INTERNAL_SERVER_ERROR, "Template error");
+        return ESP_FAIL;
+    }
+
     // Find and replace {{message}}
-    char *placeholder = strstr(html_buffer, "{{message}}");
+    char *placeholder = strstr(modified_page, "{{message}}");
     if (placeholder) {
         char *final_html = (char *)malloc(512);// Adjust based on expected output size
         if (!final_html) {
+            free(modified_page);
             free(html_buffer);
             return httpd_resp_send_500(req);
         }
-        size_t before_len = placeholder - html_buffer;
+        size_t before_len = placeholder - modified_page;
         snprintf(final_html, 512, "%.*s%s%s",
-                 (int)before_len, html_buffer, message, placeholder + 11); // Skip `{{message}}`
+                 (int)before_len, modified_page, message, placeholder + 11); // Skip `{{message}}`
 
         // Send the modified HTML response
         httpd_resp_set_type(req, "text/html");
         httpd_resp_send(req, final_html, HTTPD_RESP_USE_STRLEN);
 
+        free(modified_page);
         free(html_buffer);
         free(final_html);
 
@@ -609,8 +620,9 @@ esp_err_t alert_handler(httpd_req_t *req) {
 
     // If no placeholder found, send the original file
     httpd_resp_set_type(req, "text/html");
-    httpd_resp_send(req, html_buffer, HTTPD_RESP_USE_STRLEN);
+    httpd_resp_send(req, modified_page, HTTPD_RESP_USE_STRLEN);
 
+    free(modified_page);
     free(html_buffer);
 
     return ESP_OK;
