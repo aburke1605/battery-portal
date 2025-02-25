@@ -1,13 +1,10 @@
 {% extends "portal/base.html" %}
 
 
-{% block title %} AP Login Form {% endblock %}
-
-
 {% block content %}
     <div class='container'>
         <h2>AP Login Form</h2>
-        <form action='/validate_login' method='post'>
+        <form action='{{ prefix }}/validate_login' method='post'>
             <label for='username'>Username</label>
             <input type='text' id='username' name='username' required oninvalid="this.setCustomValidity('Please input your username.')" oninput="setCustomValidity('')">
 
