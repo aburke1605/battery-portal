@@ -70,7 +70,7 @@ def forward_request_to_esp32(endpoint, method="POST", id=None):
 @portal.route('/')
 def homepage():
     print('Request for home page received')
-    return render_template('portal/homepage.html')
+    return render_template('portal/homepage.html', prefix="/portal")
 
 @sock.route("/monitor")
 def monitor(ws):
@@ -86,7 +86,7 @@ def monitor(ws):
 @portal.route('/login')
 def login():
     print('Request for login page received')
-    return render_template('portal/login.html')
+    return render_template('portal/login.html', prefix="/portal")
 
 @portal.route('/validate_login', methods=['POST'])
 def validate_login():
@@ -101,11 +101,11 @@ def validate_login():
 @portal.route('/display')
 def display():
     print('Request for display page received')
-    return render_template('portal/display.html')
+    return render_template('portal/display.html', prefix="/portal")
 
 @portal.route("/alert")
 def alert():
-    return render_template("portal/alert.html")
+    return render_template("portal/alert.html", prefix="/portal")
 
 @sock.route('/ws')
 def websocket(ws):
@@ -178,7 +178,7 @@ def websocket(ws):
 @portal.route('/change')
 def change():
     print('Request for change page received')
-    return render_template('portal/change.html')
+    return render_template('portal/change.html', prefix="/portal")
 
 @portal.route('/validate_change', methods=['POST'])
 def validate_change():
@@ -197,12 +197,12 @@ def reset():
 @portal.route('/connect')
 def connect():
     print('Request for connect page received')
-    return render_template('portal/connect.html')
+    return render_template('portal/connect.html', prefix="/portal")
 
 @portal.route('/eduroam')
 def eduroam():
     print('Request for eduroam page received')
-    return render_template('portal/eduroam.html')
+    return render_template('portal/eduroam.html', prefix="/portal")
 
 @portal.route('/validate_connect', methods=['POST'])
 def validate_connect():
@@ -228,12 +228,12 @@ def nearby():
 @portal.route('/about')
 def about():
     print('Request for about page received')
-    return render_template('portal/about.html')
+    return render_template('portal/about.html', prefix="/portal")
 
 @portal.route('/device')
 def device():
     print('Request for device page received')
-    return render_template('portal/device.html')
+    return render_template('portal/device.html', prefix="/portal")
 
 @portal.route('/toggle', methods=['POST'])
 def toggle():
