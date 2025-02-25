@@ -16,7 +16,8 @@ from flask_admin import helpers as admin_helpers
 
 from wtforms import PasswordField
 
-from portal import portal, sock
+from portal import portal
+from ws import sock
 
 # Create Flask application
 app = Flask(__name__)
