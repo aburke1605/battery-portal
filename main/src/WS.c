@@ -367,6 +367,32 @@ esp_err_t image_handler(httpd_req_t *req) {
     return ESP_OK;
 }
 
+char* read_file(const char* path) {
+    FILE* f = fopen(path, "r");
+    if (!f) return NULL;
+
+    fseek(f, 0, SEEK_END);
+    size_t file_size = ftell(f);
+    fseek(f, 0, SEEK_SET);
+
+    char* buffer = (char*)malloc(file_size + 1);
+    if (!buffer){
+        fclose(f);
+        return NULL;
+    }
+
+    size_t bytes_read = fread(buffer, 1, file_size, f);
+    if (bytes_read != file_size) {
+        free(buffer);
+        fclose(f);
+        return NULL;
+    }
+    buffer[bytes_read] = '\0';
+
+    fclose(f);
+    return buffer;
+}
+
 esp_err_t file_serve_handler(httpd_req_t *req) {
     const char *file_path = (const char *)req->user_ctx; // Get file path from user_ctx
     ESP_LOGI("WS", "Serving file: %s", file_path);
