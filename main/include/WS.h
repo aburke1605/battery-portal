@@ -7,6 +7,7 @@
 
 #include "include/utils.h"
 
+#define MAX_HTML_SIZE 4096
 #define CONFIG_MAX_CLIENTS 5
 
 extern char ESP_ID[KEY_LENGTH + 1];

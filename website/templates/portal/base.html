@@ -8,9 +8,9 @@
 </head>
 
 <body>
-    <div class="overlay" id="overlay">Loading...</div>
-
     {% block content %}{% endblock %}
+
+    <div class="overlay" id="overlay">Loading...</div>
 
     <script>
         let protocol = (window.location.protocol === 'https:') ? 'wss://' : 'ws://';
