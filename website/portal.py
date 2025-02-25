@@ -55,26 +55,6 @@ def forward_request_to_esp32(endpoint, method="POST", id=None):
 
     return responses
 
-@portal.route('/')
-def homepage():
-    print('Request for home page received')
-    return render_template('portal/homepage.html', prefix="/portal")
-
-@portal.route('/login')
-def login():
-    print('Request for login page received')
-    return render_template('portal/login.html', prefix="/portal")
-
-@portal.route('/validate_login', methods=['POST'])
-def validate_login():
-    username = request.form.get("username")
-    password = request.form.get("password")
-    if username == "admin" and password == "1234":
-        return redirect(url_for("display"), code=302)
-    else:
-        return "<p>Invalid username or password.</p>", 401
-
-
 @portal.route('/display')
 def display():
     print('Request for display page received')
