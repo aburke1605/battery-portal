@@ -393,6 +393,36 @@ char* read_file(const char* path) {
     return buffer;
 }
 
+char* remove_prefix(const char *html) {
+    const char *placeholder = "{{ prefix }}";
+    size_t placeholder_len = strlen(placeholder);
+
+    // count occurrences of placeholder
+    int count = 0;
+    const char *tmp = html;
+    while ((tmp = strstr(tmp, placeholder))) {
+        count++;
+        tmp += placeholder_len;
+    }
+
+    size_t new_len = strlen(html) - (count * placeholder_len);
+    char *result = malloc(new_len + 1);
+    if (!result) return NULL;
+
+    // remove occurrences
+    char *dest = result;
+    const char *src = html;
+    while ((tmp = strstr(src, placeholder))) {
+        size_t segment_len = tmp - src;
+        memcpy(dest, src, segment_len); // copy everything before placeholder
+        dest += segment_len;
+        src = tmp + placeholder_len; // move past the placeholder
+    }
+    strcpy(dest, src); // copy remaining part
+
+    return result;
+}
+
 esp_err_t file_serve_handler(httpd_req_t *req) {
     const char *file_path = (const char *)req->user_ctx; // Get file path from user_ctx
     ESP_LOGI("WS", "Serving file: %s", file_path);
