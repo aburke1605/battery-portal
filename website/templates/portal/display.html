@@ -28,7 +28,7 @@
         <div class='section'>
             <h2>ESP32 LED Control</h2>
             <div class='button-container'>
-                <form id='toggle-form' action='/toggle' method='post'>
+                <form action='{{ prefix }}/toggle' method='post'>
                     <button type='submit'>Toggle LED</button>
                 </form>
             </div>
@@ -36,12 +36,11 @@
 
         <div class='section'>
             <div>
-                <!-- TODO: these too -->
-                <a href='/change'>Change battery pack properties</a>
-                <a href='/connect'>Connect to WiFi access point</a>
-                <a href='/nearby'>Nearby battery packs</a>
-                <a href='/about'>About AceOn</a>
-                <a href='/device'>Unit Layout</a>
+                <a href='{{ prefix }}/change'>Change battery pack properties</a>
+                <a href='{{ prefix }}/connect'>Connect to WiFi access point</a>
+                <a href='{{ prefix }}/nearby'>Nearby battery packs</a>
+                <a href='{{ prefix }}/about'>About AceOn</a>
+                <a href='{{ prefix }}/device'>Unit Layout</a>
             </div>
         </div>
 
@@ -51,11 +50,6 @@
 
     <script>
         document.addEventListener('DOMContentLoaded', function() {
-            let path = window.location.pathname;
-            if (path.startsWith('/portal')) {
-                document.getElementById("toggle-form").action = "/portal/toggle";
-            }
-
             let protocol = (window.location.protocol === 'https:') ? 'wss://' : 'ws://';
             let socket = new WebSocket(protocol + location.host + '/ws');
             socket.onopen = function() {
