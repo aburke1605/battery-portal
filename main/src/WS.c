@@ -484,9 +484,19 @@ esp_err_t file_serve_handler(httpd_req_t *req) {
         // strncat(page, base_insert_pos + strlen(base_jinja_string), sizeof(page) - strlen(page) - 1);
         strcat(page, "</body>\n</html>\n\n");
 
-        httpd_resp_set_type(req, "text/html");
-        httpd_resp_send(req, page, HTTPD_RESP_USE_STRLEN);
+        // remove {{ prefix }} jinja bits too
+        // (replace with nothing)
+        char *modified_page = remove_prefix(page);
+        if (!modified_page) {
+            ESP_LOGE("WS", "Could not replace {{ prefix }} in %s", file_path);
+            httpd_resp_send_err(req, HTTPD_500_INTERNAL_SERVER_ERROR, "Template error");
+            return ESP_FAIL;
+        }
 
+        httpd_resp_set_type(req, "text/html");
+        httpd_resp_send(req, modified_page, HTTPD_RESP_USE_STRLEN);
+
+        free(modified_page);
         free(page);
 
         return ESP_OK;
