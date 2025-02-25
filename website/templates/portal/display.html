@@ -31,7 +31,7 @@
         <div class='section'>
             <h2>ESP32 LED Control</h2>
             <div class='button-container'>
-                <form action='/toggle' method='post'>
+                <form id='toggle-form' action='/toggle' method='post'>
                     <button type='submit'>Toggle LED</button>
                 </form>
             </div>
@@ -39,6 +39,7 @@
 
         <div class='section'>
             <div>
+                <!-- TODO: these too -->
                 <a href='/change'>Change battery pack properties</a>
                 <a href='/connect'>Connect to WiFi access point</a>
                 <a href='/nearby'>Nearby battery packs</a>
@@ -55,6 +56,11 @@
 {% block script %}
     <script>
         document.addEventListener('DOMContentLoaded', function() {
+            let path = window.location.pathname;
+            if (path.startsWith('/portal')) {
+                document.getElementById("toggle-form").action = "/portal/toggle";
+            }
+
             let protocol = (window.location.protocol === 'https:') ? 'wss://' : 'ws://';
             let socket = new WebSocket(protocol + location.host + '/ws');
             socket.onopen = function() {
