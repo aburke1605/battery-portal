@@ -99,6 +99,7 @@ def validate_connect():
     id = request.args.get("id")
     print(f"id: {id}, hardcoded: {list(connected_esp_clients.keys())[0]}")
     print("\n")
+    # TODO: support >1 ESP32
     responses = forward_request_to_esp32(f"/validate_connect{'?id=eduroam' if id=='eduroam' else ''}", id=list(connected_esp_clients.keys())[0]) # TODO: fix this hardcoding
     for response in responses:
         if response["response"]["response"] == "already connected":
