@@ -8,9 +8,6 @@
 #include "include/config.h"
 #include "include/utils.h"
 
-#define WS_MAX_HTML_SIZE 4096
-#define WS_CONFIG_MAX_CLIENTS 5
-
 extern char ESP_ID[UTILS_KEY_LENGTH + 1];
 extern httpd_handle_t server;
 extern int client_sockets[WS_CONFIG_MAX_CLIENTS];

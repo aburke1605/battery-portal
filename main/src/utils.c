@@ -5,9 +5,6 @@
 
 #include <esp_random.h>
 
-#define UTILS_EDUROAM_USERNAME CONFIG_EDUROAM_USERNAME
-#define UTILS_EDUROAM_PASSWORD CONFIG_EDUROAM_PASSWORD
-
 void random_key(char *key) {
     const char charset[] = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
     size_t charset_size = sizeof(charset) - 1;

@@ -3,9 +3,10 @@
 #include <esp_http_server.h>
 #include <esp_http_client.h>
 
+#include "include/config.h"
+
 extern bool connected_to_WiFi;
 
-#define UTILS_KEY_LENGTH 16
 void random_key(char *key);
 
 void send_fake_post_request();

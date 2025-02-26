@@ -1,6 +1,4 @@
-#define AP_WIFI_SSID "AceOn battery"
-#define AP_WIFI_PASS "password"
-#define AP_MAX_STA_CONN 4
+#include "include/config.h"
 
 extern int other_AP_SSIDs[256];
 

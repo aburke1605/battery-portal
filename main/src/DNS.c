@@ -5,8 +5,6 @@
 
 #include "include/DNS.h"
 
-#define DNS_PORT 53
-
 // DNS handler (redirect all requests to our AP IP)
 void dns_server_task(void *pvParameters) {
     struct sockaddr_in dest_addr;
