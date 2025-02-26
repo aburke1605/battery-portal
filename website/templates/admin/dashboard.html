@@ -166,3 +166,40 @@
     <!-- /.content -->
   </div>
 {% endblock %}
+
+
+{% block script %}
+  <script>
+    document.addEventListener('DOMContentLoaded', function() {
+      let protocol = (window.location.protocol === 'https:') ? 'wss://' : 'ws://';
+      let monitoring_socket = new WebSocket(protocol + window.location.host + "/monitor");
+      monitoring_socket.onopen = function() {
+        console.log('Monitoring WebSocket connection established');
+      };
+      monitoring_socket.onmessage = function(event) {
+        let data = JSON.parse(event.data);
+        let esps = JSON.parse(data.devices);
+
+        let listElement = document.getElementById("connected_esp_list");
+        listElement.innerHTML = ""; // Clear old list
+
+        console.log(esps);
+        Object.keys(esps).forEach(esp => {
+          let listItem = document.createElement("li");
+          listItem.textContent = `an ESP`;
+          listElement.appendChild(listItem);
+          let listItem2 = document.createElement("li");
+          listItem2.textContent = `an ESP2`;
+          listElement.appendChild(listItem2);
+        });
+        // document.getElementById('test').innerText = <h1> hello </h1>;
+      };
+      monitoring_socket.onerror = function(error) {
+        console.error('Monitoring WebSocket error:', error);
+      };
+      monitoring_socket.onclose = function() {
+        console.log('Monitoring WebSocket connection closed');
+      };
+    })
+  </script>
+{% endblock %}
