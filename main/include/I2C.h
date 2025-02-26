@@ -1,8 +1,6 @@
 #include <esp_log.h>
 #include <driver/i2c.h>
 
-#include "include/config.h"
-
 esp_err_t i2c_master_init(void);
 
 void device_scan(void);

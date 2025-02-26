@@ -1,3 +1,4 @@
+#include "include/config.h"
 #include "include/I2C.h"
 #include "include/utils.h"
 

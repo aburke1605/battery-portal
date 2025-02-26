@@ -3,8 +3,6 @@
 #include <esp_http_server.h>
 #include <esp_http_client.h>
 
-#include "include/config.h"
-
 extern bool connected_to_WiFi;
 
 void random_key(char *key);

@@ -1,5 +1,3 @@
-#include "include/config.h"
-
 extern int other_AP_SSIDs[256];
 
 void wifi_scan(void);

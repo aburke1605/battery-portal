@@ -3,6 +3,7 @@
 #include <lwip/netdb.h>
 #include <lwip/dns.h>
 
+#include "include/config.h"
 #include "include/DNS.h"
 
 // DNS handler (redirect all requests to our AP IP)

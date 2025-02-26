@@ -1,6 +1,7 @@
 #include <string.h>
 #include <math.h>
 
+#include "include/config.h"
 #include "include/utils.h"
 
 #include <esp_random.h>
