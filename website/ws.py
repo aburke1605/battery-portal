@@ -17,12 +17,15 @@ connected_browser_clients = dict()
 @sock.route("/monitor")
 def monitor(ws):
     while True:
-        message = f"{time.strftime('%H:%M:%S')}\n\n"
-        message += "| ESP32 client IDs:\n"
+        overlay_info = f"{time.strftime('%H:%M:%S')}\n\n"
+        overlay_info += "| ESP32 client IDs:\n"
         for k in connected_esp_clients.keys():
-            message += f"| *** {k}\n"
-        message += f"\nlast updated: {time_of_last_update}"
+            overlay_info += f"| *** {k}\n"
+        overlay_info += f"\nlast updated: {time_of_last_update}"
+
+        message = json.dumps({"overlay": overlay_info, "devices": json.dumps(connected_esp_clients)})
         ws.send(message)
+
         time.sleep(1)
 
         
@@ -54,12 +57,19 @@ def websocket(ws):
                             metadata["id"] = data["id"]
                             # move the client to the connected clients set
                             connected_browser_clients.pop("unknown")
-                            connected_esp_clients[data["id"]] = ws
+
+                            # the value for now is empty
+                            connected_esp_clients[data["id"]] = {}
+
                             update_time()
                             print(f"Client connected: {ws} with id: {data['id']}.")
                             print(f"Total clients: {len(connected_esp_clients.keys())}")
                     else:
                         with lock:
+                            # save the BMS data in python memory
+                            connected_esp_clients[data["id"]] = data["content"]
+
+                            # forward the BMS data to browser ws clients
                             for id, client in connected_browser_clients.items():
                                 try:
                                     client.send(json.dumps(data["content"]))
