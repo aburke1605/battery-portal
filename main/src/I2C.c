@@ -83,11 +83,11 @@ uint16_t test_read(uint8_t subclass, uint8_t offset) {
     uint8_t block = get_block(offset);
 
     // specify the location in memory
-    ret = write_byte(DATA_FLASH_CLASS, subclass);
-    ret = write_byte(DATA_FLASH_BLOCK, block);
+    ret = write_byte(I2C_DATA_FLASH_CLASS, subclass);
+    ret = write_byte(I2C_DATA_FLASH_BLOCK, block);
 
     uint8_t data[2] = {0}; // 2 bytes
-    ret = read_data(BLOCK_DATA_START + offset%32, data, sizeof(data));
+    ret = read_data(I2C_BLOCK_DATA_START + offset%32, data, sizeof(data));
     if (ret != ESP_OK) {
         // TODO: fill out
     }
@@ -137,12 +137,12 @@ esp_err_t set_I2_value(uint8_t subclass, uint8_t offset, int16_t value) {
 
     uint8_t block = get_block(offset);
 
-    ret = write_byte(DATA_FLASH_CLASS, subclass);
-    ret = write_byte(DATA_FLASH_BLOCK, block);
+    ret = write_byte(I2C_DATA_FLASH_CLASS, subclass);
+    ret = write_byte(I2C_DATA_FLASH_BLOCK, block);
 
     // read current block data
     uint8_t block_data[32] = {0};
-    ret = read_data(BLOCK_DATA_START, block_data, sizeof(block_data));
+    ret = read_data(I2C_BLOCK_DATA_START, block_data, sizeof(block_data));
     if (ret != ESP_OK) {
         ESP_LOGE("I2C", "Failed to read Block Data.");
         return ret;
@@ -154,7 +154,7 @@ esp_err_t set_I2_value(uint8_t subclass, uint8_t offset, int16_t value) {
 
     // Write updated block data back
     for (int i = 0; i < sizeof(block_data); i++) {
-        ret = write_byte(BLOCK_DATA_START + i, block_data[i]);
+        ret = write_byte(I2C_BLOCK_DATA_START + i, block_data[i]);
         if (ret != ESP_OK) {
             ESP_LOGE("I2C", "Failed to write Block Data at index %d.", i);
             return ret;
@@ -169,7 +169,7 @@ esp_err_t set_I2_value(uint8_t subclass, uint8_t offset, int16_t value) {
     checksum = 0xFF - checksum;
 
     // Write new checksum
-    ret = write_byte(BLOCK_DATA_CHECKSUM, checksum);
+    ret = write_byte(I2C_BLOCK_DATA_CHECKSUM, checksum);
     if (ret != ESP_OK) {
         ESP_LOGE("I2C", "Failed to write Block Data Checksum.");
         return ret;
@@ -184,14 +184,14 @@ esp_err_t set_I2_value(uint8_t subclass, uint8_t offset, int16_t value) {
 
 esp_err_t write_word(uint8_t reg, uint16_t value) {
     uint8_t data[3] = {reg, value & 0xFF, (value >> 8) & 0xFF}; // LSB first
-    return i2c_master_write_to_device(I2C_MASTER_PORT, I2C_ADDR, data, sizeof(data), pdMS_TO_TICKS(1000));
+    return i2c_master_write_to_device(I2C_I2C_MASTER_PORT, I2C_ADDR, data, sizeof(data), pdMS_TO_TICKS(1000));
 }
 
 esp_err_t reset_BMS() {
     esp_err_t ret;
 
     // Send reset subcommand
-    ret = write_word(CONTROL_REG, CONTROL_RESET_SUBCMD);
+    ret = write_word(I2C_CONTROL_REG, I2C_CONTROL_RESET_SUBCMD);
     if (ret != ESP_OK) {
         ESP_LOGE("I2C", "Failed to send reset command.");
         return ret;

@@ -113,22 +113,22 @@ void wifi_init(void) {
     wifi_config_t wifi_ap_config = {
         .ap = {
             .channel = 1,
-            .password = WIFI_PASS,
-            .max_connection = MAX_STA_CONN,
+            .password = AP_WIFI_PASS,
+            .max_connection = AP_MAX_STA_CONN,
             .authmode = WIFI_AUTH_WPA_WPA2_PSK
         },
     };
     // set the SSID as well
-    char buffer[strlen(WIFI_SSID) + 4 + 2 + 16 + 1 + 1]; // "AceOn battery" + " xxx" + ": " + uint16_t, + "%" + "\0"
+    char buffer[strlen(AP_WIFI_SSID) + 4 + 2 + 16 + 1 + 1]; // "AceOn battery" + " xxx" + ": " + uint16_t, + "%" + "\0"
     int SSID_number = find_unique_SSID();
-    uint16_t iCharge = read_2byte_data(STATE_OF_CHARGE_REG);
-    snprintf(buffer, sizeof(buffer), "%s %u: %d%%", WIFI_SSID, SSID_number, iCharge);
+    uint16_t iCharge = read_2byte_data(I2C_STATE_OF_CHARGE_REG);
+    snprintf(buffer, sizeof(buffer), "%s %u: %d%%", AP_WIFI_SSID, SSID_number, iCharge);
 
     strncpy((char *)wifi_ap_config.ap.ssid, buffer, sizeof(wifi_ap_config.ap.ssid) - 1);
     wifi_ap_config.ap.ssid[sizeof(wifi_ap_config.ap.ssid) - 1] = '\0'; // Ensure null-termination
     wifi_ap_config.ap.ssid_len = strlen((char *)wifi_ap_config.ap.ssid); // Set SSID length
 
-    if (strlen(WIFI_PASS) == 0) {
+    if (strlen(AP_WIFI_PASS) == 0) {
         wifi_ap_config.ap.authmode = WIFI_AUTH_OPEN;
     }
     ESP_ERROR_CHECK(esp_wifi_set_config(ESP_IF_WIFI_AP, &wifi_ap_config));
@@ -156,6 +156,6 @@ void wifi_init(void) {
     ESP_ERROR_CHECK(esp_netif_dhcps_start(ap_netif));
     ESP_LOGI("AP", "AP initialized with IP: %s", IP_buffer);
 
-    ESP_LOGI("AP", "Starting WiFi AP... SSID: %s, Password: %s", WIFI_SSID, WIFI_PASS);
+    ESP_LOGI("AP", "Starting WiFi AP... SSID: %s, Password: %s", AP_WIFI_SSID, AP_WIFI_PASS);
     ESP_ERROR_CHECK(esp_wifi_start());
 }

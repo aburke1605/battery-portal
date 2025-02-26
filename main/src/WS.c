@@ -9,7 +9,7 @@
 #include "include/cert.h"
 
 void add_client(int fd) {
-    for (int i = 0; i < CONFIG_MAX_CLIENTS; i++) {
+    for (int i = 0; i < WS_CONFIG_MAX_CLIENTS; i++) {
         if (client_sockets[i] == -1) {
             client_sockets[i] = fd;
             ESP_LOGI("WS", "Client %d added", fd);
@@ -20,7 +20,7 @@ void add_client(int fd) {
 }
 
 void remove_client(int fd) {
-    for (int i = 0; i < CONFIG_MAX_CLIENTS; i++) {
+    for (int i = 0; i < WS_CONFIG_MAX_CLIENTS; i++) {
         if (client_sockets[i] == fd) {
             client_sockets[i] = -1;
             ESP_LOGI("WS", "Client %d removed", fd);
@@ -97,14 +97,14 @@ esp_err_t validate_change_handler(httpd_req_t *req) {
 
     static bool led_on = false;
     led_on = !led_on;
-    gpio_set_level(LED_GPIO_PIN, led_on ? 1 : 0);
+    gpio_set_level(I2C_LED_GPIO_PIN, led_on ? 1 : 0);
 
     if (BL_start) {
         char BL_voltage_threshold[50] = {0};
         sscanf(BL_start, "BL_voltage_threshold=%49[^&]", BL_voltage_threshold);
         if (BL_voltage_threshold[0] != '\0') {
             ESP_LOGI("I2C", "Changing BL voltage...");
-            set_I2_value(DISCHARGE_SUBCLASS_ID, BL_OFFSET, atoi(BL_voltage_threshold));
+            set_I2_value(I2C_DISCHARGE_SUBCLASS_ID, I2C_BL_OFFSET, atoi(BL_voltage_threshold));
         }
     }
 
@@ -113,7 +113,7 @@ esp_err_t validate_change_handler(httpd_req_t *req) {
         sscanf(BH_start, "BH_voltage_threshold=%49[^&]", BH_voltage_threshold);
         if (BH_voltage_threshold[0] != '\0') {
             ESP_LOGI("I2C", "Changing BH voltage...");
-            set_I2_value(DISCHARGE_SUBCLASS_ID, BH_OFFSET, atoi(BH_voltage_threshold));
+            set_I2_value(I2C_DISCHARGE_SUBCLASS_ID, I2C_BH_OFFSET, atoi(BH_voltage_threshold));
         }
     }
 
@@ -122,7 +122,7 @@ esp_err_t validate_change_handler(httpd_req_t *req) {
         sscanf(CCT_start, "charge_current_threshold=%49[^&]", charge_current_threshold);
         if (charge_current_threshold[0] != '\0') {
             ESP_LOGI("I2C", "Changing charge current threshold...");
-            set_I2_value(CURRENT_THRESHOLDS_SUBCLASS_ID, CHG_CURRENT_THRESHOLD_OFFSET, atoi(charge_current_threshold));
+            set_I2_value(I2C_CURRENT_THRESHOLDS_SUBCLASS_ID, I2C_CHG_CURRENT_THRESHOLD_OFFSET, atoi(charge_current_threshold));
         }
     }
 
@@ -131,7 +131,7 @@ esp_err_t validate_change_handler(httpd_req_t *req) {
         sscanf(DCT_start, "discharge_current_threshold=%49[^&]", discharge_current_threshold);
         if (discharge_current_threshold[0] != '\0') {
             ESP_LOGI("I2C", "Changing discharge current threshold...");
-            set_I2_value(CURRENT_THRESHOLDS_SUBCLASS_ID, DSG_CURRENT_THRESHOLD_OFFSET, atoi(discharge_current_threshold));
+            set_I2_value(I2C_CURRENT_THRESHOLDS_SUBCLASS_ID, I2C_DSG_CURRENT_THRESHOLD_OFFSET, atoi(discharge_current_threshold));
         }
     }
 
@@ -140,7 +140,7 @@ esp_err_t validate_change_handler(httpd_req_t *req) {
         sscanf(CITL_start, "chg_inhibit_temp_low=%49[^&]", chg_inhibit_temp_low);
         if (chg_inhibit_temp_low[0] != '\0') {
             ESP_LOGI("I2C", "Changing charge inhibit low temperature threshold...");
-            set_I2_value(CHARGE_INHIBIT_CFG_SUBCLASS_ID, CHG_INHIBIT_TEMP_LOW_OFFSET, atoi(chg_inhibit_temp_low));
+            set_I2_value(I2C_CHARGE_INHIBIT_CFG_SUBCLASS_ID, I2C_CHG_INHIBIT_TEMP_LOW_OFFSET, atoi(chg_inhibit_temp_low));
         }
     }
 
@@ -149,12 +149,12 @@ esp_err_t validate_change_handler(httpd_req_t *req) {
         sscanf(CITH_start, "chg_inhibit_temp_high=%49s", chg_inhibit_temp_high);
         if (chg_inhibit_temp_high[0] != '\0') {
             ESP_LOGI("I2C", "Changing charge inhibit high temperature threshold...");
-            set_I2_value(CHARGE_INHIBIT_CFG_SUBCLASS_ID, CHG_INHIBIT_TEMP_HIGH_OFFSET, atoi(chg_inhibit_temp_high));
+            set_I2_value(I2C_CHARGE_INHIBIT_CFG_SUBCLASS_ID, I2C_CHG_INHIBIT_TEMP_HIGH_OFFSET, atoi(chg_inhibit_temp_high));
         }
     }
 
     vTaskDelay(pdMS_TO_TICKS(500));
-    gpio_set_level(LED_GPIO_PIN, led_on ? 0 : 1);
+    gpio_set_level(I2C_LED_GPIO_PIN, led_on ? 0 : 1);
 
     return ESP_OK;
 }
@@ -284,7 +284,7 @@ esp_err_t validate_connect_handler(httpd_req_t *req) {
 esp_err_t toggle_handler(httpd_req_t *req) {
     static bool led_on = false;
     led_on = !led_on;
-    gpio_set_level(LED_GPIO_PIN, led_on ? 1 : 0);
+    gpio_set_level(I2C_LED_GPIO_PIN, led_on ? 1 : 0);
     ESP_LOGI("WS", "LED is now %s", led_on ? "ON" : "OFF");
 
     if (req->handle) {
@@ -442,14 +442,14 @@ esp_err_t file_serve_handler(httpd_req_t *req) {
             return ESP_FAIL;
         }
 
-        if (strlen(base_html) + strlen(content_html) + 1 >= MAX_HTML_SIZE) {
+        if (strlen(base_html) + strlen(content_html) + 1 >= WS_MAX_HTML_SIZE) {
             ESP_LOGE("WS", "Response buffer overflow risk!");
             httpd_resp_send_err(req, HTTPD_500_INTERNAL_SERVER_ERROR, "Buffer overflow");
             return ESP_FAIL;
         }
 
 
-        char *page = malloc(MAX_HTML_SIZE);
+        char *page = malloc(WS_MAX_HTML_SIZE);
         if (!page) {
             ESP_LOGE("WS", "Failed to allocate memory for page");
             httpd_resp_send_err(req, HTTPD_500_INTERNAL_SERVER_ERROR, "Memory allocation failed");
@@ -632,7 +632,7 @@ esp_err_t alert_handler(httpd_req_t *req) {
 // Start HTTP server
 httpd_handle_t start_webserver(void) {
     // create sockets for clients
-    for (int i = 0; i < CONFIG_MAX_CLIENTS; i++) {
+    for (int i = 0; i < WS_CONFIG_MAX_CLIENTS; i++) {
         client_sockets[i] = -1;
     }
 
@@ -1028,22 +1028,22 @@ void websocket_task(void *pvParameters) {
         send_fake_post_request();
 
         // read sensor data
-        uint16_t iCharge = read_2byte_data(STATE_OF_CHARGE_REG);
-        uint16_t iVoltage = read_2byte_data(VOLTAGE_REG);
+        uint16_t iCharge = read_2byte_data(I2C_STATE_OF_CHARGE_REG);
+        uint16_t iVoltage = read_2byte_data(I2C_VOLTAGE_REG);
         float fVoltage = (float)iVoltage / 1000.0;
-        uint16_t iCurrent = read_2byte_data(CURRENT_REG);
+        uint16_t iCurrent = read_2byte_data(I2C_CURRENT_REG);
         float fCurrent = (float)iCurrent / 1000.0;
         if (fCurrent < 65.536 && fCurrent > 32.767) fCurrent = 65.536 - fCurrent; // this is something to do with 16 bit binary
-        uint16_t iTemperature = read_2byte_data(TEMPERATURE_REG);
+        uint16_t iTemperature = read_2byte_data(I2C_TEMPERATURE_REG);
         float fTemperature = (float)iTemperature / 10.0 - 273.15;
 
         // configurable data too
-        uint16_t iBL = test_read(DISCHARGE_SUBCLASS_ID, BL_OFFSET);
-        uint16_t iBH = test_read(DISCHARGE_SUBCLASS_ID, BH_OFFSET);
-        uint16_t iCCT = test_read(CURRENT_THRESHOLDS_SUBCLASS_ID, CHG_CURRENT_THRESHOLD_OFFSET);
-        uint16_t iDCT = test_read(CURRENT_THRESHOLDS_SUBCLASS_ID, DSG_CURRENT_THRESHOLD_OFFSET);
-        uint16_t iCITL = test_read(CHARGE_INHIBIT_CFG_SUBCLASS_ID, CHG_INHIBIT_TEMP_LOW_OFFSET);
-        uint16_t iCITH = test_read(CHARGE_INHIBIT_CFG_SUBCLASS_ID, CHG_INHIBIT_TEMP_HIGH_OFFSET);
+        uint16_t iBL = test_read(I2C_DISCHARGE_SUBCLASS_ID, I2C_BL_OFFSET);
+        uint16_t iBH = test_read(I2C_DISCHARGE_SUBCLASS_ID, I2C_BH_OFFSET);
+        uint16_t iCCT = test_read(I2C_CURRENT_THRESHOLDS_SUBCLASS_ID, I2C_CHG_CURRENT_THRESHOLD_OFFSET);
+        uint16_t iDCT = test_read(I2C_CURRENT_THRESHOLDS_SUBCLASS_ID, I2C_DSG_CURRENT_THRESHOLD_OFFSET);
+        uint16_t iCITL = test_read(I2C_CHARGE_INHIBIT_CFG_SUBCLASS_ID, I2C_CHG_INHIBIT_TEMP_LOW_OFFSET);
+        uint16_t iCITH = test_read(I2C_CHARGE_INHIBIT_CFG_SUBCLASS_ID, I2C_CHG_INHIBIT_TEMP_HIGH_OFFSET);
 
         // create JSON object with sensor data
         cJSON *json = cJSON_CreateObject();
@@ -1065,7 +1065,7 @@ void websocket_task(void *pvParameters) {
 
         if (json_string != NULL) {
             // first send to all connected WebSocket clients
-            for (int i = 0; i < CONFIG_MAX_CLIENTS; i++) {
+            for (int i = 0; i < WS_CONFIG_MAX_CLIENTS; i++) {
                 if (client_sockets[i] != -1) {
                     /*
                     // Validate WebSocket connection with a PING

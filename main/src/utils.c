@@ -12,10 +12,10 @@ void random_key(char *key) {
     const char charset[] = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
     size_t charset_size = sizeof(charset) - 1;
 
-    for (size_t i = 0; i < KEY_LENGTH; i++) {
+    for (size_t i = 0; i < UTILS_KEY_LENGTH; i++) {
         key[i] = charset[esp_random() % charset_size];
     }
-    key[KEY_LENGTH] = '\0';
+    key[UTILS_KEY_LENGTH] = '\0';
 }
 
 void send_fake_post_request() {
