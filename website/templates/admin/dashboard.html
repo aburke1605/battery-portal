@@ -27,6 +27,10 @@
     <div class="content">
       <div class="container-fluid">
         <div class="row">
+
+
+
+
           <div class="col-lg-6">
             <div class="card">
               <div class="card-header border-0">
@@ -112,6 +116,48 @@
             <!-- /.card -->
           </div>
           <!-- /.col-md-6 -->
+
+
+
+
+          <div class="col-lg-6">
+
+            <!-- new card -->
+            <div class="card">
+
+              <!-- header -->
+              <div class="card-header border-0">
+                <div class="d-flex justify-content-between">
+                  <h3 class="card-title">Live monitoring</h3>
+                </div>
+              </div>
+
+              <!-- body -->
+              <div class="card-body">
+                <div class="d-flex">
+                  <p class="d-flex flex-column">
+                    <span class="text-bold text-lg">Connected battery packs:</span>
+                    <span><ul id="connected_esp_list"></ul></span>
+                  </p>
+                  <p class="ml-auto d-flex flex-column text-right">
+                    <span class="text-primary">
+                      <i class="fas fa-arrow-up"></i> 33.1%
+                    </span>
+                    <span class="text-muted">Since last month</span>
+                  </p>
+                </div>
+
+                <div class="position-relative mb-4">
+                  <canvas id="sales-chart" height="ml-auto"></canvas>
+                </div>
+              </div>
+            </div>
+          </div>
+
+
+
+
+
         </div>
         <!-- /.row -->
       </div>
