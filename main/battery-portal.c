@@ -22,7 +22,7 @@ char old_successful_ips[256][16];
 uint8_t successful_ip_count = 0;
 uint8_t old_successful_ip_count = 0;
 char ESP_IP[16] = "xxx.xxx.xxx.xxx\0";
-
+char ESP_subnet_IP[15];
 esp_websocket_client_handle_t ws_client = NULL;
 QueueHandle_t ws_queue;
 
