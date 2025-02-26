@@ -13,11 +13,23 @@
     <div class="overlay" id="overlay">Loading...</div>
 
     <script>
-        let protocol = (window.location.protocol === 'https:') ? 'wss://' : 'ws://';
-        let monitoring_socket = new WebSocket(protocol + window.location.host + "/monitor");
-        monitoring_socket.onmessage = function(event) {
-            document.getElementById('overlay').innerText = event.data;
-        };
+        document.addEventListener('DOMContentLoaded', function() {
+            let protocol = (window.location.protocol === 'https:') ? 'wss://' : 'ws://';
+            let monitoring_socket = new WebSocket(protocol + window.location.host + "/monitor");
+            monitoring_socket.onopen = function() {
+                console.log('Monitoring WebSocket connection established');
+            };
+            monitoring_socket.onmessage = function(event) {
+                let data = JSON.parse(event.data);
+                document.getElementById('overlay').innerText = data.overlay;
+            };
+            monitoring_socket.onerror = function(error) {
+                console.error('Monitoring WebSocket error:', error);
+            };
+            monitoring_socket.onclose = function() {
+                console.log('Monitoring WebSocket connection closed');
+            };
+        })
     </script>
 </body>
 </html>
