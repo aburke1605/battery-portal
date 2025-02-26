@@ -6,7 +6,6 @@
 extern bool connected_to_WiFi;
 extern char ESP_subnet_IP[15];
 
-#define KEY_LENGTH 16
 void random_key(char *key);
 
 void send_fake_post_request();

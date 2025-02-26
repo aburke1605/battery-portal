@@ -64,6 +64,13 @@ def display():
 def alert():
     return render_template("portal/alert.html", prefix="/portal")
 
+@portal.route("/purge")
+def purge():
+    global connected_esp_clients
+    connected_esp_clients = dict()
+
+    return "", 204
+
 @portal.route('/change')
 def change():
     print('Request for change page received')

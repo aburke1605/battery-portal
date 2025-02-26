@@ -3,9 +3,8 @@
 #include <lwip/netdb.h>
 #include <lwip/dns.h>
 
+#include "include/config.h"
 #include "include/DNS.h"
-
-#define DNS_PORT 53
 
 // DNS handler (redirect all requests to our AP IP)
 void dns_server_task(void *pvParameters) {

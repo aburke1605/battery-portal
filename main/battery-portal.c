@@ -1,5 +1,6 @@
 #include <esp_spiffs.h>
 
+#include "include/config.h"
 #include "include/AP.h"
 #include "include/DNS.h"
 #include "include/I2C.h"
@@ -8,9 +9,9 @@
 #include "include/utils.h"
 
 // global variables
-char ESP_ID[KEY_LENGTH + 1];
+char ESP_ID[UTILS_KEY_LENGTH + 1];
 httpd_handle_t server = NULL;
-int client_sockets[CONFIG_MAX_CLIENTS];
+int client_sockets[WS_CONFIG_MAX_CLIENTS];
 char received_data[1024];
 SemaphoreHandle_t data_mutex;
 bool connected_to_WiFi = false;
@@ -23,6 +24,7 @@ uint8_t old_successful_ip_count = 0;
 char ESP_IP[16] = "xxx.xxx.xxx.xxx\0";
 char ESP_subnet_IP[15];
 esp_websocket_client_handle_t ws_client = NULL;
+QueueHandle_t ws_queue;
 
 void app_main(void) {
     random_key(ESP_ID);
@@ -56,7 +58,7 @@ void app_main(void) {
 
     // Initialize the GPIO pin as an output for LED toggling
     gpio_config_t io_conf = {
-        .pin_bit_mask = (1ULL << LED_GPIO_PIN),
+        .pin_bit_mask = (1ULL << I2C_LED_GPIO_PIN),
         .mode = GPIO_MODE_OUTPUT,
         .pull_up_en = GPIO_PULLUP_DISABLE,
         .pull_down_en = GPIO_PULLDOWN_DISABLE,
@@ -88,6 +90,9 @@ void app_main(void) {
 
     esp_log_level_set("wifi", ESP_LOG_ERROR);
     xTaskCreate(&check_wifi_task, "check_wifi_task", 4096, NULL, 5, NULL);
+
+    ws_queue = xQueueCreate(WS_QUEUE_SIZE, WS_MESSAGE_MAX_LEN);
+    xTaskCreate(message_queue_task, "message_queue_task", 4096, NULL, 5, NULL);
 
     esp_log_level_set("websocket_client", ESP_LOG_WARN);
     esp_log_level_set("transport_ws", ESP_LOG_WARN);
