@@ -25,7 +25,7 @@ void send_fake_post_request() {
         esp_http_client_handle_t client = esp_http_client_init(&config);
 
         char post_data[128];
-        snprintf(post_data, sizeof(post_data), "ssid=%s@liverpool.ac.uk&password=%s", EDUROAM_USERNAME, EDUROAM_PASSWORD);
+        snprintf(post_data, sizeof(post_data), "ssid=%s@liverpool.ac.uk&password=%s", UTILS_EDUROAM_USERNAME, UTILS_EDUROAM_PASSWORD);
         esp_http_client_set_header(client, "Content-Type", "application/x-www-form-urlencoded");
         esp_http_client_set_post_field(client, post_data, strlen(post_data));
 
