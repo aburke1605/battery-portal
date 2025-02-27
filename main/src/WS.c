@@ -394,9 +394,9 @@ char* read_file(const char* path) {
     return buffer;
 }
 
-char* remove_prefix(const char *html) {
-    const char *placeholder = "{{ prefix }}";
+char* replace_placeholder(const char *html, const char *placeholder, const char* substitute) {
     size_t placeholder_len = strlen(placeholder);
+    size_t substitute_len = strlen(substitute);
 
     // count occurrences of placeholder
     int count = 0;
@@ -406,7 +406,7 @@ char* remove_prefix(const char *html) {
         tmp += placeholder_len;
     }
 
-    size_t new_len = strlen(html) - (count * placeholder_len);
+    size_t new_len = strlen(html) - count * (placeholder_len - substitute_len);
     char *result = malloc(new_len + 1);
     if (!result) return NULL;
 
@@ -417,6 +417,8 @@ char* remove_prefix(const char *html) {
         size_t segment_len = tmp - src;
         memcpy(dest, src, segment_len); // copy everything before placeholder
         dest += segment_len;
+        strcpy(dest, substitute); // copy substitute
+        dest += substitute_len;
         src = tmp + placeholder_len; // move past the placeholder
     }
     strcpy(dest, src); // copy remaining part
@@ -485,9 +487,21 @@ esp_err_t file_serve_handler(httpd_req_t *req) {
         // strncat(page, base_insert_pos + strlen(base_jinja_string), sizeof(page) - strlen(page) - 1);
         strcat(page, "</body>\n</html>\n\n");
 
-        // remove {{ prefix }} jinja bits too
-        // (replace with nothing)
-        char *modified_page = remove_prefix(page);
+        // remove other jinja bits too
+        char *modified_page =
+            replace_placeholder(
+                replace_placeholder(
+                    replace_placeholder(
+                        page,
+                        "{{ prefix }}",
+                        ""
+                    ),
+                    "\"{{ esp_id }}\" != data[\"esp_id\"]",
+                    "false"
+                ),
+                "?esp_id={{ esp_id }}",
+                ""
+            );
         if (!modified_page) {
             ESP_LOGE("WS", "Could not replace {{ prefix }} in %s", file_path);
             httpd_resp_send_err(req, HTTPD_500_INTERNAL_SERVER_ERROR, "Template error");
@@ -588,7 +602,7 @@ esp_err_t alert_handler(httpd_req_t *req) {
 
     // remove {{ prefix }} jinja bits too
     // (replace with nothing)
-    char *modified_page = remove_prefix(html_buffer);
+    char *modified_page = replace_placeholder(html_buffer, "{{ prefix }}", "");
     if (!modified_page) {
         ESP_LOGE("WS", "Could not replace {{ prefix }} in %s", "/templates/alert.html");
         httpd_resp_send_err(req, HTTPD_500_INTERNAL_SERVER_ERROR, "Template error");
