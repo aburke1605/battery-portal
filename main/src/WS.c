@@ -1141,9 +1141,8 @@ void websocket_task(void *pvParameters) {
                     .uri = uri,
                     .reconnect_timeout_ms = 10000,
                     .network_timeout_ms = 10000,
-                    .cert_pem = (const char *)website_cert_pem,
-                    // .cert_pem = (const char *)local_cert_pem,
-                    // .skip_cert_common_name_check = true,
+                    .cert_pem = (const char *)DEV?local_cert_pem:website_cert_pem,
+                    .skip_cert_common_name_check = DEV,
                 };
 
                 if (ws_client == NULL) {
