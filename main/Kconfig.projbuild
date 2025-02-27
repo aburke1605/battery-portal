@@ -1,8 +1,18 @@
+menu "[CUSTOM] Developer mode"
+
 config DEV
     bool "Developer mode"
     default n
     help
       Set to true to enable ESP32 developer mode.
+
+config FLASK_IP
+    string "Flask IP"
+    default 192.168.137.1
+    help
+      IP address of machine running Flask in local network.
+
+endmenu
 
 
 menu "[CUSTOM] I2C Configuration"

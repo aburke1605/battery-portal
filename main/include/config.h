@@ -8,6 +8,8 @@
     #define DEV false
 #endif
 
+# define FLASK_IP CONFIG_FLASK_IP
+
 
 #define AP_WIFI_SSID "AceOn battery"
 #define AP_WIFI_PASS "password"
