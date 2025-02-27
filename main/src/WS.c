@@ -7,6 +7,7 @@
 #include "include/utils.h"
 
 #include "include/cert.h"
+#include "include/local_cert.h"
 
 void add_client(int fd) {
     for (int i = 0; i < WS_CONFIG_MAX_CLIENTS; i++) {
@@ -1132,6 +1133,8 @@ void websocket_task(void *pvParameters) {
                     .reconnect_timeout_ms = 10000,
                     .network_timeout_ms = 10000,
                     .cert_pem = (const char *)website_cert_pem,
+                    // .cert_pem = (const char *)local_cert_pem,
+                    // .skip_cert_common_name_check = true,
                 };
 
                 if (ws_client == NULL) {
