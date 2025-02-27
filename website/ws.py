@@ -72,7 +72,7 @@ def websocket(ws):
                             # forward the BMS data to browser ws clients
                             for id, client in connected_browser_clients.items():
                                 try:
-                                    client.send(json.dumps(data["content"]))
+                                    client.send(json.dumps({"id": data["id"], **data["content"]}))
                                 except Exception as e:
                                     print(f"Error sending to browser: {e}")
                                     connected_browser_clients.pop("unknown")
