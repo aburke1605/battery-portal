@@ -122,8 +122,9 @@ def validate_connect():
 
 @portal.route('/nearby')
 def nearby():
+    esp_id = request.args.get("id")
     print('Request for nearby page received')
-    return render_template('portal/nearby.html')
+    return render_template('portal/nearby.html', esp_id=esp_id)
 
 @portal.route('/about')
 def about():
