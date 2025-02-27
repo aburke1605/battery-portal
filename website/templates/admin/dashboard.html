@@ -184,13 +184,23 @@
         let data = JSON.parse(event.data);
         let esps = JSON.parse(data.esps);
 
-        let listElement = document.getElementById("connected_esp_list");
-        listElement.innerHTML = ""; // clear
+        let list_element = document.getElementById("connected_esp_list");
+        list_element.innerHTML = ""; // clear
 
         Object.keys(esps).forEach(esp => {
-          let listItem = document.createElement("li");
-          listItem.textContent = `ESP32 with ID: `+ esp;
-          listElement.appendChild(listItem);
+          let list_item = document.createElement("li");
+          list_item.textContent = `ESP32 with ID: `;
+
+          let list_link = document.createElement("a");
+          list_link.href = "/portal/display"
+          list_link.textContent = esp;
+          list_link.style.textDecoration = "none";
+          list_item.appendChild(list_link);
+
+          let state_of_charge = document.createTextNode(" (" + esps[esp]['charge'] + "\u00A0%)");
+          list_item.appendChild(state_of_charge);
+
+          list_element.appendChild(list_item);
         });
       };
       monitoring_socket.onerror = function(error) {
