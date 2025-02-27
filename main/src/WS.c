@@ -492,7 +492,11 @@ esp_err_t file_serve_handler(httpd_req_t *req) {
             replace_placeholder(
                 replace_placeholder(
                     replace_placeholder(
-                        page,
+                        replace_placeholder(
+                            page,
+                            "wss://",
+                            "ws://"
+                        ),
                         "{{ prefix }}",
                         ""
                     ),

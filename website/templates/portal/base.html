@@ -14,8 +14,7 @@
 
     <script>
         document.addEventListener('DOMContentLoaded', function() {
-            let protocol = (window.location.protocol === 'https:') ? 'wss://' : 'ws://';
-            let monitoring_socket = new WebSocket(protocol + window.location.host + "/monitor");
+            let monitoring_socket = new WebSocket("wss://" + window.location.host + "/monitor");
             monitoring_socket.onopen = function() {
                 console.log('Monitoring WebSocket connection established');
             };
