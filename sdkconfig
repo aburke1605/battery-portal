@@ -432,6 +432,13 @@ CONFIG_TEMPERATURE_REG=0x06
 # end of [CUSTOM] I2C Configuration
 
 #
+# [CUSTOM] Eduroam Configuration
+#
+CONFIG_EDUROAM_USERNAME="USERNAME"
+CONFIG_EDUROAM_PASSWORD="PASSWORD"
+# end of [CUSTOM] Eduroam Configuration
+
+#
 # Compiler options
 #
 CONFIG_COMPILER_OPTIMIZATION_DEBUG=y
