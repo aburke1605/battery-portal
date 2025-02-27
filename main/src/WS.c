@@ -1109,8 +1109,17 @@ void websocket_task(void *pvParameters) {
                 // add correct ESP32 IP info to message
                 esp_ip4addr_ntoa(&ip_info.ip, ESP_IP, 16);
 
+                char s[64];
+                if (DEV) {
+                    snprintf(s, sizeof(s), "%s:5000", FLASK_IP);
+                } else {
+                    snprintf(s, sizeof(s), "batteryportal-e9czhgamgferavf7.ukwest-01.azurewebsites.net");
+                }
+                char uri[128];
+                snprintf(uri, sizeof(uri), "wss://%s/ws", s);
+
                 const esp_websocket_client_config_t websocket_cfg = {
-                    .uri = "wss://batteryportal-e9czhgamgferavf7.ukwest-01.azurewebsites.net/ws",
+                    .uri = uri,
                     .reconnect_timeout_ms = 10000,
                     .network_timeout_ms = 10000,
                     .cert_pem = (const char *)website_cert_pem,
