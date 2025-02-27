@@ -67,7 +67,7 @@ def alert():
 @portal.route("/purge")
 def purge():
     global connected_esp_clients
-    connected_esp_clients = dict()
+    connected_esp_clients.clear()
 
     return "", 204
 
