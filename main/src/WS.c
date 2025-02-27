@@ -210,7 +210,7 @@ esp_err_t validate_connect_handler(httpd_req_t *req) {
         wifi_config_t *wifi_sta_config = malloc(sizeof(wifi_config_t));
         memset(wifi_sta_config, 0, sizeof(wifi_config_t));
 
-        if (strcmp(req->uri, "/validate_connect?id=eduroam") == 0) {
+        if (strcmp(req->uri, "/validate_connect?esp_id=eduroam") == 0) {
             strncpy((char *)wifi_sta_config->sta.ssid, "eduroam", 8);
 
             esp_wifi_sta_enterprise_enable();
@@ -880,7 +880,7 @@ void websocket_event_handler(void *arg, esp_event_base_t event_base, int32_t eve
         case WEBSOCKET_EVENT_CONNECTED:
             // ESP_LOGI("WS", "WebSocket connected");
             char websocket_connect_message[128];
-            snprintf(websocket_connect_message, sizeof(websocket_connect_message), "{\"type\": \"register\", \"id\": \"%s\"}", ESP_ID);
+            snprintf(websocket_connect_message, sizeof(websocket_connect_message), "{\"type\": \"register\", \"esp_id\": \"%s\"}", ESP_ID);
             send_ws_message(websocket_connect_message);
             break;
 
@@ -929,7 +929,7 @@ void websocket_event_handler(void *arg, esp_event_base_t event_base, int32_t eve
                 char *req_content;
                 esp_err_t err = ESP_OK;
 
-                if ((strcmp(endpoint, "/validate_connect") == 0 || strcmp(endpoint, "/validate_connect?id=eduroam") == 0) && strcmp(method, "POST") == 0) {
+                if ((strcmp(endpoint, "/validate_connect") == 0 || strcmp(endpoint, "/validate_connect?esp_id=eduroam") == 0) && strcmp(method, "POST") == 0) {
                     reconnect = true;
                     // create a mock HTTP request
                     cJSON *ssid = cJSON_GetObjectItem(data, "ssid");
@@ -1155,7 +1155,7 @@ void websocket_task(void *pvParameters) {
                     ws_client = NULL;
                 } else {
                     char message[1024];
-                    snprintf(message, sizeof(message), "{\"type\": \"data\", \"id\": \"%s\", \"content\": %s}", ESP_ID, json_string);
+                    snprintf(message, sizeof(message), "{\"type\": \"data\", \"esp_id\": \"%s\", \"content\": %s}", ESP_ID, json_string);
                     send_ws_message(message);
                 }
             }

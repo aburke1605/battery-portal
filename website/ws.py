@@ -33,7 +33,7 @@ def monitor(ws):
 @sock.route('/ws')
 def websocket(ws):
     global connected_esp_clients, connected_browser_clients
-    metadata = {"ws": ws, "id": "unknown"}
+    metadata = {"ws": ws, "esp_id": "unknown"}
 
     with lock:
         connected_browser_clients["unknown"] = ws # assume it's a browser client initially
@@ -54,31 +54,31 @@ def websocket(ws):
 
                     if data["type"] == "register":
                         with lock:
-                            metadata["id"] = data["id"]
+                            metadata["esp_id"] = data["esp_id"]
                             # move the client to the connected clients set
                             connected_browser_clients.pop("unknown")
 
                             # the value for now is empty
-                            connected_esp_clients[data["id"]] = {}
+                            connected_esp_clients[data["esp_id"]] = {}
 
                             update_time()
-                            print(f"Client connected: {ws} with id: {data['id']}.")
+                            print(f"Client connected: {ws} with ID: {data['esp_id']}.")
                             print(f"Total clients: {len(connected_esp_clients.keys())}")
                     else:
                         with lock:
                             # save the BMS data in python memory
-                            connected_esp_clients[data["id"]] = data["content"]
+                            connected_esp_clients[data["esp_id"]] = data["content"]
 
                             # forward the BMS data to browser ws clients
-                            for id, client in connected_browser_clients.items():
+                            for esp_id, client in connected_browser_clients.items():
                                 try:
-                                    client.send(json.dumps({"id": data["id"], **data["content"]}))
+                                    client.send(json.dumps({"esp_id": data["esp_id"], **data["content"]}))
                                 except Exception as e:
                                     print(f"Error sending to browser: {e}")
                                     connected_browser_clients.pop("unknown")
 
                     response["content"]["status"] = "success"
-                    response["content"]["id"] = metadata["id"]
+                    response["content"]["esp_id"] = metadata["esp_id"]
 
                 except json.JSONDecodeError:
                     response["content"]["status"] = "error"
@@ -98,7 +98,7 @@ def websocket(ws):
     finally:
         with lock:
             if ws in connected_esp_clients.values():
-                connected_esp_clients.pop(data["id"])
+                connected_esp_clients.pop(data["esp_id"])
                 print(f"Client disconnected. Total clients: {len(connected_esp_clients.keys())}")
             elif ws in connected_browser_clients.values():
                 connected_browser_clients.pop("unknown")
