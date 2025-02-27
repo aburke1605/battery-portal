@@ -75,8 +75,9 @@ def purge():
 
 @portal.route('/change')
 def change():
+    esp_id = request.args.get("id")
     print('Request for change page received')
-    return render_template('portal/change.html', prefix="/portal")
+    return render_template('portal/change.html', prefix="/portal", esp_id=esp_id)
 
 @portal.route('/validate_change', methods=['POST'])
 def validate_change():

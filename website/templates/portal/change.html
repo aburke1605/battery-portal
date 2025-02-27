@@ -46,6 +46,11 @@
             socket.onmessage = function(event) {
                 try {
                     let data = JSON.parse(event.data);
+                    if (window.location.protocol === 'https:') {
+                        if ("{{ esp_id }}" != data["id"]){
+                            return;
+                        }
+                    }
                     document.getElementById('BL').innerHTML = data.BL;
                     document.getElementById('BH').innerHTML = data.BH;
                     document.getElementById('CCT').innerHTML = data.CCT;
