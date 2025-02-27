@@ -402,6 +402,7 @@ char* replace_placeholder(const char *html, const char *placeholder, const char*
     // count occurrences of placeholder
     int count = 0;
     const char *tmp = html;
+    // TODO: using too much stack memory in this function
     while ((tmp = strstr(tmp, placeholder))) {
         count++;
         tmp += placeholder_len;
