@@ -3,7 +3,7 @@ from flask_login import login_required
 import urllib.parse
 import json
 
-from ws import lock, connected_esp_clients
+from ws import lock, connected_esp_clients, update_time
 
 portal = Blueprint('portal', __name__, url_prefix='/portal')
 @portal.before_request
@@ -69,6 +69,7 @@ def alert():
 def purge():
     global connected_esp_clients
     connected_esp_clients.clear()
+    update_time()
 
     return "", 204
 
