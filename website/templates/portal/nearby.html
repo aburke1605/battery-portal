@@ -39,10 +39,8 @@
             socket.onmessage = function(event) {
                 try {
                     let data = JSON.parse(event.data);
-                    if (window.location.protocol === 'https:') {
-                        if ("{{ esp_id }}" != data["id"]){
-                            return;
-                        }
+                    if ("{{ esp_id }}" != data["esp_id"]) {
+                        return;
                     }
 
                     document.getElementById('charge').innerHTML = data.received_data.charge;
