@@ -182,7 +182,7 @@
       };
       monitoring_socket.onmessage = function(event) {
         let data = JSON.parse(event.data);
-        let esps = JSON.parse(data.devices);
+        let esps = JSON.parse(data.esps);
 
         let listElement = document.getElementById("connected_esp_list");
         listElement.innerHTML = ""; // clear

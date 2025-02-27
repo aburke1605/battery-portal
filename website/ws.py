@@ -23,7 +23,7 @@ def monitor(ws):
             overlay_info += f"| *** {k}\n"
         overlay_info += f"\nlast updated: {time_of_last_update}"
 
-        message = json.dumps({"overlay": overlay_info, "devices": json.dumps(connected_esp_clients)})
+        message = json.dumps({"overlay": overlay_info, "esps": json.dumps(connected_esp_clients)})
         ws.send(message)
 
         time.sleep(1)
