@@ -417,6 +417,13 @@ CONFIG_PARTITION_TABLE_MD5=y
 # end of Partition Table
 
 #
+# [CUSTOM] Developer mode
+#
+# CONFIG_DEV is not set
+CONFIG_FLASK_IP="192.168.137.1"
+# end of [CUSTOM] Developer mode
+
+#
 # [CUSTOM] I2C Configuration
 #
 CONFIG_I2C_ADDR=0x55
@@ -428,6 +435,13 @@ CONFIG_VOLTAGE_REG=0x08
 CONFIG_CURRENT_REG=0x14
 CONFIG_TEMPERATURE_REG=0x06
 # end of [CUSTOM] I2C Configuration
+
+#
+# [CUSTOM] Eduroam Configuration
+#
+CONFIG_EDUROAM_USERNAME="USERNAME"
+CONFIG_EDUROAM_PASSWORD="PASSWORD"
+# end of [CUSTOM] Eduroam Configuration
 
 #
 # Compiler options
