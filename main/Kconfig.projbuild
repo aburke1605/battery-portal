@@ -1,3 +1,10 @@
+config DEV
+    bool "Developer mode"
+    default n
+    help
+      Set to true to enable ESP32 developer mode.
+
+
 menu "[CUSTOM] I2C Configuration"
 
 config I2C_ADDR
