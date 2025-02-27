@@ -58,6 +58,12 @@
             socket.onmessage = function(event) {
                 try {
                     let data = JSON.parse(event.data);
+                    if (window.location.protocol === 'https:') {
+                        if ("{{ esp_id }}" != data["id"]){
+                            return;
+                        }
+                    }
+
                     document.getElementById('charge').innerHTML = data.charge;
                     document.getElementById('voltage').innerHTML = data.voltage.toFixed(2);
                     document.getElementById('current').innerHTML = data.current.toFixed(2);

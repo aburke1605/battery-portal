@@ -59,7 +59,7 @@ def forward_request_to_esp32(endpoint, method="POST", id=None):
 def display():
     esp_id = request.args.get("id")
     print('Request for display page received')
-    return render_template('portal/display.html', prefix="/portal")
+    return render_template('portal/display.html', prefix="/portal", esp_id=esp_id)
 
 @portal.route("/alert")
 def alert():
