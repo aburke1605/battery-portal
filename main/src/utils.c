@@ -19,7 +19,7 @@ void random_key(char *key) {
 void send_fake_post_request() {
     if (!connected_to_WiFi) {
         char url[64];
-        snprintf(url, sizeof(url), "http://%s/validate_connect?id=eduroam", ESP_subnet_IP);
+        snprintf(url, sizeof(url), "http://%s/validate_connect?eduroam=true", ESP_subnet_IP);
         esp_http_client_config_t config = {
             .url = url,
             .method = HTTP_METHOD_POST,

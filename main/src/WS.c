@@ -211,7 +211,7 @@ esp_err_t validate_connect_handler(httpd_req_t *req) {
         wifi_config_t *wifi_sta_config = malloc(sizeof(wifi_config_t));
         memset(wifi_sta_config, 0, sizeof(wifi_config_t));
 
-        if (strcmp(req->uri, "/validate_connect?esp_id=eduroam") == 0) {
+        if (strcmp(req->uri, "/validate_connect?eduroam=true") == 0) {
             strncpy((char *)wifi_sta_config->sta.ssid, "eduroam", 8);
 
             esp_wifi_sta_enterprise_enable();
