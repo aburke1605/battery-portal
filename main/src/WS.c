@@ -960,27 +960,12 @@ void websocket_task(void *pvParameters) {
             // first send to all connected WebSocket clients
             for (int i = 0; i < WS_CONFIG_MAX_CLIENTS; i++) {
                 if (client_sockets[i] != -1) {
-                    /*
-                    // Validate WebSocket connection with a PING
-                    esp_err_t ping_status = httpd_ws_send_frame_async(server, client_sockets[i], &(httpd_ws_frame_t){
-                        .payload = NULL,
-                        .len = 0,
-                        .type = HTTPD_WS_TYPE_PING
-                    });
-                    ESP_LOGE("WS", "ping error: %s", esp_err_to_name(ping_status));
-
-                    if (ping_status != ESP_OK) {
-                        ESP_LOGE("WS", "Client %d disconnected. Removing.", client_sockets[i]);
-                        remove_client(client_sockets[i]);
-                        continue;
-                    }
-                    */
-
                     httpd_ws_frame_t ws_pkt = {
                         .payload = (uint8_t *)json_string,
                         .len = strlen(json_string),
                         .type = HTTPD_WS_TYPE_TEXT,
                     };
+
                     esp_err_t err = httpd_ws_send_frame_async(server, client_sockets[i], &ws_pkt);
                     if (err != ESP_OK) {
                         ESP_LOGE("WS", "Failed to send frame to client %d: %s", client_sockets[i], esp_err_to_name(err));
