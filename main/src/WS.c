@@ -1017,7 +1017,7 @@ void websocket_task(void *pvParameters) {
                     .uri = uri,
                     .reconnect_timeout_ms = 10000,
                     .network_timeout_ms = 10000,
-                    .cert_pem = DEV?(const char *)local_cert_pem:(const char *)website_cert_pem,
+                    .cert_pem = LOCAL?(const char *)local_cert_pem:(const char *)website_cert_pem,
                     .skip_cert_common_name_check = LOCAL,
                 };
 
