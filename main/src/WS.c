@@ -303,71 +303,6 @@ esp_err_t toggle_handler(httpd_req_t *req) {
     return ESP_OK;
 }
 
-esp_err_t css_handler(httpd_req_t *req) {
-    const char *file_path = (const char *)req->user_ctx;
-
-    FILE *file = fopen(file_path, "r");
-    if (!file) {
-        ESP_LOGE("CSS_HANDLER", "Failed to open file: %s", file_path);
-        httpd_resp_send_err(req, HTTPD_404_NOT_FOUND, "File not found");
-        return ESP_FAIL;
-    }
-
-    httpd_resp_set_type(req, "text/css");
-
-    char buffer[1024];
-    size_t bytes_read;
-
-    while ((bytes_read = fread(buffer, 1, sizeof(buffer), file)) > 0) {
-        if (httpd_resp_send_chunk(req, buffer, bytes_read) != ESP_OK) {
-            fclose(file);
-            ESP_LOGE("CSS_HANDLER", "Failed to send chunk");
-            httpd_resp_send_err(req, HTTPD_500_INTERNAL_SERVER_ERROR, "Failed to send file");
-            return ESP_FAIL;
-        }
-    }
-
-    fclose(file);
-
-    httpd_resp_send_chunk(req, NULL, 0);
-
-    return ESP_OK;
-}
-
-esp_err_t image_handler(httpd_req_t *req) {
-    // Path to the file in the SPIFFS partition
-    const char *file_path = (const char *)req->user_ctx;
-    FILE *file = fopen(file_path, "r");
-
-    if (file == NULL) {
-        ESP_LOGE("WS", "Failed to open file: %s", file_path);
-        httpd_resp_send_404(req);
-        return ESP_FAIL;
-    }
-
-    // Set the response type to indicate it's an image
-    httpd_resp_set_type(req, "image/png");
-
-    // Buffer for reading file chunks
-    char buffer[1024];
-    size_t read_bytes;
-
-    // Read the file and send chunks
-    while ((read_bytes = fread(buffer, 1, sizeof(buffer), file)) > 0) {
-        if (httpd_resp_send_chunk(req, buffer, read_bytes) != ESP_OK) {
-            fclose(file);
-            ESP_LOGE("WS", "Failed to send file chunk");
-            httpd_resp_send_500(req);
-            return ESP_FAIL;
-        }
-    }
-
-    // Close the file and send the final empty chunk to signal the end of the response
-    fclose(file);
-    httpd_resp_send_chunk(req, NULL, 0);
-    return ESP_OK;
-}
-
 char* read_file(const char* path) {
     FILE* f = fopen(path, "r");
     if (!f) return NULL;
@@ -671,7 +606,6 @@ httpd_handle_t start_webserver(void) {
     if (httpd_start(&server, &config) == ESP_OK) {
         ESP_LOGI("WS", "Registering URI handlers");
 
-        // Login page
         httpd_uri_t login_uri = {
             .uri       = "/",
             .method    = HTTP_GET,
@@ -696,7 +630,6 @@ httpd_handle_t start_webserver(void) {
         login_uri.uri = "/gen_204";
         httpd_register_uri_handler(server, &login_uri);
 
-        // Validate login
         httpd_uri_t validate_login_uri = {
             .uri       = "/validate_login",
             .method    = HTTP_POST,
@@ -705,7 +638,6 @@ httpd_handle_t start_webserver(void) {
         };
         httpd_register_uri_handler(server, &validate_login_uri);
 
-        // Display page
         httpd_uri_t display_uri = {
             .uri       = "/display",
             .method    = HTTP_GET,
@@ -722,7 +654,6 @@ httpd_handle_t start_webserver(void) {
         };
         httpd_register_uri_handler(server, &alert_uri);
 
-        // WebSocket
         httpd_uri_t ws_uri = {
             .uri = "/ws",
             .method = HTTP_GET,
@@ -755,7 +686,6 @@ httpd_handle_t start_webserver(void) {
         };
         httpd_register_uri_handler(server, &reset_uri);
 
-        // Connect page
         httpd_uri_t connect_uri = {
             .uri       = "/connect",
             .method    = HTTP_GET,
@@ -764,7 +694,6 @@ httpd_handle_t start_webserver(void) {
         };
         httpd_register_uri_handler(server, &connect_uri);
 
-        // Eduroam page
         httpd_uri_t eduroam_uri = {
             .uri       = "/eduroam",
             .method    = HTTP_GET,
@@ -773,7 +702,6 @@ httpd_handle_t start_webserver(void) {
         };
         httpd_register_uri_handler(server, &eduroam_uri);
 
-        // Validate connect
         httpd_uri_t validate_connect_uri = {
             .uri       = "/validate_connect",
             .method    = HTTP_POST,
@@ -782,7 +710,6 @@ httpd_handle_t start_webserver(void) {
         };
         httpd_register_uri_handler(server, &validate_connect_uri);
 
-        // Nearby page
         httpd_uri_t nearby_uri = {
             .uri       = "/nearby",
             .method    = HTTP_GET,
@@ -791,7 +718,6 @@ httpd_handle_t start_webserver(void) {
         };
         httpd_register_uri_handler(server, &nearby_uri);
 
-        // About page
         httpd_uri_t about_uri = {
             .uri       = "/about",
             .method    = HTTP_GET,
@@ -800,7 +726,6 @@ httpd_handle_t start_webserver(void) {
         };
         httpd_register_uri_handler(server, &about_uri);
 
-        // Device page
         httpd_uri_t device_uri = {
             .uri       = "/device",
             .method    = HTTP_GET,
@@ -820,25 +745,24 @@ httpd_handle_t start_webserver(void) {
         httpd_uri_t css_uri = {
             .uri      = "/static/portal/style.css",
             .method   = HTTP_GET,
-            .handler  = css_handler,
+            .handler  = file_serve_handler,
             .user_ctx = "/static/style.css",
         };
         httpd_register_uri_handler(server, &css_uri);
 
-        // Add a handler for serving the image
         httpd_uri_t image_uri = {
             .uri       = "/static/portal/images/aceon.png",
             .method    = HTTP_GET,
-            .handler   = image_handler, // Function to read and send the image
-            .user_ctx  = "/static/images/aceon.png" // File path as user context
+            .handler   = file_serve_handler,
+            .user_ctx  = "/static/images/aceon.png"
         };
         httpd_register_uri_handler(server, &image_uri);
 
         httpd_uri_t image_uri_2 = {
             .uri       = "/static/portal/images/aceon2.png",
             .method    = HTTP_GET,
-            .handler   = image_handler, // Function to read and send the image
-            .user_ctx  = "/static/images/aceon2.png" // File path as user context
+            .handler   = file_serve_handler,
+            .user_ctx  = "/static/images/aceon2.png"
         };
         httpd_register_uri_handler(server, &image_uri_2);
 
