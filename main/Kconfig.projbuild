@@ -1,5 +1,11 @@
 menu "[CUSTOM] Developer mode"
 
+config VERBOSE
+    bool "Verbose mode"
+    default n
+    help
+      Set to true to enable verbose mode.
+
 config DEV
     bool "Developer mode"
     default n

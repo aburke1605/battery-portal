@@ -2,6 +2,12 @@
 #define CONFIG_H
 
 
+#ifdef CONFIG_VERBOSE
+    #define VERBOSE true
+#else
+    #define VERBOSE false
+#endif
+
 #ifdef CONFIG_DEV
     #define DEV true
 #else
