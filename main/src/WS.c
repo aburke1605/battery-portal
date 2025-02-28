@@ -859,7 +859,9 @@ void websocket_event_handler(void *arg, esp_event_base_t event_base, int32_t eve
                 const char *method = cJSON_GetObjectItem(content, "method")->valuestring;
                 cJSON *data = cJSON_GetObjectItem(content, "data");
 
-                httpd_req_t req = {0};
+                httpd_req_t req = {
+                    .uri = {*endpoint}
+                };
                 size_t req_len;
                 char *req_content;
                 esp_err_t err = ESP_OK;
@@ -876,8 +878,6 @@ void websocket_event_handler(void *arg, esp_event_base_t event_base, int32_t eve
 
                     req.content_len = req_len;
                     req.user_ctx = req_content;
-
-                    strncpy(req.uri, endpoint, HTTPD_MAX_URI_LEN);
 
                     // call validate_connect_handler
                     err = validate_connect_handler(&req);
