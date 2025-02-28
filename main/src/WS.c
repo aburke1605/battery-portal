@@ -254,7 +254,7 @@ esp_err_t validate_connect_handler(httpd_req_t *req) {
                     }
                 }
             } else {
-                ESP_LOGI("WS", "Not connected. Retrying... %d", tries);
+                if (VERBOSE) ESP_LOGI("WS", "Not connected. Retrying... %d", tries);
                 esp_wifi_connect();
             }
             tries++;
@@ -305,7 +305,7 @@ esp_err_t toggle_handler(httpd_req_t *req) {
 
 esp_err_t file_serve_handler(httpd_req_t *req) {
     const char *file_path = (const char *)req->user_ctx; // Get file path from user_ctx
-    ESP_LOGI("WS", "Serving file: %s", file_path);
+    if (VERBOSE) ESP_LOGI("WS", "Serving file: %s", file_path);
 
     bool already_rendered = false;
     for (int i=0; i<n_rendered_html_pages; i++) {
@@ -743,7 +743,7 @@ void message_queue_task(void *pvParameters) {
                 if (err != ESP_OK) {
                     ESP_LOGE("WS", "Failed to send WebSocket message: %s (%#x)", esp_err_to_name(err), err);
                 } else {
-                    ESP_LOGI("WS", "Sent: %s", message);
+                    if (VERBOSE) ESP_LOGI("WS", "Sent: %s", message);
                 }
             } else {
                 ESP_LOGW("WS", "WebSocket not connected, dropping message: %s", message);
@@ -757,14 +757,14 @@ void websocket_event_handler(void *arg, esp_event_base_t event_base, int32_t eve
 
     switch (event_id) {
         case WEBSOCKET_EVENT_CONNECTED:
-            // ESP_LOGI("WS", "WebSocket connected");
+            if (VERBOSE) ESP_LOGI("WS", "WebSocket connected");
             char websocket_connect_message[128];
             snprintf(websocket_connect_message, sizeof(websocket_connect_message), "{\"type\": \"register\", \"id\": \"%s\"}", ESP_ID);
             send_ws_message(websocket_connect_message);
             break;
 
         case WEBSOCKET_EVENT_DISCONNECTED:
-            // ESP_LOGI("WS", "WebSocket disconnected");
+            if (VERBOSE) ESP_LOGI("WS", "WebSocket disconnected");
             esp_websocket_client_stop(ws_client);
             break;
 
@@ -785,7 +785,7 @@ void websocket_event_handler(void *arg, esp_event_base_t event_base, int32_t eve
             }
             const char *type = typeItem->valuestring;
 
-            // ESP_LOGI("WS", "WebSocket data received: %.*s", ws_event_data->data_len, (char *)ws_event_data->data_ptr);
+            if (VERBOSE) ESP_LOGI("WS", "WebSocket data received: %.*s", ws_event_data->data_len, (char *)ws_event_data->data_ptr);
 
             if (strcmp(type, "response") == 0) {
 
@@ -907,11 +907,11 @@ void websocket_event_handler(void *arg, esp_event_base_t event_base, int32_t eve
             break;
 
         case WEBSOCKET_EVENT_ERROR:
-            // ESP_LOGE("WS", "WebSocket error occurred");
+            if (VERBOSE) ESP_LOGE("WS", "WebSocket error occurred");
             break;
 
         default:
-            // ESP_LOGI("WS", "WebSocket event ID: %ld", event_id);
+            if (VERBOSE) ESP_LOGI("WS", "WebSocket event ID: %ld", event_id);
             break;
     }
 }

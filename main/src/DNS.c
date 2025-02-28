@@ -45,7 +45,7 @@ void dns_server_task(void *pvParameters) {
         int len = recvfrom(sock, buffer, sizeof(buffer), 0, (struct sockaddr *)&source_addr, &socklen);
 
         if (len > 0) {
-            ESP_LOGI("DNS", "DNS request received, responding with AP IP: " IPSTR, IP2STR(&ip_info.ip));
+            if (VERBOSE) ESP_LOGI("DNS", "DNS request received, responding with AP IP: " IPSTR, IP2STR(&ip_info.ip));
 
             // Set the DNS response flags
             buffer[2] = 0x81; // Response flag and authoritative answer
