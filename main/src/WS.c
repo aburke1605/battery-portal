@@ -1135,7 +1135,7 @@ void websocket_task(void *pvParameters) {
                 esp_ip4addr_ntoa(&ip_info.ip, ESP_IP, 16);
 
                 char s[64];
-                if (DEV) {
+                if (LOCAL) {
                     snprintf(s, sizeof(s), "%s:5000", FLASK_IP);
                 } else {
                     snprintf(s, sizeof(s), "batteryportal-e9czhgamgferavf7.ukwest-01.azurewebsites.net");

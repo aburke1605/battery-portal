@@ -8,6 +8,11 @@
     #define DEV false
 #endif
 
+#ifdef CONFIG_LOCAL
+    #define LOCAL true
+#else
+    #define LOCAL false
+#endif
 # define FLASK_IP CONFIG_FLASK_IP
 
 

@@ -6,11 +6,18 @@ config DEV
     help
       Set to true to enable ESP32 developer mode.
 
+config LOCAL
+    bool "Local network mode"
+    default n
+    help
+      Set to true to connect to Flask app running in local network.
+      Requires configuration of "Local Flask IP".
+
 config FLASK_IP
-    string "Flask IP"
+    string "Local Flask IP"
     default "192.168.137.1"
     help
-      IP address of machine running Flask in local network.
+      IP address of machine running Flask app in local network.
 
 endmenu
 
