@@ -2,6 +2,7 @@
 #include <esp_wifi.h>
 #include <lwip/etharp.h>
 
+#include "include/config.h"
 #include "include/ARP.h"
 
 void send_arp_request(ip4_addr_t target_ip) {
@@ -70,7 +71,7 @@ void get_devices_task(void *pvParameters) {
                                 break;
                             }
                         }
-                        if (undiscovered_ip) ESP_LOGI("ARP", "discovered new device with IP address " IPSTR, IP2STR(ip_ret));
+                        if (undiscovered_ip && VERBOSE) ESP_LOGI("ARP", "discovered new device with IP address " IPSTR, IP2STR(ip_ret));
                     }
                 }
             }

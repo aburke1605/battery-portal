@@ -2,17 +2,27 @@
 #define CONFIG_H
 
 
+#ifdef CONFIG_VERBOSE
+    #define VERBOSE true
+#else
+    #define VERBOSE false
+#endif
+
 #ifdef CONFIG_DEV
     #define DEV true
 #else
     #define DEV false
 #endif
 
+#ifdef CONFIG_LOCAL
+    #define LOCAL true
+#else
+    #define LOCAL false
+#endif
 # define FLASK_IP CONFIG_FLASK_IP
 
 
 #define AP_WIFI_SSID "AceOn battery"
-#define AP_WIFI_PASS "password"
 #define AP_MAX_STA_CONN 4
 
 

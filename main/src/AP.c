@@ -114,9 +114,8 @@ void wifi_init(void) {
     wifi_config_t wifi_ap_config = {
         .ap = {
             .channel = 1,
-            .password = AP_WIFI_PASS,
             .max_connection = AP_MAX_STA_CONN,
-            .authmode = WIFI_AUTH_WPA_WPA2_PSK
+            .authmode = WIFI_AUTH_OPEN
         },
     };
     // set the SSID as well
@@ -129,9 +128,6 @@ void wifi_init(void) {
     wifi_ap_config.ap.ssid[sizeof(wifi_ap_config.ap.ssid) - 1] = '\0'; // Ensure null-termination
     wifi_ap_config.ap.ssid_len = strlen((char *)wifi_ap_config.ap.ssid); // Set SSID length
 
-    if (strlen(AP_WIFI_PASS) == 0) {
-        wifi_ap_config.ap.authmode = WIFI_AUTH_OPEN;
-    }
     ESP_ERROR_CHECK(esp_wifi_set_config(ESP_IF_WIFI_AP, &wifi_ap_config));
 
 
@@ -156,6 +152,6 @@ void wifi_init(void) {
     ESP_ERROR_CHECK(esp_netif_dhcps_start(ap_netif));
     ESP_LOGI("AP", "AP initialized with IP: %s", ESP_subnet_IP);
 
-    ESP_LOGI("AP", "Starting WiFi AP... SSID: %s, Password: %s", AP_WIFI_SSID, AP_WIFI_PASS);
+    ESP_LOGI("AP", "Starting WiFi AP... SSID: %s", wifi_ap_config.ap.ssid);
     ESP_ERROR_CHECK(esp_wifi_start());
 }
