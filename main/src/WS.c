@@ -432,6 +432,18 @@ esp_err_t file_serve_handler(httpd_req_t *req) {
     const char *file_path = (const char *)req->user_ctx; // Get file path from user_ctx
     ESP_LOGI("WS", "Serving file: %s", file_path);
 
+    bool already_rendered = false;
+    for (int i=0; i<n_rendered_html_pages; i++) {
+        if (strcmp(file_path, rendered_html_pages[i].name) == 0) {
+            already_rendered = true;
+
+            httpd_resp_set_type(req, "text/html");
+            httpd_resp_send(req, rendered_html_pages[i].content, HTTPD_RESP_USE_STRLEN);
+
+            return ESP_OK;
+        }
+    }
+
     const char *ext = strrchr(file_path, '.');
     bool is_html = (ext && strcmp(ext, ".html") == 0);
 
@@ -512,6 +524,19 @@ esp_err_t file_serve_handler(httpd_req_t *req) {
             ESP_LOGE("WS", "Could not replace {{ prefix }} in %s", file_path);
             httpd_resp_send_err(req, HTTPD_500_INTERNAL_SERVER_ERROR, "Template error");
             return ESP_FAIL;
+        }
+
+        if (!already_rendered) {
+            struct rendered_page* new_page = malloc(sizeof(struct rendered_page));
+
+            strncpy(new_page->name, file_path, WS_MAX_HTML_PAGE_NAME_LENGTH - 1);
+            new_page->name[WS_MAX_HTML_PAGE_NAME_LENGTH - 1] = '\0';
+
+            strncpy(new_page->content, modified_page, WS_MAX_HTML_SIZE - 1);
+            new_page->content[WS_MAX_HTML_SIZE - 1] = '\0';
+
+            rendered_html_pages[n_rendered_html_pages++] = *new_page;
+            free(new_page);
         }
 
         httpd_resp_set_type(req, "text/html");
