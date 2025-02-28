@@ -8,7 +8,7 @@ config DEV
 
 config FLASK_IP
     string "Flask IP"
-    default 192.168.137.1
+    default "192.168.137.1"
     help
       IP address of machine running Flask in local network.
 
@@ -72,13 +72,13 @@ menu "[CUSTOM] Eduroam Configuration"
 
 config EDUROAM_USERNAME
     string "Username"
-    default USERNAME
+    default "USERNAME"
     help
       University account username (without @liverpool.ac.uk).
 
 config EDUROAM_PASSWORD
     string "Password"
-    default PASSWORD
+    default "PASSWORD"
     help
       University account password.
 
