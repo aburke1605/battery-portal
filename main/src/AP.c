@@ -152,6 +152,6 @@ void wifi_init(void) {
     ESP_ERROR_CHECK(esp_netif_dhcps_start(ap_netif));
     ESP_LOGI("AP", "AP initialized with IP: %s", ESP_subnet_IP);
 
-    ESP_LOGI("AP", "Starting WiFi AP... SSID: %s", AP_WIFI_SSID);
+    ESP_LOGI("AP", "Starting WiFi AP... SSID: %s", wifi_ap_config.ap.ssid);
     ESP_ERROR_CHECK(esp_wifi_start());
 }
