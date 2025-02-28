@@ -25,6 +25,8 @@ char ESP_IP[16] = "xxx.xxx.xxx.xxx\0";
 char ESP_subnet_IP[15];
 esp_websocket_client_handle_t ws_client = NULL;
 QueueHandle_t ws_queue;
+struct rendered_page rendered_html_pages[WS_MAX_N_HTML_PAGES];
+uint8_t n_rendered_html_pages = 0;
 
 void app_main(void) {
     random_key(ESP_ID);
