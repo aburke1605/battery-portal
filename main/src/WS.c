@@ -1072,6 +1072,7 @@ void websocket_task(void *pvParameters) {
                     .reconnect_timeout_ms = 10000,
                     .network_timeout_ms = 10000,
                     .cert_pem = (const char *)website_cert_pem,
+                    .skip_cert_common_name_check = LOCAL,
                 };
 
                 if (ws_client == NULL) {
