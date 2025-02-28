@@ -429,6 +429,17 @@ esp_err_t file_serve_handler(httpd_req_t *req) {
     ESP_LOGI("WS", "Serving file: %s", file_path);
 
     bool already_rendered = false;
+    for (int i=0; i<n_rendered_html_pages; i++) {
+        if (strcmp(file_path, rendered_html_pages[i].name) == 0) {
+            already_rendered = true;
+
+            httpd_resp_set_type(req, "text/html");
+            httpd_resp_send(req, rendered_html_pages[i].content, HTTPD_RESP_USE_STRLEN);
+
+            return ESP_OK;
+        }
+    }
+
     const char *ext = strrchr(file_path, '.');
     bool is_html = (ext && strcmp(ext, ".html") == 0);
 
