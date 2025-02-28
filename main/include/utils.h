@@ -16,4 +16,8 @@ void url_decode(char *dest, const char *src);
 
 void url_encode(char *dest, const char *src, size_t dest_size);
 
+char* read_file(const char* path);
+
+char* remove_prefix(const char *html);
+
 uint8_t get_block(uint8_t offset);

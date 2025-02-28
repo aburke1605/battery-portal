@@ -254,7 +254,7 @@ esp_err_t validate_connect_handler(httpd_req_t *req) {
                     }
                 }
             } else {
-                ESP_LOGI("WS", "Not connected. Retrying... %d", tries);
+                if (VERBOSE) ESP_LOGI("WS", "Not connected. Retrying... %d", tries);
                 esp_wifi_connect();
             }
             tries++;
@@ -303,130 +303,9 @@ esp_err_t toggle_handler(httpd_req_t *req) {
     return ESP_OK;
 }
 
-esp_err_t css_handler(httpd_req_t *req) {
-    const char *file_path = (const char *)req->user_ctx;
-
-    FILE *file = fopen(file_path, "r");
-    if (!file) {
-        ESP_LOGE("CSS_HANDLER", "Failed to open file: %s", file_path);
-        httpd_resp_send_err(req, HTTPD_404_NOT_FOUND, "File not found");
-        return ESP_FAIL;
-    }
-
-    httpd_resp_set_type(req, "text/css");
-
-    char buffer[1024];
-    size_t bytes_read;
-
-    while ((bytes_read = fread(buffer, 1, sizeof(buffer), file)) > 0) {
-        if (httpd_resp_send_chunk(req, buffer, bytes_read) != ESP_OK) {
-            fclose(file);
-            ESP_LOGE("CSS_HANDLER", "Failed to send chunk");
-            httpd_resp_send_err(req, HTTPD_500_INTERNAL_SERVER_ERROR, "Failed to send file");
-            return ESP_FAIL;
-        }
-    }
-
-    fclose(file);
-
-    httpd_resp_send_chunk(req, NULL, 0);
-
-    return ESP_OK;
-}
-
-esp_err_t image_handler(httpd_req_t *req) {
-    // Path to the file in the SPIFFS partition
-    const char *file_path = (const char *)req->user_ctx;
-    FILE *file = fopen(file_path, "r");
-
-    if (file == NULL) {
-        ESP_LOGE("WS", "Failed to open file: %s", file_path);
-        httpd_resp_send_404(req);
-        return ESP_FAIL;
-    }
-
-    // Set the response type to indicate it's an image
-    httpd_resp_set_type(req, "image/png");
-
-    // Buffer for reading file chunks
-    char buffer[1024];
-    size_t read_bytes;
-
-    // Read the file and send chunks
-    while ((read_bytes = fread(buffer, 1, sizeof(buffer), file)) > 0) {
-        if (httpd_resp_send_chunk(req, buffer, read_bytes) != ESP_OK) {
-            fclose(file);
-            ESP_LOGE("WS", "Failed to send file chunk");
-            httpd_resp_send_500(req);
-            return ESP_FAIL;
-        }
-    }
-
-    // Close the file and send the final empty chunk to signal the end of the response
-    fclose(file);
-    httpd_resp_send_chunk(req, NULL, 0);
-    return ESP_OK;
-}
-
-char* read_file(const char* path) {
-    FILE* f = fopen(path, "r");
-    if (!f) return NULL;
-
-    fseek(f, 0, SEEK_END);
-    size_t file_size = ftell(f);
-    fseek(f, 0, SEEK_SET);
-
-    char* buffer = (char*)malloc(file_size + 1);
-    if (!buffer){
-        fclose(f);
-        return NULL;
-    }
-
-    size_t bytes_read = fread(buffer, 1, file_size, f);
-    if (bytes_read != file_size) {
-        free(buffer);
-        fclose(f);
-        return NULL;
-    }
-    buffer[bytes_read] = '\0';
-
-    fclose(f);
-    return buffer;
-}
-
-char* remove_prefix(const char *html) {
-    const char *placeholder = "{{ prefix }}";
-    size_t placeholder_len = strlen(placeholder);
-
-    // count occurrences of placeholder
-    int count = 0;
-    const char *tmp = html;
-    while ((tmp = strstr(tmp, placeholder))) {
-        count++;
-        tmp += placeholder_len;
-    }
-
-    size_t new_len = strlen(html) - (count * placeholder_len);
-    char *result = malloc(new_len + 1);
-    if (!result) return NULL;
-
-    // remove occurrences
-    char *dest = result;
-    const char *src = html;
-    while ((tmp = strstr(src, placeholder))) {
-        size_t segment_len = tmp - src;
-        memcpy(dest, src, segment_len); // copy everything before placeholder
-        dest += segment_len;
-        src = tmp + placeholder_len; // move past the placeholder
-    }
-    strcpy(dest, src); // copy remaining part
-
-    return result;
-}
-
 esp_err_t file_serve_handler(httpd_req_t *req) {
     const char *file_path = (const char *)req->user_ctx; // Get file path from user_ctx
-    ESP_LOGI("WS", "Serving file: %s", file_path);
+    if (VERBOSE) ESP_LOGI("WS", "Serving file: %s", file_path);
 
     bool already_rendered = false;
     for (int i=0; i<n_rendered_html_pages; i++) {
@@ -671,7 +550,6 @@ httpd_handle_t start_webserver(void) {
     if (httpd_start(&server, &config) == ESP_OK) {
         ESP_LOGI("WS", "Registering URI handlers");
 
-        // Login page
         httpd_uri_t login_uri = {
             .uri       = "/",
             .method    = HTTP_GET,
@@ -696,7 +574,6 @@ httpd_handle_t start_webserver(void) {
         login_uri.uri = "/gen_204";
         httpd_register_uri_handler(server, &login_uri);
 
-        // Validate login
         httpd_uri_t validate_login_uri = {
             .uri       = "/validate_login",
             .method    = HTTP_POST,
@@ -705,7 +582,6 @@ httpd_handle_t start_webserver(void) {
         };
         httpd_register_uri_handler(server, &validate_login_uri);
 
-        // Display page
         httpd_uri_t display_uri = {
             .uri       = "/display",
             .method    = HTTP_GET,
@@ -722,7 +598,6 @@ httpd_handle_t start_webserver(void) {
         };
         httpd_register_uri_handler(server, &alert_uri);
 
-        // WebSocket
         httpd_uri_t ws_uri = {
             .uri = "/ws",
             .method = HTTP_GET,
@@ -755,7 +630,6 @@ httpd_handle_t start_webserver(void) {
         };
         httpd_register_uri_handler(server, &reset_uri);
 
-        // Connect page
         httpd_uri_t connect_uri = {
             .uri       = "/connect",
             .method    = HTTP_GET,
@@ -764,7 +638,6 @@ httpd_handle_t start_webserver(void) {
         };
         httpd_register_uri_handler(server, &connect_uri);
 
-        // Eduroam page
         httpd_uri_t eduroam_uri = {
             .uri       = "/eduroam",
             .method    = HTTP_GET,
@@ -773,7 +646,6 @@ httpd_handle_t start_webserver(void) {
         };
         httpd_register_uri_handler(server, &eduroam_uri);
 
-        // Validate connect
         httpd_uri_t validate_connect_uri = {
             .uri       = "/validate_connect",
             .method    = HTTP_POST,
@@ -782,7 +654,6 @@ httpd_handle_t start_webserver(void) {
         };
         httpd_register_uri_handler(server, &validate_connect_uri);
 
-        // Nearby page
         httpd_uri_t nearby_uri = {
             .uri       = "/nearby",
             .method    = HTTP_GET,
@@ -791,7 +662,6 @@ httpd_handle_t start_webserver(void) {
         };
         httpd_register_uri_handler(server, &nearby_uri);
 
-        // About page
         httpd_uri_t about_uri = {
             .uri       = "/about",
             .method    = HTTP_GET,
@@ -800,7 +670,6 @@ httpd_handle_t start_webserver(void) {
         };
         httpd_register_uri_handler(server, &about_uri);
 
-        // Device page
         httpd_uri_t device_uri = {
             .uri       = "/device",
             .method    = HTTP_GET,
@@ -820,25 +689,24 @@ httpd_handle_t start_webserver(void) {
         httpd_uri_t css_uri = {
             .uri      = "/static/portal/style.css",
             .method   = HTTP_GET,
-            .handler  = css_handler,
+            .handler  = file_serve_handler,
             .user_ctx = "/static/style.css",
         };
         httpd_register_uri_handler(server, &css_uri);
 
-        // Add a handler for serving the image
         httpd_uri_t image_uri = {
             .uri       = "/static/portal/images/aceon.png",
             .method    = HTTP_GET,
-            .handler   = image_handler, // Function to read and send the image
-            .user_ctx  = "/static/images/aceon.png" // File path as user context
+            .handler   = file_serve_handler,
+            .user_ctx  = "/static/images/aceon.png"
         };
         httpd_register_uri_handler(server, &image_uri);
 
         httpd_uri_t image_uri_2 = {
             .uri       = "/static/portal/images/aceon2.png",
             .method    = HTTP_GET,
-            .handler   = image_handler, // Function to read and send the image
-            .user_ctx  = "/static/images/aceon2.png" // File path as user context
+            .handler   = file_serve_handler,
+            .user_ctx  = "/static/images/aceon2.png"
         };
         httpd_register_uri_handler(server, &image_uri_2);
 
@@ -875,7 +743,7 @@ void message_queue_task(void *pvParameters) {
                 if (err != ESP_OK) {
                     ESP_LOGE("WS", "Failed to send WebSocket message: %s (%#x)", esp_err_to_name(err), err);
                 } else {
-                    ESP_LOGI("WS", "Sent: %s", message);
+                    if (VERBOSE) ESP_LOGI("WS", "Sent: %s", message);
                 }
             } else {
                 ESP_LOGW("WS", "WebSocket not connected, dropping message: %s", message);
@@ -889,14 +757,14 @@ void websocket_event_handler(void *arg, esp_event_base_t event_base, int32_t eve
 
     switch (event_id) {
         case WEBSOCKET_EVENT_CONNECTED:
-            // ESP_LOGI("WS", "WebSocket connected");
+            if (VERBOSE) ESP_LOGI("WS", "WebSocket connected");
             char websocket_connect_message[128];
             snprintf(websocket_connect_message, sizeof(websocket_connect_message), "{\"type\": \"register\", \"id\": \"%s\"}", ESP_ID);
             send_ws_message(websocket_connect_message);
             break;
 
         case WEBSOCKET_EVENT_DISCONNECTED:
-            // ESP_LOGI("WS", "WebSocket disconnected");
+            if (VERBOSE) ESP_LOGI("WS", "WebSocket disconnected");
             esp_websocket_client_stop(ws_client);
             break;
 
@@ -917,7 +785,7 @@ void websocket_event_handler(void *arg, esp_event_base_t event_base, int32_t eve
             }
             const char *type = typeItem->valuestring;
 
-            // ESP_LOGI("WS", "WebSocket data received: %.*s", ws_event_data->data_len, (char *)ws_event_data->data_ptr);
+            if (VERBOSE) ESP_LOGI("WS", "WebSocket data received: %.*s", ws_event_data->data_len, (char *)ws_event_data->data_ptr);
 
             if (strcmp(type, "response") == 0) {
 
@@ -935,7 +803,9 @@ void websocket_event_handler(void *arg, esp_event_base_t event_base, int32_t eve
                 const char *method = cJSON_GetObjectItem(content, "method")->valuestring;
                 cJSON *data = cJSON_GetObjectItem(content, "data");
 
-                httpd_req_t req = {0};
+                httpd_req_t req = {
+                    .uri = {*endpoint}
+                };
                 size_t req_len;
                 char *req_content;
                 esp_err_t err = ESP_OK;
@@ -952,8 +822,6 @@ void websocket_event_handler(void *arg, esp_event_base_t event_base, int32_t eve
 
                     req.content_len = req_len;
                     req.user_ctx = req_content;
-
-                    strncpy(req.uri, endpoint, HTTPD_MAX_URI_LEN);
 
                     // call validate_connect_handler
                     err = validate_connect_handler(&req);
@@ -1039,11 +907,11 @@ void websocket_event_handler(void *arg, esp_event_base_t event_base, int32_t eve
             break;
 
         case WEBSOCKET_EVENT_ERROR:
-            // ESP_LOGE("WS", "WebSocket error occurred");
+            if (VERBOSE) ESP_LOGE("WS", "WebSocket error occurred");
             break;
 
         default:
-            // ESP_LOGI("WS", "WebSocket event ID: %ld", event_id);
+            if (VERBOSE) ESP_LOGI("WS", "WebSocket event ID: %ld", event_id);
             break;
     }
 }
@@ -1092,27 +960,12 @@ void websocket_task(void *pvParameters) {
             // first send to all connected WebSocket clients
             for (int i = 0; i < WS_CONFIG_MAX_CLIENTS; i++) {
                 if (client_sockets[i] != -1) {
-                    /*
-                    // Validate WebSocket connection with a PING
-                    esp_err_t ping_status = httpd_ws_send_frame_async(server, client_sockets[i], &(httpd_ws_frame_t){
-                        .payload = NULL,
-                        .len = 0,
-                        .type = HTTPD_WS_TYPE_PING
-                    });
-                    ESP_LOGE("WS", "ping error: %s", esp_err_to_name(ping_status));
-
-                    if (ping_status != ESP_OK) {
-                        ESP_LOGE("WS", "Client %d disconnected. Removing.", client_sockets[i]);
-                        remove_client(client_sockets[i]);
-                        continue;
-                    }
-                    */
-
                     httpd_ws_frame_t ws_pkt = {
                         .payload = (uint8_t *)json_string,
                         .len = strlen(json_string),
                         .type = HTTPD_WS_TYPE_TEXT,
                     };
+
                     esp_err_t err = httpd_ws_send_frame_async(server, client_sockets[i], &ws_pkt);
                     if (err != ESP_OK) {
                         ESP_LOGE("WS", "Failed to send frame to client %d: %s", client_sockets[i], esp_err_to_name(err));
@@ -1135,7 +988,7 @@ void websocket_task(void *pvParameters) {
                 esp_ip4addr_ntoa(&ip_info.ip, ESP_IP, 16);
 
                 char s[64];
-                if (DEV) {
+                if (LOCAL) {
                     snprintf(s, sizeof(s), "%s:5000", FLASK_IP);
                 } else {
                     snprintf(s, sizeof(s), "batteryportal-e9czhgamgferavf7.ukwest-01.azurewebsites.net");
@@ -1148,6 +1001,7 @@ void websocket_task(void *pvParameters) {
                     .reconnect_timeout_ms = 10000,
                     .network_timeout_ms = 10000,
                     .cert_pem = (const char *)website_cert_pem,
+                    .skip_cert_common_name_check = LOCAL,
                 };
 
                 if (ws_client == NULL) {

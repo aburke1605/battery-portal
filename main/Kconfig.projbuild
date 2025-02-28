@@ -1,16 +1,29 @@
 menu "[CUSTOM] Developer mode"
 
+config VERBOSE
+    bool "Verbose mode"
+    default n
+    help
+      Set to true to enable verbose mode.
+
 config DEV
     bool "Developer mode"
     default n
     help
       Set to true to enable ESP32 developer mode.
 
-config FLASK_IP
-    string "Flask IP"
-    default 192.168.137.1
+config LOCAL
+    bool "Local network mode"
+    default n
     help
-      IP address of machine running Flask in local network.
+      Set to true to connect to Flask app running in local network.
+      Requires configuration of "Local Flask IP".
+
+config FLASK_IP
+    string "Local Flask IP"
+    default "192.168.137.1"
+    help
+      IP address of machine running Flask app in local network.
 
 endmenu
 
@@ -72,13 +85,13 @@ menu "[CUSTOM] Eduroam Configuration"
 
 config EDUROAM_USERNAME
     string "Username"
-    default USERNAME
+    default "USERNAME"
     help
       University account username (without @liverpool.ac.uk).
 
 config EDUROAM_PASSWORD
     string "Password"
-    default PASSWORD
+    default "PASSWORD"
     help
       University account password.
 
