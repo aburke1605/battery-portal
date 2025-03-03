@@ -22,6 +22,7 @@ from ws import sock
 # Create Flask application
 app = Flask(__name__)
 app.config.from_pyfile('config.py')
+app.config['SQLALCHEMY_ECHO'] = False
 db = SQLAlchemy(app)
 
 app.register_blueprint(portal)
