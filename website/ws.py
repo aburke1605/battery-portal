@@ -28,79 +28,102 @@ def monitor(ws):
 
         time.sleep(1)
 
-        
 
-@sock.route('/ws')
-def websocket(ws):
-    global connected_esp_clients, connected_browser_clients
-    metadata = {"ws": ws, "esp_id": "unknown"}
+esp_clients = set()
+browser_clients = set()
 
+def broadcast():
     with lock:
-        connected_browser_clients["unknown"] = ws # assume it's a browser client initially
+        esp_data = [{"content": dict(client)["content"]} for client in esp_clients]
+        esp_data = {}
+        for esp in esp_clients:
+            content = json.loads(dict(esp)["content"])
+            esp_data[content.pop("esp_id")] = content
+
+        message = json.dumps(esp_data)
+
+        for browser in set(browser_clients): # copy set to avoid modification issues
+            try:
+                browser.send(message) # broadcast to all browsers
+            except Exception:
+                browser_clients.discard(browser) # remove disconnected clients
+
+
+@sock.route('/browser_ws')
+def browser_ws(ws):
+    with lock:
+        browser_clients.add(ws)
+    print(f"Browser connected: {ws}")
+    print(f"Total browsers: {len(browser_clients)}")
 
     try:
         while True:
-            # Receive a message from the client
-            message = ws.receive()
-
-            if message:
-                response = {
-                    "type": "response",
-                    "content": {}
-                }
-
-                try:
-                    data = json.loads(message)
-
-                    if data["type"] == "register":
-                        with lock:
-                            metadata["esp_id"] = data["esp_id"]
-                            # move the client to the connected clients set
-                            connected_browser_clients.pop("unknown")
-
-                            # the value for now is empty
-                            connected_esp_clients[data["esp_id"]] = {}
-
-                            update_time()
-                            print(f"Client connected: {ws} with ID: {data['esp_id']}.")
-                            print(f"Total clients: {len(connected_esp_clients.keys())}")
-                    else:
-                        with lock:
-                            # save the BMS data in python memory
-                            connected_esp_clients[data["esp_id"]] = data["content"]
-
-                            # forward the BMS data to browser ws clients
-                            for esp_id, client in connected_browser_clients.items():
-                                try:
-                                    client.send(json.dumps({"esp_id": data["esp_id"], **data["content"]}))
-                                except Exception as e:
-                                    print(f"Error sending to browser: {e}")
-                                    connected_browser_clients.pop("unknown")
-
-                    response["content"]["status"] = "success"
-                    response["content"]["esp_id"] = metadata["esp_id"]
-
-                except json.JSONDecodeError:
-                    response["content"]["status"] = "error"
-                    response["content"]["message"] = "invalid json"
-
-                ws.send(json.dumps(response))
-
-                response["type"] = "echo"
-                response["content"] = message
-                ws.send(json.dumps(response))
-            else:
+            if ws.receive() is None: # browser disconnected
                 break
 
     except Exception as e:
-        print(f"WebSocket error: {e}")
+        print(f"Browser WebSocket error: {e}")
 
     finally:
         with lock:
-            if ws in connected_esp_clients.values():
-                connected_esp_clients.pop(data["esp_id"])
-                print(f"Client disconnected. Total clients: {len(connected_esp_clients.keys())}")
-            elif ws in connected_browser_clients.values():
-                connected_browser_clients.pop("unknown")
+            browser_clients.discard(ws) # remove browser on disconnect
+        print(f"Browser disconnected: {ws}")
+
+
+@sock.route('/esp_ws')
+def esp_ws(ws):
+    meta_data = {"ws": ws, "content": None}
+
+    try:
+        while True:
+            message = ws.receive()
+            if message is None:  # esp disconnected
+                break
+
+
+            response = {
+                "type": "response",
+                "content": {}
+            }
+
+            try:
+                data = json.loads(message)
+                if data["type"] == "register":
+                    with lock:
+                        esp_clients.add(frozenset(meta_data.items()))
+                        update_time()
+                    print(f"ESP connected: {ws}")
+                    print(f"Total ESPs: {len(esp_clients)}")
+                else:
+                    """
+                    # TODO remove this in favour of data storage for later broadcast in `browser_ws()`
+                    for c in browser_clients:
+                        with lock:
+                            c.send(json.dumps({"esp_id": data["esp_id"], **data["content"]}))
+                    """
+                    esp_clients.discard(frozenset(meta_data.items())) # remove old entry
+                    meta_data["content"] = json.dumps({"esp_id": data["esp_id"], **data["content"]}) # update content
+                    esp_clients.add(frozenset(meta_data.items())) # re-add updated data
+
+                    broadcast() # send data to browsers
+
+                response["type"] = "echo"
+                response["content"] = message
+            except json.JSONDecodeError:
+                response["content"]["status"] = "error"
+                response["content"]["message"] = "invalid json"
+
+            ws.send(json.dumps(response))
+
+
+    except Exception as e:
+        print(f"ESP WebSocket error: {e}")
+
+
+    finally:
+        with lock:
+            esp_clients.discard(frozenset(meta_data.items())) # remove esp on disconnect
+            update_time()
+        print(f"ESP disconnected: {ws}")
 
 # TODO: add some code which periodically checks if ESP32s are still connected
