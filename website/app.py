@@ -102,9 +102,6 @@ class UserView(MyModelView):
         'password': PasswordField
     }
 
-
-
-
 @app.route('/')
 def index():
     return render_template('Home/index.html')
@@ -119,6 +116,10 @@ def admin_index():
 def subpage():
     return render_template('admin/battery.html')
 
+@app.route('/admin_new')
+@login_required
+def admin_new():
+    return render_template('frontend/index.html')
 
 
 # Create admin
