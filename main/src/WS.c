@@ -616,7 +616,7 @@ httpd_handle_t start_webserver(void) {
         httpd_register_uri_handler(server, &alert_uri);
 
         httpd_uri_t ws_uri = {
-            .uri = "/ws",
+            .uri = "/browser_ws",
             .method = HTTP_GET,
             .handler = websocket_handler,
             .is_websocket = true
