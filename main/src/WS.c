@@ -957,23 +957,28 @@ void websocket_task(void *pvParameters) {
 
         // create JSON object with sensor data
         cJSON *json = cJSON_CreateObject();
-        cJSON_AddNumberToObject(json, "charge", iCharge);
-        cJSON_AddNumberToObject(json, "voltage", fVoltage);
-        cJSON_AddNumberToObject(json, "current", fCurrent);
-        cJSON_AddNumberToObject(json, "temperature", fTemperature);
-        cJSON_AddNumberToObject(json, "BL", iBL);
-        cJSON_AddNumberToObject(json, "BH", iBH);
-        cJSON_AddNumberToObject(json, "CCT", iCCT);
-        cJSON_AddNumberToObject(json, "DCT", iDCT);
-        cJSON_AddNumberToObject(json, "CITL", iCITL);
-        cJSON_AddNumberToObject(json, "CITH", iCITH);
+        cJSON *data = cJSON_CreateObject();
 
-        cJSON_AddStringToObject(json, "IP", ESP_IP);
+        cJSON_AddNumberToObject(data, "charge", iCharge);
+        cJSON_AddNumberToObject(data, "voltage", fVoltage);
+        cJSON_AddNumberToObject(data, "current", fCurrent);
+        cJSON_AddNumberToObject(data, "temperature", fTemperature);
+        cJSON_AddNumberToObject(data, "BL", iBL);
+        cJSON_AddNumberToObject(data, "BH", iBH);
+        cJSON_AddNumberToObject(data, "CCT", iCCT);
+        cJSON_AddNumberToObject(data, "DCT", iDCT);
+        cJSON_AddNumberToObject(data, "CITL", iCITL);
+        cJSON_AddNumberToObject(data, "CITH", iCITH);
+        cJSON_AddStringToObject(data, "IP", ESP_IP);
+        char *data_string = cJSON_PrintUnformatted(data);
 
+        cJSON_AddItemToObject(json, ESP_ID, data);
         char *json_string = cJSON_PrintUnformatted(json);
+
+        // cJSON_Delete(data);
         cJSON_Delete(json);
 
-        if (json_string != NULL) {
+        if (json_string != NULL && data_string != NULL) {
             // first send to all connected WebSocket clients
             for (int i = 0; i < WS_CONFIG_MAX_CLIENTS; i++) {
                 if (client_sockets[i] != -1) {
@@ -1046,12 +1051,13 @@ void websocket_task(void *pvParameters) {
                     ws_client = NULL;
                 } else {
                     char message[1024];
-                    snprintf(message, sizeof(message), "{\"type\": \"data\", \"esp_id\": \"%s\", \"content\": %s}", ESP_ID, json_string);
+                    snprintf(message, sizeof(message), "{\"type\": \"data\", \"esp_id\": \"%s\", \"content\": %s}", ESP_ID, data_string);
                     send_ws_message(message);
                 }
             }
 
             // clean up
+            free(data_string);
             free(json_string);
         }
 
