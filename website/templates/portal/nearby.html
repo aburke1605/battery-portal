@@ -38,14 +38,14 @@
             socket.onmessage = function(event) {
                 try {
                     let data = JSON.parse(event.data);
-                    if ("{{ esp_id }}" != data["esp_id"]) {
-                        return;
-                    }
-
-                    document.getElementById('charge').innerHTML = data.received_data.charge;
-                    document.getElementById('voltage').innerHTML = data.received_data.voltage.toFixed(2);
-                    document.getElementById('current').innerHTML = data.received_data.current.toFixed(2);
-                    document.getElementById('temperature').innerHTML = data.received_data.temperature.toFixed(2);
+                    Object.keys(data).forEach(esp_id => {
+                        if ("{{ esp_id }}" == esp_id) {
+                            document.getElementById('charge').innerHTML = data[esp_id].received_data.charge;
+                            document.getElementById('voltage').innerHTML = data[esp_id].received_data.voltage.toFixed(2);
+                            document.getElementById('current').innerHTML = data[esp_id].received_data.current.toFixed(2);
+                            document.getElementById('temperature').innerHTML = data[esp_id].received_data.temperature.toFixed(2);
+                        }
+                    });
                 } catch (error) {
                     console.error('Error parsing JSON:', error);
                 }
