@@ -381,6 +381,7 @@ esp_err_t file_serve_handler(httpd_req_t *req) {
         char ESP_ID_string[sizeof(ESP_ID) + 2];
         snprintf(ESP_ID_string, sizeof(ESP_ID_string), "\"%s\"", ESP_ID);
         char *modified_page =
+        replace_placeholder(
             replace_placeholder(
                 replace_placeholder(
                     replace_placeholder(
@@ -397,7 +398,10 @@ esp_err_t file_serve_handler(httpd_req_t *req) {
                 ),
                 "?esp_id={{ esp_id }}",
                 ""
-            );
+            ),
+            "&", // fixes eduroam.html
+            "?"
+        );
         if (!modified_page) {
             ESP_LOGE("WS", "Could not replace {{ prefix }} in %s", file_path);
             httpd_resp_send_err(req, HTTPD_500_INTERNAL_SERVER_ERROR, "Template error");
