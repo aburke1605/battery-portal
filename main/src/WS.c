@@ -378,6 +378,8 @@ esp_err_t file_serve_handler(httpd_req_t *req) {
         strcat(page, "</body>\n</html>\n\n");
 
         // remove other jinja bits too
+        char ESP_ID_string[sizeof(ESP_ID) + 2];
+        snprintf(ESP_ID_string, sizeof(ESP_ID_string), "\"%s\"", ESP_ID);
         char *modified_page =
             replace_placeholder(
                 replace_placeholder(
@@ -390,8 +392,8 @@ esp_err_t file_serve_handler(httpd_req_t *req) {
                         "{{ prefix }}",
                         ""
                     ),
-                    "\"{{ esp_id }}\" != data[\"esp_id\"]",
-                    "false"
+                    "\"{{ esp_id }}\"",
+                    ESP_ID_string
                 ),
                 "?esp_id={{ esp_id }}",
                 ""
