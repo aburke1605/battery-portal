@@ -5,13 +5,13 @@
     <div class='container'>
         <h2> Change battery properties </h2>
         <div class='section'>
-            <form action='{{ prefix }}/reset' method='post'>
+            <form action='{{ prefix }}/reset?esp_id={{ esp_id }}' method='post'>
                 <button type='submit'>Reset BMS</button>
             </form>
         </div>
 
         <div class='section'>
-            <form action='{{ prefix }}/validate_change' method='post'>
+            <form action='{{ prefix }}/validate_change?esp_id={{ esp_id }}' method='post'>
                 <label>Update BL voltage threshold (currently <span id='BL'></span> [mV]): </label>
                 <input type='text' placeholder='Enter value [mV]' name='BL_voltage_threshold'>
 
