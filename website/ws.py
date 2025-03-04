@@ -19,12 +19,18 @@ def monitor(ws):
     while True:
         overlay_info = f"{time.strftime('%H:%M:%S')}\n\n"
         overlay_info += "| ESP32 client IDs:\n"
+        esp_data = {}
         for esp in esp_clients:
-            content = json.loads(dict(esp)["content"])
+            content = dict(esp)["content"]
+            if content == None:
+                # still registering
+                continue
+            content = json.loads(content)
             overlay_info += f"| *** {content['esp_id']}\n"
+            esp_data[content.pop("esp_id")] = content
         overlay_info += f"\nlast updated: {time_of_last_update}"
 
-        message = json.dumps({"overlay": overlay_info, "esps": json.dumps(connected_esp_clients)})
+        message = json.dumps({"overlay": overlay_info, "esps": json.dumps(esp_data)})
         ws.send(message)
 
         time.sleep(1)
@@ -35,10 +41,13 @@ browser_clients = set()
 
 def broadcast():
     with lock:
-        esp_data = [{"content": dict(client)["content"]} for client in esp_clients]
         esp_data = {}
         for esp in esp_clients:
-            content = json.loads(dict(esp)["content"])
+            content = dict(esp)["content"]
+            if content == None:
+                # still registering
+                continue
+            content = json.loads(content)
             esp_data[content.pop("esp_id")] = content
 
         message = json.dumps(esp_data)
