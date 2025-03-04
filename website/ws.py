@@ -19,8 +19,9 @@ def monitor(ws):
     while True:
         overlay_info = f"{time.strftime('%H:%M:%S')}\n\n"
         overlay_info += "| ESP32 client IDs:\n"
-        for k in connected_esp_clients.keys():
-            overlay_info += f"| *** {k}\n"
+        for esp in esp_clients:
+            content = json.loads(dict(esp)["content"])
+            overlay_info += f"| *** {content['esp_id']}\n"
         overlay_info += f"\nlast updated: {time_of_last_update}"
 
         message = json.dumps({"overlay": overlay_info, "esps": json.dumps(connected_esp_clients)})
