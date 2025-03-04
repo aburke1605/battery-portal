@@ -826,8 +826,11 @@ void websocket_event_handler(void *arg, esp_event_base_t event_base, int32_t eve
                 char *req_content;
                 esp_err_t err = ESP_OK;
 
-                if ((strcmp(endpoint, "/validate_connect") == 0 || strcmp(endpoint, "/validate_connect?esp_id=eduroam") == 0) && strcmp(method, "POST") == 0) {
+                if ((strcmp(endpoint, "/validate_connect") == 0 || strcmp(endpoint, "/validate_connect?eduroam=true") == 0) && strcmp(method, "POST") == 0) {
                     reconnect = true;
+
+                    // TODO: support eduroam
+
                     // create a mock HTTP request
                     cJSON *ssid = cJSON_GetObjectItem(data, "ssid");
                     cJSON *password = cJSON_GetObjectItem(data, "password");
