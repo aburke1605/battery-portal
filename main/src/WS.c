@@ -157,6 +157,8 @@ esp_err_t validate_change_handler(httpd_req_t *req) {
     vTaskDelay(pdMS_TO_TICKS(500));
     gpio_set_level(I2C_LED_GPIO_PIN, led_on ? 0 : 1);
 
+    req->user_ctx = "success";
+
     return ESP_OK;
 }
 
