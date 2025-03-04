@@ -88,17 +88,27 @@ def change():
 
 @portal.route('/validate_change', methods=['POST'])
 def validate_change():
-    forward_request_to_esp32("/validate_change", esp_id=list(connected_esp_clients.keys())[0])
+    esp_id = request.args.get("esp_id")
+    response = forward_request_to_esp32("/validate_change", esp_id=esp_id)
+    # TODO
+    # TODO
+    # if response["content"] == "success":
+    #     pass
+    # TODO
+    # TODO
     return "", 204
 
 @portal.route('/reset', methods=['POST'])
 def reset():
     esp_id = request.args.get("esp_id")
-    responses = forward_request_to_esp32("/reset", esp_id=list(connected_esp_clients.keys())[0])
-    for response in responses:
-        if response["response"]["response"] == "success":
-            return redirect("/change")
-    return "", 204
+    response = forward_request_to_esp32("/reset", esp_id=esp_id)
+    # TODO
+    # TODO
+    # if response["content"] == "success":
+    #     return redirect(f"/change?esp_id={esp_id}")
+    # TODO
+    # TODO
+    return redirect(f"/portal/change?esp_id={esp_id}")
 
 @portal.route('/connect')
 def connect():
@@ -112,19 +122,17 @@ def eduroam():
 
 @portal.route('/validate_connect', methods=['POST'])
 def validate_connect():
-    print("\n")
     esp_id = request.args.get("esp_id")
-    print(f"esp_id: {esp_id}, hardcoded: {list(connected_esp_clients.keys())[0]}")
-    print("\n")
-    # TODO: support >1 ESP32
-    responses = forward_request_to_esp32(f"/validate_connect{'?esp_id=eduroam' if esp_id=='eduroam' else ''}", esp_id=list(connected_esp_clients.keys())[0]) # TODO: fix this hardcoding
-    for response in responses:
-        if response["response"]["response"] == "already connected":
-            message = "One or more ESP32s already connected to Wi-Fi"
-            encoded_message = urllib.parse.quote(message)
-            return redirect(f"/portal/alert?message={encoded_message}")
-
-    return redirect("/display")
+    response = forward_request_to_esp32("/validate_connect", esp_id=esp_id)
+    # TODO
+    # TODO
+    # if response["content"] == "already connected":
+    #     message = "One or more ESP32s already connected to Wi-Fi"
+    #     encoded_message = urllib.parse.quote(message)
+    #     return redirect(f"/portal/alert?message={encoded_message}")
+    # TODO
+    # TODO
+    return redirect(f"/portal/display?esp_id={esp_id}")
 
 
 @portal.route('/nearby')
@@ -146,10 +154,13 @@ def device():
 @portal.route('/toggle', methods=['POST'])
 def toggle():
     esp_id = request.args.get("esp_id")
-    responses = forward_request_to_esp32("/toggle", esp_id=list(connected_esp_clients.keys())[0])
-    for response in responses:
-        if response["response"]["response"] == "led toggled":
-            message = "One or more ESP32 LEDs toggled"
-            encoded_message = urllib.parse.quote(message)
-            return redirect(f"/portal/alert?message={encoded_message}")
+    response = forward_request_to_esp32("/toggle", esp_id=esp_id)
+    # TODO
+    # TODO
+    # if response["content"] == "led toggled":
+    #     message = "One or more ESP32 LEDs toggled"
+    #     encoded_message = urllib.parse.quote(message)
+    #     return redirect(f"/portal/alert?message={encoded_message}")
+    # TODO
+    # TODO
     return "", 204

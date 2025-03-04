@@ -11,8 +11,6 @@ update_time()
 
 sock = Sock()
 lock = Lock()
-connected_esp_clients = dict()
-connected_browser_clients = dict()
 
 @sock.route("/monitor")
 def monitor(ws):
