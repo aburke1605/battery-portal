@@ -758,16 +758,13 @@ void message_queue_task(void *pvParameters) {
     while (true) {
         if (xQueueReceive(ws_queue, message, portMAX_DELAY) == pdPASS) {
             if (esp_websocket_client_is_connected(ws_client)) {
-                esp_err_t err = esp_websocket_client_send_text(ws_client, message, strlen(message), portMAX_DELAY);
-                if (err != ESP_OK) {
-                    ESP_LOGE("WS", "Failed to send WebSocket message: %s (%#x)", esp_err_to_name(err), err);
-                } else {
-                    if (VERBOSE) ESP_LOGI("WS", "Sent: %s", message);
-                }
+                if (VERBOSE) ESP_LOGI("WS", "Sending: %s", message);
+                esp_websocket_client_send_text(ws_client, message, strlen(message), portMAX_DELAY);
             } else {
                 ESP_LOGW("WS", "WebSocket not connected, dropping message: %s", message);
             }
         }
+        vTaskDelay(pdMS_TO_TICKS(1000));
     }
 }
 
