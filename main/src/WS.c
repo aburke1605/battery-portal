@@ -909,6 +909,7 @@ void websocket_event_handler(void *arg, esp_event_base_t event_base, int32_t eve
 
                 cJSON *response = cJSON_CreateObject();
                 cJSON_AddStringToObject(response, "type", "response");
+                cJSON_AddStringToObject(response, "esp_id", ESP_ID);
                 cJSON_AddItemToObject(response, "content", response_content);
 
                 char *response_str = cJSON_PrintUnformatted(response);
