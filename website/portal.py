@@ -74,8 +74,8 @@ def alert():
 
 @portal.route("/purge")
 def purge():
-    global connected_esp_clients
-    connected_esp_clients.clear()
+    global esp_clients
+    esp_clients.clear()
     update_time()
 
     return "", 204
