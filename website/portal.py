@@ -3,7 +3,7 @@ from flask_login import login_required
 import urllib.parse
 import json
 
-from ws import lock, connected_esp_clients, update_time
+from ws import lock, esp_clients, update_time
 
 portal = Blueprint('portal', __name__, url_prefix='/portal')
 @portal.before_request
@@ -28,14 +28,19 @@ def forward_request_to_esp32(endpoint, method="POST", esp_id=None):
         }
     }
 
-    responses = []
-
     with lock:
-        target_clients = connected_esp_clients if not esp_id else {esp_id: connected_esp_clients[esp_id]}
+        for esp in set(esp_clients):
+            content = dict(esp)["content"]
+            if content == None:
+                # still registering
+                continue
+            content = json.loads(content)
+            if content["esp_id"] != esp_id:
+                # not the right one
+                continue
 
-        if not target_clients:
-            return 'No matching ESP32 connected', 404
-        for ID, ws in target_clients.items():
+            ws = dict(set(esp))["ws"]
+
             try:
                 if method == "POST":
                     message["content"]["data"] = request.form.to_dict()
@@ -45,15 +50,17 @@ def forward_request_to_esp32(endpoint, method="POST", esp_id=None):
                     response = ws.receive()
                     if response:
                         response = json.loads(response)
+                        # TODO
+                        # TODO
                         if response["type"] == "response":
-                            responses.append({"esp_id": ID, "response": response["content"]})
+                            return response["content"]
+                        # TODO
+                        # TODO
                         break
 
             except Exception as e:
-                print(f"Error communicating with {ID}: {e}")
-                responses.append({"esp_id": ID, "error": str(e)})
-
-    return responses
+                print(f"Error communicating with {esp_id}: {e}")
+                return {"esp_id": esp_id, "error": str(e)}
 
 @portal.route('/display')
 def display():
