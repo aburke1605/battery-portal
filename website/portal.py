@@ -35,16 +35,17 @@ def forward_request_to_esp32(endpoint, method="POST", esp_id=None, delay=5):
             if content == None:
                 # still registering
                 continue
-            content = json.loads(content)
-            if content["esp_id"] != esp_id:
-                # not the right one
-                continue
-
-            ws = dict(set(esp))["ws"]
 
             try:
+                content = json.loads(content)
+                if content.get("esp_id") != esp_id:
+                    # not the right one
+                    continue
+
                 if method == "POST":
                     message["content"]["data"] = request.form.to_dict()
+
+                ws = dict(set(esp))["ws"]
                 ws.send(json.dumps(message))
 
                 start = time.time()
