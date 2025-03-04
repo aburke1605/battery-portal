@@ -2,8 +2,9 @@ from flask import Blueprint, render_template, request, redirect, url_for
 from flask_login import login_required
 import urllib.parse
 import json
+import time
 
-from ws import lock, esp_clients, update_time
+from ws import lock, response_lock, esp_clients, pending_responses, update_time
 
 portal = Blueprint('portal', __name__, url_prefix='/portal')
 @portal.before_request
@@ -12,7 +13,7 @@ def require_login():
     pass
 
 
-def forward_request_to_esp32(endpoint, method="POST", esp_id=None):
+def forward_request_to_esp32(endpoint, method="POST", esp_id=None, delay=5):
     """
     Generic function to forward requests to the ESP32 via WebSocket.
     :param endpoint: ESP32 endpoint to forward the request to.
@@ -46,17 +47,14 @@ def forward_request_to_esp32(endpoint, method="POST", esp_id=None):
                     message["content"]["data"] = request.form.to_dict()
                 ws.send(json.dumps(message))
 
-                while True:
-                    response = ws.receive()
-                    if response:
-                        response = json.loads(response)
-                        # TODO
-                        # TODO
-                        if response["type"] == "response":
-                            return response["content"]
-                        # TODO
-                        # TODO
-                        break
+                start = time.time()
+                while time.time() - start < delay: # seconds
+                    with response_lock:
+                        if esp_id in pending_responses.keys():
+                            return pending_responses.pop(esp_id)
+                    time.sleep(0.1)
+
+                return {"esp_id": esp_id, "error": "Timeout waiting for ESP response"}
 
             except Exception as e:
                 print(f"Error communicating with {esp_id}: {e}")

@@ -11,6 +11,7 @@ update_time()
 
 sock = Sock()
 lock = Lock()
+response_lock = Lock()
 
 @sock.route("/monitor")
 def monitor(ws):
@@ -36,6 +37,7 @@ def monitor(ws):
 
 esp_clients = set()
 browser_clients = set()
+pending_responses = {}
 
 def broadcast():
     with lock:
@@ -102,13 +104,12 @@ def esp_ws(ws):
                         update_time()
                     print(f"ESP connected: {ws}")
                     print(f"Total ESPs: {len(esp_clients)}")
+                elif data["type"] == "response":
+                    # should go to forward_request_to_esp32() instead
+                    with response_lock:
+                        pending_responses[data["esp_id"]] = data["content"]
+                    continue
                 else:
-                    """
-                    # TODO remove this in favour of data storage for later broadcast in `browser_ws()`
-                    for c in browser_clients:
-                        with lock:
-                            c.send(json.dumps({"esp_id": data["esp_id"], **data["content"]}))
-                    """
                     esp_clients.discard(frozenset(meta_data.items())) # remove old entry
                     meta_data["content"] = json.dumps({"esp_id": data["esp_id"], **data["content"]}) # update content
                     esp_clients.add(frozenset(meta_data.items())) # re-add updated data
