@@ -100,4 +100,9 @@ void app_main(void) {
     esp_log_level_set("transport_ws", ESP_LOG_WARN);
     esp_log_level_set("transport_base", ESP_LOG_WARN);
     xTaskCreate(&websocket_task, "websocket_task", 8192, NULL, 5, NULL);
+
+    while (true) {
+        if (VERBOSE) ESP_LOGI("main", "%ld bytes available in heap", esp_get_free_heap_size());
+        vTaskDelay(pdMS_TO_TICKS(10000));
+    }
 }
