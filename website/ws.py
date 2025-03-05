@@ -1,5 +1,5 @@
 from flask_sock import Sock
-from threading import Lock
+from threading import Lock, Thread
 import time
 import json
 
@@ -105,7 +105,7 @@ def esp_ws(ws):
                     print(f"ESP connected: {ws}")
                     print(f"Total ESPs: {len(esp_clients)}")
                 elif data["type"] == "response":
-                    # should go to forward_request_to_esp32() instead
+                    # should go to forward_request_to_esp32() or ping_esps() instead
                     with response_lock:
                         pending_responses[data["esp_id"]] = data["content"]
                     continue
@@ -135,4 +135,44 @@ def esp_ws(ws):
             update_time()
         print(f"ESP disconnected: {ws}")
 
-# TODO: add some code which periodically checks if ESP32s are still connected
+def ping_esps(delay=5):
+    while True:
+        message = {
+            "type": "query",
+            "content": "are you still there?",
+        }
+
+        with lock:
+            for esp in set(esp_clients):
+                content = dict(esp)["content"]
+                if content == None:
+                    # still registering
+                    continue
+
+                try:
+                    content = json.loads(content)
+                    esp_id = content.get("esp_id")
+
+                    ws = dict(set(esp))["ws"]
+                    ws.send(json.dumps(message))
+
+                    start = time.time()
+                    response = False
+                    while not response and time.time() - start < delay: # seconds
+                        with response_lock:
+                            if esp_id in pending_responses.keys():
+                                if pending_responses.pop(esp_id)["response"] == "yes":
+                                    response = True
+                        time.sleep(0.1)
+
+                    if not response:
+                        esp_clients.discard(frozenset(esp))
+                        update_time()
+
+                except Exception as e:
+                    print(f"Error communicating with {esp_id}: {e}")
+
+        time.sleep(20)
+
+thread = Thread(target=ping_esps, daemon=True)
+thread.start()
