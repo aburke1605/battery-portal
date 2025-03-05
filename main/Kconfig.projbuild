@@ -83,6 +83,12 @@ endmenu
 
 menu "[CUSTOM] Eduroam Configuration"
 
+config EDUROAM
+    bool "Use Eduroam"
+    default n
+    help
+      Set to true to connect to Eduroam.
+
 config EDUROAM_USERNAME
     string "Username"
     default "USERNAME"
