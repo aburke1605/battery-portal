@@ -809,8 +809,26 @@ void websocket_event_handler(void *arg, esp_event_base_t event_base, int32_t eve
 
             if (VERBOSE) ESP_LOGI("WS", "WebSocket data received: %.*s", ws_event_data->data_len, (char *)ws_event_data->data_ptr);
 
-            if (strcmp(type, "response") == 0) {
+            if (strcmp(type, "query") == 0) {
+                const char *content = cJSON_GetObjectItem(message, "content")->valuestring;
+                if (strcmp(content, "are you still there?") == 0) {
 
+                    cJSON *response_content = cJSON_CreateObject();
+                    cJSON_AddStringToObject(response_content, "response", "yes");
+
+                    cJSON *response = cJSON_CreateObject();
+                    cJSON_AddStringToObject(response, "type", "response");
+                    cJSON_AddStringToObject(response, "esp_id", ESP_ID);
+                    cJSON_AddItemToObject(response, "content", response_content);
+
+                    char *response_str = cJSON_PrintUnformatted(response);
+                    cJSON_Delete(response);
+
+                    xQueueReset(ws_queue);
+                    send_ws_message(response_str);
+
+                    free(response_str);
+                }
             }
 
             else if (strcmp(type, "request") == 0) {
