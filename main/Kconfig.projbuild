@@ -1,4 +1,4 @@
-menu "[CUSTOM] Developer mode"
+menu "[CUSTOM] Developer options"
 
 config VERBOSE
     bool "Verbose mode"

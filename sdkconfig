@@ -417,13 +417,13 @@ CONFIG_PARTITION_TABLE_MD5=y
 # end of Partition Table
 
 #
-# [CUSTOM] Developer mode
+# [CUSTOM] Developer options
 #
 # CONFIG_VERBOSE is not set
 # CONFIG_DEV is not set
 # CONFIG_LOCAL is not set
 CONFIG_FLASK_IP="192.168.137.1"
-# end of [CUSTOM] Developer mode
+# end of [CUSTOM] Developer options
 
 #
 # [CUSTOM] I2C Configuration
