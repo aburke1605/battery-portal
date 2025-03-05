@@ -748,6 +748,8 @@ void check_wifi_task(void* pvParameters) {
             connected_to_WiFi = false;
         }
 
+        check_bytes((TaskParams *)pvParameters);
+
         vTaskDelay(1000 / portTICK_PERIOD_MS);
     }
 }
@@ -770,6 +772,9 @@ void message_queue_task(void *pvParameters) {
                 ESP_LOGW("WS", "WebSocket not connected, dropping message: %s", message);
             }
         }
+
+        check_bytes((TaskParams *)pvParameters);
+
         vTaskDelay(pdMS_TO_TICKS(1000));
     }
 }
@@ -1087,6 +1092,8 @@ void websocket_task(void *pvParameters) {
             free(data_string);
             free(json_string);
         }
+
+        check_bytes((TaskParams *)pvParameters);
 
         vTaskDelay(pdMS_TO_TICKS(1000));
     }

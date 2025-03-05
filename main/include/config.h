@@ -89,4 +89,10 @@
 #define WS_CONFIG_MAX_CLIENTS 5
 
 
+typedef struct {
+    int stack_size;
+    const char* task_name;
+} TaskParams;
+
+
 #endif // CONFIG_H
