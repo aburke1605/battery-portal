@@ -1,5 +1,5 @@
 from flask_sock import Sock
-from threading import Lock
+from threading import Lock, Thread
 import time
 import json
 
@@ -11,86 +11,168 @@ update_time()
 
 sock = Sock()
 lock = Lock()
-connected_esp_clients = dict()
-connected_browser_clients = dict()
+response_lock = Lock()
 
 @sock.route("/monitor")
 def monitor(ws):
     while True:
-        message = f"{time.strftime('%H:%M:%S')}\n\n"
-        message += "| ESP32 client IDs:\n"
-        for k in connected_esp_clients.keys():
-            message += f"| *** {k}\n"
-        message += f"\nlast updated: {time_of_last_update}"
+        overlay_info = f"{time.strftime('%H:%M:%S')}\n\n"
+        overlay_info += "| ESP32 client IDs:\n"
+        esp_data = {}
+        for esp in esp_clients:
+            content = dict(esp)["content"]
+            if content == None:
+                # still registering
+                continue
+            content = json.loads(content)
+            overlay_info += f"| *** {content['esp_id']}\n"
+            esp_data[content.pop("esp_id")] = content
+        overlay_info += f"\nlast updated: {time_of_last_update}"
+
+        message = json.dumps({"overlay": overlay_info, "esps": json.dumps(esp_data)})
         ws.send(message)
+
         time.sleep(1)
 
-        
 
-@sock.route('/ws')
-def websocket(ws):
-    global connected_esp_clients, connected_browser_clients
-    metadata = {"ws": ws, "id": "unknown"}
+esp_clients = set()
+browser_clients = set()
+pending_responses = {}
 
+def broadcast():
     with lock:
-        connected_browser_clients["unknown"] = ws # assume it's a browser client initially
+        esp_data = {}
+        for esp in esp_clients:
+            content = dict(esp)["content"]
+            if content == None:
+                # still registering
+                continue
+            content = json.loads(content)
+            esp_data[content.pop("esp_id")] = content
+
+        message = json.dumps(esp_data)
+
+        for browser in set(browser_clients): # copy set to avoid modification issues
+            try:
+                browser.send(message) # broadcast to all browsers
+            except Exception:
+                browser_clients.discard(browser) # remove disconnected clients
+
+
+@sock.route('/browser_ws')
+def browser_ws(ws):
+    with lock:
+        browser_clients.add(ws)
+    print(f"Browser connected: {ws}")
+    print(f"Total browsers: {len(browser_clients)}")
 
     try:
         while True:
-            # Receive a message from the client
-            message = ws.receive()
-
-            if message:
-                response = {
-                    "type": "response",
-                    "content": {}
-                }
-
-                try:
-                    data = json.loads(message)
-
-                    if data["type"] == "register":
-                        with lock:
-                            metadata["id"] = data["id"]
-                            # move the client to the connected clients set
-                            connected_browser_clients.pop("unknown")
-                            connected_esp_clients[data["id"]] = ws
-                            update_time()
-                            print(f"Client connected: {ws} with id: {data['id']}.")
-                            print(f"Total clients: {len(connected_esp_clients.keys())}")
-                    else:
-                        with lock:
-                            for id, client in connected_browser_clients.items():
-                                try:
-                                    client.send(json.dumps(data["content"]))
-                                except Exception as e:
-                                    print(f"Error sending to browser: {e}")
-                                    connected_browser_clients.pop("unknown")
-
-                    response["content"]["status"] = "success"
-                    response["content"]["id"] = metadata["id"]
-
-                except json.JSONDecodeError:
-                    response["content"]["status"] = "error"
-                    response["content"]["message"] = "invalid json"
-
-                ws.send(json.dumps(response))
-
-                response["type"] = "echo"
-                response["content"] = message
-                ws.send(json.dumps(response))
-            else:
+            if ws.receive() is None: # browser disconnected
                 break
 
     except Exception as e:
-        print(f"WebSocket error: {e}")
+        print(f"Browser WebSocket error: {e}")
 
     finally:
         with lock:
-            if ws in connected_esp_clients.values():
-                connected_esp_clients.pop(data["id"])
-                print(f"Client disconnected. Total clients: {len(connected_esp_clients.keys())}")
-            elif ws in connected_browser_clients.values():
-                connected_browser_clients.pop("unknown")
+            browser_clients.discard(ws) # remove browser on disconnect
+        print(f"Browser disconnected: {ws}")
 
-# TODO: add some code which periodically checks if ESP32s are still connected
+
+@sock.route('/esp_ws')
+def esp_ws(ws):
+    meta_data = {"ws": ws, "content": None}
+
+    try:
+        while True:
+            message = ws.receive()
+            if message is None:  # esp disconnected
+                break
+
+
+            response = {
+                "type": "response",
+                "content": {}
+            }
+
+            try:
+                data = json.loads(message)
+                if data["type"] == "register":
+                    with lock:
+                        esp_clients.add(frozenset(meta_data.items()))
+                        update_time()
+                    print(f"ESP connected: {ws}")
+                    print(f"Total ESPs: {len(esp_clients)}")
+                elif data["type"] == "response":
+                    # should go to forward_request_to_esp32() or ping_esps() instead
+                    with response_lock:
+                        pending_responses[data["esp_id"]] = data["content"]
+                    continue
+                else:
+                    esp_clients.discard(frozenset(meta_data.items())) # remove old entry
+                    meta_data["content"] = json.dumps({"esp_id": data["esp_id"], **data["content"]}) # update content
+                    esp_clients.add(frozenset(meta_data.items())) # re-add updated data
+
+                    broadcast() # send data to browsers
+
+                response["type"] = "echo"
+                response["content"] = message
+            except json.JSONDecodeError:
+                response["content"]["status"] = "error"
+                response["content"]["message"] = "invalid json"
+
+            ws.send(json.dumps(response))
+
+
+    except Exception as e:
+        print(f"ESP WebSocket error: {e}")
+
+
+    finally:
+        with lock:
+            esp_clients.discard(frozenset(meta_data.items())) # remove esp on disconnect
+            update_time()
+        print(f"ESP disconnected: {ws}")
+
+def ping_esps(delay=5):
+    while True:
+        message = {
+            "type": "query",
+            "content": "are you still there?",
+        }
+
+        with lock:
+            for esp in set(esp_clients):
+                content = dict(esp)["content"]
+                if content == None:
+                    # still registering
+                    continue
+
+                try:
+                    content = json.loads(content)
+                    esp_id = content.get("esp_id")
+
+                    ws = dict(set(esp))["ws"]
+                    ws.send(json.dumps(message))
+
+                    start = time.time()
+                    response = False
+                    while not response and time.time() - start < delay: # seconds
+                        with response_lock:
+                            if esp_id in pending_responses.keys():
+                                if pending_responses.pop(esp_id)["response"] == "yes":
+                                    response = True
+                        time.sleep(0.1)
+
+                    if not response:
+                        esp_clients.discard(frozenset(esp))
+                        update_time()
+
+                except Exception as e:
+                    print(f"Error communicating with {esp_id}: {e}")
+
+        time.sleep(20)
+
+thread = Thread(target=ping_esps, daemon=True)
+thread.start()

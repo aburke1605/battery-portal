@@ -18,6 +18,6 @@ void url_encode(char *dest, const char *src, size_t dest_size);
 
 char* read_file(const char* path);
 
-char* remove_prefix(const char *html);
+char* replace_placeholder(const char *html, const char *placeholder, const char* substitute);
 
 uint8_t get_block(uint8_t offset);

@@ -19,7 +19,7 @@ void random_key(char *key) {
 void send_fake_post_request() {
     if (!connected_to_WiFi) {
         char url[64];
-        snprintf(url, sizeof(url), "http://%s/validate_connect?id=eduroam", ESP_subnet_IP);
+        snprintf(url, sizeof(url), "http://%s/validate_connect%s", ESP_subnet_IP, UTILS_EDUROAM ? "?eduroam=true" : "");
         esp_http_client_config_t config = {
             .url = url,
             .method = HTTP_METHOD_POST,
@@ -28,7 +28,12 @@ void send_fake_post_request() {
         esp_http_client_handle_t client = esp_http_client_init(&config);
 
         char post_data[128];
-        snprintf(post_data, sizeof(post_data), "ssid=%s@liverpool.ac.uk&password=%s", UTILS_EDUROAM_USERNAME, UTILS_EDUROAM_PASSWORD);
+        if (UTILS_EDUROAM) {
+            snprintf(post_data, sizeof(post_data), "ssid=%s@liverpool.ac.uk&password=%s", UTILS_EDUROAM_USERNAME, UTILS_EDUROAM_PASSWORD);
+        } else {
+            strcpy(post_data, "ssid=Aodhan's%20Laptop&password=32mF%2B669");
+            post_data[strlen(post_data)] = '\0';
+        }
         esp_http_client_set_header(client, "Content-Type", "application/x-www-form-urlencoded");
         esp_http_client_set_post_field(client, post_data, strlen(post_data));
 
@@ -126,9 +131,9 @@ char* read_file(const char* path) {
     return buffer;
 }
 
-char* remove_prefix(const char *html) {
-    const char *placeholder = "{{ prefix }}";
+char* replace_placeholder(const char *html, const char *placeholder, const char* substitute) {
     size_t placeholder_len = strlen(placeholder);
+    size_t substitute_len = strlen(substitute);
 
     // count occurrences of placeholder
     int count = 0;
@@ -138,7 +143,7 @@ char* remove_prefix(const char *html) {
         tmp += placeholder_len;
     }
 
-    size_t new_len = strlen(html) - (count * placeholder_len);
+    size_t new_len = strlen(html) - count * (placeholder_len - substitute_len);
     char *result = malloc(new_len + 1);
     if (!result) return NULL;
 
@@ -149,6 +154,8 @@ char* remove_prefix(const char *html) {
         size_t segment_len = tmp - src;
         memcpy(dest, src, segment_len); // copy everything before placeholder
         dest += segment_len;
+        strcpy(dest, substitute); // copy substitute
+        dest += substitute_len;
         src = tmp + placeholder_len; // move past the placeholder
     }
     strcpy(dest, src); // copy remaining part

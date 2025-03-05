@@ -7,6 +7,7 @@
 #include "include/utils.h"
 
 #include "include/cert.h"
+#include "include/local_cert.h"
 
 void add_client(int fd) {
     for (int i = 0; i < WS_CONFIG_MAX_CLIENTS; i++) {
@@ -156,6 +157,8 @@ esp_err_t validate_change_handler(httpd_req_t *req) {
     vTaskDelay(pdMS_TO_TICKS(500));
     gpio_set_level(I2C_LED_GPIO_PIN, led_on ? 0 : 1);
 
+    req->user_ctx = "success";
+
     return ESP_OK;
 }
 
@@ -210,7 +213,7 @@ esp_err_t validate_connect_handler(httpd_req_t *req) {
         wifi_config_t *wifi_sta_config = malloc(sizeof(wifi_config_t));
         memset(wifi_sta_config, 0, sizeof(wifi_config_t));
 
-        if (strcmp(req->uri, "/validate_connect?id=eduroam") == 0) {
+        if (strcmp(req->uri, "/validate_connect?eduroam=true") == 0) {
             strncpy((char *)wifi_sta_config->sta.ssid, "eduroam", 8);
 
             esp_wifi_sta_enterprise_enable();
@@ -376,9 +379,31 @@ esp_err_t file_serve_handler(httpd_req_t *req) {
         // strncat(page, base_insert_pos + strlen(base_jinja_string), sizeof(page) - strlen(page) - 1);
         strcat(page, "</body>\n</html>\n\n");
 
-        // remove {{ prefix }} jinja bits too
-        // (replace with nothing)
-        char *modified_page = remove_prefix(page);
+        // remove other jinja bits too
+        char ESP_ID_string[sizeof(ESP_ID) + 2];
+        snprintf(ESP_ID_string, sizeof(ESP_ID_string), "\"%s\"", ESP_ID);
+        char *modified_page =
+        replace_placeholder(
+            replace_placeholder(
+                replace_placeholder(
+                    replace_placeholder(
+                        replace_placeholder(
+                            page,
+                            "wss://",
+                            "ws://"
+                        ),
+                        "{{ prefix }}",
+                        ""
+                    ),
+                    "\"{{ esp_id }}\"",
+                    ESP_ID_string
+                ),
+                "?esp_id={{ esp_id }}",
+                ""
+            ),
+            "&", // fixes eduroam.html
+            "?"
+        );
         if (!modified_page) {
             ESP_LOGE("WS", "Could not replace {{ prefix }} in %s", file_path);
             httpd_resp_send_err(req, HTTPD_500_INTERNAL_SERVER_ERROR, "Template error");
@@ -492,7 +517,7 @@ esp_err_t alert_handler(httpd_req_t *req) {
 
     // remove {{ prefix }} jinja bits too
     // (replace with nothing)
-    char *modified_page = remove_prefix(html_buffer);
+    char *modified_page = replace_placeholder(html_buffer, "{{ prefix }}", "");
     if (!modified_page) {
         ESP_LOGE("WS", "Could not replace {{ prefix }} in %s", "/templates/alert.html");
         httpd_resp_send_err(req, HTTPD_500_INTERNAL_SERVER_ERROR, "Template error");
@@ -599,7 +624,7 @@ httpd_handle_t start_webserver(void) {
         httpd_register_uri_handler(server, &alert_uri);
 
         httpd_uri_t ws_uri = {
-            .uri = "/ws",
+            .uri = "/browser_ws",
             .method = HTTP_GET,
             .handler = websocket_handler,
             .is_websocket = true
@@ -739,16 +764,13 @@ void message_queue_task(void *pvParameters) {
     while (true) {
         if (xQueueReceive(ws_queue, message, portMAX_DELAY) == pdPASS) {
             if (esp_websocket_client_is_connected(ws_client)) {
-                esp_err_t err = esp_websocket_client_send_text(ws_client, message, strlen(message), portMAX_DELAY);
-                if (err != ESP_OK) {
-                    ESP_LOGE("WS", "Failed to send WebSocket message: %s (%#x)", esp_err_to_name(err), err);
-                } else {
-                    if (VERBOSE) ESP_LOGI("WS", "Sent: %s", message);
-                }
+                if (VERBOSE) ESP_LOGI("WS", "Sending: %s", message);
+                esp_websocket_client_send_text(ws_client, message, strlen(message), portMAX_DELAY);
             } else {
                 ESP_LOGW("WS", "WebSocket not connected, dropping message: %s", message);
             }
         }
+        vTaskDelay(pdMS_TO_TICKS(1000));
     }
 }
 
@@ -759,7 +781,7 @@ void websocket_event_handler(void *arg, esp_event_base_t event_base, int32_t eve
         case WEBSOCKET_EVENT_CONNECTED:
             if (VERBOSE) ESP_LOGI("WS", "WebSocket connected");
             char websocket_connect_message[128];
-            snprintf(websocket_connect_message, sizeof(websocket_connect_message), "{\"type\": \"register\", \"id\": \"%s\"}", ESP_ID);
+            snprintf(websocket_connect_message, sizeof(websocket_connect_message), "{\"type\": \"register\", \"esp_id\": \"%s\"}", ESP_ID);
             send_ws_message(websocket_connect_message);
             break;
 
@@ -787,8 +809,26 @@ void websocket_event_handler(void *arg, esp_event_base_t event_base, int32_t eve
 
             if (VERBOSE) ESP_LOGI("WS", "WebSocket data received: %.*s", ws_event_data->data_len, (char *)ws_event_data->data_ptr);
 
-            if (strcmp(type, "response") == 0) {
+            if (strcmp(type, "query") == 0) {
+                const char *content = cJSON_GetObjectItem(message, "content")->valuestring;
+                if (strcmp(content, "are you still there?") == 0) {
 
+                    cJSON *response_content = cJSON_CreateObject();
+                    cJSON_AddStringToObject(response_content, "response", "yes");
+
+                    cJSON *response = cJSON_CreateObject();
+                    cJSON_AddStringToObject(response, "type", "response");
+                    cJSON_AddStringToObject(response, "esp_id", ESP_ID);
+                    cJSON_AddItemToObject(response, "content", response_content);
+
+                    char *response_str = cJSON_PrintUnformatted(response);
+                    cJSON_Delete(response);
+
+                    xQueueReset(ws_queue);
+                    send_ws_message(response_str);
+
+                    free(response_str);
+                }
             }
 
             else if (strcmp(type, "request") == 0) {
@@ -810,8 +850,11 @@ void websocket_event_handler(void *arg, esp_event_base_t event_base, int32_t eve
                 char *req_content;
                 esp_err_t err = ESP_OK;
 
-                if ((strcmp(endpoint, "/validate_connect") == 0 || strcmp(endpoint, "/validate_connect?id=eduroam") == 0) && strcmp(method, "POST") == 0) {
+                if ((strcmp(endpoint, "/validate_connect") == 0 || strcmp(endpoint, "/validate_connect?eduroam=true") == 0) && strcmp(method, "POST") == 0) {
                     reconnect = true;
+
+                    // TODO: support eduroam
+
                     // create a mock HTTP request
                     cJSON *ssid = cJSON_GetObjectItem(data, "ssid");
                     cJSON *password = cJSON_GetObjectItem(data, "password");
@@ -893,6 +936,7 @@ void websocket_event_handler(void *arg, esp_event_base_t event_base, int32_t eve
 
                 cJSON *response = cJSON_CreateObject();
                 cJSON_AddStringToObject(response, "type", "response");
+                cJSON_AddStringToObject(response, "esp_id", ESP_ID);
                 cJSON_AddItemToObject(response, "content", response_content);
 
                 char *response_str = cJSON_PrintUnformatted(response);
@@ -940,23 +984,28 @@ void websocket_task(void *pvParameters) {
 
         // create JSON object with sensor data
         cJSON *json = cJSON_CreateObject();
-        cJSON_AddNumberToObject(json, "charge", iCharge);
-        cJSON_AddNumberToObject(json, "voltage", fVoltage);
-        cJSON_AddNumberToObject(json, "current", fCurrent);
-        cJSON_AddNumberToObject(json, "temperature", fTemperature);
-        cJSON_AddNumberToObject(json, "BL", iBL);
-        cJSON_AddNumberToObject(json, "BH", iBH);
-        cJSON_AddNumberToObject(json, "CCT", iCCT);
-        cJSON_AddNumberToObject(json, "DCT", iDCT);
-        cJSON_AddNumberToObject(json, "CITL", iCITL);
-        cJSON_AddNumberToObject(json, "CITH", iCITH);
+        cJSON *data = cJSON_CreateObject();
 
-        cJSON_AddStringToObject(json, "IP", ESP_IP);
+        cJSON_AddNumberToObject(data, "charge", iCharge);
+        cJSON_AddNumberToObject(data, "voltage", fVoltage);
+        cJSON_AddNumberToObject(data, "current", fCurrent);
+        cJSON_AddNumberToObject(data, "temperature", fTemperature);
+        cJSON_AddNumberToObject(data, "BL", iBL);
+        cJSON_AddNumberToObject(data, "BH", iBH);
+        cJSON_AddNumberToObject(data, "CCT", iCCT);
+        cJSON_AddNumberToObject(data, "DCT", iDCT);
+        cJSON_AddNumberToObject(data, "CITL", iCITL);
+        cJSON_AddNumberToObject(data, "CITH", iCITH);
+        cJSON_AddStringToObject(data, "IP", ESP_IP);
+        char *data_string = cJSON_PrintUnformatted(data);
 
+        cJSON_AddItemToObject(json, ESP_ID, data);
         char *json_string = cJSON_PrintUnformatted(json);
+
+        // cJSON_Delete(data);
         cJSON_Delete(json);
 
-        if (json_string != NULL) {
+        if (json_string != NULL && data_string != NULL) {
             // first send to all connected WebSocket clients
             for (int i = 0; i < WS_CONFIG_MAX_CLIENTS; i++) {
                 if (client_sockets[i] != -1) {
@@ -994,13 +1043,13 @@ void websocket_task(void *pvParameters) {
                     snprintf(s, sizeof(s), "batteryportal-e9czhgamgferavf7.ukwest-01.azurewebsites.net");
                 }
                 char uri[128];
-                snprintf(uri, sizeof(uri), "wss://%s/ws", s);
+                snprintf(uri, sizeof(uri), "wss://%s/esp_ws", s);
 
                 const esp_websocket_client_config_t websocket_cfg = {
                     .uri = uri,
                     .reconnect_timeout_ms = 10000,
                     .network_timeout_ms = 10000,
-                    .cert_pem = (const char *)website_cert_pem,
+                    .cert_pem = LOCAL?(const char *)local_cert_pem:(const char *)website_cert_pem,
                     .skip_cert_common_name_check = LOCAL,
                 };
 
@@ -1029,12 +1078,13 @@ void websocket_task(void *pvParameters) {
                     ws_client = NULL;
                 } else {
                     char message[1024];
-                    snprintf(message, sizeof(message), "{\"type\": \"data\", \"id\": \"%s\", \"content\": %s}", ESP_ID, json_string);
+                    snprintf(message, sizeof(message), "{\"type\": \"data\", \"esp_id\": \"%s\", \"content\": %s}", ESP_ID, data_string);
                     send_ws_message(message);
                 }
             }
 
             // clean up
+            free(data_string);
             free(json_string);
         }
 

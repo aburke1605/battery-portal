@@ -27,6 +27,10 @@
     <div class="content">
       <div class="container-fluid">
         <div class="row">
+
+
+
+
           <div class="col-lg-6">
             <div class="card">
               <div class="card-header border-0">
@@ -51,7 +55,7 @@
                 <!-- /.d-flex -->
 
                 <div class="position-relative mb-4">
-                  <canvas id="visitors-chart" height="200"></canvas>
+                  <canvas id="visitors-chart" height="ml-auto"></canvas>
                 </div>
 
                 <div class="d-flex flex-row justify-content-end">
@@ -71,6 +75,10 @@
             <!-- /.card -->
           </div>
           <!-- /.col-md-6 -->
+
+
+
+
           <div class="col-lg-6">
             <div class="card">
               <div class="card-header border-0">
@@ -95,7 +103,7 @@
                 <!-- /.d-flex -->
 
                 <div class="position-relative mb-4">
-                  <canvas id="sales-chart" height="200"></canvas>
+                  <canvas id="sales-chart" height="ml-auto"></canvas>
                 </div>
 
                 <div class="d-flex flex-row justify-content-end">
@@ -112,6 +120,42 @@
             <!-- /.card -->
           </div>
           <!-- /.col-md-6 -->
+
+
+
+
+          <div class="col-lg-6">
+
+            <!-- new card -->
+            <div class="card">
+
+              <!-- header -->
+              <div class="card-header border-0">
+                <div class="d-flex justify-content-between">
+                  <h3 class="card-title">Live monitoring</h3>
+                </div>
+              </div>
+
+              <!-- body -->
+              <div class="card-body">
+                <div class="d-flex">
+                  <div class="d-flex flex-column">
+                    <span class="text-bold text-lg">Connected battery packs:</span>
+                    <ol id="connected_esp_list"></ol>
+                  </div>
+                </div>
+
+                <div class="position-relative mb-4">
+                  <canvas id="sales-chart" height="ml-auto"></canvas>
+                </div>
+              </div>
+            </div>
+          </div>
+
+
+
+
+
         </div>
         <!-- /.row -->
       </div>
@@ -119,4 +163,46 @@
     </div>
     <!-- /.content -->
   </div>
+{% endblock %}
+
+
+{% block script %}
+  <script>
+    document.addEventListener('DOMContentLoaded', function() {
+      let protocol = (window.location.protocol === 'https:') ? 'wss://' : 'ws://';
+      let monitoring_socket = new WebSocket(protocol + window.location.host + "/monitor");
+      monitoring_socket.onopen = function() {
+        console.log('Monitoring WebSocket connection established');
+      };
+      monitoring_socket.onmessage = function(event) {
+        let data = JSON.parse(event.data);
+        let esps = JSON.parse(data.esps);
+
+        let list_element = document.getElementById("connected_esp_list");
+        list_element.innerHTML = ""; // clear
+
+        Object.keys(esps).forEach(esp => {
+          let list_item = document.createElement("li");
+          list_item.textContent = `ESP32 with ID: `;
+
+          let list_link = document.createElement("a");
+          list_link.href = "/portal/display?esp_id=" + esp
+          list_link.textContent = esp;
+          list_link.style.textDecoration = "none";
+          list_item.appendChild(list_link);
+
+          let state_of_charge = document.createTextNode(" (" + esps[esp]['charge'] + "\u00A0%)");
+          list_item.appendChild(state_of_charge);
+
+          list_element.appendChild(list_item);
+        });
+      };
+      monitoring_socket.onerror = function(error) {
+        console.error('Monitoring WebSocket error:', error);
+      };
+      monitoring_socket.onclose = function() {
+        console.log('Monitoring WebSocket connection closed');
+      };
+    })
+  </script>
 {% endblock %}
