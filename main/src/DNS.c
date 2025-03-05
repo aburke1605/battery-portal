@@ -4,6 +4,7 @@
 #include <lwip/dns.h>
 
 #include "include/config.h"
+#include "include/utils.h"
 #include "include/DNS.h"
 
 // DNS handler (redirect all requests to our AP IP)
@@ -92,6 +93,8 @@ void dns_server_task(void *pvParameters) {
         } else {
             ESP_LOGE("DNS", "recvfrom failed: errno %d", errno);
         }
+
+        check_bytes((TaskParams *)pvParameters);
     }
 
     // Cleanup if the loop exits
