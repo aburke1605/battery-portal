@@ -85,7 +85,7 @@ menu "[CUSTOM] Eduroam Configuration"
 
 config EDUROAM
     bool "Use Eduroam"
-    default n
+    default y
     help
       Set to true to connect to Eduroam.
 
