@@ -28,7 +28,7 @@
         <div class='section'>
             <h2>ESP32 LED Control</h2>
             <div class='button-container'>
-                <form action='{{ prefix }}/toggle' method='post'>
+                <form action='{{ prefix }}/toggle?esp_id={{ esp_id }}' method='post'>
                     <button type='submit'>Toggle LED</button>
                 </form>
             </div>
@@ -36,9 +36,9 @@
 
         <div class='section'>
             <div>
-                <a href='{{ prefix }}/change'>Change battery pack properties</a>
-                <a href='{{ prefix }}/connect'>Connect to WiFi access point</a>
-                <a href='{{ prefix }}/nearby'>Nearby battery packs</a>
+                <a href='{{ prefix }}/change?esp_id={{ esp_id }}'>Change battery pack properties</a>
+                <a href='{{ prefix }}/connect?esp_id={{ esp_id }}'>Connect to WiFi access point</a>
+                <a href='{{ prefix }}/nearby?esp_id={{ esp_id }}'>Nearby battery packs</a>
                 <a href='{{ prefix }}/about'>About AceOn</a>
                 <a href='{{ prefix }}/device'>Unit Layout</a>
             </div>
@@ -50,18 +50,21 @@
 
     <script>
         document.addEventListener('DOMContentLoaded', function() {
-            let protocol = (window.location.protocol === 'https:') ? 'wss://' : 'ws://';
-            let socket = new WebSocket(protocol + location.host + '/ws');
+            let socket = new WebSocket('wss://' + location.host + '/browser_ws');
             socket.onopen = function() {
                 console.log('WebSocket connection established');
             };
             socket.onmessage = function(event) {
                 try {
                     let data = JSON.parse(event.data);
-                    document.getElementById('charge').innerHTML = data.charge;
-                    document.getElementById('voltage').innerHTML = data.voltage.toFixed(2);
-                    document.getElementById('current').innerHTML = data.current.toFixed(2);
-                    document.getElementById('temperature').innerHTML = data.temperature.toFixed(2);
+                    Object.keys(data).forEach(esp_id => {
+                        if ("{{ esp_id }}" == esp_id) {
+                            document.getElementById('charge').innerHTML = data[esp_id].charge;
+                            document.getElementById('voltage').innerHTML = data[esp_id].voltage.toFixed(2);
+                            document.getElementById('current').innerHTML = data[esp_id].current.toFixed(2);
+                            document.getElementById('temperature').innerHTML = data[esp_id].temperature.toFixed(2);
+                        }
+                    });
                 } catch (error) {
                     console.error('Error parsing JSON:', error);
                 }

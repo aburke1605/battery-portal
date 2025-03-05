@@ -2,8 +2,9 @@ from flask import Blueprint, render_template, request, redirect, url_for
 from flask_login import login_required
 import urllib.parse
 import json
+import time
 
-from ws import lock, connected_esp_clients
+from ws import lock, response_lock, esp_clients, pending_responses, update_time
 
 portal = Blueprint('portal', __name__, url_prefix='/portal')
 @portal.before_request
@@ -12,7 +13,7 @@ def require_login():
     pass
 
 
-def forward_request_to_esp32(endpoint, method="POST", id=None):
+def forward_request_to_esp32(endpoint, method="POST", esp_id=None, delay=5):
     """
     Generic function to forward requests to the ESP32 via WebSocket.
     :param endpoint: ESP32 endpoint to forward the request to.
@@ -28,37 +29,43 @@ def forward_request_to_esp32(endpoint, method="POST", id=None):
         }
     }
 
-    responses = []
-
     with lock:
-        target_clients = connected_esp_clients if not id else {id: connected_esp_clients[id]}
+        for esp in set(esp_clients):
+            content = dict(esp)["content"]
+            if content == None:
+                # still registering
+                continue
 
-        if not target_clients:
-            return 'No matching ESP32 connected', 404
-        for ID, ws in target_clients.items():
             try:
+                content = json.loads(content)
+                if content.get("esp_id") != esp_id:
+                    # not the right one
+                    continue
+
                 if method == "POST":
                     message["content"]["data"] = request.form.to_dict()
+
+                ws = dict(set(esp))["ws"]
                 ws.send(json.dumps(message))
 
-                while True:
-                    response = ws.receive()
-                    if response:
-                        response = json.loads(response)
-                        if response["type"] == "response":
-                            responses.append({"id": ID, "response": response["content"]})
-                        break
+                start = time.time()
+                while time.time() - start < delay: # seconds
+                    with response_lock:
+                        if esp_id in pending_responses.keys():
+                            return pending_responses.pop(esp_id)
+                    time.sleep(0.1)
+
+                return {"esp_id": esp_id, "error": "Timeout waiting for ESP response"}
 
             except Exception as e:
-                print(f"Error communicating with {ID}: {e}")
-                responses.append({"id": ID, "error": str(e)})
-
-    return responses
+                print(f"Error communicating with {esp_id}: {e}")
+                return {"esp_id": esp_id, "error": str(e)}
 
 @portal.route('/display')
 def display():
+    esp_id = request.args.get("esp_id")
     print('Request for display page received')
-    return render_template('portal/display.html', prefix="/portal")
+    return render_template('portal/display.html', prefix="/portal", esp_id=esp_id)
 
 @portal.route("/alert")
 def alert():
@@ -66,61 +73,67 @@ def alert():
 
 @portal.route("/purge")
 def purge():
-    global connected_esp_clients
-    connected_esp_clients = dict()
+    global esp_clients
+    esp_clients.clear()
+    update_time()
 
     return "", 204
 
 @portal.route('/change')
 def change():
+    esp_id = request.args.get("esp_id")
     print('Request for change page received')
-    return render_template('portal/change.html', prefix="/portal")
+    return render_template('portal/change.html', prefix="/portal", esp_id=esp_id)
 
 @portal.route('/validate_change', methods=['POST'])
 def validate_change():
-    forward_request_to_esp32("/validate_change", id=list(connected_esp_clients.keys())[0])
+    esp_id = request.args.get("esp_id")
+    response = forward_request_to_esp32("/validate_change", esp_id=esp_id, delay=20)
+    if response.get("status") == "success" and response["response"] == "success":
+        return redirect(f"/portal/change?esp_id={esp_id}")
     return "", 204
 
 @portal.route('/reset', methods=['POST'])
 def reset():
-    id = request.args.get("id")
-    responses = forward_request_to_esp32("/reset", id=list(connected_esp_clients.keys())[0])
-    for response in responses:
-        if response["response"]["response"] == "success":
-            return redirect("/change")
+    esp_id = request.args.get("esp_id")
+    response = forward_request_to_esp32("/reset", esp_id=esp_id)
+    if response.get("status") == "success" and response["response"] == "success":
+        return redirect(f"/portal/change?esp_id={esp_id}")
     return "", 204
 
 @portal.route('/connect')
 def connect():
+    esp_id = request.args.get("esp_id")
     print('Request for connect page received')
-    return render_template('portal/connect.html', prefix="/portal")
+    return render_template('portal/connect.html', prefix="/portal", esp_id=esp_id)
 
 @portal.route('/eduroam')
 def eduroam():
+    esp_id = request.args.get("esp_id")
     print('Request for eduroam page received')
-    return render_template('portal/eduroam.html', prefix="/portal")
+    return render_template('portal/eduroam.html', prefix="/portal", esp_id=esp_id)
 
 @portal.route('/validate_connect', methods=['POST'])
 def validate_connect():
-    print("\n")
-    id = request.args.get("id")
-    print(f"id: {id}, hardcoded: {list(connected_esp_clients.keys())[0]}")
-    print("\n")
-    # TODO: support >1 ESP32
-    responses = forward_request_to_esp32(f"/validate_connect{'?id=eduroam' if id=='eduroam' else ''}", id=list(connected_esp_clients.keys())[0]) # TODO: fix this hardcoding
-    for response in responses:
-        if response["response"]["response"] == "already connected":
-            message = "One or more ESP32s already connected to Wi-Fi"
-            encoded_message = urllib.parse.quote(message)
-            return redirect(f"/portal/alert?message={encoded_message}")
-
-    return redirect("/display")
+    esp_id = request.args.get("esp_id")
+    use_eduroam = request.args.get("eduroam")
+    response = forward_request_to_esp32(f"/validate_connect{'?eduroam=true' if use_eduroam else ''}", esp_id=esp_id, delay=15)
+    if response.get("status") == "success":
+        message = "Empty message"
+        if response["response"] == "success":
+            message = "Success!"
+        elif response["response"] == "already connected":
+            message = "Already connected to Wi-Fi"
+        encoded_message = urllib.parse.quote(message)
+        return redirect(f"/portal/alert?esp_id={esp_id}&message={encoded_message}")
+    return response.get("error"), 204
 
 
 @portal.route('/nearby')
 def nearby():
+    esp_id = request.args.get("esp_id")
     print('Request for nearby page received')
-    return render_template('portal/nearby.html')
+    return render_template('portal/nearby.html', esp_id=esp_id)
 
 @portal.route('/about')
 def about():
@@ -134,11 +147,10 @@ def device():
 
 @portal.route('/toggle', methods=['POST'])
 def toggle():
-    id = request.args.get("id")
-    responses = forward_request_to_esp32("/toggle", id=list(connected_esp_clients.keys())[0])
-    for response in responses:
-        if response["response"]["response"] == "led toggled":
-            message = "One or more ESP32 LEDs toggled"
-            encoded_message = urllib.parse.quote(message)
-            return redirect(f"/portal/alert?message={encoded_message}")
+    esp_id = request.args.get("esp_id")
+    response = forward_request_to_esp32("/toggle", esp_id=esp_id)
+    if response.get("status") == "success" and response["response"] == "led toggled":
+        message = "LED Toggled"
+        encoded_message = urllib.parse.quote(message)
+        return redirect(f"/portal/alert?esp_id={esp_id}&message={encoded_message}")
     return "", 204

@@ -71,6 +71,11 @@
 
 #define UTILS_KEY_LENGTH 16
 
+#ifdef CONFIG_EDUROAM
+    #define UTILS_EDUROAM true
+#else
+    #define UTILS_EDUROAM false
+#endif
 #define UTILS_EDUROAM_USERNAME CONFIG_EDUROAM_USERNAME
 #define UTILS_EDUROAM_PASSWORD CONFIG_EDUROAM_PASSWORD
 
@@ -78,10 +83,16 @@
 #define WS_QUEUE_SIZE 10
 #define WS_MESSAGE_MAX_LEN 1024
 
-#define WS_MAX_HTML_SIZE 4096
+#define WS_MAX_HTML_SIZE 5000
 #define WS_MAX_N_HTML_PAGES 16
 #define WS_MAX_HTML_PAGE_NAME_LENGTH 32
 #define WS_CONFIG_MAX_CLIENTS 5
+
+
+typedef struct {
+    int stack_size;
+    const char* task_name;
+} TaskParams;
 
 
 #endif // CONFIG_H
