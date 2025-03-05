@@ -1,0 +1,242 @@
+import { BatteryData, AlertData, UserData } from '../types';
+
+// Sample battery data
+export const initialBatteries: BatteryData[] = [
+  {
+    id: 'B-001',
+    name: 'Battery Pack Alpha',
+    status: 'good',
+    chargeLevel: 87,
+    temperature: 32,
+    voltage: 48.2,
+    current: 12.3,
+    health: 95,
+    lastMaintenance: '2025-03-15',
+    location: 'Building A, Floor 1',
+    type: 'Lithium-Ion',
+    capacity: 100,
+    cycleCount: 124,
+    isCharging: false
+  },
+  {
+    id: 'B-002',
+    name: 'Battery Pack Beta',
+    status: 'good',
+    chargeLevel: 92,
+    temperature: 29,
+    voltage: 48.5,
+    current: 8.7,
+    health: 98,
+    lastMaintenance: '2025-02-28',
+    location: 'Building A, Floor 2',
+    type: 'Lithium-Ion',
+    capacity: 75,
+    cycleCount: 87,
+    isCharging: true
+  },
+  {
+    id: 'B-003',
+    name: 'Battery Pack Gamma',
+    status: 'critical',
+    chargeLevel: 65,
+    temperature: 58,
+    voltage: 46.1,
+    current: 5.2,
+    health: 72,
+    lastMaintenance: '2025-01-10',
+    location: 'Building B, Floor 1',
+    type: 'Lithium-Polymer',
+    capacity: 50,
+    cycleCount: 203,
+    isCharging: false
+  },
+  {
+    id: 'B-004',
+    name: 'Battery Pack Delta',
+    status: 'good',
+    chargeLevel: 78,
+    temperature: 31,
+    voltage: 48,
+    current: 10.1,
+    health: 91,
+    lastMaintenance: '2025-03-01',
+    location: 'Building B, Floor 2',
+    type: 'Lithium-Iron-Phosphate',
+    capacity: 120,
+    cycleCount: 156,
+    isCharging: false
+  },
+  {
+    id: 'B-005',
+    name: 'Battery Pack Epsilon',
+    status: 'warning',
+    chargeLevel: 45,
+    temperature: 42,
+    voltage: 47.2,
+    current: 15.6,
+    health: 83,
+    lastMaintenance: '2025-03-20',
+    location: 'Building C, Floor 1',
+    type: 'Lithium-Ion',
+    capacity: 150,
+    cycleCount: 189,
+    isCharging: true
+  },
+  {
+    id: 'B-006',
+    name: 'Battery Pack Zeta',
+    status: 'good',
+    chargeLevel: 82,
+    temperature: 30,
+    voltage: 48.3,
+    current: 3.1,
+    health: 94,
+    lastMaintenance: '2024-12-05',
+    location: 'Building C, Floor 2',
+    type: 'Lithium-Polymer',
+    capacity: 80,
+    cycleCount: 112,
+    isCharging: false
+  },
+  {
+    id: 'B-007',
+    name: 'Battery Pack Eta',
+    status: 'warning',
+    chargeLevel: 12,
+    temperature: 33,
+    voltage: 46.8,
+    current: 2.5,
+    health: 85,
+    lastMaintenance: '2025-02-10',
+    location: 'Building D, Floor 1',
+    type: 'Lithium-Ion',
+    capacity: 90,
+    cycleCount: 201,
+    isCharging: false
+  },
+  {
+    id: 'B-008',
+    name: 'Battery Pack Theta',
+    status: 'good',
+    chargeLevel: 90,
+    temperature: 28,
+    voltage: 48.6,
+    current: 11.2,
+    health: 97,
+    lastMaintenance: '2025-03-05',
+    location: 'Building D, Floor 2',
+    type: 'Lithium-Iron-Phosphate',
+    capacity: 110,
+    cycleCount: 76,
+    isCharging: true
+  },
+  {
+    id: 'B-009',
+    name: 'Battery Pack Iota',
+    status: 'good',
+    chargeLevel: 85,
+    temperature: 31,
+    voltage: 48.1,
+    current: 9.8,
+    health: 93,
+    lastMaintenance: '2025-01-25',
+    location: 'Building E, Floor 1',
+    type: 'Lithium-Ion',
+    capacity: 100,
+    cycleCount: 134,
+    isCharging: false
+  }
+];
+
+// Sample alerts data
+export const initialAlerts: AlertData[] = [
+  {
+    id: 'A-001',
+    type: 'critical',
+    message: 'High temperature detected',
+    batteryId: 'B-003',
+    batteryName: 'Battery Pack Gamma',
+    timestamp: '2025-04-02T09:15:00',
+    isRead: false
+  },
+  {
+    id: 'A-002',
+    type: 'warning',
+    message: 'Low charge level',
+    batteryId: 'B-007',
+    batteryName: 'Battery Pack Eta',
+    timestamp: '2025-04-02T08:30:00',
+    isRead: false
+  },
+  {
+    id: 'A-003',
+    type: 'warning',
+    message: 'Battery health degrading',
+    batteryId: 'B-003',
+    batteryName: 'Battery Pack Gamma',
+    timestamp: '2025-04-01T14:45:00',
+    isRead: true
+  },
+  {
+    id: 'A-004',
+    type: 'info',
+    message: 'Maintenance due soon',
+    batteryId: 'B-006',
+    batteryName: 'Battery Pack Zeta',
+    timestamp: '2025-04-01T10:20:00',
+    isRead: true
+  },
+  {
+    id: 'A-005',
+    type: 'info',
+    message: 'Charging cycle completed',
+    batteryId: 'B-002',
+    batteryName: 'Battery Pack Beta',
+    timestamp: '2025-03-31T16:05:00',
+    isRead: true
+  }
+];
+
+// Sample users data
+export const initialUsers: UserData[] = [
+  {
+    id: 'U-001',
+    name: 'John Doe',
+    email: 'john.doe@example.com',
+    role: 'Administrator',
+    avatar: 'JD',
+    lastActive: '2025-04-02T10:30:00'
+  },
+  {
+    id: 'U-002',
+    name: 'Jane Smith',
+    email: 'jane.smith@example.com',
+    role: 'Technician',
+    avatar: 'JS',
+    lastActive: '2025-04-02T09:15:00'
+  },
+  {
+    id: 'U-003',
+    name: 'Robert Johnson',
+    email: 'robert.johnson@example.com',
+    role: 'Operator',
+    avatar: 'RJ',
+    lastActive: '2025-04-01T16:45:00'
+  },
+  {
+    id: 'U-004',
+    name: 'Emily Davis',
+    email: 'emily.davis@example.com',
+    role: 'Technician',
+    avatar: 'ED',
+    lastActive: '2025-04-01T14:20:00'
+  },
+  {
+    id: 'U-005',
+    name: 'Michael Wilson',
+    email: 'michael.wilson@example.com',
+    role: 'Operator',
+    avatar: 'MW',
+    lastActive: '2025-03-31T11:10:00'
+  }
+];
