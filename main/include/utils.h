@@ -21,3 +21,5 @@ char* read_file(const char* path);
 char* replace_placeholder(const char *html, const char *placeholder, const char* substitute);
 
 uint8_t get_block(uint8_t offset);
+
+void check_bytes(TaskParams *params);
