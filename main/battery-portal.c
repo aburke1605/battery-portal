@@ -91,7 +91,7 @@ void app_main(void) {
     xTaskCreate(&dns_server_task, "dns_server_task", 4096, NULL, 5, NULL);
 
     esp_log_level_set("wifi", ESP_LOG_ERROR);
-    xTaskCreate(&check_wifi_task, "check_wifi_task", 4096, NULL, 5, NULL);
+    xTaskCreate(&check_wifi_task, "check_wifi_task", 2048, NULL, 5, NULL);
 
     ws_queue = xQueueCreate(WS_QUEUE_SIZE, WS_MESSAGE_MAX_LEN);
     xTaskCreate(message_queue_task, "message_queue_task", 4096, NULL, 5, NULL);
@@ -99,5 +99,5 @@ void app_main(void) {
     esp_log_level_set("websocket_client", ESP_LOG_WARN);
     esp_log_level_set("transport_ws", ESP_LOG_WARN);
     esp_log_level_set("transport_base", ESP_LOG_WARN);
-    xTaskCreate(&websocket_task, "websocket_task", 4096, NULL, 5, NULL);
+    xTaskCreate(&websocket_task, "websocket_task", 8192, NULL, 5, NULL);
 }
