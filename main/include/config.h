@@ -58,6 +58,9 @@
 #define I2C_CHG_INHIBIT_TEMP_LOW_OFFSET      0
 #define I2C_CHG_INHIBIT_TEMP_HIGH_OFFSET     2
 
+#define I2C_DATA_SUBCLASS_ID 48
+#define I2C_NAME_OFFSET        45
+
 #define I2C_DISCHARGE_SUBCLASS_ID 49
 #define I2C_BL_OFFSET                9
 #define I2C_BH_OFFSET               14
