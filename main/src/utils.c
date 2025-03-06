@@ -7,6 +7,10 @@
 #include <esp_random.h>
 
 void random_key(char *key) {
+    //
+    // not used currently
+    //
+
     const char charset[] = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
     size_t charset_size = sizeof(charset) - 1;
 

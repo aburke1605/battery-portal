@@ -72,7 +72,7 @@
 #define I2C_LED_GPIO_PIN 2
 
 
-#define UTILS_KEY_LENGTH 16
+#define UTILS_KEY_LENGTH 10
 
 #ifdef CONFIG_EDUROAM
     #define UTILS_EDUROAM true
