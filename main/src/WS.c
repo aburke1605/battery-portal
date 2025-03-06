@@ -388,7 +388,7 @@ esp_err_t file_serve_handler(httpd_req_t *req) {
             "{{ prefix }}",
             "\"{{ esp_id }}\"",
             "?esp_id={{ esp_id }}",
-            "&"
+            "&" // fixes eduroam.html
         };
         const char* substitutes[] = {
             "ws://",
