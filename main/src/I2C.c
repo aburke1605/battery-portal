@@ -206,7 +206,7 @@ esp_err_t set_I2_value(uint8_t subclass, uint8_t offset, int16_t value) {
     ret = write_byte(I2C_DATA_FLASH_CLASS, subclass);
     ret = write_byte(I2C_DATA_FLASH_BLOCK, block);
 
-    // read current block data
+    // read all data in current block (32 bytes)
     uint8_t block_data[32] = {0};
     ret = read_data(I2C_BLOCK_DATA_START, block_data, sizeof(block_data));
     if (ret != ESP_OK) {
@@ -214,7 +214,7 @@ esp_err_t set_I2_value(uint8_t subclass, uint8_t offset, int16_t value) {
         return ret;
     }
 
-    // modify the value
+    // modify the value of interest only in sub-block (2 bytes)
     block_data[offset%32]   = (value >> 8) & 0xFF; // Higher byte
     block_data[offset%32+1] =  value       & 0xFF; // Lower byte
 
