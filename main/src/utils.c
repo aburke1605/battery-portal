@@ -131,34 +131,48 @@ char* read_file(const char* path) {
     return buffer;
 }
 
-char* replace_placeholder(const char *html, const char *placeholder, const char* substitute) {
-    size_t placeholder_len = strlen(placeholder);
-    size_t substitute_len = strlen(substitute);
+char* replace_placeholder(const char *html, const char *const placeholders[], const char*const substitutes[], size_t num_replacements) {
+    if (!html || !placeholders || !substitutes) return NULL;
 
-    // count occurrences of placeholder
-    int count = 0;
-    const char *tmp = html;
-    while ((tmp = strstr(tmp, placeholder))) {
-        count++;
-        tmp += placeholder_len;
+    size_t new_len = strlen(html);
+    size_t i, count;
+
+    for (i = 0; i < num_replacements; i++) {
+        // count occurrences of placeholder
+        count = 0;
+        const char* tmp = html;
+        while ((tmp = strstr(tmp, placeholders[i]))) {
+            count++;
+            tmp += strlen(placeholders[i]);
+        }
+
+        new_len += count * (strlen(substitutes[i]) - strlen(placeholders[i]));
     }
 
-    size_t new_len = strlen(html) - count * (placeholder_len - substitute_len);
+    // allocate memory for new page
     char *result = malloc(new_len + 1);
     if (!result) return NULL;
 
     // remove occurrences
     char *dest = result;
-    const char *src = html;
-    while ((tmp = strstr(src, placeholder))) {
-        size_t segment_len = tmp - src;
-        memcpy(dest, src, segment_len); // copy everything before placeholder
-        dest += segment_len;
-        strcpy(dest, substitute); // copy substitute
-        dest += substitute_len;
-        src = tmp + placeholder_len; // move past the placeholder
+    while (*html) {
+        bool replaced = false;
+        for (i = 0; i< num_replacements; i++) {
+            if (strncmp(html, placeholders[i], strlen(placeholders[i])) == 0) {
+                memcpy(dest, substitutes[i], strlen(substitutes[i]));
+                html += strlen(placeholders[i]);
+                dest += strlen(substitutes[i]);
+
+                replaced = true;
+                break;
+            }
+        }
+
+        if (!replaced) {
+            *dest++ = *html++;
+        }
     }
-    strcpy(dest, src); // copy remaining part
+    *dest = '\0';
 
     return result;
 }

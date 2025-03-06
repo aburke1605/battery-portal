@@ -382,28 +382,23 @@ esp_err_t file_serve_handler(httpd_req_t *req) {
         // remove other jinja bits too
         char ESP_ID_string[sizeof(ESP_ID) + 2];
         snprintf(ESP_ID_string, sizeof(ESP_ID_string), "\"%s\"", ESP_ID);
-        char *modified_page =
-        replace_placeholder(
-            replace_placeholder(
-                replace_placeholder(
-                    replace_placeholder(
-                        replace_placeholder(
-                            page,
-                            "wss://",
-                            "ws://"
-                        ),
-                        "{{ prefix }}",
-                        ""
-                    ),
-                    "\"{{ esp_id }}\"",
-                    ESP_ID_string
-                ),
-                "?esp_id={{ esp_id }}",
-                ""
-            ),
-            "&", // fixes eduroam.html
+
+        const char* placeholders[] = {
+            "wss://",
+            "{{ prefix }}",
+            "\"{{ esp_id }}\"",
+            "?esp_id={{ esp_id }}",
+            "&" // fixes eduroam.html
+        };
+        const char* substitutes[] = {
+            "ws://",
+            "",
+            ESP_ID_string,
+            "",
             "?"
-        );
+        };
+        char *modified_page = replace_placeholder(page, placeholders, substitutes, 5);
+
         if (!modified_page) {
             ESP_LOGE("WS", "Could not replace {{ prefix }} in %s", file_path);
             httpd_resp_send_err(req, HTTPD_500_INTERNAL_SERVER_ERROR, "Template error");
@@ -517,7 +512,9 @@ esp_err_t alert_handler(httpd_req_t *req) {
 
     // remove {{ prefix }} jinja bits too
     // (replace with nothing)
-    char *modified_page = replace_placeholder(html_buffer, "{{ prefix }}", "");
+    const char* placeholders[] = {"{{ prefix }}"};
+    const char* substitutes[] = {""};
+    char *modified_page = replace_placeholder(html_buffer, placeholders, substitutes, 1);
     if (!modified_page) {
         ESP_LOGE("WS", "Could not replace {{ prefix }} in %s", "/templates/alert.html");
         httpd_resp_send_err(req, HTTPD_500_INTERNAL_SERVER_ERROR, "Template error");

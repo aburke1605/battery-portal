@@ -18,7 +18,7 @@ void url_encode(char *dest, const char *src, size_t dest_size);
 
 char* read_file(const char* path);
 
-char* replace_placeholder(const char *html, const char *placeholder, const char* substitute);
+char* replace_placeholder(const char *html, const char *const placeholders[], const char*const substitutes[], size_t num_replacements);
 
 uint8_t get_block(uint8_t offset);
 
