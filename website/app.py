@@ -1,8 +1,7 @@
 #!venv/bin/python
 
 import mysql.connector
-from flask import Flask
-import time
+from flask import Flask, render_template
 
 app = Flask(__name__)
 
@@ -12,13 +11,15 @@ db = mysql.connector.connect(
     password="Qaz123ws",
     database="batteryportal-database"
 )
+
 cursor = db.cursor()
+cursor.execute("SHOW TABLES")
+
+n = 0
+for table in cursor.fetchall():
+    data = table
+    n += 1
 
 @app.route('/')
 def index():
-    while True:
-        cursor.execute("SHOW TABLES")
-        for table in cursor.fetchall():
-            print(table)
-        
-        time.sleep(5)
+    return render_template("test.html", n=n, data=data)
