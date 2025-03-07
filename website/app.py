@@ -4,12 +4,14 @@ import mysql.connector
 from flask import Flask, render_template
 
 app = Flask(__name__)
-
 db = mysql.connector.connect(
     host="batteryportal-server.mysql.database.azure.com",
     user="hroolfgemh",
     password="Qaz123ws",
-    database="batteryportal-database"
+    database="batteryportal-database",
+    port=3306,
+    ssl_ca="DigiCertGlobalRootCA.crt.pem",
+    ssl_disabled=False
 )
 
 cursor = db.cursor()
