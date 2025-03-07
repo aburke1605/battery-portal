@@ -14,7 +14,7 @@ db = mysql.connector.connect(
 
 cursor = db.cursor()
 cursor.execute("SHOW TABLES")
-
+data = "none"
 n = 0
 for table in cursor.fetchall():
     data = table
