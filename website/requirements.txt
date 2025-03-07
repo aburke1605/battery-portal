@@ -6,4 +6,5 @@ flask-sock==0.7.0
 setuptools==75.8.0
 gevent==24.11.1
 mysql-connector-python==9.2.0
-matplotlib==3.5.1
+matplotlib==3.10.0
+
