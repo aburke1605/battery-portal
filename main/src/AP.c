@@ -119,10 +119,17 @@ void wifi_init(void) {
         },
     };
     // set the SSID as well
+    /*
     char buffer[strlen(AP_WIFI_SSID) + 4 + 2 + 16 + 1 + 1]; // "AceOn battery" + " xxx" + ": " + uint16_t, + "%" + "\0"
     int SSID_number = find_unique_SSID();
     uint16_t iCharge = read_2byte_data(I2C_STATE_OF_CHARGE_REG);
     snprintf(buffer, sizeof(buffer), "%s %u: %d%%", AP_WIFI_SSID, SSID_number, iCharge);
+    */
+    char sName[UTILS_KEY_LENGTH + 1];
+    read_name(I2C_DATA_SUBCLASS_ID, I2C_NAME_OFFSET, sName);
+    uint16_t iCharge = read_2byte_data(I2C_STATE_OF_CHARGE_REG);
+    char buffer[strlen(sName) + 2 + 5 + 1 + 1]; // "BMS-01" + ": " + uint16_t, + "%" + "\0"
+    snprintf(buffer, sizeof(buffer), "%s: %d%%", sName, iCharge);
 
     strncpy((char *)wifi_ap_config.ap.ssid, buffer, sizeof(wifi_ap_config.ap.ssid) - 1);
     wifi_ap_config.ap.ssid[sizeof(wifi_ap_config.ap.ssid) - 1] = '\0'; // Ensure null-termination
@@ -133,7 +140,8 @@ void wifi_init(void) {
 
     // manually set the netmask and gateway as something different from first ESP
     ESP_ERROR_CHECK(esp_netif_dhcps_stop(ap_netif));
-    snprintf(ESP_subnet_IP, sizeof(ESP_subnet_IP), "192.168.%u.1", 4 + (SSID_number-1));
+    // snprintf(ESP_subnet_IP, sizeof(ESP_subnet_IP), "192.168.%u.1", 4 + (SSID_number-1));
+    snprintf(ESP_subnet_IP, sizeof(ESP_subnet_IP), "192.168.4.1");
     esp_ip4_addr_t ip_info = {
         .addr = esp_ip4addr_aton(ESP_subnet_IP),
     };
