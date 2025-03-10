@@ -22,7 +22,7 @@ import base64
 
 from portal import portal
 from ws import sock
-from db import cursor, table, esp_id
+from db import cursor
 
 # Create Flask application
 app = Flask(__name__)
@@ -202,7 +202,7 @@ if not os.path.exists(database_path):
 
 
 
-
+"""
 fig, ax = plt.subplots()
 cursor.execute(f"               SELECT timestamp FROM {esp_id}"); t = cursor.fetchall()
 cursor.execute(f"               SELECT soc FROM {esp_id}"); y = cursor.fetchall()
@@ -217,6 +217,9 @@ fig.savefig(img, format="png", bbox_inches='tight')
 @app.route('/')
 def index():
     return render_template("test.html", table=table, plot_url=base64.b64encode(img.getvalue()).decode())
+"""
+
+
 
 if __name__ == '__main__':
     app.run(debug=True, ssl_context=("local_cert.pem", "local_key.pem"), host="0.0.0.0")

@@ -3,6 +3,8 @@ from threading import Lock, Thread
 import time
 import json
 
+from db import update_db
+
 time_of_last_update = None
 def update_time():
     global time_of_last_update
@@ -115,6 +117,8 @@ def esp_ws(ws):
                     esp_clients.add(frozenset(meta_data.items())) # re-add updated data
 
                     broadcast() # send data to browsers
+
+                    update_db(data["esp_id"], data["content"]) # update server db
 
                 response["type"] = "echo"
                 response["content"] = message
