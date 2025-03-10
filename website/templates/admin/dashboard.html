@@ -186,13 +186,19 @@
           list_item.textContent = `ESP32 with ID: `;
 
           let list_link = document.createElement("a");
-          list_link.href = "/portal/display?esp_id=" + esp
+          list_link.href = "/db/test?esp_id=" + esp
           list_link.textContent = esp;
           list_link.style.textDecoration = "none";
           list_item.appendChild(list_link);
 
-          let state_of_charge = document.createTextNode(" (" + esps[esp]['charge'] + "\u00A0%)");
+          let state_of_charge = document.createTextNode(" (" + esps[esp]['charge'] + "\u00A0%) ");
           list_item.appendChild(state_of_charge);
+
+          let list_link_2 = document.createElement("a");
+          list_link_2.href = "/portal/display?esp_id=" + esp
+          list_link_2.textContent = "manage";
+          list_link_2.style.textDecoration = "none";
+          list_item.appendChild(list_link_2);
 
           list_element.appendChild(list_item);
         });
