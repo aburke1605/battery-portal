@@ -1,17 +1,23 @@
+from flask import Blueprint, render_template, request
+
 import mysql.connector
 import time
 
+import matplotlib.pyplot as plt
+import io
+import base64
 
-local = False
+
+local = True
 if local:
-    db = mysql.connector.connect(
+    DB = mysql.connector.connect(
         host="localhost",
         user="root",
         password="password",
         database="battery_data",
     )
 else:
-    db = mysql.connector.connect(
+    DB = mysql.connector.connect(
         host="batteryportal-server.mysql.database.azure.com",
         user="hroolfgemh",
         password="Qaz123ws",
@@ -22,7 +28,7 @@ else:
     )
 
 
-cursor = db.cursor()
+cursor = DB.cursor()
 
 
 def update_db(esp_id, data):
@@ -49,7 +55,7 @@ def update_db(esp_id, data):
                                         current FLOAT
                                     )
             """)
-            db.commit()
+            DB.commit()
             print("table created")
 
         else:
@@ -63,11 +69,35 @@ def update_db(esp_id, data):
                                     INSERT INTO {esp_id} (timestamp, soc, temperature, voltage, current)
                                     VALUES (FROM_UNIXTIME({time.time()}), {data['charge']}, {data['temperature']}, {data['voltage']}, {data['current']})
             """)
-            db.commit()
+            DB.commit()
 
-
-        cursor.execute(f"           SELECT * FROM {esp_id}")
-        table = cursor.fetchall()
 
     except mysql.connector.Error as err:
         print(f"Error: {err}")
+
+
+db = Blueprint('db', __name__, url_prefix='/db')
+@db.route('/test')
+def test():
+    esp_id = request.args.get("esp_id")
+
+    try:
+        cursor.execute(f"               SELECT * FROM {esp_id}")
+        table = cursor.fetchall()
+
+    except mysql.connector.Error as err:
+        table = ""
+        print(f"Error: {err}")
+
+    fig, ax = plt.subplots()
+    cursor.execute(f"               SELECT timestamp FROM {esp_id}"); t = cursor.fetchall()
+    cursor.execute(f"               SELECT soc FROM {esp_id}"); y = cursor.fetchall()
+    ax.plot(t, y)
+    ax.set_xlabel("timestamp")
+    ax.set_ylabel("soc [%]")
+    plt.gcf().autofmt_xdate()
+    img = io.BytesIO()
+    fig.savefig(img, format="png", bbox_inches='tight')
+    # img.seek(0) # rewind the buffer (needed?)
+
+    return render_template("test.html", table=table, plot_url=base64.b64encode(img.getvalue()).decode())
