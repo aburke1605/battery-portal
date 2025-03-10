@@ -81,20 +81,25 @@ db = Blueprint('db', __name__, url_prefix='/db')
 def test():
     esp_id = request.args.get("esp_id")
 
+    fig, ax = plt.subplots()
+
     try:
         cursor.execute(f"           SELECT * FROM {esp_id}")
         table = cursor.fetchall()
 
+        cursor.execute(f"           SELECT timestamp FROM {esp_id}"); t = cursor.fetchall()
+        cursor.execute(f"           SELECT soc FROM {esp_id}"); y = cursor.fetchall()
+
+        ax.plot(t, y)
+        ax.set_xlabel("timestamp")
+        ax.set_ylabel("soc [%]")
+
     except mysql.connector.Error as err:
         table = ""
+        ax.text(0.5,0.5,"No data")
+
         print(f"Error: {err}")
 
-    fig, ax = plt.subplots()
-    cursor.execute(f"               SELECT timestamp FROM {esp_id}"); t = cursor.fetchall()
-    cursor.execute(f"               SELECT soc FROM {esp_id}"); y = cursor.fetchall()
-    ax.plot(t, y)
-    ax.set_xlabel("timestamp")
-    ax.set_ylabel("soc [%]")
     plt.gcf().autofmt_xdate()
     img = io.BytesIO()
     fig.savefig(img, format="png", bbox_inches='tight')
