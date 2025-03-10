@@ -11,7 +11,11 @@ uint16_t read_2byte_data(uint8_t reg);
 
 uint16_t test_read(uint8_t subclass, uint8_t offset);
 
+void read_name(uint8_t subclass, uint8_t offset, char* name);
+
 esp_err_t write_byte(uint8_t reg, uint8_t data);
+
+esp_err_t set_device_name(uint8_t subclass, uint8_t offset, char value[11]);
 
 esp_err_t set_I2_value(uint8_t subclass, uint8_t offset, int16_t value);
 

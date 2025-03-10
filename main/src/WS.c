@@ -89,6 +89,7 @@ esp_err_t validate_change_handler(httpd_req_t *req) {
     }
 
     // Check if each parameter exists and parse it
+    char *name_start = strstr(content, "device_name=");
     char *BL_start = strstr(content, "BL_voltage_threshold=");
     char *BH_start = strstr(content, "BH_voltage_threshold=");
     char *CCT_start = strstr(content, "charge_current_threshold=");
@@ -99,6 +100,16 @@ esp_err_t validate_change_handler(httpd_req_t *req) {
     static bool led_on = false;
     led_on = !led_on;
     gpio_set_level(I2C_LED_GPIO_PIN, led_on ? 1 : 0);
+
+    if (name_start) {
+        char device_name[11] = {0};
+        sscanf(name_start, "device_name=%10[^&]", device_name);
+        device_name[sizeof(device_name)] = '\0';
+        if (device_name[0] != '\0') {
+            ESP_LOGI("I2C", "Changing device name...");
+            set_device_name(I2C_DATA_SUBCLASS_ID, I2C_NAME_OFFSET, device_name);
+        }
+    }
 
     if (BL_start) {
         char BL_voltage_threshold[50] = {0};
@@ -878,6 +889,7 @@ void websocket_event_handler(void *arg, esp_event_base_t event_base, int32_t eve
 
                 else if (strcmp(endpoint, "/validate_change") == 0 && strcmp(method, "POST") == 0) {
                     // create a mock HTTP request
+                    cJSON *device_name = cJSON_GetObjectItem(data, "device_name");
                     cJSON *BL_voltage_threshold = cJSON_GetObjectItem(data, "BL_voltage_threshold");
                     cJSON *BH_voltage_threshold = cJSON_GetObjectItem(data, "BH_voltage_threshold");
                     cJSON *charge_current_threshold = cJSON_GetObjectItem(data, "charge_current_threshold");
@@ -886,7 +898,8 @@ void websocket_event_handler(void *arg, esp_event_base_t event_base, int32_t eve
                     cJSON *chg_inhibit_temp_high = cJSON_GetObjectItem(data, "chg_inhibit_temp_high");
 
                     req_len = snprintf(NULL, 0,
-                        "BL_voltage_threshold=%s&BH_voltage_threshold=%s&charge_current_threshold=%s&discharge_current_threshold=%s&chg_inhibit_temp_low=%s&chg_inhibit_temp_high=%s",
+                        "device_name=%s&BL_voltage_threshold=%s&BH_voltage_threshold=%s&charge_current_threshold=%s&discharge_current_threshold=%s&chg_inhibit_temp_low=%s&chg_inhibit_temp_high=%s",
+                        device_name->valuestring,
                         BL_voltage_threshold->valuestring,
                         BH_voltage_threshold->valuestring,
                         charge_current_threshold->valuestring,
@@ -895,7 +908,8 @@ void websocket_event_handler(void *arg, esp_event_base_t event_base, int32_t eve
                         chg_inhibit_temp_high->valuestring);
                     req_content = malloc(req_len + 1);
                     snprintf(req_content, req_len + 1,
-                        "BL_voltage_threshold=%s&BH_voltage_threshold=%s&charge_current_threshold=%s&discharge_current_threshold=%s&chg_inhibit_temp_low=%s&chg_inhibit_temp_high=%s",
+                        "device_name=%s&BL_voltage_threshold=%s&BH_voltage_threshold=%s&charge_current_threshold=%s&discharge_current_threshold=%s&chg_inhibit_temp_low=%s&chg_inhibit_temp_high=%s",
+                        device_name->valuestring,
                         BL_voltage_threshold->valuestring,
                         BH_voltage_threshold->valuestring,
                         charge_current_threshold->valuestring,
@@ -977,6 +991,7 @@ void websocket_task(void *pvParameters) {
         float fTemperature = (float)iTemperature / 10.0 - 273.15;
 
         // configurable data too
+        read_name(I2C_DATA_SUBCLASS_ID, I2C_NAME_OFFSET, ESP_ID);
         uint16_t iBL = test_read(I2C_DISCHARGE_SUBCLASS_ID, I2C_BL_OFFSET);
         uint16_t iBH = test_read(I2C_DISCHARGE_SUBCLASS_ID, I2C_BH_OFFSET);
         uint16_t iCCT = test_read(I2C_CURRENT_THRESHOLDS_SUBCLASS_ID, I2C_CHG_CURRENT_THRESHOLD_OFFSET);
@@ -992,6 +1007,7 @@ void websocket_task(void *pvParameters) {
         cJSON_AddNumberToObject(data, "voltage", fVoltage);
         cJSON_AddNumberToObject(data, "current", fCurrent);
         cJSON_AddNumberToObject(data, "temperature", fTemperature);
+        cJSON_AddStringToObject(data, "name", ESP_ID);
         cJSON_AddNumberToObject(data, "BL", iBL);
         cJSON_AddNumberToObject(data, "BH", iBH);
         cJSON_AddNumberToObject(data, "CCT", iCCT);
