@@ -2,7 +2,6 @@
 import os
 import string
 import random
-import time
 
 from flask import Flask, render_template, request, redirect, url_for, abort
 
@@ -17,14 +16,13 @@ from flask_admin import helpers as admin_helpers
 
 from wtforms import PasswordField
 
-import mysql.connector
-
 import matplotlib.pyplot as plt
 import io
 import base64
 
 from portal import portal
 from ws import sock
+from db import cursor, table, esp_id
 
 # Create Flask application
 app = Flask(__name__)
@@ -111,7 +109,6 @@ class UserView(MyModelView):
     }
 
 
-local = False
 
 
 @app.route('/')
@@ -203,76 +200,6 @@ if not os.path.exists(database_path):
     print("Database file not found. Creating tables and populating with sample data.")
     build_sample_db()
 
-if local:
-    db = mysql.connector.connect(
-        host="localhost",
-        user="root",
-        password="password",
-        database="battery_data",
-    )
-else:
-    db = mysql.connector.connect(
-        host="batteryportal-server.mysql.database.azure.com",
-        user="hroolfgemh",
-        password="Qaz123ws",
-        database="batteryportal-database",
-        port=3306,
-        ssl_ca="DigiCertGlobalRootCA.crt.pem",
-        ssl_disabled=False
-    )
-
-
-cursor = db.cursor()
-
-table = """
-    <----->
-     EMPTY
-    <----->
-"""
-
-esp_id = "BMS_01"
-
-try:
-    n_rows = 0
-
-    cursor.execute(f"""
-                                SHOW TABLES LIKE '{esp_id}'
-    """)
-    if not cursor.fetchone():
-        cursor.execute(f"""
-                                CREATE TABLE {esp_id} (
-                                    timestamp TIMESTAMP PRIMARY KEY,
-                                    soc INT,
-                                    temperature FLOAT,
-                                    voltage FLOAT,
-                                    current FLOAT
-                                )
-        """)
-        db.commit()
-        print("table created")
-
-    else:
-        cursor.execute(f"       SELECT COUNT(*) FROM {esp_id}")
-        n_rows = cursor.fetchone()[0]
-        print("table already exists")
-
-
-    while n_rows < 10:
-        cursor.execute(f"""
-                                INSERT INTO {esp_id} (timestamp, soc, temperature, voltage, current)
-                                VALUES (FROM_UNIXTIME({time.time()}), {31}, {5.5}, {3.7}, {0.1})
-        """)
-        db.commit()
-
-        n_rows += 1
-        time.sleep(1)
-
-
-    cursor.execute(f"           SELECT * FROM {esp_id}")
-    table = cursor.fetchall()
-
-except mysql.connector.Error as err:
-    print(f"Error: {err}")
 
 
 
