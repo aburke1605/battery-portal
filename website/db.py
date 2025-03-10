@@ -8,7 +8,7 @@ import io
 import base64
 
 
-local = True
+local = False
 if local:
     DB = mysql.connector.connect(
         host="localhost",
