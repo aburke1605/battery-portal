@@ -82,7 +82,7 @@ def test():
     esp_id = request.args.get("esp_id")
 
     try:
-        cursor.execute(f"               SELECT * FROM {esp_id}")
+        cursor.execute(f"           SELECT * FROM {esp_id}")
         table = cursor.fetchall()
 
     except mysql.connector.Error as err:
