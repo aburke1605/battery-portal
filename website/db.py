@@ -57,7 +57,7 @@ def update_db(esp_id, data):
             cursor.execute(f"       SELECT COUNT(*) FROM {esp_id}")
             n_rows = cursor.fetchone()[0]
 
-        if n_rows < 100:
+        if abs(data["current"]) >= 0.1 and n_rows < 10000:
             cursor.execute(f"""
                                     INSERT INTO {esp_id} (timestamp, soc, temperature, voltage, current)
                                     VALUES (FROM_UNIXTIME({time.time()}), {data['charge']}, {data['temperature']}, {data['voltage']}, {data['current']})
