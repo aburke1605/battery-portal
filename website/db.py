@@ -126,7 +126,7 @@ def display():
         cursor.execute(f"           SELECT timestamp FROM {esp_id}"); t = cursor.fetchall()
         cursor.execute(f"           SELECT soc FROM {esp_id}"); y = cursor.fetchall()
 
-        ax.plot(t, y)
+        ax.plot(t, y, marker=".")
         ax.set_xlabel("timestamp")
         ax.set_ylabel("soc [%]")
 
