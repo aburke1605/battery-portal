@@ -16,6 +16,11 @@
 <script>
     async function runQuery() {
         const query = document.getElementById("sqlQuery").value;
+        if (query.includes("ADMIN ")) {
+            return;
+        }
+
+        // send initial request
         const response = await fetch("/db/execute_sql", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
@@ -23,7 +28,27 @@
         });
 
         const data = await response.json();
-        document.getElementById("result").innerText = JSON.stringify(data, null, 2);
+
+        // check if confirmation is needed
+        if (response.status === 403 && data.confirm) {
+            const userConfirm = prompt("Dangerous query detected! Please re-enter the query to confirm:");
+
+            if (userConfirm && userConfirm === query) {
+                // resend request with confirmation
+                const finalResponse = await fetch("/db/execute_sql", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ query: "ADMIN " + userConfirm })
+                });
+
+                const finalData = await finalResponse.json();
+                document.getElementById("result").innerText = JSON.stringify(finalData, null, 2);
+            } else {
+                document.getElementById("result").innerText = "Query confirmation failed. Execution canceled.";
+            }
+        } else {
+            document.getElementById("result").innerText = JSON.stringify(data, null, 2);
+        }
     }
 </script>
 
