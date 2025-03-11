@@ -111,7 +111,7 @@ class UserView(MyModelView):
 
 @app.route('/')
 def index():
-    return render_template('Home/index.html')
+    return render_template('index.html')
 
 @app.route('/admin/dashboard')
 @login_required
