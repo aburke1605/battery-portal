@@ -69,42 +69,6 @@ def update_db(esp_id, data):
         print(f"Error: {err}")
 
 
-@db.route('/display')
-def display():
-    esp_id = request.args.get("esp_id")
-
-    fig, ax = plt.subplots()
-
-    try:
-        DB = mysql.connector.connect(**DB_CONFIG)
-        cursor = DB.cursor()
-
-        cursor.execute(f"           SELECT * FROM {esp_id}")
-        table = cursor.fetchall()
-
-        cursor.execute(f"           SELECT timestamp FROM {esp_id}"); t = cursor.fetchall()
-        cursor.execute(f"           SELECT soc FROM {esp_id}"); y = cursor.fetchall()
-
-        ax.plot(t, y)
-        ax.set_xlabel("timestamp")
-        ax.set_ylabel("soc [%]")
-
-        cursor.close()
-        DB.close()
-
-    except mysql.connector.Error as err:
-        table = ""
-        ax.text(0.5,0.5,"No data")
-
-        print(f"Error: {err}")
-
-    plt.gcf().autofmt_xdate()
-    img = io.BytesIO()
-    fig.savefig(img, format="png", bbox_inches='tight')
-    # img.seek(0) # rewind the buffer (needed?)
-
-    return render_template("db/display.html", table=table, plot_url=base64.b64encode(img.getvalue()).decode())
-
 def execute_query(query):
     try:
         DB = mysql.connector.connect(**DB_CONFIG)
@@ -142,3 +106,39 @@ def execute_sql():
 
     result = execute_query(query)
     return jsonify(result)
+
+@db.route('/display')
+def display():
+    esp_id = request.args.get("esp_id")
+
+    fig, ax = plt.subplots()
+
+    try:
+        DB = mysql.connector.connect(**DB_CONFIG)
+        cursor = DB.cursor()
+
+        cursor.execute(f"           SELECT * FROM {esp_id}")
+        table = cursor.fetchall()
+
+        cursor.execute(f"           SELECT timestamp FROM {esp_id}"); t = cursor.fetchall()
+        cursor.execute(f"           SELECT soc FROM {esp_id}"); y = cursor.fetchall()
+
+        ax.plot(t, y)
+        ax.set_xlabel("timestamp")
+        ax.set_ylabel("soc [%]")
+
+        cursor.close()
+        DB.close()
+
+    except mysql.connector.Error as err:
+        table = ""
+        ax.text(0.5,0.5,"No data")
+
+        print(f"Error: {err}")
+
+    plt.gcf().autofmt_xdate()
+    img = io.BytesIO()
+    fig.savefig(img, format="png", bbox_inches='tight')
+    # img.seek(0) # rewind the buffer (needed?)
+
+    return render_template("db/display.html", table=table, plot_url=base64.b64encode(img.getvalue()).decode())

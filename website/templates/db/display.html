@@ -24,6 +24,10 @@
 
 <body>
     <div>
+        <img src="data:image/png;base64,{{ plot_url }}" alt="Matplotlib Plot">
+    </div>
+
+    <div>
         <table>
             <thead>
                 <tr>
@@ -44,7 +48,6 @@
                 {% endfor %}
             </tbody>
         </table>
-        <img src="data:image/png;base64,{{ plot_url }}" alt="Matplotlib Plot">
     </div>
 </body>
 </html>
