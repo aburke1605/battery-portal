@@ -10,7 +10,7 @@ import base64
 
 db = Blueprint('db', __name__, url_prefix='/db')
 
-local = True
+local = False
 if local:
     DB_CONFIG = {
         "host": "localhost",
