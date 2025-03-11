@@ -75,8 +75,8 @@ def update_db(esp_id, data):
 
 
 db = Blueprint('db', __name__, url_prefix='/db')
-@db.route('/test')
-def test():
+@db.route('/display')
+def display():
     esp_id = request.args.get("esp_id")
 
     fig, ax = plt.subplots()
@@ -109,7 +109,7 @@ def test():
     fig.savefig(img, format="png", bbox_inches='tight')
     # img.seek(0) # rewind the buffer (needed?)
 
-    return render_template("test.html", table=table, plot_url=base64.b64encode(img.getvalue()).decode())
+    return render_template("db/display.html", table=table, plot_url=base64.b64encode(img.getvalue()).decode())
 
 def execute_query(query):
     try:
@@ -127,9 +127,9 @@ def execute_query(query):
     except Exception as e:
         return {"error": str(e)}
 
-@db.route("/")
-def index():
-    return render_template("query.html")  # Serve the HTML page
+@db.route("/query")
+def query():
+    return render_template("db/query.html")  # Serve the HTML page
 
 @db.route("/execute_sql", methods=["POST"])
 def execute_sql():
