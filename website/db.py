@@ -1,4 +1,5 @@
 from flask import Blueprint, render_template, request, jsonify
+from flask_login import login_required
 
 import mysql.connector
 import time
@@ -7,6 +8,7 @@ import matplotlib.pyplot as plt
 import io
 import base64
 
+db = Blueprint('db', __name__, url_prefix='/db')
 
 local = True
 if local:
@@ -74,7 +76,6 @@ def update_db(esp_id, data):
         print(f"Error: {err}")
 
 
-db = Blueprint('db', __name__, url_prefix='/db')
 @db.route('/display')
 def display():
     esp_id = request.args.get("esp_id")
@@ -128,10 +129,12 @@ def execute_query(query):
         return {"error": str(e)}
 
 @db.route("/query")
+@login_required
 def query():
-    return render_template("db/query.html")  # Serve the HTML page
+    return render_template("db/query.html")
 
 @db.route("/execute_sql", methods=["POST"])
+@login_required
 def execute_sql():
     data = request.get_json()
     query = data.get("query")
