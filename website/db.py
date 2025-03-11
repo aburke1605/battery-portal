@@ -8,7 +8,7 @@ import io
 import base64
 
 
-local = False
+local = True
 if local:
     DB_CONFIG = {
         "host": "localhost",
@@ -61,8 +61,6 @@ def update_db(esp_id, data):
         else:
             cursor.execute(f"       SELECT COUNT(*) FROM {esp_id}")
             n_rows = cursor.fetchone()[0]
-            print("table already exists")
-
 
         if n_rows < 100:
             cursor.execute(f"""
