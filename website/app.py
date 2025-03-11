@@ -18,49 +18,52 @@ from wtforms import PasswordField
 
 from portal import portal
 from ws import sock
+from db import db
 
 # Create Flask application
 app = Flask(__name__)
 app.config.from_pyfile('config.py')
 app.config['SQLALCHEMY_ECHO'] = False
-db = SQLAlchemy(app)
+DB = SQLAlchemy(app)
 
 app.register_blueprint(portal)
+app.register_blueprint(db)
 sock.init_app(app)
 
+
 # Define models
-roles_users = db.Table(
+roles_users = DB.Table(
     'roles_users',
-    db.Column('user_id', db.Integer(), db.ForeignKey('user.id')),
-    db.Column('role_id', db.Integer(), db.ForeignKey('role.id'))
+    DB.Column('user_id', DB.Integer(), DB.ForeignKey('user.id')),
+    DB.Column('role_id', DB.Integer(), DB.ForeignKey('role.id'))
 )
 
-class Role(db.Model, RoleMixin):
-    id = db.Column(db.Integer(), primary_key=True)
-    name = db.Column(db.String(80), unique=True)
-    description = db.Column(db.String(255))
+class Role(DB.Model, RoleMixin):
+    id = DB.Column(DB.Integer(), primary_key=True)
+    name = DB.Column(DB.String(80), unique=True)
+    description = DB.Column(DB.String(255))
 
     def __str__(self):
         return self.name
 
 
-class User(db.Model, UserMixin):
-    id = db.Column(db.Integer, primary_key=True)
-    first_name = db.Column(db.String(255), nullable=False)
-    last_name = db.Column(db.String(255))
-    email = db.Column(db.String(255), unique=True, nullable=False)
-    password = db.Column(db.String(255), nullable=False)
-    active = db.Column(db.Boolean())
-    confirmed_at = db.Column(db.DateTime())
-    fs_uniquifier = db.Column(db.String(64), unique=True, nullable=False, default=lambda: str(uuid4()))
-    roles = db.relationship('Role', secondary=roles_users,
-                            backref=db.backref('users', lazy='dynamic'))
+class User(DB.Model, UserMixin):
+    id = DB.Column(DB.Integer, primary_key=True)
+    first_name = DB.Column(DB.String(255), nullable=False)
+    last_name = DB.Column(DB.String(255))
+    email = DB.Column(DB.String(255), unique=True, nullable=False)
+    password = DB.Column(DB.String(255), nullable=False)
+    active = DB.Column(DB.Boolean())
+    confirmed_at = DB.Column(DB.DateTime())
+    fs_uniquifier = DB.Column(DB.String(64), unique=True, nullable=False, default=lambda: str(uuid4()))
+    roles = DB.relationship('Role', secondary=roles_users,
+                            backref=DB.backref('users', lazy='dynamic'))
 
     def __str__(self):
         return self.email
 
 # Setup Flask-Security
-user_datastore = SQLAlchemyUserDatastore(db, User, Role)
+user_datastore = SQLAlchemyUserDatastore(DB, User, Role)
 security = Security(app, user_datastore)
 
 # Create customized model view class
@@ -105,7 +108,7 @@ class UserView(MyModelView):
 
 @app.route('/')
 def index():
-    return render_template('Home/index.html')
+    return render_template('index.html')
 
 @app.route('/admin/dashboard')
 @login_required
@@ -130,8 +133,8 @@ admin = flask_admin.Admin(
 )
 
 # Add model views
-admin.add_view(MyModelView(Role, db.session, menu_icon_type='fa', menu_icon_value='fa-server', name="Roles"))
-admin.add_view(UserView(User, db.session, menu_icon_type='fa', menu_icon_value='fa-users', name="Users"))
+admin.add_view(MyModelView(Role, DB.session, menu_icon_type='fa', menu_icon_value='fa-server', name="Roles"))
+admin.add_view(UserView(User, DB.session, menu_icon_type='fa', menu_icon_value='fa-users', name="Users"))
 
 # define a context processor for merging flask-admin's template context into the
 # flask-security views.
@@ -146,17 +149,17 @@ def security_context_processor():
 
 def build_sample_db():
     """
-    Populate a small db with some example entries.
+    Populate a small DB with some example entries.
     """
     with app.app_context():
-        db.drop_all()
-        db.create_all()
+        DB.drop_all()
+        DB.create_all()
 
         user_role = Role(name='user')
         super_user_role = Role(name='superuser')
-        db.session.add(user_role)
-        db.session.add(super_user_role)
-        db.session.commit()
+        DB.session.add(user_role)
+        DB.session.add(super_user_role)
+        DB.session.commit()
 
         user_datastore.create_user(
             first_name='Admin',
@@ -186,7 +189,7 @@ def build_sample_db():
                 roles=[user_role, ]
             )
 
-        db.session.commit()
+        DB.session.commit()
     return
 
 # Init the table, only in dev env TODO
@@ -195,6 +198,7 @@ database_path = os.path.join(app_dir, app.config['DATABASE_FILE'])
 if not os.path.exists(database_path):
     print("Database file not found. Creating tables and populating with sample data.")
     build_sample_db()
+
 
 
 if __name__ == '__main__':

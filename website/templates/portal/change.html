@@ -12,6 +12,9 @@
 
         <div class='section'>
             <form action='{{ prefix }}/validate_change?esp_id={{ esp_id }}' method='post'>
+                <label>Update device name (currently <span id='name'>unknown</span>): </label>
+                <input type='text' placeholder='Enter value' name='device_name'>
+
                 <label>Update BL voltage threshold (currently <span id='BL'></span> [mV]): </label>
                 <input type='text' placeholder='Enter value [mV]' name='BL_voltage_threshold'>
 
@@ -47,6 +50,7 @@
                     let data = JSON.parse(event.data);
                     Object.keys(data).forEach(esp_id => {
                         if ("{{ esp_id }}" == esp_id) {
+                            document.getElementById('name').innerHTML = data[esp_id].name;
                             document.getElementById('BL').innerHTML = data[esp_id].BL;
                             document.getElementById('BH').innerHTML = data[esp_id].BH;
                             document.getElementById('CCT').innerHTML = data[esp_id].CCT;

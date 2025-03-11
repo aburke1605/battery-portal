@@ -99,6 +99,24 @@ uint16_t test_read(uint8_t subclass, uint8_t offset) {
     return val;
 }
 
+void read_name(uint8_t subclass, uint8_t offset, char* name) {
+    esp_err_t ret;
+
+    uint8_t block = get_block(offset);
+
+    // specify the location in memory
+    ret = write_byte(I2C_DATA_FLASH_CLASS, subclass);
+    ret = write_byte(I2C_DATA_FLASH_BLOCK, block);
+
+    char data[11] = {0}; // 11 bytes
+    ret = read_data(I2C_BLOCK_DATA_START + offset%32 + 1, (uint8_t*)data, sizeof(data));
+    if (ret != ESP_OK) {
+        // TODO: fill out
+    }
+
+    strncpy(name, data, 10);
+}
+
 esp_err_t write_byte(uint8_t reg, uint8_t data) {
     i2c_cmd_handle_t cmd = i2c_cmd_link_create();
     if (!cmd) {
@@ -133,6 +151,53 @@ esp_err_t write_byte(uint8_t reg, uint8_t data) {
     return ret;
 }
 
+esp_err_t set_device_name(uint8_t subclass, uint8_t offset, char value[11]) {
+    esp_err_t ret;
+
+    uint8_t block = get_block(offset);
+    ret = write_byte(I2C_DATA_FLASH_CLASS, subclass);
+    ret = write_byte(I2C_DATA_FLASH_BLOCK, block);
+
+    char block_data[32] = {0};
+    ret = read_data(I2C_BLOCK_DATA_START, (uint8_t*)block_data, sizeof(block_data));
+    if (ret != ESP_OK) {
+        ESP_LOGE("I2C", "Failed to read Block Data.");
+        return ret;
+    }
+
+    for (int i=0; i<10; i++) {
+        block_data[offset%32+1+i] = value[i];
+    }
+
+    // Write updated block data back
+    for (int i = 0; i < sizeof(block_data); i++) {
+        ret = write_byte(I2C_BLOCK_DATA_START + i, block_data[i]);
+        if (ret != ESP_OK) {
+            ESP_LOGE("I2C", "Failed to write Block Data at index %d.", i);
+            return ret;
+        }
+    }
+
+    // Calculate new checksum
+    uint8_t checksum = 0;
+    for (int i = 0; i < sizeof(block_data); i++) {
+        checksum += block_data[i];
+    }
+    checksum = 0xFF - checksum;
+
+    // Write new checksum
+    ret = write_byte(I2C_BLOCK_DATA_CHECKSUM, checksum);
+    if (ret != ESP_OK) {
+        ESP_LOGE("I2C", "Failed to write Block Data Checksum.");
+        return ret;
+    }
+    ESP_LOGI("I2C", "Device name successfully set to %s", value);
+
+    vTaskDelay(pdMS_TO_TICKS(1000));
+
+    return ESP_OK;
+}
+
 esp_err_t set_I2_value(uint8_t subclass, uint8_t offset, int16_t value) {
     esp_err_t ret;
 
@@ -141,7 +206,7 @@ esp_err_t set_I2_value(uint8_t subclass, uint8_t offset, int16_t value) {
     ret = write_byte(I2C_DATA_FLASH_CLASS, subclass);
     ret = write_byte(I2C_DATA_FLASH_BLOCK, block);
 
-    // read current block data
+    // read all data in current block (32 bytes)
     uint8_t block_data[32] = {0};
     ret = read_data(I2C_BLOCK_DATA_START, block_data, sizeof(block_data));
     if (ret != ESP_OK) {
@@ -149,7 +214,7 @@ esp_err_t set_I2_value(uint8_t subclass, uint8_t offset, int16_t value) {
         return ret;
     }
 
-    // modify the value
+    // modify the value of interest only in sub-block (2 bytes)
     block_data[offset%32]   = (value >> 8) & 0xFF; // Higher byte
     block_data[offset%32+1] =  value       & 0xFF; // Lower byte
 

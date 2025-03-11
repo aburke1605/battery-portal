@@ -29,7 +29,6 @@ struct rendered_page rendered_html_pages[WS_MAX_N_HTML_PAGES];
 uint8_t n_rendered_html_pages = 0;
 
 void app_main(void) {
-    random_key(ESP_ID);
 
     // initialise SPIFFS
     esp_err_t result;
@@ -67,6 +66,8 @@ void app_main(void) {
         .intr_type = GPIO_INTR_DISABLE
     };
     gpio_config(&io_conf);
+
+    read_name(I2C_DATA_SUBCLASS_ID, I2C_NAME_OFFSET, ESP_ID);
 
     // initialise mutex
     data_mutex = xSemaphoreCreateMutex();
