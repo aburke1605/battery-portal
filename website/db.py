@@ -96,7 +96,7 @@ def test():
         ax.plot(t, y)
         ax.set_xlabel("timestamp")
         ax.set_ylabel("soc [%]")
-        
+
         cursor.close()
         DB.close()
 
@@ -124,7 +124,7 @@ def execute_query(query):
         cursor.close()
         DB.close()
 
-        return result 
+        return result
 
     except Exception as e:
         return {"error": str(e)}
