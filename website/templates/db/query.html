@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang='en'>
+<head>
+    <meta charset='UTF-8'>
+    <meta name='viewport' content='width=device-width, initial-scale=1.0'>
+    <title>SQL Query Interface</title>
+</head>
+
+<body>
+    <h2>MySQL `battery_data` database query interface</h2>
+    <textarea id="sqlQuery" rows="5" cols="50"></textarea><br>
+    <button onclick="runQuery()">Run Query</button>
+    <pre id="result"></pre>
+</body>
+
+<script>
+    async function runQuery() {
+        const query = document.getElementById("sqlQuery").value;
+        if (query.includes("ADMIN ")) {
+            return;
+        }
+
+        // send initial request
+        const response = await fetch("/db/execute_sql", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ query: query })
+        });
+
+        const data = await response.json();
+
+        // check if confirmation is needed
+        if (response.status === 403 && data.confirm) {
+            const userConfirm = prompt("Dangerous query detected! Please re-enter the query to confirm:");
+
+            if (userConfirm && userConfirm === query) {
+                // resend request with confirmation
+                const finalResponse = await fetch("/db/execute_sql", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ query: "ADMIN " + userConfirm })
+                });
+
+                const finalData = await finalResponse.json();
+                document.getElementById("result").innerText = JSON.stringify(finalData, null, 2);
+            } else {
+                document.getElementById("result").innerText = "Query confirmation failed. Execution canceled.";
+            }
+        } else {
+            document.getElementById("result").innerText = JSON.stringify(data, null, 2);
+        }
+    }
+</script>
+
+</html>
