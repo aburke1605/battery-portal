@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html lang='en'>
+<head>
+    <meta charset='UTF-8'>
+    <meta name='viewport' content='width=device-width, initial-scale=1.0'>
+    <title>SQL Query Interface</title>
+</head>
+
+<body>
+    <h2>SQL Query Interface</h2>
+    <textarea id="sqlQuery" rows="5" cols="50"></textarea><br>
+    <button onclick="runQuery()">Run Query</button>
+    <pre id="result"></pre>
+</body>
+
+<script>
+    async function runQuery() {
+        const query = document.getElementById("sqlQuery").value;
+        const response = await fetch("/db/execute_sql", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ query: query })
+        });
+
+        const data = await response.json();
+        document.getElementById("result").innerText = JSON.stringify(data, null, 2);
+    }
+</script>
+
+</html>

@@ -1,4 +1,4 @@
-from flask import Blueprint, render_template, request
+from flask import Blueprint, render_template, request, jsonify
 
 import mysql.connector
 import time
@@ -10,23 +10,23 @@ import base64
 
 local = False
 if local:
-    DB = mysql.connector.connect(
-        host="localhost",
-        user="root",
-        password="password",
-        database="battery_data",
-    )
+    DB_CONFIG = {
+        "host": "localhost",
+        "user": "root",
+        "password": "password",
+        "database": "battery_data",
+    }
 else:
-    DB = mysql.connector.connect(
-        host="batteryportal-server.mysql.database.azure.com",
-        user="hroolfgemh",
-        password="Qaz123ws",
-        database="batteryportal-database",
-        port=3306,
-        ssl_ca="DigiCertGlobalRootCA.crt.pem",
-        ssl_disabled=False
-    )
-
+    DB_CONFIG = {
+        "host": "batteryportal-server.mysql.database.azure.com",
+        "user": "hroolfgemh",
+        "password": "Qaz123ws",
+        "database": "batteryportal-database",
+        "port": 3306,
+        "ssl_ca": "DigiCertGlobalRootCA.crt.pem",
+        "ssl_disabled": False
+    }
+DB = mysql.connector.connect(**DB_CONFIG)
 
 cursor = DB.cursor()
 
@@ -106,3 +106,31 @@ def test():
     # img.seek(0) # rewind the buffer (needed?)
 
     return render_template("test.html", table=table, plot_url=base64.b64encode(img.getvalue()).decode())
+
+def execute_query(query):
+    try:
+        cursor.execute(query)
+        return cursor.fetchall()
+
+    except Exception as e:
+        return {"error": str(e)}
+
+@db.route("/")
+def index():
+    return render_template("query.html")  # Serve the HTML page
+
+@db.route("/execute_sql", methods=["POST"])
+def execute_sql():
+    data = request.get_json()
+    query = data.get("query")
+
+    if not query:
+        return jsonify({"error": "No query provided"}), 400
+
+    # Security: Restrict dangerous queries
+    forbidden_statements = ["drop", "delete", "update", "alter", "truncate"]
+    if any(word in query.lower() for word in forbidden_statements):
+        return jsonify({"error": "This query type is not allowed"}), 403
+
+    result = execute_query(query)
+    return jsonify(result)
