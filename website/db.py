@@ -31,13 +31,6 @@ else:
 
 
 def update_db(esp_id, data):
-
-    table = """
-        <----->
-        EMPTY
-        <----->
-    """
-
     try:
         DB = mysql.connector.connect(**DB_CONFIG)
         cursor = DB.cursor()
