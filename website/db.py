@@ -26,9 +26,6 @@ else:
         "ssl_ca": "DigiCertGlobalRootCA.crt.pem",
         "ssl_disabled": False
     }
-DB = mysql.connector.connect(**DB_CONFIG)
-
-cursor = DB.cursor()
 
 
 def update_db(esp_id, data):
@@ -40,6 +37,9 @@ def update_db(esp_id, data):
     """
 
     try:
+        DB = mysql.connector.connect(**DB_CONFIG)
+        cursor = DB.cursor()
+
         n_rows = 0
 
         cursor.execute(f"""
@@ -84,6 +84,9 @@ def test():
     fig, ax = plt.subplots()
 
     try:
+        DB = mysql.connector.connect(**DB_CONFIG)
+        cursor = DB.cursor()
+
         cursor.execute(f"           SELECT * FROM {esp_id}")
         table = cursor.fetchall()
 
@@ -93,6 +96,9 @@ def test():
         ax.plot(t, y)
         ax.set_xlabel("timestamp")
         ax.set_ylabel("soc [%]")
+        
+        cursor.close()
+        DB.close()
 
     except mysql.connector.Error as err:
         table = ""
@@ -109,8 +115,16 @@ def test():
 
 def execute_query(query):
     try:
+        DB = mysql.connector.connect(**DB_CONFIG)
+        cursor = DB.cursor(dictionary=True)
+
         cursor.execute(query)
-        return cursor.fetchall()
+        result = cursor.fetchall()
+
+        cursor.close()
+        DB.close()
+
+        return result 
 
     except Exception as e:
         return {"error": str(e)}
