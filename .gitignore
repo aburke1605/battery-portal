@@ -8,3 +8,6 @@ cmake-build-debug
 managed_components/**
 dependencies.lock
 website/static/plots/
+
+website/frontend/node_modules/
+website/frontend/dist/
