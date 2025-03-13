@@ -341,6 +341,19 @@ esp_err_t file_serve_handler(httpd_req_t *req) {
     if (is_html) {
         char *base_html = read_file("/templates/base.html");
         char *content_html = read_file(file_path);
+        if (strcmp(file_path, "/storage/battery.html") == 0) {
+            const char* placeholders[] = {
+                "{{ esp_id }}"
+            };
+            const char* substitutes[] = {
+                ESP_ID
+            };
+            char *modified_page = replace_placeholder(content_html, placeholders, substitutes, 1);
+            httpd_resp_set_type(req, "text/html");
+            httpd_resp_send(req, modified_page, HTTPD_RESP_USE_STRLEN);
+
+            return ESP_OK;
+        }
         if (!base_html || !content_html) {
             ESP_LOGE("WS", "Failed to read base or content HTML file");
             httpd_resp_send_err(req, HTTPD_404_NOT_FOUND, "File not found");
@@ -888,7 +901,7 @@ void websocket_task(void *pvParameters) {
         float fTemperature = (float)iTemperature / 10.0 - 273.15;
 
         // configurable data too
-        read_name(I2C_DATA_SUBCLASS_ID, I2C_NAME_OFFSET, ESP_ID);
+        // read_name(I2C_DATA_SUBCLASS_ID, I2C_NAME_OFFSET, ESP_ID);
         uint16_t iBL = test_read(I2C_DISCHARGE_SUBCLASS_ID, I2C_BL_OFFSET);
         uint16_t iBH = test_read(I2C_DISCHARGE_SUBCLASS_ID, I2C_BH_OFFSET);
         uint16_t iCCT = test_read(I2C_CURRENT_THRESHOLDS_SUBCLASS_ID, I2C_CHG_CURRENT_THRESHOLD_OFFSET);
@@ -904,7 +917,6 @@ void websocket_task(void *pvParameters) {
         cJSON_AddNumberToObject(data, "voltage", fVoltage);
         cJSON_AddNumberToObject(data, "current", fCurrent);
         cJSON_AddNumberToObject(data, "temperature", fTemperature);
-        strncpy(ESP_ID, "BMS_05", 7);
         cJSON_AddStringToObject(data, "name", ESP_ID);
         cJSON_AddNumberToObject(data, "BL", iBL);
         cJSON_AddNumberToObject(data, "BH", iBH);

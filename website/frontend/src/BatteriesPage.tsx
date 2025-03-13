@@ -8,7 +8,7 @@ const BatteriesPage: React.FC = () => {
 
   useEffect(() => {
     // Simulate fetching available battery IDs (replace with real data source)
-    setBatteryIds(["BMS_01", "BMS_05"]);
+    setBatteryIds(["not a real BMS", "BMS_05"]);
   }, []);
 
   return (

@@ -9,7 +9,7 @@
 #include "include/utils.h"
 
 // global variables
-char ESP_ID[UTILS_KEY_LENGTH + 1];
+char ESP_ID[UTILS_KEY_LENGTH + 1] = "BMS_05";
 httpd_handle_t server = NULL;
 int client_sockets[WS_CONFIG_MAX_CLIENTS];
 char received_data[1024];
@@ -57,7 +57,7 @@ void app_main(void) {
     };
     gpio_config(&io_conf);
 
-    read_name(I2C_DATA_SUBCLASS_ID, I2C_NAME_OFFSET, ESP_ID);
+    // read_name(I2C_DATA_SUBCLASS_ID, I2C_NAME_OFFSET, ESP_ID);
 
     // initialise mutex
     data_mutex = xSemaphoreCreateMutex();
