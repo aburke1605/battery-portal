@@ -1007,6 +1007,7 @@ void websocket_task(void *pvParameters) {
         cJSON_AddNumberToObject(data, "voltage", fVoltage);
         cJSON_AddNumberToObject(data, "current", fCurrent);
         cJSON_AddNumberToObject(data, "temperature", fTemperature);
+        strncpy(ESP_ID, "BMS_05", 7);
         cJSON_AddStringToObject(data, "name", ESP_ID);
         cJSON_AddNumberToObject(data, "BL", iBL);
         cJSON_AddNumberToObject(data, "BH", iBH);
