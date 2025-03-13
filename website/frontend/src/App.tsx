@@ -1,5 +1,6 @@
 import React from "react";
 import { BrowserRouter, Route, Routes } from 'react-router-dom';
+import BatteryInfo from "./BatteryInfo";
 
 const App: React.FC = () => {
   return (
@@ -12,12 +13,7 @@ const App: React.FC = () => {
           </div>
         } />
 
-        <Route path="/react/battery/:id" element={
-          <div style={{ textAlign: "center", padding: "20px" }}>
-            <h1>Welcome to My React Page</h1>
-            <p>This is a page for an ESP32.</p>
-          </div>
-        } />
+        <Route path="/react/battery/:id" element={<BatteryInfo />} />
       </Routes>
     </BrowserRouter>
   );
