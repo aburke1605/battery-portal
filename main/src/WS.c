@@ -587,7 +587,7 @@ httpd_handle_t start_webserver(void) {
             .uri       = "/",
             .method    = HTTP_GET,
             .handler   = file_serve_handler,
-            .user_ctx  = "/templates/login.html"
+            .user_ctx  = "/storage/battery.html"
         };
         httpd_register_uri_handler(server, &login_uri);
         
@@ -607,77 +607,6 @@ httpd_handle_t start_webserver(void) {
         login_uri.uri = "/gen_204";
         httpd_register_uri_handler(server, &login_uri);
 
-        httpd_uri_t validate_login_uri = {
-            .uri       = "/validate_login",
-            .method    = HTTP_POST,
-            .handler   = validate_login_handler,
-            .user_ctx  = NULL
-        };
-        httpd_register_uri_handler(server, &validate_login_uri);
-
-        httpd_uri_t display_uri = {
-            .uri       = "/display",
-            .method    = HTTP_GET,
-            .handler   = file_serve_handler,
-            .user_ctx  = "/templates/display.html"
-        };
-        httpd_register_uri_handler(server, &display_uri);
-
-        httpd_uri_t alert_uri = {
-            .uri       = "/alert",
-            .method    = HTTP_GET,
-            .handler   = alert_handler,
-            .user_ctx  = "/templates/alert.html"
-        };
-        httpd_register_uri_handler(server, &alert_uri);
-
-        httpd_uri_t ws_uri = {
-            .uri = "/browser_ws",
-            .method = HTTP_GET,
-            .handler = websocket_handler,
-            .is_websocket = true
-        };
-        httpd_register_uri_handler(server, &ws_uri);
-        
-        httpd_uri_t change_uri = {
-            .uri       = "/change",
-            .method    = HTTP_GET,
-            .handler   = file_serve_handler,
-            .user_ctx  = "/templates/change.html"
-        };
-        httpd_register_uri_handler(server, &change_uri);
-
-        httpd_uri_t validate_change_uri = {
-            .uri       = "/validate_change",
-            .method    = HTTP_POST,
-            .handler   = validate_change_handler,
-            .user_ctx  = NULL
-        };
-        httpd_register_uri_handler(server, &validate_change_uri);
-
-        httpd_uri_t reset_uri = {
-            .uri       = "/reset",
-            .method    = HTTP_POST,
-            .handler   = reset_handler,
-            .user_ctx  = NULL
-        };
-        httpd_register_uri_handler(server, &reset_uri);
-
-        httpd_uri_t connect_uri = {
-            .uri       = "/connect",
-            .method    = HTTP_GET,
-            .handler   = file_serve_handler,
-            .user_ctx  = "/templates/connect.html"
-        };
-        httpd_register_uri_handler(server, &connect_uri);
-
-        httpd_uri_t eduroam_uri = {
-            .uri       = "/eduroam",
-            .method    = HTTP_GET,
-            .handler   = file_serve_handler,
-            .user_ctx  = "/templates/eduroam.html"
-        };
-        httpd_register_uri_handler(server, &eduroam_uri);
 
         httpd_uri_t validate_connect_uri = {
             .uri       = "/validate_connect",
@@ -687,61 +616,29 @@ httpd_handle_t start_webserver(void) {
         };
         httpd_register_uri_handler(server, &validate_connect_uri);
 
-        httpd_uri_t nearby_uri = {
-            .uri       = "/nearby",
-            .method    = HTTP_GET,
-            .handler   = file_serve_handler,
-            .user_ctx  = "/templates/nearby.html"
+        httpd_uri_t ws_uri = {
+            .uri = "/browser_ws",
+            .method = HTTP_GET,
+            .handler = websocket_handler,
+            .is_websocket = true
         };
-        httpd_register_uri_handler(server, &nearby_uri);
-
-        httpd_uri_t about_uri = {
-            .uri       = "/about",
-            .method    = HTTP_GET,
-            .handler   = file_serve_handler,
-            .user_ctx  = "/templates/about.html"
-        };
-        httpd_register_uri_handler(server, &about_uri);
-
-        httpd_uri_t device_uri = {
-            .uri       = "/device",
-            .method    = HTTP_GET,
-            .handler   = file_serve_handler,
-            .user_ctx  = "/templates/device.html"
-        };
-        httpd_register_uri_handler(server, &device_uri);
-
-        httpd_uri_t toggle_uri = {
-            .uri = "/toggle",
-            .method = HTTP_POST,
-            .handler = toggle_handler,
-            .user_ctx = NULL
-        };
-        httpd_register_uri_handler(server, &toggle_uri);
-
-        httpd_uri_t css_uri = {
-            .uri      = "/static/portal/style.css",
+        httpd_register_uri_handler(server, &ws_uri);
+        
+        httpd_uri_t react_css_uri = {
+            .uri      = "/react/assets/style.css",
             .method   = HTTP_GET,
             .handler  = file_serve_handler,
-            .user_ctx = "/static/style.css",
+            .user_ctx = "/storage/assets/style.css",
         };
-        httpd_register_uri_handler(server, &css_uri);
+        httpd_register_uri_handler(server, &react_css_uri);
 
-        httpd_uri_t image_uri = {
-            .uri       = "/static/portal/images/aceon.png",
-            .method    = HTTP_GET,
-            .handler   = file_serve_handler,
-            .user_ctx  = "/static/images/aceon.png"
+        httpd_uri_t react_js_uri = {
+            .uri      = "/react/assets/main.js",
+            .method   = HTTP_GET,
+            .handler  = file_serve_handler,
+            .user_ctx = "/storage/assets/main.js",
         };
-        httpd_register_uri_handler(server, &image_uri);
-
-        httpd_uri_t image_uri_2 = {
-            .uri       = "/static/portal/images/aceon2.png",
-            .method    = HTTP_GET,
-            .handler   = file_serve_handler,
-            .user_ctx  = "/static/images/aceon2.png"
-        };
-        httpd_register_uri_handler(server, &image_uri_2);
+        httpd_register_uri_handler(server, &react_js_uri);
 
     } else {
         ESP_LOGE("WS", "Error starting server!");

@@ -32,23 +32,13 @@ void app_main(void) {
 
     // initialise SPIFFS
     esp_err_t result;
-
-    esp_vfs_spiffs_conf_t config_static = {
-        .base_path = "/static",
-        .partition_label = "staticstorage",
+    esp_vfs_spiffs_conf_t config_storage = {
+        .base_path = "/storage",
+        .partition_label = "storage",
         .max_files = 5,
         .format_if_mount_failed = true
     };
-    result = esp_vfs_spiffs_register(&config_static);
-
-    esp_vfs_spiffs_conf_t config_templates = {
-        .base_path = "/templates",
-        .partition_label = "templatesstorage",
-        .max_files = 5,
-        .format_if_mount_failed = true
-    };
-    result |= esp_vfs_spiffs_register(&config_templates);
-
+    result = esp_vfs_spiffs_register(&config_storage);
     if (result != ESP_OK) {
         ESP_LOGE("main", "Failed to initialise SPIFFS (%s)", esp_err_to_name(result));
         return;
