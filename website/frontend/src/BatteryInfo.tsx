@@ -15,7 +15,8 @@ const BatteryInfo: React.FC = () => {
   useEffect(() => {
     if (!id) return; // Ensure id is defined before proceeding
 
-    const socket = new WebSocket(`wss://${window.location.host}/browser_ws`);
+    const protocol = window.location.protocol === "https:" ? "wss" : "ws";
+    const socket = new WebSocket(`${protocol}://${window.location.host}/browser_ws`);
 
     socket.onopen = () => {
       console.log("WebSocket connection established");
