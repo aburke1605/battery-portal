@@ -1,4 +1,4 @@
-from flask import Blueprint, render_template, request, redirect, url_for
+from flask import Blueprint, render_template, request, redirect, url_for, jsonify
 from flask_login import login_required
 import urllib.parse
 import json
@@ -12,6 +12,27 @@ portal = Blueprint('portal', __name__, url_prefix='/portal')
 def require_login():
     pass
 
+
+# Assume esp_clients stores metadata, and each ESP32 has a unique 'id'
+@portal.route("/api/batteries", methods=["GET"])
+def get_battery_list():
+    battery_ids = []
+    with lock:
+        for esp in set(esp_clients):
+            content = dict(esp)["content"]
+            if content == None:
+                # still registering
+                continue
+
+            try:
+                content = json.loads(content)
+                battery_ids.append(content["esp_id"])
+
+            except Exception as e:
+                print(f"get_battery_list error: {e}")
+                return {"error": str(e)}
+
+    return jsonify(battery_ids)
 
 def forward_request_to_esp32(endpoint, method="POST", esp_id=None, delay=5):
     """

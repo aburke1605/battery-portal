@@ -7,8 +7,10 @@ const BatteriesPage: React.FC = () => {
   const { id } = useParams<{ id?: string }>();
 
   useEffect(() => {
-    // Simulate fetching available battery IDs (replace with real data source)
-    setBatteryIds(["not a real BMS", "BMS_05"]);
+    fetch("/portal/api/batteries") // get battery list from Flask app
+      .then((response) => response.json())
+      .then((data) => setBatteryIds(data))
+      .catch((error) => console.error("Error fetching batteries:", error));
   }, []);
 
   return (
