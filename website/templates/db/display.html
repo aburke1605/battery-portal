@@ -4,22 +4,7 @@
     <meta charset='UTF-8'>
     <meta name='viewport' content='width=device-width, initial-scale=1.0'>
     <title> test </title>
-    <style>
-        table {
-            width: 100%;
-            border-collapse: collapse;
-            margin: 20px 0;
-            font-size: 18px;
-            text-align: left;
-        }
-        th, td {
-            padding: 10px;
-            border: 1px solid #ddd;
-        }
-        th {
-            background-color: #f4f4f4;
-        }
-    </style>
+    <link rel='stylesheet' type='text/css' href='/static/portal/style.css'>
 </head>
 
 <body>
@@ -27,8 +12,8 @@
         <img src="data:image/png;base64,{{ plot_url }}" alt="Matplotlib Plot">
     </div>
 
-    <div>
-        <table>
+    <!-- <div>
+        <table class="table">
             <thead>
                 <tr>
                     <th>Timestamp</th>
@@ -48,6 +33,6 @@
                 {% endfor %}
             </tbody>
         </table>
-    </div>
+    </div> -->
 </body>
 </html>
