@@ -114,7 +114,7 @@ def execute_sql():
 def display():
     esp_id = request.args.get("esp_id")
 
-    fig, ax = plt.subplots()
+    fig = plt.figure(figsize=(15, 11))
 
     try:
         DB = mysql.connector.connect(**DB_CONFIG)
@@ -123,18 +123,42 @@ def display():
         cursor.execute(f"           SELECT * FROM {esp_id}")
         table = cursor.fetchall()
 
-        cursor.execute(f"           SELECT timestamp FROM {esp_id}"); t = cursor.fetchall()
-        cursor.execute(f"           SELECT soc FROM {esp_id}"); y = cursor.fetchall()
+        cursor.execute(f"           SELECT timestamp FROM {esp_id}"); timestamp = cursor.fetchall()
+        cursor.execute(f"           SELECT soc FROM {esp_id}"); soc = cursor.fetchall()
+        cursor.execute(f"           SELECT temperature FROM {esp_id}"); temperature = cursor.fetchall()
+        cursor.execute(f"           SELECT voltage FROM {esp_id}"); voltage = cursor.fetchall()
+        cursor.execute(f"           SELECT current FROM {esp_id}"); current = cursor.fetchall()
 
-        ax.plot(t, y, marker=".")
-        ax.set_xlabel("timestamp")
-        ax.set_ylabel("soc [%]")
+        gs = fig.add_gridspec(2, 2, height_ratios=[1, 1], hspace=0, wspace=0.1) # middle row is used as a spacer and so not used
+        ax1 = fig.add_subplot(gs[0, 0])
+        ax2 = fig.add_subplot(gs[1, 0], sharex=ax1)
+        ax3 = fig.add_subplot(gs[0, 1])
+        ax4 = fig.add_subplot(gs[1, 1], sharex=ax3)
+        ax2.set_xlabel("timestamp")
+        ax4.set_xlabel("timestamp")
+
+        ax1.scatter(timestamp, soc, marker=".")
+        ax1.set_ylabel("soc [%]")
+
+        ax2.scatter(timestamp, temperature, marker=".")
+        ax2.set_ylabel("T [°C]")
+
+        ax3.scatter(timestamp, voltage, marker=".")
+        ax3.set_ylabel("V [V]")
+        ax3.yaxis.set_label_position("right")
+        ax3.yaxis.tick_right()
+
+        ax4.scatter(timestamp, current, marker=".")
+        ax4.set_ylabel("I [A]")
+        ax4.yaxis.set_label_position("right")
+        ax4.yaxis.tick_right()
 
         cursor.close()
         DB.close()
 
     except mysql.connector.Error as err:
         table = ""
+        ax = fig.add_subplot()
         ax.text(0.5,0.5,"No data")
 
         print(f"Error: {err}")
