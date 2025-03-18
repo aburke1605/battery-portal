@@ -21,7 +21,6 @@ DB_CONFIG = {
     "ssl_ca": os.getenv("AZURE_MYSQL_SSL_CA", None),
     "ssl_disabled": os.getenv("AZURE_MYSQL_SSL_DISABLED", "False") == "True",
 }
-print(DB_CONFIG)
 
 def update_db(esp_id, data):
     try:
@@ -50,7 +49,7 @@ def update_db(esp_id, data):
             cursor.execute(f"       SELECT COUNT(*) FROM {esp_id}")
             n_rows = cursor.fetchone()[0]
 
-        if abs(data["current"]) >= 0.1 and n_rows < 10000:
+        if abs(data["current"]) >= 0.1: # and n_rows < 10000:
             cursor.execute(f"""
                                     INSERT INTO {esp_id} (timestamp, soc, temperature, voltage, current)
                                     VALUES (FROM_UNIXTIME({time.time()}), {data['charge']}, {data['temperature']}, {data['voltage']}, {data['current']})
