@@ -124,6 +124,12 @@ def subpage():
     return render_template('admin/battery.html')
 
 
+@app.route('/new_admin')
+@login_required
+def new_admin():
+    return render_template('new_admin/index.html')
+
+
 
 # Create admin
 admin = flask_admin.Admin(

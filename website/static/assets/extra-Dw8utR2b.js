@@ -1,0 +1,1 @@
+import{v as r,j as e,w as s,A as o,B as t,S as a,t as i}from"./DetailPage-C0p-0vh5.js";r.createRoot(document.getElementById("root")).render(e.jsx(s,{children:e.jsx(o,{children:e.jsxs(t,{children:[e.jsx(a,{}),e.jsx(i,{isFromEsp32:!0})]})})}));
