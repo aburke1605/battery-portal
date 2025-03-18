@@ -47,7 +47,7 @@ esp_err_t validate_login_handler(httpd_req_t *req) {
     // [^&]:  a scan set that matches any character except &
     // s:     reads a sequence of non-whitespace characters until a space, newline, or null terminator is encountered
 
-    if (strcmp(username, "admin") == 0 && strcmp(password, "1234") == 0) {
+    if (strcmp(username, WS_USERNAME) == 0 && strcmp(password, WS_PASSWORD) == 0) {
         // credentials correct
         httpd_resp_set_status(req, "302 Found");
         httpd_resp_set_hdr(req, "Location", "/display"); // redirect to /display
