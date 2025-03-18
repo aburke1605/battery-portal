@@ -591,7 +591,7 @@ httpd_handle_t start_webserver(void) {
             .uri       = "/",
             .method    = HTTP_GET,
             .handler   = file_serve_handler,
-            .user_ctx  = "/templates/login.html"
+            .user_ctx  = DEV ? "/templates/display.html" : "/templates/login.html"
         };
         httpd_register_uri_handler(server, &login_uri);
         
