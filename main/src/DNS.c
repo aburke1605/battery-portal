@@ -72,7 +72,7 @@ void dns_server_task(void *pvParameters) {
             buffer[response_offset++] = 0x00;
             buffer[response_offset++] = 0x01;
 
-            // TTL (Time to live) - 5 minutes
+            // TTL (Time to live) - 1 hour
             buffer[response_offset++] = 0x00;
             buffer[response_offset++] = 0x00;
             buffer[response_offset++] = 0x0e;
