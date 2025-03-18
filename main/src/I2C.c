@@ -3,18 +3,24 @@
 #include "include/utils.h"
 
 esp_err_t i2c_master_init(void) {
-    i2c_config_t conf = {
-        .mode = I2C_MODE_MASTER,
-        .sda_io_num = I2C_MASTER_SDA_IO,
-        .sda_pullup_en = GPIO_PULLUP_ENABLE,
+    i2c_master_bus_config_t bus_cfg = {
+        .clk_source = I2C_CLK_SRC_DEFAULT,
+        .i2c_port = I2C_MASTER_NUM,
         .scl_io_num = I2C_MASTER_SCL_IO,
-        .scl_pullup_en = GPIO_PULLUP_ENABLE,
-        .master.clk_speed = I2C_MASTER_FREQ_HZ,
+        .sda_io_num = I2C_MASTER_SDA_IO,
+        .glitch_ignore_cnt = 7, // default for glitch filtering
+        .flags.enable_internal_pullup = true,
     };
-    esp_err_t err = i2c_param_config(I2C_MASTER_NUM, &conf);
-    if (err != ESP_OK) return err;
 
-    err = i2c_driver_install(I2C_MASTER_NUM, conf.mode, I2C_MASTER_RX_BUF_DISABLE, I2C_MASTER_TX_BUF_DISABLE, 0);
+    esp_err_t err = i2c_new_master_bus(&bus_cfg, &i2c_bus);
+    if (err != ESP_OK) return err;
+    
+    i2c_device_config_t dev_cfg = {
+        .device_address = I2C_ADDR,
+        .scl_speed_hz = I2C_MASTER_FREQ_HZ
+    };
+    err |= i2c_master_bus_add_device(i2c_bus, &dev_cfg, &i2c_device);
+
     return err;
 }
 
@@ -22,12 +28,7 @@ void device_scan(void) {
     ESP_LOGI("I2C", "Scanning for devices...");
     uint8_t n_devices = 0;
     for (uint8_t i = 1; i < 127; i++) {
-        i2c_cmd_handle_t cmd = i2c_cmd_link_create();
-        i2c_master_start(cmd);
-        i2c_master_write_byte(cmd, (i << 1) | I2C_MASTER_WRITE, true);
-        i2c_master_stop(cmd);
-        esp_err_t ret = i2c_master_cmd_begin(I2C_MASTER_NUM, cmd, pdMS_TO_TICKS(1000));
-        i2c_cmd_link_delete(cmd);
+        esp_err_t ret = i2c_master_probe(i2c_bus, i, pdMS_TO_TICKS(1000));
 
         if (ret == ESP_OK) {
             ESP_LOGI("I2C", "I2C device found at address 0x%02X", i);
@@ -44,23 +45,14 @@ esp_err_t read_data(uint8_t reg, uint8_t* data, size_t len) {
         return ESP_ERR_INVALID_ARG;
         // TODO: error check the rest of this function
     }
-    i2c_cmd_handle_t cmd = i2c_cmd_link_create();
     esp_err_t ret;
 
-    // first specify the register to read
-    ret = i2c_master_start(cmd);
-    ret = i2c_master_write_byte(cmd, (I2C_ADDR << 1) | I2C_MASTER_WRITE, true);
-    ret = i2c_master_write_byte(cmd, reg, true);
+    // Transmit the register address
+    ret = i2c_master_transmit(i2c_device, &reg, 1, I2C_MASTER_TIMEOUT_MS);
+    if (ret != ESP_OK) return ret;
 
-    // do the reading
-    ret = i2c_master_start(cmd);
-    ret = i2c_master_write_byte(cmd, (I2C_ADDR << 1) | I2C_MASTER_READ, true);
-    ret = i2c_master_read(cmd, data, len, I2C_MASTER_LAST_NACK);
-
-    // clean up
-    ret = i2c_master_stop(cmd);
-    ret = i2c_master_cmd_begin(I2C_MASTER_NUM, cmd, pdMS_TO_TICKS(I2C_MASTER_TIMEOUT_MS));
-    i2c_cmd_link_delete(cmd);
+    // Receive the data
+    ret = i2c_master_receive(i2c_device, data, len, I2C_MASTER_TIMEOUT_MS);
 
     return ret;
 }
@@ -250,7 +242,7 @@ esp_err_t set_I2_value(uint8_t subclass, uint8_t offset, int16_t value) {
 
 esp_err_t write_word(uint8_t reg, uint16_t value) {
     uint8_t data[3] = {reg, value & 0xFF, (value >> 8) & 0xFF}; // LSB first
-    return i2c_master_write_to_device(I2C_I2C_MASTER_PORT, I2C_ADDR, data, sizeof(data), pdMS_TO_TICKS(1000));
+    return i2c_master_transmit(i2c_device, data, sizeof(data), pdMS_TO_TICKS(1000));
 }
 
 esp_err_t reset_BMS() {
