@@ -14,7 +14,7 @@ esp_err_t i2c_master_init(void) {
 
     esp_err_t err = i2c_new_master_bus(&bus_cfg, &i2c_bus);
     if (err != ESP_OK) return err;
-    
+
     i2c_device_config_t dev_cfg = {
         .device_address = I2C_ADDR,
         .scl_speed_hz = I2C_MASTER_FREQ_HZ
@@ -110,34 +110,12 @@ void read_name(uint8_t subclass, uint8_t offset, char* name) {
 }
 
 esp_err_t write_byte(uint8_t reg, uint8_t data) {
-    i2c_cmd_handle_t cmd = i2c_cmd_link_create();
-    if (!cmd) {
-        ESP_LOGE("I2C", "Failed to create I2C command link.");
-        return ESP_FAIL;
-    }
+    uint8_t buffer[2] = {reg, data}; // Register address + data
 
-    esp_err_t ret = i2c_master_start(cmd);
-    if (ret != ESP_OK) {
-        ESP_LOGE("I2C", "Failed to start I2C command: %s", esp_err_to_name(ret));
-        i2c_cmd_link_delete(cmd);
-        return ret;
-    }
-
-    ret |= i2c_master_write_byte(cmd, (I2C_ADDR << 1) | I2C_MASTER_WRITE, true);
-    ret |= i2c_master_write_byte(cmd, reg, true);
-    ret |= i2c_master_write_byte(cmd, data, true);
-    ret |= i2c_master_stop(cmd);
-    if (ret != ESP_OK) {
-        ESP_LOGE("I2C", "Failed to build I2C write command: %s", esp_err_to_name(ret));
-        i2c_cmd_link_delete(cmd);
-        return ret;
-    }
-
-    ret = i2c_master_cmd_begin(I2C_MASTER_NUM, cmd, pdMS_TO_TICKS(I2C_MASTER_TIMEOUT_MS));
-    i2c_cmd_link_delete(cmd);
+    esp_err_t ret = i2c_master_transmit(i2c_device, buffer, sizeof(buffer), pdMS_TO_TICKS(I2C_MASTER_TIMEOUT_MS));
 
     if (ret != ESP_OK) {
-        ESP_LOGE("I2C", "Failed to execute I2C write command: %s", esp_err_to_name(ret));
+        ESP_LOGE("I2C", "Failed to write byte to I2C device: %s", esp_err_to_name(ret));
     }
 
     return ret;
