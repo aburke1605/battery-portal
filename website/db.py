@@ -9,30 +9,19 @@ import matplotlib.pyplot as plt
 import io
 import base64
 
-from dotenv import load_dotenv
-
 db = Blueprint('db', __name__, url_prefix='/db')
 
 
-load_dotenv()
-if os.getenv("Local", "False") == "True":
-    DB_CONFIG = {
-        "host": os.getenv("LOCAL_DB_HOST"),
-        "user": os.getenv("LOCAL_DB_USER"),
-        "password": os.getenv("LOCAL_DB_PASSWORD"),
-        "database": os.getenv("LOCAL_DB_DATABASE"),
-    }
-else:
-    DB_CONFIG = {
-        "host": os.getenv("DB_HOST"),
-        "user": os.getenv("DB_USER"),
-        "password": os.getenv("DB_PASSWORD"),
-        "database": os.getenv("DB_DATABASE"),
-        "port": int(os.getenv("DB_PORT", 3306)),
-        "ssl_ca": os.getenv("SSL_CA"),
-        "ssl_disabled": os.getenv("SSL_DISABLED", "False") == "True"
-    }
-
+DB_CONFIG = {
+    "host": os.getenv("AZURE_MYSQL_HOST", "localhost"),
+    "user": os.getenv("AZURE_MYSQL_USER", "root"),
+    "password": os.getenv("AZURE_MYSQL_PASSWORD", "password"),
+    "database": os.getenv("AZURE_MYSQL_NAME", "battery_data"),
+    "port": int(os.getenv("AZURE_MYSQL_PORT", 3306)),
+    "ssl_ca": os.getenv("AZURE_MYSQL_SSL_CA", None),
+    "ssl_disabled": os.getenv("AZURE_MYSQL_SSL_DISABLED", "False") == "True",
+}
+print(DB_CONFIG)
 
 def update_db(esp_id, data):
     try:
