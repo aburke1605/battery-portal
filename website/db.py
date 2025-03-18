@@ -1,3 +1,4 @@
+import os
 from flask import Blueprint, render_template, request, jsonify
 from flask_login import login_required
 
@@ -8,25 +9,28 @@ import matplotlib.pyplot as plt
 import io
 import base64
 
+from dotenv import load_dotenv
+
 db = Blueprint('db', __name__, url_prefix='/db')
 
-local = False
-if local:
+
+load_dotenv()
+if os.getenv("Local", "False") == "True":
     DB_CONFIG = {
-        "host": "localhost",
-        "user": "root",
-        "password": "password",
-        "database": "battery_data",
+        "host": os.getenv("LOCAL_DB_HOST"),
+        "user": os.getenv("LOCAL_DB_USER"),
+        "password": os.getenv("LOCAL_DB_PASSWORD"),
+        "database": os.getenv("LOCAL_DB_DATABASE"),
     }
 else:
     DB_CONFIG = {
-        "host": "batteryportal-server.mysql.database.azure.com",
-        "user": "hroolfgemh",
-        "password": "Qaz123ws",
-        "database": "batteryportal-database",
-        "port": 3306,
-        "ssl_ca": "DigiCertGlobalRootCA.crt.pem",
-        "ssl_disabled": False
+        "host": os.getenv("DB_HOST"),
+        "user": os.getenv("DB_USER"),
+        "password": os.getenv("DB_PASSWORD"),
+        "database": os.getenv("DB_DATABASE"),
+        "port": int(os.getenv("DB_PORT", 3306)),
+        "ssl_ca": os.getenv("SSL_CA"),
+        "ssl_disabled": os.getenv("SSL_DISABLED", "False") == "True"
     }
 
 
