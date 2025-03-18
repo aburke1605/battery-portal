@@ -10,9 +10,14 @@ interface BatteriesPageProps {
 }
 
   export default function BatteriesPage({ isFromEsp32 = false }: BatteriesPageProps) {
-
-    const urlParams = new URLSearchParams(window.location.search);
+      let queryString = window.location.search;
+      if (!isFromEsp32) {
+          const hash = window.location.hash;  // e.g., "#/battery-detail?id=BMS_02"
+          queryString = hash.split('?')[1];  // Extract "id=BMS_02"
+    }
+    const urlParams = new URLSearchParams(queryString);
     const id = urlParams.get('id');
+      console.log(id);
 
     const [batteryItem, setSelectedBattery] = useState<BatteryData | null>(null);
     //const [setBatteries] = useState<BatteryData[]>(initialBatteries);
@@ -20,13 +25,14 @@ interface BatteriesPageProps {
 
      // Get data from Webscocket
       useEffect(() => {
-        const ws = new WebSocket(apiConfig.WEBSOCKET_BROWSER);
-      
+          const ws = new WebSocket(apiConfig.WEBSOCKET_BROWSER);
+
         ws.onopen = () => {
           console.log('WebSocket connected');
         };
       
         ws.onmessage = (event) => {
+            console.log('Received message', event.data);
             if (!id) {
                 return;
             }

@@ -16,7 +16,7 @@ export default function BatteriesPage() {
 
   // Get data from Webscocket
   useEffect(() => {
-    const ws = new WebSocket(apiConfig.WEBSOCKET_MONITOR);
+    const ws = new WebSocket(apiConfig.WEBSOCKET_BROWSER);
   
     ws.onopen = () => {
       console.log('WebSocket connected');
@@ -25,11 +25,9 @@ export default function BatteriesPage() {
     ws.onmessage = (event) => {
       try {
         const data = JSON.parse(event.data);
-  
-        if (data.esps) {
-          const parsedEsps = JSON.parse(data.esps);  // Convert string to object
-          console.log('Parsed ESPs:', parsedEsps);
-          const batteryArray: BatteryData[] = Object.values(parsedEsps).map((battery: any) => ({
+        if (data) {
+          console.log('Parsed ESPs:', data);
+          const batteryArray: BatteryData[] = Object.values(data).map((battery: any) => ({
             id: battery.name,
             name: battery.name,
             charge: battery.charge,
