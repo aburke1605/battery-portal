@@ -8,4 +8,3 @@ cmake-build-debug
 managed_components/**
 dependencies.lock
 website/static/plots/
-website/.env
