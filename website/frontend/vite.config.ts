@@ -25,6 +25,12 @@ export default defineConfig(() => ({
         main: path.resolve(__dirname, "index.html"),
         extra: path.resolve(__dirname, "esp32.html"),
       },
+      output: {
+        // no hash in output file names
+        entryFileNames: "assets/[name].js",
+        chunkFileNames: "assets/[name].js",
+        assetFileNames: "assets/[name].[ext]",
+      },
     },
   },
 }));
