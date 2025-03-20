@@ -10,6 +10,12 @@ execute_process(COMMAND rm -rf ${SPIFFS_BUILD_DIR})
 execute_process(COMMAND mkdir -p ${SPIFFS_BUILD_DIR})
 execute_process(
     COMMAND rsync -av
+    --include=esp_login.html
+    --exclude=*
+    ${CMAKE_SOURCE_DIR}/website/templates/ ${SPIFFS_BUILD_DIR}/
+)
+execute_process(
+    COMMAND rsync -av
     --include=esp32.html
     --include=assets/
     --include=assets/extra.js

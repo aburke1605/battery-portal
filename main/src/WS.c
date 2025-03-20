@@ -50,7 +50,9 @@ esp_err_t validate_login_handler(httpd_req_t *req) {
     if (strcmp(username, "admin") == 0 && strcmp(password, "1234") == 0) {
         // credentials correct
         httpd_resp_set_status(req, "302 Found");
-        httpd_resp_set_hdr(req, "Location", "/display"); // redirect to /display
+        char redirect_url[21];
+        snprintf(redirect_url, sizeof(redirect_url), "/esp32?id=%s", ESP_ID);
+        httpd_resp_set_hdr(req, "Location", redirect_url);
         httpd_resp_send(req, NULL, 0); // no response body
     } else {
         // credentials incorrect
@@ -360,6 +362,11 @@ esp_err_t file_serve_handler(httpd_req_t *req) {
             httpd_resp_send(req, NULL, 0);
             return ESP_OK;
         }
+        else if (strcmp(file_path, "/static/esp_login.html") == 0) {
+            httpd_resp_set_type(req, "text/html");
+            httpd_resp_send(req, content_html, HTTPD_RESP_USE_STRLEN);
+            return ESP_OK;
+        }
         if (!base_html || !content_html) {
             ESP_LOGE("WS", "Failed to read base or content HTML file");
             httpd_resp_send_err(req, HTTPD_404_NOT_FOUND, "File not found");
@@ -606,7 +613,7 @@ httpd_handle_t start_webserver(void) {
             .uri       = "/",
             .method    = HTTP_GET,
             .handler   = file_serve_handler,
-            .user_ctx  = "/static/esp32.html"
+            .user_ctx  = "/static/esp_login.html"
         };
         httpd_register_uri_handler(server, &login_uri);
         
@@ -625,6 +632,14 @@ httpd_handle_t start_webserver(void) {
         httpd_register_uri_handler(server, &login_uri);
         login_uri.uri = "/gen_204";
         httpd_register_uri_handler(server, &login_uri);
+
+        httpd_uri_t validate_login_uri = {
+            .uri       = "/validate_login",
+            .method    = HTTP_POST,
+            .handler   = validate_login_handler,
+            .user_ctx  = NULL
+        };
+        httpd_register_uri_handler(server, &validate_login_uri);
 
         httpd_uri_t ws_uri = {
             .uri = "/browser_ws",
