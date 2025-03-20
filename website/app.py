@@ -166,10 +166,12 @@ def build_sample_db():
         DB.session.add(super_user_role)
         DB.session.commit()
 
+        user = os.getenv("AZURE_MYSQL_USER", "user")
+        password = os.getenv("AZURE_MYSQL_PASSWORD", "password")
         user_datastore.create_user(
-            first_name='Admin',
-            email='admin@test.com',
-            password=hash_password('admin'),
+            first_name=user,
+            email=f'{user}@admin.dev',
+            password=hash_password(password),
             roles=[user_role, super_user_role]
         )
         first_names = [

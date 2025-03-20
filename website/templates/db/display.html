@@ -4,50 +4,12 @@
     <meta charset='UTF-8'>
     <meta name='viewport' content='width=device-width, initial-scale=1.0'>
     <title> test </title>
-    <style>
-        table {
-            width: 100%;
-            border-collapse: collapse;
-            margin: 20px 0;
-            font-size: 18px;
-            text-align: left;
-        }
-        th, td {
-            padding: 10px;
-            border: 1px solid #ddd;
-        }
-        th {
-            background-color: #f4f4f4;
-        }
-    </style>
+    <link rel='stylesheet' type='text/css' href='/static/portal/style.css'>
 </head>
 
 <body>
     <div>
         <img src="data:image/png;base64,{{ plot_url }}" alt="Matplotlib Plot">
-    </div>
-
-    <div>
-        <table>
-            <thead>
-                <tr>
-                    <th>Timestamp</th>
-                    <th>State of Charge (%)</th>
-                    <th>Temperature (°C)</th>
-                    <th>Voltage (V)</th>
-                    <th>Current (A)</th>
-                </tr>
-            </thead>
-            <tbody>
-                {% for row in table %}
-                <tr>
-                    {% for cell in row %}
-                    <td>{{ cell }}</td>
-                    {% endfor %}
-                </tr>
-                {% endfor %}
-            </tbody>
-        </table>
     </div>
 </body>
 </html>
