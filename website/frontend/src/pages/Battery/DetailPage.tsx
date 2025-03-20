@@ -41,13 +41,13 @@ interface BatteriesPageProps {
                 console.log('No state, looking up battery by id...');
                 const battery = data[id];
                 const batteryItem: BatteryData = {
-                    id: battery.name,
-                    name: battery.name,
-                    charge: battery.charge,
-                    voltage: battery.voltage?.toFixed(1) || 0,
-                    current: battery.current?.toFixed(1) || 0,
-                    temperature: battery.temperature?.toFixed(1) || 0,
-                    IP: battery.IP,
+                    id: battery?.name || "id",
+                    name: battery?.name || "name",
+                    charge: battery?.charge  || 0,
+                    voltage: battery?.voltage.toFixed(1) || 0,
+                    current: battery?.current.toFixed(1) || 0,
+                    temperature: battery?.temperature.toFixed(1) || 0,
+                    IP: battery?.IP || "xxx.xxx.xxx.xxx",
                     location: "Unknown",
                     health: 100,
                     isCharging: false,
