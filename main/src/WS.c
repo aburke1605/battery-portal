@@ -344,23 +344,9 @@ esp_err_t file_serve_handler(httpd_req_t *req) {
     if (is_html) {
         char *base_html = read_file("/templates/base.html");
         char *content_html = read_file(file_path);
-        if (strcmp(file_path, "/static/esp32.html") == 0) {
-            // extract query string from URL
-            char query[32];
-            if (httpd_req_get_url_query_str(req, query, sizeof(query)) == ESP_OK) {
-                char id[8];
-                if (httpd_query_key_value(query, "id", id, sizeof(id)) == ESP_OK) {
-                    httpd_resp_set_type(req, "text/html");
-                    httpd_resp_send(req, content_html, HTTPD_RESP_USE_STRLEN);
-                    return ESP_OK;
-                }
-            }
-            // no ID is found, redirect to /?id={ESP_ID}
-            char redirect_url[16];
-            snprintf(redirect_url, sizeof(redirect_url), "/?id=%s", ESP_ID);
-            httpd_resp_set_status(req, "302 Found");
-            httpd_resp_set_hdr(req, "Location", redirect_url);
-            httpd_resp_send(req, NULL, 0);
+        if (strcmp(file_path, "/static/esp32.html") == 0 && admin_verified) {
+            httpd_resp_set_type(req, "text/html");
+            httpd_resp_send(req, content_html, HTTPD_RESP_USE_STRLEN);
             return ESP_OK;
         }
         else if (strcmp(file_path, "/static/esp_login.html") == 0) {
@@ -649,6 +635,14 @@ httpd_handle_t start_webserver(void) {
             .is_websocket = true
         };
         httpd_register_uri_handler(server, &ws_uri);
+
+        httpd_uri_t esp32_uri = {
+            .uri       = "/esp32",
+            .method    = HTTP_GET,
+            .handler   = file_serve_handler,
+            .user_ctx  = "/static/esp32.html"
+        };
+        httpd_register_uri_handler(server, &esp32_uri);
         
         httpd_uri_t validate_connect_uri = {
             .uri       = "/validate_connect",
