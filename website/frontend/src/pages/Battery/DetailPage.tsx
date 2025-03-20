@@ -17,7 +17,6 @@ interface BatteriesPageProps {
     }
     const urlParams = new URLSearchParams(queryString);
     const id = urlParams.get('id');
-      console.log(id);
 
     const [batteryItem, setSelectedBattery] = useState<BatteryData | null>(null);
     //const [setBatteries] = useState<BatteryData[]>(initialBatteries);
@@ -25,7 +24,7 @@ interface BatteriesPageProps {
 
      // Get data from Webscocket
       useEffect(() => {
-          const ws = new WebSocket(apiConfig.WEBSOCKET_BROWSER);
+        const ws = new WebSocket(apiConfig.WEBSOCKET_BROWSER);
 
         ws.onopen = () => {
           console.log('WebSocket connected');
