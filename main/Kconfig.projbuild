@@ -1,3 +1,19 @@
+menu "[CUSTOM] Log-in Configuration"
+
+config USERNAME
+    string "Username"
+    default "admin"
+    help
+      Username to access Wi-Fi AP.
+
+config PASSWORD
+    string "Password"
+    default "BaTT3ryP0rta!"
+    help
+      Password to access Wi-Fi AP.
+
+endmenu
+
 menu "[CUSTOM] Developer options"
 
 config VERBOSE

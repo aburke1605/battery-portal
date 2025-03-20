@@ -38,16 +38,20 @@ esp_err_t validate_login_handler(httpd_req_t *req) {
         return err;
     }
 
-    char username[50] = {0};
-    char password[50] = {0};
+    char username_encoded[50] = {0};
+    char password_encoded[50] = {0};
     // a correct login gets POSTed as:
     //    username=admin&password=1234
-    sscanf(content, "username=%49[^&]&password=%49s", username, password);
+    sscanf(content, "username=%49[^&]&password=%49s", username_encoded, password_encoded);
     // %49:   read up to 49 characters (including the null terminator) to prevent buffer overflow
     // [^&]:  a scan set that matches any character except &
     // s:     reads a sequence of non-whitespace characters until a space, newline, or null terminator is encountered
+    char username[50] = {0};
+    char password[50] = {0};
+    url_decode(username, username_encoded);
+    url_decode(password, password_encoded);
 
-    if (strcmp(username, "admin") == 0 && strcmp(password, "1234") == 0) {
+    if (DEV || (strcmp(username, WS_USERNAME) == 0 && strcmp(password, WS_PASSWORD) == 0)) {
         // credentials correct
         admin_verified = true;
         httpd_resp_set_status(req, "302 Found");

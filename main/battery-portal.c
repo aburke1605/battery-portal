@@ -28,6 +28,8 @@ QueueHandle_t ws_queue;
 struct rendered_page rendered_html_pages[WS_MAX_N_HTML_PAGES];
 uint8_t n_rendered_html_pages = 0;
 bool admin_verified = false;
+i2c_master_bus_handle_t i2c_bus = NULL;
+i2c_master_dev_handle_t i2c_device = NULL;
 
 void app_main(void) {
 
