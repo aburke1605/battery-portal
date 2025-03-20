@@ -29,6 +29,7 @@ extern esp_websocket_client_handle_t ws_client;
 extern QueueHandle_t ws_queue;
 extern struct rendered_page rendered_html_pages[WS_MAX_N_HTML_PAGES];
 extern uint8_t n_rendered_html_pages;
+extern bool admin_verified;
 
 void add_client(int fd);
 

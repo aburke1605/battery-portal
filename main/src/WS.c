@@ -49,6 +49,7 @@ esp_err_t validate_login_handler(httpd_req_t *req) {
 
     if (strcmp(username, "admin") == 0 && strcmp(password, "1234") == 0) {
         // credentials correct
+        admin_verified = true;
         httpd_resp_set_status(req, "302 Found");
         char redirect_url[21];
         snprintf(redirect_url, sizeof(redirect_url), "/esp32?id=%s", ESP_ID);

@@ -27,6 +27,7 @@ esp_websocket_client_handle_t ws_client = NULL;
 QueueHandle_t ws_queue;
 struct rendered_page rendered_html_pages[WS_MAX_N_HTML_PAGES];
 uint8_t n_rendered_html_pages = 0;
+bool admin_verified = false;
 
 void app_main(void) {
 
