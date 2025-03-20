@@ -129,7 +129,7 @@ def subpage():
 def new_admin():
     return send_from_directory("frontend/dist", "index.html")
 
-@app.route("/admin/<path:path>")
+@app.route("/<path:path>")
 def serve_react_static(path):
     return send_from_directory("frontend/dist", path)
 
