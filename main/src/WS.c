@@ -321,134 +321,57 @@ esp_err_t toggle_handler(httpd_req_t *req) {
 }
 
 esp_err_t file_serve_handler(httpd_req_t *req) {
-    const char *file_path = (const char *)req->user_ctx; // Get file path from user_ctx
-    if (VERBOSE) ESP_LOGI("WS", "Serving file: %s", file_path);
+    const char *file_path = (const char *)req->user_ctx;
 
-    bool already_rendered = false;
-    for (int i=0; i<n_rendered_html_pages; i++) {
-        if (strcmp(file_path, rendered_html_pages[i].name) == 0) {
-            already_rendered = true;
-
-            httpd_resp_set_type(req, "text/html");
-            httpd_resp_send(req, rendered_html_pages[i].content, HTTPD_RESP_USE_STRLEN);
-
-            return ESP_OK;
-        }
+    // before anything, make sure nobody tries to bypass the login page
+    if (strcmp(file_path, "/static/esp32.html") == 0 && !admin_verified) {
+        httpd_resp_set_status(req, "302 Found");
+        httpd_resp_set_hdr(req, "Location", "/");
+        httpd_resp_send(req, NULL, 0); // no response body
     }
+
+    if (VERBOSE) ESP_LOGI("WS", "Serving file: %s", file_path);
 
     const char *ext = strrchr(file_path, '.');
     bool is_html = (ext && strcmp(ext, ".html") == 0);
-
-    // for HTML files, remove jinja lines
-    // and do merging with base.html by hand
+    // only render html pages once to save memory
     if (is_html) {
-        char *base_html = read_file("/templates/base.html");
-        char *content_html = read_file(file_path);
-        if (strcmp(file_path, "/static/esp32.html") == 0 && admin_verified) {
-            httpd_resp_set_type(req, "text/html");
-            httpd_resp_send(req, content_html, HTTPD_RESP_USE_STRLEN);
-            return ESP_OK;
-        }
-        else if (strcmp(file_path, "/static/esp_login.html") == 0) {
-            httpd_resp_set_type(req, "text/html");
-            httpd_resp_send(req, content_html, HTTPD_RESP_USE_STRLEN);
-            return ESP_OK;
-        }
-        if (!base_html || !content_html) {
-            ESP_LOGE("WS", "Failed to read base or content HTML file");
-            httpd_resp_send_err(req, HTTPD_404_NOT_FOUND, "File not found");
-            return ESP_FAIL;
-        }
+        bool already_rendered = false;
+        for (int i=0; i<n_rendered_html_pages; i++) {
+            if (strcmp(file_path, rendered_html_pages[i].name) == 0) {
+                already_rendered = true;
 
-        if (strlen(base_html) + strlen(content_html) + 1 >= WS_MAX_HTML_SIZE) {
-            ESP_LOGE("WS", "Response buffer overflow risk!");
-            httpd_resp_send_err(req, HTTPD_500_INTERNAL_SERVER_ERROR, "Buffer overflow");
-            return ESP_FAIL;
-        }
+                httpd_resp_set_type(req, "text/html");
+                httpd_resp_send(req, rendered_html_pages[i].content, HTTPD_RESP_USE_STRLEN);
 
-
-        char *page = malloc(WS_MAX_HTML_SIZE);
-        if (!page) {
-            ESP_LOGE("WS", "Failed to allocate memory for page");
-            httpd_resp_send_err(req, HTTPD_500_INTERNAL_SERVER_ERROR, "Memory allocation failed");
-            return ESP_FAIL;
-        }
-
-
-        const char* base_jinja_string;
-        char* base_insert_pos;
-        const char* content_jinja_string_1;
-        const char* content_jinja_string_2;
-
-        // remove jinja from base and add to page
-        base_jinja_string = "    {% block content %}{% endblock %}";
-        base_insert_pos = strstr(base_html, base_jinja_string);
-        if (!base_insert_pos) {
-            ESP_LOGE("WS", "Template placeholder not found in base.html");
-            httpd_resp_send_err(req, HTTPD_500_INTERNAL_SERVER_ERROR, "Template error");
-            return ESP_FAIL;
-        }
-
-        // add start section of base to rendered page
-        size_t base_start_len = base_insert_pos - base_html;
-        strncpy(page, base_html, base_start_len);
-        page[base_start_len-1] = '\0';
-
-        // remove jinja from content first and add to page
-        content_jinja_string_1 = "{% extends \"portal/base.html\" %}\n\n\n{% block content %}";
-        content_jinja_string_2 = "{% endblock %}";
-        strncat(page, content_html + strlen(content_jinja_string_1), strlen(content_html) - strlen(content_jinja_string_1) - strlen(content_jinja_string_2) - 1);
-
-        // add end section of base to rendered page
-        // strncat(page, base_insert_pos + strlen(base_jinja_string), sizeof(page) - strlen(page) - 1);
-        strcat(page, "</body>\n</html>\n\n");
-
-        // remove other jinja bits too
-        char ESP_ID_string[sizeof(ESP_ID) + 2];
-        snprintf(ESP_ID_string, sizeof(ESP_ID_string), "\"%s\"", ESP_ID);
-
-        const char* placeholders[] = {
-            "wss://",
-            "{{ prefix }}",
-            "\"{{ esp_id }}\"",
-            "?esp_id={{ esp_id }}",
-            "&" // fixes eduroam.html
-        };
-        const char* substitutes[] = {
-            "ws://",
-            "",
-            ESP_ID_string,
-            "",
-            "?"
-        };
-        char *modified_page = replace_placeholder(page, placeholders, substitutes, 5);
-
-        if (!modified_page) {
-            ESP_LOGE("WS", "Could not replace {{ prefix }} in %s", file_path);
-            httpd_resp_send_err(req, HTTPD_500_INTERNAL_SERVER_ERROR, "Template error");
-            return ESP_FAIL;
+                return ESP_OK;
+            }
         }
 
         if (!already_rendered) {
+            char *content_html = read_file(file_path);
+            if (!content_html) {
+                ESP_LOGE("WS", "Failed to serve HTML file");
+                httpd_resp_send_err(req, HTTPD_404_NOT_FOUND, "File not found");
+                return ESP_FAIL;
+            }
+
             struct rendered_page* new_page = malloc(sizeof(struct rendered_page));
 
             strncpy(new_page->name, file_path, WS_MAX_HTML_PAGE_NAME_LENGTH - 1);
             new_page->name[WS_MAX_HTML_PAGE_NAME_LENGTH - 1] = '\0';
 
-            strncpy(new_page->content, modified_page, WS_MAX_HTML_SIZE - 1);
+            strncpy(new_page->content, content_html, WS_MAX_HTML_SIZE - 1);
             new_page->content[WS_MAX_HTML_SIZE - 1] = '\0';
 
             rendered_html_pages[n_rendered_html_pages++] = *new_page;
             free(new_page);
+
+            httpd_resp_set_type(req, "text/html");
+            httpd_resp_send(req, content_html, HTTPD_RESP_USE_STRLEN);
+
+            return ESP_OK;
         }
-
-        httpd_resp_set_type(req, "text/html");
-        httpd_resp_send(req, modified_page, HTTPD_RESP_USE_STRLEN);
-
-        free(modified_page);
-        free(page);
-
-        return ESP_OK;
     }
 
 
