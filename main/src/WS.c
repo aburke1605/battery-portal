@@ -630,26 +630,26 @@ httpd_handle_t start_webserver(void) {
         httpd_register_uri_handler(server, &validate_connect_uri);
 
         httpd_uri_t css_uri = {
-            .uri      = "/static/assets/DetailPage-7kRJpqu6.css",
+            .uri      = "/assets/DetailPage.css",
             .method   = HTTP_GET,
             .handler  = file_serve_handler,
-            .user_ctx = "/static/assets/DetailPage-7kRJpqu6.css",
+            .user_ctx = "/static/assets/DetailPage.css",
         };
         httpd_register_uri_handler(server, &css_uri);
 
         httpd_uri_t js_1_uri = {
-            .uri      = "/static/assets/DetailPage-Byq6e-6Q.js",
+            .uri      = "/assets/DetailPage.js",
             .method   = HTTP_GET,
             .handler  = file_serve_handler,
-            .user_ctx = "/static/assets/DetailPage-Byq6e-6Q.js",
+            .user_ctx = "/static/assets/DetailPage.js",
         };
         httpd_register_uri_handler(server, &js_1_uri);
 
         httpd_uri_t js_2_uri = {
-            .uri      = "/static/assets/extra-BvUo45iF.js",
+            .uri      = "/assets/extra.js",
             .method   = HTTP_GET,
             .handler  = file_serve_handler,
-            .user_ctx = "/static/assets/extra-BvUo45iF.js",
+            .user_ctx = "/static/assets/extra.js",
         };
         httpd_register_uri_handler(server, &js_2_uri);
 
