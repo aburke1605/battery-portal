@@ -14,6 +14,7 @@
     #define DEV false
 #endif
 
+# define AZURE_URL CONFIG_AZURE_URL
 #ifdef CONFIG_LOCAL
     #define LOCAL true
 #else
