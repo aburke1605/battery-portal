@@ -35,7 +35,11 @@ void send_fake_post_request() {
         if (UTILS_EDUROAM) {
             snprintf(post_data, sizeof(post_data), "ssid=%s@liverpool.ac.uk&password=%s", UTILS_EDUROAM_USERNAME, UTILS_EDUROAM_PASSWORD);
         } else {
-            strcpy(post_data, "ssid=Aodhan's%20Laptop&password=32mF%2B669");
+            char encoded_ssid[32];
+            url_encode(encoded_ssid, UTILS_ROUTER_SSID, sizeof(encoded_ssid));
+            char encoded_password[32];
+            url_encode(encoded_password, UTILS_ROUTER_PASSWORD, sizeof(encoded_password));
+            snprintf(post_data, sizeof(post_data), "ssid=%s&password=%s", encoded_ssid, encoded_password);
             post_data[strlen(post_data)] = '\0';
         }
         esp_http_client_set_header(client, "Content-Type", "application/x-www-form-urlencoded");

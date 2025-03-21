@@ -1062,7 +1062,7 @@ void websocket_task(void *pvParameters) {
                 if (LOCAL) {
                     snprintf(s, sizeof(s), "%s:5000", FLASK_IP);
                 } else {
-                    snprintf(s, sizeof(s), "batteryportal-e9czhgamgferavf7.ukwest-01.azurewebsites.net");
+                    snprintf(s, sizeof(s), "%s", AZURE_URL);
                 }
                 char uri[128];
                 snprintf(uri, sizeof(uri), "wss://%s/esp_ws", s);
