@@ -76,6 +76,12 @@ config STATE_OF_CHARGE_REG
     help
       Set the register address for the BMS to read the battery state of charge.
 
+config STATE_OF_HEALTH_REG
+    hex "BMS SOH Address"
+    default 0x2E
+    help
+      Set the register address for the BMS to read the battery state of health.
+
 config VOLTAGE_REG
     hex "BMS Voltage Address"
     default 0x08

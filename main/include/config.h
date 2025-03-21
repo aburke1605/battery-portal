@@ -36,6 +36,7 @@
 #define I2C_MASTER_NUM     I2C_NUM_0                 // I2C port number for master dev
 
 #define I2C_STATE_OF_CHARGE_REG CONFIG_STATE_OF_CHARGE_REG // Register address for StateOfCharge
+#define I2C_STATE_OF_HEALTH_REG CONFIG_STATE_OF_HEALTH_REG // Register address for StateOfHealth
 #define I2C_VOLTAGE_REG CONFIG_VOLTAGE_REG                 // Register address for Voltage
 #define I2C_CURRENT_REG CONFIG_CURRENT_REG                 // Register address for AverageCurrent
 #define I2C_TEMPERATURE_REG CONFIG_TEMPERATURE_REG         // Register address for Temperature

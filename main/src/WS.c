@@ -986,6 +986,7 @@ void websocket_task(void *pvParameters) {
 
         // read sensor data
         uint16_t iCharge = read_2byte_data(I2C_STATE_OF_CHARGE_REG);
+        uint16_t iHealth = read_2byte_data(I2C_STATE_OF_HEALTH_REG);
         uint16_t iVoltage = read_2byte_data(I2C_VOLTAGE_REG);
         float fVoltage = (float)iVoltage / 1000.0;
         uint16_t iCurrent = read_2byte_data(I2C_CURRENT_REG);
@@ -1008,6 +1009,7 @@ void websocket_task(void *pvParameters) {
         cJSON *data = cJSON_CreateObject();
 
         cJSON_AddNumberToObject(data, "charge", iCharge);
+        cJSON_AddNumberToObject(data, "health", iHealth);
         cJSON_AddNumberToObject(data, "voltage", fVoltage);
         cJSON_AddNumberToObject(data, "current", fCurrent);
         cJSON_AddNumberToObject(data, "temperature", fTemperature);
