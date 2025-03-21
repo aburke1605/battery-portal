@@ -415,6 +415,7 @@ CONFIG_PASSWORD="BaTT3ryP0rta!"
 #
 # CONFIG_VERBOSE is not set
 # CONFIG_DEV is not set
+CONFIG_AZURE_URL="batteryportal-{identifier}.{location}-01.azurewebsites.net"
 # CONFIG_LOCAL is not set
 CONFIG_FLASK_IP="192.168.137.1"
 # end of [CUSTOM] Developer options

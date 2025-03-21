@@ -28,6 +28,12 @@ config DEV
     help
       Set to true to enable ESP32 developer mode.
 
+config AZURE_URL
+    string "URL of Azure Web App"
+    default "batteryportal-{identifier}.{location}-01.azurewebsites.net"
+    help
+      URL of Azure Web App running Flask app online.
+
 config LOCAL
     bool "Local network mode"
     default n
