@@ -24,6 +24,13 @@ esp_err_t i2c_master_init(void) {
     return err;
 }
 
+esp_err_t check_device(uint8_t reg) {
+    esp_err_t ret = i2c_master_probe(i2c_bus, reg, I2C_MASTER_TIMEOUT_MS);
+    if (ret != ESP_OK) ESP_LOGE("I2C", "I2C device not found.");
+
+    return ret;
+}
+
 void device_scan(void) {
     ESP_LOGI("I2C", "Scanning for devices...");
     uint8_t n_devices = 0;
@@ -46,6 +53,9 @@ esp_err_t read_data(uint8_t reg, uint8_t* data, size_t len) {
         // TODO: error check the rest of this function
     }
     esp_err_t ret;
+
+    ret = check_device(reg);
+    if (ret != ESP_OK) return ret;
 
     // Transmit the register address
     ret = i2c_master_transmit(i2c_device, &reg, 1, I2C_MASTER_TIMEOUT_MS);
@@ -110,9 +120,14 @@ void read_name(uint8_t subclass, uint8_t offset, char* name) {
 }
 
 esp_err_t write_byte(uint8_t reg, uint8_t data) {
+    esp_err_t ret;
+
     uint8_t buffer[2] = {reg, data}; // Register address + data
 
-    esp_err_t ret = i2c_master_transmit(i2c_device, buffer, sizeof(buffer), pdMS_TO_TICKS(I2C_MASTER_TIMEOUT_MS));
+    ret = check_device(reg);
+    if (ret != ESP_OK) return ret;
+
+    ret = i2c_master_transmit(i2c_device, buffer, sizeof(buffer), pdMS_TO_TICKS(I2C_MASTER_TIMEOUT_MS));
 
     if (ret != ESP_OK) {
         ESP_LOGE("I2C", "Failed to write byte to I2C device: %s", esp_err_to_name(ret));

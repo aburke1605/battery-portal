@@ -6,6 +6,8 @@ extern i2c_master_dev_handle_t i2c_device;
 
 esp_err_t i2c_master_init(void);
 
+esp_err_t check_device(uint8_t reg);
+
 void device_scan(void);
 
 esp_err_t read_data(uint8_t reg, uint8_t* data, size_t len);
