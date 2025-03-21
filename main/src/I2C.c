@@ -234,8 +234,15 @@ esp_err_t set_I2_value(uint8_t subclass, uint8_t offset, int16_t value) {
 }
 
 esp_err_t write_word(uint8_t reg, uint16_t value) {
+    esp_err_t ret;
     uint8_t data[3] = {reg, value & 0xFF, (value >> 8) & 0xFF}; // LSB first
-    return i2c_master_transmit(i2c_device, data, sizeof(data), pdMS_TO_TICKS(1000));
+
+    ret = check_device(reg);
+    if (ret != ESP_OK) return ret;
+
+    ret = i2c_master_transmit(i2c_device, data, sizeof(data), pdMS_TO_TICKS(1000));
+
+    return ret;
 }
 
 esp_err_t reset_BMS() {
