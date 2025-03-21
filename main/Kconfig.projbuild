@@ -99,21 +99,21 @@ endmenu
 
 menu "[CUSTOM] Router Configuration"
 
-config EDUROAM_USERNAME
-    string "Eduroam username"
-    default "USERNAME"
+config ROUTER_SSID
+    string "Wi-Fi router SSID"
+    default "SSID"
     help
-      University account username (without @liverpool.ac.uk).
+      SSID of the router to connect to.
 
-config EDUROAM_PASSWORD
-    string "Eduroam password"
+config ROUTER_PASSWORD
+    string "Wi-Fi router password"
     default "PASSWORD"
     help
-      University account password.
+      Password of the router to connect to.
 
 config EDUROAM
     bool "Use Eduroam"
-    default y
+    default n
     help
       Set to true to connect to Eduroam.
 
