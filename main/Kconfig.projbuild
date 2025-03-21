@@ -97,7 +97,19 @@ config TEMPERATURE_REG
 endmenu
 
 
-menu "[CUSTOM] Eduroam Configuration"
+menu "[CUSTOM] Router Configuration"
+
+config EDUROAM_USERNAME
+    string "Eduroam username"
+    default "USERNAME"
+    help
+      University account username (without @liverpool.ac.uk).
+
+config EDUROAM_PASSWORD
+    string "Eduroam password"
+    default "PASSWORD"
+    help
+      University account password.
 
 config EDUROAM
     bool "Use Eduroam"
@@ -106,13 +118,13 @@ config EDUROAM
       Set to true to connect to Eduroam.
 
 config EDUROAM_USERNAME
-    string "Username"
+    string "Eduroam username"
     default "USERNAME"
     help
       University account username (without @liverpool.ac.uk).
 
 config EDUROAM_PASSWORD
-    string "Password"
+    string "Eduroam password"
     default "PASSWORD"
     help
       University account password.
