@@ -14,6 +14,7 @@
     #define DEV false
 #endif
 
+# define AZURE_URL CONFIG_AZURE_URL
 #ifdef CONFIG_LOCAL
     #define LOCAL true
 #else
@@ -74,6 +75,8 @@
 
 #define UTILS_KEY_LENGTH 10
 
+#define UTILS_ROUTER_SSID CONFIG_ROUTER_SSID
+#define UTILS_ROUTER_PASSWORD CONFIG_ROUTER_PASSWORD
 #ifdef CONFIG_EDUROAM
     #define UTILS_EDUROAM true
 #else
