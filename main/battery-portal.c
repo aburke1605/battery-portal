@@ -52,6 +52,7 @@ void app_main(void) {
 
     ESP_ERROR_CHECK(i2c_master_init());
     ESP_LOGI("main", "I2C initialized successfully");
+    if (SCAN_I2C) device_scan();
 
     // Initialize the GPIO pin as an output for LED toggling
     gpio_config_t io_conf = {

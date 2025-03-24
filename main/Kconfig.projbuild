@@ -52,6 +52,12 @@ endmenu
 
 menu "[CUSTOM] I2C Configuration"
 
+config SCAN_I2C
+    bool "Scan I2C devices"
+    default n
+    help
+      Set to true to scan addresses for connected I2C devices.
+
 config I2C_ADDR
     hex "I2C Device Address"
     default 0x55

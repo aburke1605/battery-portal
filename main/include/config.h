@@ -30,6 +30,11 @@
 #define DNS_PORT 53
 
 
+#ifdef CONFIG_SCAN_I2C
+    #define SCAN_I2C true
+#else
+    #define SCAN_I2C false
+#endif
 #define I2C_ADDR           CONFIG_I2C_ADDR           // 7-bit I2C address of the battery
 #define I2C_MASTER_SDA_IO  CONFIG_I2C_MASTER_SDA_PIN // GPIO number for I2C master data
 #define I2C_MASTER_SCL_IO  CONFIG_I2C_MASTER_SCL_PIN // GPIO number for I2C master clock
