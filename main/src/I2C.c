@@ -67,27 +67,6 @@ esp_err_t read_data(uint8_t reg, uint8_t* data, size_t len) {
     return ret;
 }
 
-void read_bytes(uint8_t subclass, uint8_t offset, uint8_t* data, size_t n_bytes) {
-    esp_err_t ret;
-
-    if (subclass == 0) {
-        // request is a read of simple memory data
-        ret = read_data(offset, data, n_bytes);
-    } else {
-        uint8_t block = get_block(offset);
-
-        // specify the location in memory
-        ret = write_data(I2C_DATA_FLASH_CLASS, subclass, 1);
-        ret = write_data(I2C_DATA_FLASH_BLOCK, block, 1);
-
-        ret = read_data(I2C_BLOCK_DATA_START + offset%32, data, n_bytes);
-    }
-
-    if (ret != ESP_OK) {
-        // TODO: fill out
-    }
-}
-
 esp_err_t write_data(uint8_t reg, uint32_t data, size_t n_btyes) {
     esp_err_t ret;
 
@@ -108,6 +87,27 @@ esp_err_t write_data(uint8_t reg, uint32_t data, size_t n_btyes) {
     }
 
     return ret;
+}
+
+void read_bytes(uint8_t subclass, uint8_t offset, uint8_t* data, size_t n_bytes) {
+    esp_err_t ret;
+
+    if (subclass == 0) {
+        // request is a read of simple memory data
+        ret = read_data(offset, data, n_bytes);
+    } else {
+        uint8_t block = get_block(offset);
+
+        // specify the location in memory
+        ret = write_data(I2C_DATA_FLASH_CLASS, subclass, 1);
+        ret = write_data(I2C_DATA_FLASH_BLOCK, block, 1);
+
+        ret = read_data(I2C_BLOCK_DATA_START + offset%32, data, n_bytes);
+    }
+
+    if (ret != ESP_OK) {
+        // TODO: fill out
+    }
 }
 
 esp_err_t set_device_name(uint8_t subclass, uint8_t offset, char value[11]) {
