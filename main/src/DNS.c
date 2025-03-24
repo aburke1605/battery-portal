@@ -1,11 +1,11 @@
-#include <esp_log.h>
-#include <esp_wifi.h>
-#include <lwip/netdb.h>
-#include <lwip/dns.h>
+#include "include/DNS.h"
 
 #include "include/config.h"
 #include "include/utils.h"
-#include "include/DNS.h"
+
+#include <esp_log.h>
+#include <esp_wifi.h>
+#include <lwip/netdb.h>
 
 // DNS handler (redirect all requests to our AP IP)
 void dns_server_task(void *pvParameters) {

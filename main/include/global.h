@@ -1,11 +1,9 @@
 #ifndef GLOBAL_H
 #define GLOBAL_H
 
-#include <esp_http_server.h>
-#include <esp_websocket_client.h>
-#include <driver/i2c_master.h>
-
 #include "include/config.h"
+
+#include <esp_http_server.h>
 
 extern char ESP_ID[UTILS_KEY_LENGTH + 1];
 extern httpd_handle_t server;

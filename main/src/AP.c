@@ -1,13 +1,12 @@
-#include <string.h>
-#include <ctype.h>
+#include "include/AP.h"
+
+#include "include/global.h"
+#include "include/config.h"
+#include "include/I2C.h"
 
 #include <esp_log.h>
 #include <nvs_flash.h>
 #include <esp_wifi.h>
-
-#include "include/config.h"
-#include "include/AP.h"
-#include "include/I2C.h"
 
 void wifi_init(void) {
     // Initialize NVS

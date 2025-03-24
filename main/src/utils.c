@@ -1,10 +1,10 @@
-#include <string.h>
-#include <math.h>
-
-#include "include/config.h"
 #include "include/utils.h"
 
-#include <esp_random.h>
+#include "include/global.h"
+
+#include <math.h>
+#include <esp_log.h>
+#include <esp_http_client.h>
 
 void send_fake_post_request() {
     if (!connected_to_WiFi) {

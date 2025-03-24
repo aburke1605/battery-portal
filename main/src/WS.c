@@ -1,13 +1,18 @@
-#include <esp_wifi.h>
-#include <esp_http_client.h>
-#include <esp_eap_client.h>
-
 #include "include/WS.h"
+
 #include "include/I2C.h"
+#include "include/global.h"
 #include "include/utils.h"
 
 #include "include/cert.h"
 #include "include/local_cert.h"
+
+#include <esp_log.h>
+#include <esp_wifi.h>
+#include <esp_websocket_client.h>
+#include <esp_eap_client.h>
+#include <cJSON.h>
+#include <driver/gpio.h>
 
 static struct rendered_page rendered_html_pages[WS_MAX_N_HTML_PAGES];
 static int client_sockets[WS_CONFIG_MAX_CLIENTS];

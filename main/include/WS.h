@@ -1,16 +1,10 @@
 #ifndef WS_H
 #define WS_H
 
-#include <esp_log.h>
-#include <esp_http_server.h>
-#include <esp_websocket_client.h>
-#include <cJSON.h>
-#include <lwip/sockets.h>
-#include <driver/gpio.h>
-
 #include "include/config.h"
-#include "include/global.h"
-#include "include/utils.h"
+
+#include <esp_err.h>
+#include <esp_http_server.h>
 
 struct rendered_page {
     char name[WS_MAX_HTML_PAGE_NAME_LENGTH];

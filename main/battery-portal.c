@@ -1,5 +1,3 @@
-#include <esp_spiffs.h>
-
 #include "include/config.h"
 #include "include/global.h"
 #include "include/AP.h"
@@ -7,6 +5,10 @@
 #include "include/I2C.h"
 #include "include/WS.h"
 #include "include/utils.h"
+
+#include <esp_log.h>
+#include <esp_spiffs.h>
+#include <driver/gpio.h>
 
 // global variables
 char ESP_ID[UTILS_KEY_LENGTH + 1];
