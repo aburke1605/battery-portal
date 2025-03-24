@@ -4,7 +4,6 @@
 #include "include/DNS.h"
 #include "include/I2C.h"
 #include "include/WS.h"
-#include "include/utils.h"
 
 #include <esp_log.h>
 #include <esp_spiffs.h>
