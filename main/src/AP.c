@@ -9,60 +9,6 @@
 #include "include/AP.h"
 #include "include/I2C.h"
 
-void wifi_scan(void) {
-    // Configure Wi-Fi scan settings
-    wifi_scan_config_t scan_config = {
-        .ssid = NULL,        // Scan all SSIDs
-        .bssid = NULL,       // Scan all BSSIDs
-        .channel = 0,        // Scan all channels
-        .show_hidden = false // Don't include hidden networks
-    };
-
-    ESP_ERROR_CHECK(esp_wifi_scan_start(&scan_config, true)); // Blocking scan
-
-    // Get the number of APs found
-    uint16_t ap_num = 0;
-    ESP_ERROR_CHECK(esp_wifi_scan_get_ap_num(&ap_num));
-    ESP_LOGI("AP", "Number of access points found: %d", ap_num);
-
-    // Allocate memory for AP info and retrieve the list
-    wifi_ap_record_t *ap_info = malloc(sizeof(wifi_ap_record_t) * ap_num);
-    if (ap_info == NULL) {
-        ESP_LOGE("AP", "Failed to allocate memory for AP list");
-        return;
-    }
-
-    ESP_ERROR_CHECK(esp_wifi_scan_get_ap_records(&ap_num, ap_info));
-
-    const char *target_substring = "AceOn battery";
-    size_t target_length = strlen(target_substring);
-
-    // Print out AP details
-    for (int i = 0, j = 0; i < ap_num; i++) {
-        const char* ssid = (const char *)ap_info[i].ssid;
-        if (strstr(ssid, target_substring) != NULL) {
-            // Calculate the start of the trailing part
-            const char *trailing_part = ssid + target_length;
-
-            // Skip leading spaces
-            while (*trailing_part == ' ') trailing_part++;
-
-            // Check if the trailing part starts with digits
-            if (isdigit((unsigned char)*trailing_part)) {
-                // Extract the digits
-                char digits[4] = {0}; // Assuming numbers won't exceed 3 digits (4th character for null-termination)
-                int k = 0;
-                while (isdigit((unsigned char)*trailing_part) && k < sizeof(digits) - 1) digits[k++] = *trailing_part++;
-                digits[k] = '\0'; // Null-terminate the string
-                other_AP_SSIDs[j++] = atoi(digits);
-            } else {
-                ESP_LOGW("AP", "AP with SSID: '%s' contains '%s' but no trailing number", ssid, target_substring);
-            }
-        }
-    }
-    free(ap_info);
-}
-
 int find_unique_SSID(void) {
     int SSID = 1;
     bool unique = false;
@@ -104,7 +50,6 @@ void wifi_init(void) {
     ESP_ERROR_CHECK(esp_wifi_set_mode(WIFI_MODE_STA));
     ESP_ERROR_CHECK(esp_wifi_start());
 
-    wifi_scan();
     ESP_ERROR_CHECK(esp_wifi_stop());
 
     // Set Wi-Fi mode to both AP and STA
