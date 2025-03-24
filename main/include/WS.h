@@ -1,3 +1,6 @@
+#ifndef WS_H
+#define WS_H
+
 #include <esp_log.h>
 #include <esp_http_server.h>
 #include <esp_websocket_client.h>
@@ -43,3 +46,5 @@ void message_queue_task(void *pvParameters);
 void websocket_event_handler(void *arg, esp_event_base_t event_base, int32_t event_id, void *event_data);
 
 void websocket_task(void *pvParameters);
+
+#endif // WS_H

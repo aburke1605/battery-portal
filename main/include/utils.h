@@ -1,3 +1,6 @@
+#ifndef UTILS_H
+#define UTILS_H
+
 #include <esp_log.h>
 #include <esp_wifi.h>
 #include <esp_http_server.h>
@@ -20,3 +23,5 @@ char* replace_placeholder(const char *html, const char *const placeholders[], co
 uint8_t get_block(uint8_t offset);
 
 void check_bytes(TaskParams *params);
+
+#endif // UTILS_H
