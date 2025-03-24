@@ -6,8 +6,6 @@
 extern bool connected_to_WiFi;
 extern char ESP_subnet_IP[15];
 
-void random_key(char *key);
-
 void send_fake_post_request();
 
 esp_err_t get_POST_data(httpd_req_t *req, char* content, size_t content_size);

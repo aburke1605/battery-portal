@@ -6,20 +6,6 @@
 
 #include <esp_random.h>
 
-void random_key(char *key) {
-    //
-    // not used currently
-    //
-
-    const char charset[] = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
-    size_t charset_size = sizeof(charset) - 1;
-
-    for (size_t i = 0; i < UTILS_KEY_LENGTH; i++) {
-        key[i] = charset[esp_random() % charset_size];
-    }
-    key[UTILS_KEY_LENGTH] = '\0';
-}
-
 void send_fake_post_request() {
     if (!connected_to_WiFi) {
         char url[64];
