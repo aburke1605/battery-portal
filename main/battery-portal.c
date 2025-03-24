@@ -16,7 +16,6 @@ char received_data[1024];
 SemaphoreHandle_t data_mutex;
 bool connected_to_WiFi = false;
 bool reconnect = false;
-int other_AP_SSIDs[256];
 char successful_ips[256][16];
 char old_successful_ips[256][16];
 uint8_t successful_ip_count = 0;
