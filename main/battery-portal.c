@@ -4,7 +4,6 @@
 #include "include/AP.h"
 #include "include/DNS.h"
 #include "include/I2C.h"
-#include "include/ARP.h"
 #include "include/WS.h"
 #include "include/utils.h"
 
@@ -16,10 +15,6 @@ char received_data[1024];
 SemaphoreHandle_t data_mutex;
 bool connected_to_WiFi = false;
 bool reconnect = false;
-char successful_ips[256][16];
-char old_successful_ips[256][16];
-uint8_t successful_ip_count = 0;
-uint8_t old_successful_ip_count = 0;
 char ESP_IP[16] = "xxx.xxx.xxx.xxx\0";
 char ESP_subnet_IP[15];
 esp_websocket_client_handle_t ws_client = NULL;
