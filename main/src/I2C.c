@@ -2,6 +2,9 @@
 #include "include/I2C.h"
 #include "include/utils.h"
 
+static i2c_master_bus_handle_t i2c_bus = NULL;
+static i2c_master_dev_handle_t i2c_device = NULL;
+
 esp_err_t i2c_master_init(void) {
     i2c_master_bus_config_t bus_cfg = {
         .clk_source = I2C_CLK_SRC_DEFAULT,

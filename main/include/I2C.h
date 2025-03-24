@@ -1,9 +1,6 @@
 #include <esp_log.h>
 #include <driver/i2c_master.h>
 
-extern i2c_master_bus_handle_t i2c_bus;
-extern i2c_master_dev_handle_t i2c_device;
-
 esp_err_t i2c_master_init(void);
 
 esp_err_t check_device(uint8_t reg);

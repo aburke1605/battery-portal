@@ -9,6 +9,13 @@
 #include "include/cert.h"
 #include "include/local_cert.h"
 
+static struct rendered_page rendered_html_pages[WS_MAX_N_HTML_PAGES];
+static int client_sockets[WS_CONFIG_MAX_CLIENTS];
+static bool reconnect = false;
+static char ESP_IP[16] = "xxx.xxx.xxx.xxx\0";
+static esp_websocket_client_handle_t ws_client = NULL;
+static uint8_t n_rendered_html_pages = 0;
+
 void add_client(int fd) {
     for (int i = 0; i < WS_CONFIG_MAX_CLIENTS; i++) {
         if (client_sockets[i] == -1) {

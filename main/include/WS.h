@@ -6,25 +6,13 @@
 #include <driver/gpio.h>
 
 #include "include/config.h"
+#include "include/global.h"
 #include "include/utils.h"
 
 struct rendered_page {
     char name[WS_MAX_HTML_PAGE_NAME_LENGTH];
     char content[WS_MAX_HTML_SIZE];
 };
-
-extern char ESP_ID[UTILS_KEY_LENGTH + 1];
-extern httpd_handle_t server;
-extern int client_sockets[WS_CONFIG_MAX_CLIENTS];
-extern char received_data[1024];
-extern SemaphoreHandle_t data_mutex;
-extern bool connected_to_WiFi;
-extern bool reconnect;
-extern char ESP_IP[16];
-extern esp_websocket_client_handle_t ws_client;
-extern QueueHandle_t ws_queue;
-extern struct rendered_page rendered_html_pages[WS_MAX_N_HTML_PAGES];
-extern uint8_t n_rendered_html_pages;
 
 void add_client(int fd);
 

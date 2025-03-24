@@ -1,6 +1,7 @@
 #include <esp_spiffs.h>
 
 #include "include/config.h"
+#include "include/global.h"
 #include "include/AP.h"
 #include "include/DNS.h"
 #include "include/I2C.h"
@@ -10,19 +11,9 @@
 // global variables
 char ESP_ID[UTILS_KEY_LENGTH + 1];
 httpd_handle_t server = NULL;
-int client_sockets[WS_CONFIG_MAX_CLIENTS];
-char received_data[1024];
-SemaphoreHandle_t data_mutex;
 bool connected_to_WiFi = false;
-bool reconnect = false;
-char ESP_IP[16] = "xxx.xxx.xxx.xxx\0";
 char ESP_subnet_IP[15];
-esp_websocket_client_handle_t ws_client = NULL;
 QueueHandle_t ws_queue;
-struct rendered_page rendered_html_pages[WS_MAX_N_HTML_PAGES];
-uint8_t n_rendered_html_pages = 0;
-i2c_master_bus_handle_t i2c_bus = NULL;
-i2c_master_dev_handle_t i2c_device = NULL;
 
 void app_main(void) {
 
@@ -69,13 +60,6 @@ void app_main(void) {
         + 1 // what's this about????
     , eleven_bytes, sizeof(eleven_bytes));
     strncpy(ESP_ID, (char *)eleven_bytes, 10);
-
-    // initialise mutex
-    data_mutex = xSemaphoreCreateMutex();
-    if (data_mutex == NULL) {
-        ESP_LOGE("main", "Failed to create data mutex");
-        return;
-    }
 
     // Start the Access Point and Connection
     wifi_init();
