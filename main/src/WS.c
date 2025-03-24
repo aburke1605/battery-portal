@@ -443,6 +443,9 @@ esp_err_t file_serve_handler(httpd_req_t *req) {
         free(modified_page);
         free(page);
 
+        free(base_html);
+        free(content_html);
+
         return ESP_OK;
     }
 
