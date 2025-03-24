@@ -984,40 +984,46 @@ void websocket_task(void *pvParameters) {
     while (true) {
         if (DEV) send_fake_post_request();
 
-        // read sensor data
-        uint16_t iCharge = read_2byte_data(I2C_STATE_OF_CHARGE_REG);
-        uint16_t iVoltage = read_2byte_data(I2C_VOLTAGE_REG);
-        float fVoltage = (float)iVoltage / 1000.0;
-        uint16_t iCurrent = read_2byte_data(I2C_CURRENT_REG);
-        float fCurrent = (float)iCurrent / 1000.0;
-        if (fCurrent < 65.536 && fCurrent > 32.767) fCurrent = 65.536 - fCurrent; // this is something to do with 16 bit binary
-        uint16_t iTemperature = read_2byte_data(I2C_TEMPERATURE_REG);
-        float fTemperature = (float)iTemperature / 10.0 - 273.15;
-
-        // configurable data too
-        read_name(I2C_DATA_SUBCLASS_ID, I2C_NAME_OFFSET, ESP_ID);
-        uint16_t iBL = test_read(I2C_DISCHARGE_SUBCLASS_ID, I2C_BL_OFFSET);
-        uint16_t iBH = test_read(I2C_DISCHARGE_SUBCLASS_ID, I2C_BH_OFFSET);
-        uint16_t iCCT = test_read(I2C_CURRENT_THRESHOLDS_SUBCLASS_ID, I2C_CHG_CURRENT_THRESHOLD_OFFSET);
-        uint16_t iDCT = test_read(I2C_CURRENT_THRESHOLDS_SUBCLASS_ID, I2C_DSG_CURRENT_THRESHOLD_OFFSET);
-        uint16_t iCITL = test_read(I2C_CHARGE_INHIBIT_CFG_SUBCLASS_ID, I2C_CHG_INHIBIT_TEMP_LOW_OFFSET);
-        uint16_t iCITH = test_read(I2C_CHARGE_INHIBIT_CFG_SUBCLASS_ID, I2C_CHG_INHIBIT_TEMP_HIGH_OFFSET);
-
         // create JSON object with sensor data
         cJSON *json = cJSON_CreateObject();
         cJSON *data = cJSON_CreateObject();
 
-        cJSON_AddNumberToObject(data, "charge", iCharge);
-        cJSON_AddNumberToObject(data, "voltage", fVoltage);
-        cJSON_AddNumberToObject(data, "current", fCurrent);
-        cJSON_AddNumberToObject(data, "temperature", fTemperature);
+        uint8_t eleven_bytes[11];
+        uint8_t two_bytes[2];
+
+        read_bytes(I2C_DATA_SUBCLASS_ID, I2C_NAME_OFFSET
+            + 1 // what's this about????
+        , eleven_bytes, sizeof(eleven_bytes));
+        strncpy(ESP_ID, (char *)eleven_bytes, 10);
         cJSON_AddStringToObject(data, "name", ESP_ID);
-        cJSON_AddNumberToObject(data, "BL", iBL);
-        cJSON_AddNumberToObject(data, "BH", iBH);
-        cJSON_AddNumberToObject(data, "CCT", iCCT);
-        cJSON_AddNumberToObject(data, "DCT", iDCT);
-        cJSON_AddNumberToObject(data, "CITL", iCITL);
-        cJSON_AddNumberToObject(data, "CITH", iCITH);
+
+        // read sensor data
+        // these values are big-endian
+        read_bytes(0, I2C_STATE_OF_CHARGE_REG, two_bytes, sizeof(two_bytes));
+        cJSON_AddNumberToObject(data, "charge", two_bytes[1] << 8 | two_bytes[0]);
+        read_bytes(0, I2C_VOLTAGE_REG, two_bytes, sizeof(two_bytes));
+        cJSON_AddNumberToObject(data, "voltage", (float)(two_bytes[1] << 8 | two_bytes[0]) / 1000.0);
+        read_bytes(0, I2C_CURRENT_REG, two_bytes, sizeof(two_bytes));
+        cJSON_AddNumberToObject(data, "current", (float)((int16_t)(two_bytes[1] << 8 | two_bytes[0])) / 1000.0);
+        // TODO:                                         ^check that this sorts the "two's complement"
+        read_bytes(0, I2C_TEMPERATURE_REG, two_bytes, sizeof(two_bytes));
+        cJSON_AddNumberToObject(data, "temperature", (float)(two_bytes[1] << 8 | two_bytes[0]) / 10.0 - 273.15);
+
+        // configurable data too
+        // these values are little-endian
+        read_bytes(I2C_DISCHARGE_SUBCLASS_ID, I2C_BL_OFFSET, two_bytes, sizeof(two_bytes));
+        cJSON_AddNumberToObject(data, "BL", two_bytes[0] << 8 | two_bytes[1]);
+        read_bytes(I2C_DISCHARGE_SUBCLASS_ID, I2C_BH_OFFSET, two_bytes, sizeof(two_bytes));
+        cJSON_AddNumberToObject(data, "BH", two_bytes[0] << 8 | two_bytes[1]);
+        read_bytes(I2C_CURRENT_THRESHOLDS_SUBCLASS_ID, I2C_CHG_CURRENT_THRESHOLD_OFFSET, two_bytes, sizeof(two_bytes));
+        cJSON_AddNumberToObject(data, "CCT", two_bytes[0] << 8 | two_bytes[1]);
+        read_bytes(I2C_CURRENT_THRESHOLDS_SUBCLASS_ID, I2C_DSG_CURRENT_THRESHOLD_OFFSET, two_bytes, sizeof(two_bytes));
+        cJSON_AddNumberToObject(data, "DCT", two_bytes[0] << 8 | two_bytes[1]);
+        read_bytes(I2C_CHARGE_INHIBIT_CFG_SUBCLASS_ID, I2C_CHG_INHIBIT_TEMP_LOW_OFFSET, two_bytes, sizeof(two_bytes));
+        cJSON_AddNumberToObject(data, "CITL", two_bytes[0] << 8 | two_bytes[1]);
+        read_bytes(I2C_CHARGE_INHIBIT_CFG_SUBCLASS_ID, I2C_CHG_INHIBIT_TEMP_HIGH_OFFSET, two_bytes, sizeof(two_bytes));
+        cJSON_AddNumberToObject(data, "CITH", two_bytes[0] << 8 | two_bytes[1]);
+
         cJSON_AddStringToObject(data, "IP", ESP_IP);
         char *data_string = cJSON_PrintUnformatted(data);
 

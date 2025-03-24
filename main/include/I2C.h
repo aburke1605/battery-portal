@@ -12,11 +12,7 @@ void device_scan(void);
 
 esp_err_t read_data(uint8_t reg, uint8_t* data, size_t len);
 
-uint16_t read_2byte_data(uint8_t reg);
-
-uint16_t test_read(uint8_t subclass, uint8_t offset);
-
-void read_name(uint8_t subclass, uint8_t offset, char* name);
+void read_bytes(uint8_t subclass, uint8_t offset, uint8_t* data, uint8_t n_bytes);
 
 esp_err_t write_byte(uint8_t reg, uint8_t data);
 

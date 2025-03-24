@@ -46,11 +46,17 @@ void wifi_init(void) {
     };
 
     // set the SSID as well
-    char sName[UTILS_KEY_LENGTH + 1];
-    read_name(I2C_DATA_SUBCLASS_ID, I2C_NAME_OFFSET, sName);
-    uint16_t iCharge = read_2byte_data(I2C_STATE_OF_CHARGE_REG);
-    char buffer[strlen(sName) + 2 + 5 + 1 + 1]; // "BMS-01" + ": " + uint16_t, + "%" + "\0"
-    snprintf(buffer, sizeof(buffer), "%s: %d%%", sName, iCharge);
+    uint8_t name[11];
+    read_bytes(I2C_DATA_SUBCLASS_ID, I2C_NAME_OFFSET
+        + 1 // what's this about????
+    , name, sizeof(name));
+    strncpy(ESP_ID, (char *)name, 10);
+
+    uint8_t charge[2] = {};
+    read_bytes(0, I2C_STATE_OF_CHARGE_REG, charge, sizeof(charge));
+
+    char buffer[strlen(ESP_ID) + 2 + 5 + 1 + 1]; // "BMS_01" + ": " + uint16_t, + "%" + "\0"
+    snprintf(buffer, sizeof(buffer), "%s: %d%%", ESP_ID, charge[1] << 8 | charge[0]);
 
     strncpy((char *)wifi_ap_config.ap.ssid, buffer, sizeof(wifi_ap_config.ap.ssid) - 1);
     wifi_ap_config.ap.ssid[sizeof(wifi_ap_config.ap.ssid) - 1] = '\0'; // Ensure null-termination

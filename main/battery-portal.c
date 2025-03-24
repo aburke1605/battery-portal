@@ -64,7 +64,11 @@ void app_main(void) {
     };
     gpio_config(&io_conf);
 
-    read_name(I2C_DATA_SUBCLASS_ID, I2C_NAME_OFFSET, ESP_ID);
+    uint8_t eleven_bytes[11];
+    read_bytes(I2C_DATA_SUBCLASS_ID, I2C_NAME_OFFSET
+        + 1 // what's this about????
+    , eleven_bytes, sizeof(eleven_bytes));
+    strncpy(ESP_ID, (char *)eleven_bytes, 10);
 
     // initialise mutex
     data_mutex = xSemaphoreCreateMutex();

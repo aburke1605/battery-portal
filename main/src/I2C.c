@@ -67,56 +67,25 @@ esp_err_t read_data(uint8_t reg, uint8_t* data, size_t len) {
     return ret;
 }
 
-uint16_t read_2byte_data(uint8_t reg) {
+void read_bytes(uint8_t subclass, uint8_t offset, uint8_t* data, uint8_t n_bytes) {
     esp_err_t ret;
 
-    uint8_t data[2] = {0};
-    ret = read_data(reg, data, sizeof(data));
+    if (subclass == 0) {
+        // request is a read of simple memory data
+        ret = read_data(offset, data, n_bytes);
+    } else {
+        uint8_t block = get_block(offset);
+
+        // specify the location in memory
+        ret = write_byte(I2C_DATA_FLASH_CLASS, subclass);
+        ret = write_byte(I2C_DATA_FLASH_BLOCK, block);
+
+        ret = read_data(I2C_BLOCK_DATA_START + offset%32, data, n_bytes);
+    }
+
     if (ret != ESP_OK) {
         // TODO: fill out
     }
-
-    // is big-endian
-    return (data[1] << 8) | data[0];
-}
-
-uint16_t test_read(uint8_t subclass, uint8_t offset) {
-    esp_err_t ret;
-
-    uint8_t block = get_block(offset);
-
-    // specify the location in memory
-    ret = write_byte(I2C_DATA_FLASH_CLASS, subclass);
-    ret = write_byte(I2C_DATA_FLASH_BLOCK, block);
-
-    uint8_t data[2] = {0}; // 2 bytes
-    ret = read_data(I2C_BLOCK_DATA_START + offset%32, data, sizeof(data));
-    if (ret != ESP_OK) {
-        // TODO: fill out
-    }
-
-    // is little-endian
-    uint16_t val = (data[0] << 8) | data[1];
-
-    return val;
-}
-
-void read_name(uint8_t subclass, uint8_t offset, char* name) {
-    esp_err_t ret;
-
-    uint8_t block = get_block(offset);
-
-    // specify the location in memory
-    ret = write_byte(I2C_DATA_FLASH_CLASS, subclass);
-    ret = write_byte(I2C_DATA_FLASH_BLOCK, block);
-
-    char data[11] = {0}; // 11 bytes
-    ret = read_data(I2C_BLOCK_DATA_START + offset%32 + 1, (uint8_t*)data, sizeof(data));
-    if (ret != ESP_OK) {
-        // TODO: fill out
-    }
-
-    strncpy(name, data, 10);
 }
 
 esp_err_t write_byte(uint8_t reg, uint8_t data) {
