@@ -178,7 +178,11 @@ esp_err_t validate_change_handler(httpd_req_t *req) {
 }
 
 esp_err_t reset_handler(httpd_req_t *req) {
-    reset_BMS();
+    write_data(I2C_CONTROL_REG, I2C_CONTROL_RESET_SUBCMD, 2);
+
+    // delay to allow reset to complete
+    vTaskDelay(pdMS_TO_TICKS(1000));
+    ESP_LOGI("I2C", "Reset command sent successfully.");
 
     if (req->handle) {
         // request is a real HTTP POST
