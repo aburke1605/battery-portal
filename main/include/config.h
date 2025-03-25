@@ -2,6 +2,8 @@
 #define CONFIG_H
 
 
+#include "sdkconfig.h"
+
 #ifdef CONFIG_VERBOSE
     #define VERBOSE true
 #else
