@@ -53,8 +53,8 @@ void device_scan(void) {
     if (n_devices == 0) ESP_LOGW("I2C", "No devices found.");
 }
 
-esp_err_t read_data(uint8_t reg, uint8_t* data, size_t len) {
-    if (!data || len == 0) {
+esp_err_t read_data(uint8_t reg, uint8_t* data, size_t n_bytes) {
+    if (!data || n_bytes == 0) {
         ESP_LOGE("I2C", "Invalid data buffer or length.");
         return ESP_ERR_INVALID_ARG;
         // TODO: error check the rest of this function
@@ -69,7 +69,7 @@ esp_err_t read_data(uint8_t reg, uint8_t* data, size_t len) {
     if (ret != ESP_OK) return ret;
 
     // Receive the data
-    ret = i2c_master_receive(i2c_device, data, len, I2C_MASTER_TIMEOUT_MS);
+    ret = i2c_master_receive(i2c_device, data, n_bytes, I2C_MASTER_TIMEOUT_MS);
 
     return ret;
 }
