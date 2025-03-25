@@ -15,8 +15,6 @@ esp_err_t write_data(uint8_t reg, uint32_t data, size_t n_bytes);
 
 void read_bytes(uint8_t subclass, uint8_t offset, uint8_t* data, size_t n_bytes);
 
-esp_err_t set_device_name(uint8_t subclass, uint8_t offset, char value[11]);
-
-esp_err_t set_I2_value(uint8_t subclass, uint8_t offset, int16_t value);
+esp_err_t write_bytes(uint8_t subclass, uint8_t offset, uint8_t* data, size_t n_bytes);
 
 #endif // I2C_H

@@ -123,16 +123,25 @@ esp_err_t validate_change_handler(httpd_req_t *req) {
         device_name[sizeof(device_name)] = '\0';
         if (device_name[0] != '\0') {
             ESP_LOGI("I2C", "Changing device name...");
-            set_device_name(I2C_DATA_SUBCLASS_ID, I2C_NAME_OFFSET, device_name);
+            // set_device_name(I2C_DATA_SUBCLASS_ID, I2C_NAME_OFFSET, device_name);
+            write_bytes(I2C_DATA_SUBCLASS_ID, I2C_NAME_OFFSET, (uint8_t *)device_name, sizeof(device_name));
+            ESP_LOGI("I2C", "Device name successfully set to %s", device_name);
         }
     }
+
+    int16_t value;
+    uint8_t two_bytes[2];
 
     if (BL_start) {
         char BL_voltage_threshold[50] = {0};
         sscanf(BL_start, "BL_voltage_threshold=%49[^&]", BL_voltage_threshold);
         if (BL_voltage_threshold[0] != '\0') {
             ESP_LOGI("I2C", "Changing BL voltage...");
-            set_I2_value(I2C_DISCHARGE_SUBCLASS_ID, I2C_BL_OFFSET, atoi(BL_voltage_threshold));
+            value = atoi(BL_voltage_threshold);
+            two_bytes[0] = (value >> 8) & 0xFF; // higher byte
+            two_bytes[1] =  value       & 0xFF; // lower byte
+            write_bytes(I2C_DISCHARGE_SUBCLASS_ID, I2C_BL_OFFSET, two_bytes, sizeof(two_bytes));
+            ESP_LOGI("I2C", "BL successfully set to %d", value);
         }
     }
 
@@ -141,7 +150,11 @@ esp_err_t validate_change_handler(httpd_req_t *req) {
         sscanf(BH_start, "BH_voltage_threshold=%49[^&]", BH_voltage_threshold);
         if (BH_voltage_threshold[0] != '\0') {
             ESP_LOGI("I2C", "Changing BH voltage...");
-            set_I2_value(I2C_DISCHARGE_SUBCLASS_ID, I2C_BH_OFFSET, atoi(BH_voltage_threshold));
+            value = atoi(BH_voltage_threshold);
+            two_bytes[0] = (value >> 8) & 0xFF; // higher byte
+            two_bytes[1] =  value       & 0xFF; // lower byte
+            write_bytes(I2C_DISCHARGE_SUBCLASS_ID, I2C_BH_OFFSET, two_bytes, sizeof(two_bytes));
+            ESP_LOGI("I2C", "BH successfully set to %d", value);
         }
     }
 
@@ -150,7 +163,11 @@ esp_err_t validate_change_handler(httpd_req_t *req) {
         sscanf(CCT_start, "charge_current_threshold=%49[^&]", charge_current_threshold);
         if (charge_current_threshold[0] != '\0') {
             ESP_LOGI("I2C", "Changing charge current threshold...");
-            set_I2_value(I2C_CURRENT_THRESHOLDS_SUBCLASS_ID, I2C_CHG_CURRENT_THRESHOLD_OFFSET, atoi(charge_current_threshold));
+            value = atoi(charge_current_threshold);
+            two_bytes[0] = (value >> 8) & 0xFF; // higher byte
+            two_bytes[1] =  value       & 0xFF; // lower byte
+            write_bytes(I2C_CURRENT_THRESHOLDS_SUBCLASS_ID, I2C_CHG_CURRENT_THRESHOLD_OFFSET, two_bytes, sizeof(two_bytes));
+            ESP_LOGI("I2C", "CCT successfully set to %d", value);
         }
     }
 
@@ -159,7 +176,11 @@ esp_err_t validate_change_handler(httpd_req_t *req) {
         sscanf(DCT_start, "discharge_current_threshold=%49[^&]", discharge_current_threshold);
         if (discharge_current_threshold[0] != '\0') {
             ESP_LOGI("I2C", "Changing discharge current threshold...");
-            set_I2_value(I2C_CURRENT_THRESHOLDS_SUBCLASS_ID, I2C_DSG_CURRENT_THRESHOLD_OFFSET, atoi(discharge_current_threshold));
+            value = atoi(discharge_current_threshold);
+            two_bytes[0] = (value >> 8) & 0xFF; // higher byte
+            two_bytes[1] =  value       & 0xFF; // lower byte
+            write_bytes(I2C_CURRENT_THRESHOLDS_SUBCLASS_ID, I2C_DSG_CURRENT_THRESHOLD_OFFSET, two_bytes, sizeof(two_bytes));
+            ESP_LOGI("I2C", "DCT successfully set to %d", value);
         }
     }
 
@@ -168,7 +189,11 @@ esp_err_t validate_change_handler(httpd_req_t *req) {
         sscanf(CITL_start, "chg_inhibit_temp_low=%49[^&]", chg_inhibit_temp_low);
         if (chg_inhibit_temp_low[0] != '\0') {
             ESP_LOGI("I2C", "Changing charge inhibit low temperature threshold...");
-            set_I2_value(I2C_CHARGE_INHIBIT_CFG_SUBCLASS_ID, I2C_CHG_INHIBIT_TEMP_LOW_OFFSET, atoi(chg_inhibit_temp_low));
+            value = atoi(chg_inhibit_temp_low);
+            two_bytes[0] = (value >> 8) & 0xFF; // higher byte
+            two_bytes[1] =  value       & 0xFF; // lower byte
+            write_bytes(I2C_CHARGE_INHIBIT_CFG_SUBCLASS_ID, I2C_CHG_INHIBIT_TEMP_LOW_OFFSET, two_bytes, sizeof(two_bytes));
+            ESP_LOGI("I2C", "CITL successfully set to %d", value);
         }
     }
 
@@ -177,7 +202,11 @@ esp_err_t validate_change_handler(httpd_req_t *req) {
         sscanf(CITH_start, "chg_inhibit_temp_high=%49s", chg_inhibit_temp_high);
         if (chg_inhibit_temp_high[0] != '\0') {
             ESP_LOGI("I2C", "Changing charge inhibit high temperature threshold...");
-            set_I2_value(I2C_CHARGE_INHIBIT_CFG_SUBCLASS_ID, I2C_CHG_INHIBIT_TEMP_HIGH_OFFSET, atoi(chg_inhibit_temp_high));
+            value = atoi(chg_inhibit_temp_high);
+            two_bytes[0] = (value >> 8) & 0xFF; // higher byte
+            two_bytes[1] =  value       & 0xFF; // lower byte
+            write_bytes(I2C_CHARGE_INHIBIT_CFG_SUBCLASS_ID, I2C_CHG_INHIBIT_TEMP_HIGH_OFFSET, two_bytes, sizeof(two_bytes));
+            ESP_LOGI("I2C", "CITH successfully set to %d", value);
         }
     }
 
