@@ -123,7 +123,6 @@ esp_err_t validate_change_handler(httpd_req_t *req) {
         device_name[sizeof(device_name)] = '\0';
         if (device_name[0] != '\0') {
             ESP_LOGI("I2C", "Changing device name...");
-            // set_device_name(I2C_DATA_SUBCLASS_ID, I2C_NAME_OFFSET, device_name);
             write_bytes(I2C_DATA_SUBCLASS_ID, I2C_NAME_OFFSET, (uint8_t *)device_name, sizeof(device_name));
             ESP_LOGI("I2C", "Device name successfully set to %s", device_name);
         }
