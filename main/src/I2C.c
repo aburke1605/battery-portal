@@ -15,7 +15,7 @@ esp_err_t i2c_master_init(void) {
         .i2c_port = I2C_MASTER_NUM,
         .scl_io_num = I2C_MASTER_SCL_IO,
         .sda_io_num = I2C_MASTER_SDA_IO,
-        .glitch_ignore_cnt = 7, // default for glitch filtering
+        .glitch_ignore_cnt = 0,
         .flags.enable_internal_pullup = true,
     };
 
