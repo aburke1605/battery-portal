@@ -1024,7 +1024,6 @@ void websocket_task(void *pvParameters) {
         cJSON_AddNumberToObject(data, "voltage", (float)(two_bytes[1] << 8 | two_bytes[0]) / 1000.0);
         read_bytes(0, I2C_CURRENT_REG, two_bytes, sizeof(two_bytes));
         cJSON_AddNumberToObject(data, "current", (float)((int16_t)(two_bytes[1] << 8 | two_bytes[0])) / 1000.0);
-        // TODO:                                         ^check that this sorts the "two's complement"
         read_bytes(0, I2C_TEMPERATURE_REG, two_bytes, sizeof(two_bytes));
         cJSON_AddNumberToObject(data, "temperature", (float)(two_bytes[1] << 8 | two_bytes[0]) / 10.0 - 273.15);
 
