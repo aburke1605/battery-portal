@@ -1010,9 +1010,7 @@ void websocket_task(void *pvParameters) {
         uint8_t eleven_bytes[11];
         uint8_t two_bytes[2];
 
-        read_bytes(I2C_DATA_SUBCLASS_ID, I2C_NAME_OFFSET
-            + 1 // what's this about????
-        , eleven_bytes, sizeof(eleven_bytes));
+        read_bytes(I2C_DATA_SUBCLASS_ID, I2C_NAME_OFFSET, eleven_bytes, sizeof(eleven_bytes));
         strncpy(ESP_ID, (char *)eleven_bytes, 10);
         cJSON_AddStringToObject(data, "name", ESP_ID);
 

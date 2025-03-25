@@ -57,9 +57,7 @@ void app_main(void) {
     gpio_config(&io_conf);
 
     uint8_t eleven_bytes[11];
-    read_bytes(I2C_DATA_SUBCLASS_ID, I2C_NAME_OFFSET
-        + 1 // what's this about????
-    , eleven_bytes, sizeof(eleven_bytes));
+    read_bytes(I2C_DATA_SUBCLASS_ID, I2C_NAME_OFFSET, eleven_bytes, sizeof(eleven_bytes));
     strncpy(ESP_ID, (char *)eleven_bytes, 10);
 
     // Start the Access Point and Connection

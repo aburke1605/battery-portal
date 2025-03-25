@@ -132,7 +132,7 @@ esp_err_t set_device_name(uint8_t subclass, uint8_t offset, char value[11]) {
     }
 
     for (int i=0; i<10; i++) {
-        block_data[offset%32+1+i] = value[i];
+        block_data[offset%32+i] = value[i];
     }
 
     // Write updated block data back
