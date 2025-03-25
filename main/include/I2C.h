@@ -5,7 +5,7 @@
 
 esp_err_t i2c_master_init(void);
 
-esp_err_t check_device(uint8_t reg);
+esp_err_t check_device();
 
 void device_scan(void);
 

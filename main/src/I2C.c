@@ -31,8 +31,8 @@ esp_err_t i2c_master_init(void) {
     return err;
 }
 
-esp_err_t check_device(uint8_t reg) {
-    esp_err_t ret = i2c_master_probe(i2c_bus, reg, I2C_MASTER_TIMEOUT_MS);
+esp_err_t check_device() {
+    esp_err_t ret = i2c_master_probe(i2c_bus, I2C_ADDR, I2C_MASTER_TIMEOUT_MS);
     if (ret != ESP_OK) ESP_LOGE("I2C", "I2C device not found.");
 
     return ret;
@@ -61,7 +61,7 @@ esp_err_t read_data(uint8_t reg, uint8_t* data, size_t len) {
     }
     esp_err_t ret;
 
-    ret = check_device(reg);
+    ret = check_device();
     if (ret != ESP_OK) return ret;
 
     // Transmit the register address
@@ -77,7 +77,7 @@ esp_err_t read_data(uint8_t reg, uint8_t* data, size_t len) {
 esp_err_t write_data(uint8_t reg, uint32_t data, size_t n_btyes) {
     esp_err_t ret;
 
-    ret = check_device(reg);
+    ret = check_device();
     if (ret != ESP_OK) return ret;
 
     uint8_t buffer[1 + n_btyes] = {};
