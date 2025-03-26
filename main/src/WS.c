@@ -180,14 +180,7 @@ esp_err_t validate_change_handler(httpd_req_t *req) {
 esp_err_t reset_handler(httpd_req_t *req) {
     reset_BMS();
 
-    if (req->handle) {
-        // request is a real HTTP POST
-        httpd_resp_set_status(req, "302 Found");
-        httpd_resp_set_hdr(req, "Location", "/change"); // redirect to /change
-        httpd_resp_send(req, NULL, 0); // no response body
-    } else {
-        req->user_ctx = "success";
-    }
+    req->user_ctx = "success";
 
     return ESP_OK;
 }
@@ -260,13 +253,7 @@ esp_err_t validate_connect_handler(httpd_req_t *req) {
                         connected_to_WiFi = true;
 
                         ESP_LOGI("WS", "Connected to router. Signal strength: %d dBm", ap_info.rssi);
-                        if (req->handle) {
-                            httpd_resp_set_status(req, "302 Found");
-                            httpd_resp_set_hdr(req, "Location", "/display"); // redirect back to /display
-                            httpd_resp_send(req, NULL, 0); // no response body
-                        } else {
-                            req->user_ctx = "success";
-                        }
+                        req->user_ctx = "success";
 
                         break;
                     }
@@ -281,19 +268,7 @@ esp_err_t validate_connect_handler(httpd_req_t *req) {
         }
     } else {
         ESP_LOGW("WS", "Already connected to Wi-Fi. Redirecting...");
-        if (req->handle) {
-            char message[] = "Already connected to Wi-Fi";
-            char encoded_message[64];
-            url_encode(encoded_message, message, sizeof(encoded_message));
-
-            char redirect_url[128];
-            snprintf(redirect_url, sizeof(redirect_url), "/alert?message=%s", encoded_message);
-            httpd_resp_set_status(req, "302 Found");
-            httpd_resp_set_hdr(req, "Location", redirect_url);
-            httpd_resp_send(req, NULL, 0);
-        } else {
-            req->user_ctx = "already connected";
-        }
+        req->user_ctx = "already connected";
     }
 
     return ESP_OK;
@@ -305,19 +280,8 @@ esp_err_t toggle_handler(httpd_req_t *req) {
     gpio_set_level(I2C_LED_GPIO_PIN, led_on ? 1 : 0);
     ESP_LOGI("WS", "LED is now %s", led_on ? "ON" : "OFF");
 
-    if (req->handle) {
-        char message[] = "LED Toggled";
-        char encoded_message[64];
-        url_encode(encoded_message, message, sizeof(encoded_message));
+    req->user_ctx = "led toggled";
 
-        char redirect_url[128];
-        snprintf(redirect_url, sizeof(redirect_url), "/alert?message=%s", encoded_message);
-        httpd_resp_set_status(req, "302 Found");
-        httpd_resp_set_hdr(req, "Location", redirect_url);
-        httpd_resp_send(req, NULL, 0);
-    } else {
-        req->user_ctx = "led toggled";
-    }
     return ESP_OK;
 }
 
