@@ -224,14 +224,7 @@ esp_err_t reset_handler(httpd_req_t *req) {
     vTaskDelay(pdMS_TO_TICKS(1000));
     ESP_LOGI("I2C", "Reset command sent successfully.");
 
-    if (req->handle) {
-        // request is a real HTTP POST
-        httpd_resp_set_status(req, "302 Found");
-        httpd_resp_set_hdr(req, "Location", "/change"); // redirect to /change
-        httpd_resp_send(req, NULL, 0); // no response body
-    } else {
-        req->user_ctx = "success";
-    }
+    req->user_ctx = "success";
 
     return ESP_OK;
 }
@@ -304,13 +297,7 @@ esp_err_t validate_connect_handler(httpd_req_t *req) {
                         connected_to_WiFi = true;
 
                         ESP_LOGI("WS", "Connected to router. Signal strength: %d dBm", ap_info.rssi);
-                        if (req->handle) {
-                            httpd_resp_set_status(req, "302 Found");
-                            httpd_resp_set_hdr(req, "Location", "/display"); // redirect back to /display
-                            httpd_resp_send(req, NULL, 0); // no response body
-                        } else {
-                            req->user_ctx = "success";
-                        }
+                        req->user_ctx = "success";
 
                         break;
                     }
@@ -325,19 +312,7 @@ esp_err_t validate_connect_handler(httpd_req_t *req) {
         }
     } else {
         ESP_LOGW("WS", "Already connected to Wi-Fi. Redirecting...");
-        if (req->handle) {
-            char message[] = "Already connected to Wi-Fi";
-            char encoded_message[64];
-            url_encode(encoded_message, message, sizeof(encoded_message));
-
-            char redirect_url[128];
-            snprintf(redirect_url, sizeof(redirect_url), "/alert?message=%s", encoded_message);
-            httpd_resp_set_status(req, "302 Found");
-            httpd_resp_set_hdr(req, "Location", redirect_url);
-            httpd_resp_send(req, NULL, 0);
-        } else {
-            req->user_ctx = "already connected";
-        }
+        req->user_ctx = "already connected";
     }
 
     return ESP_OK;
@@ -349,19 +324,8 @@ esp_err_t toggle_handler(httpd_req_t *req) {
     gpio_set_level(I2C_LED_GPIO_PIN, led_on ? 1 : 0);
     ESP_LOGI("WS", "LED is now %s", led_on ? "ON" : "OFF");
 
-    if (req->handle) {
-        char message[] = "LED Toggled";
-        char encoded_message[64];
-        url_encode(encoded_message, message, sizeof(encoded_message));
+    req->user_ctx = "success";
 
-        char redirect_url[128];
-        snprintf(redirect_url, sizeof(redirect_url), "/alert?message=%s", encoded_message);
-        httpd_resp_set_status(req, "302 Found");
-        httpd_resp_set_hdr(req, "Location", redirect_url);
-        httpd_resp_send(req, NULL, 0);
-    } else {
-        req->user_ctx = "led toggled";
-    }
     return ESP_OK;
 }
 
@@ -547,76 +511,6 @@ esp_err_t file_serve_handler(httpd_req_t *req) {
     return ESP_OK;
 }
 
-esp_err_t alert_handler(httpd_req_t *req) {
-    char message[100] = "Missing message";
-
-    // extract message from query params if available
-    char query[200];
-    if (httpd_req_get_url_query_str(req, query, sizeof(query)) == ESP_OK) {
-        httpd_query_key_value(query, "message", message, sizeof(message));
-    }
-
-    // Open the file
-    char *html_buffer = (char *)malloc(512);  // adjust based on file size
-    if (!html_buffer) {
-        return httpd_resp_send_500(req);
-    }
-    FILE *file = fopen("/templates/alert.html", "r");
-    if (!file) {
-        ESP_LOGE("WS", "Failed to open file: /templates/alert.html");
-        httpd_resp_send_err(req, HTTPD_404_NOT_FOUND, "File not found");
-        free(html_buffer);
-        return ESP_FAIL;
-    }
-    fread(html_buffer, 1, 511, file);
-    html_buffer[511] = '\0';
-    fclose(file);
-
-    // remove {{ prefix }} jinja bits too
-    // (replace with nothing)
-    const char* placeholders[] = {"{{ prefix }}"};
-    const char* substitutes[] = {""};
-    char *modified_page = replace_placeholder(html_buffer, placeholders, substitutes, 1);
-    if (!modified_page) {
-        ESP_LOGE("WS", "Could not replace {{ prefix }} in %s", "/templates/alert.html");
-        httpd_resp_send_err(req, HTTPD_500_INTERNAL_SERVER_ERROR, "Template error");
-        return ESP_FAIL;
-    }
-
-    // Find and replace {{message}}
-    char *placeholder = strstr(modified_page, "{{message}}");
-    if (placeholder) {
-        char *final_html = (char *)malloc(512);// Adjust based on expected output size
-        if (!final_html) {
-            free(modified_page);
-            free(html_buffer);
-            return httpd_resp_send_500(req);
-        }
-        size_t before_len = placeholder - modified_page;
-        snprintf(final_html, 512, "%.*s%s%s",
-                 (int)before_len, modified_page, message, placeholder + 11); // Skip `{{message}}`
-
-        // Send the modified HTML response
-        httpd_resp_set_type(req, "text/html");
-        httpd_resp_send(req, final_html, HTTPD_RESP_USE_STRLEN);
-
-        free(modified_page);
-        free(html_buffer);
-        free(final_html);
-
-        return ESP_OK;
-    }
-
-    // If no placeholder found, send the original file
-    httpd_resp_set_type(req, "text/html");
-    httpd_resp_send(req, modified_page, HTTPD_RESP_USE_STRLEN);
-
-    free(modified_page);
-    free(html_buffer);
-
-    return ESP_OK;
-}
-
 // Start HTTP server
 httpd_handle_t start_webserver(void) {
     // create sockets for clients
@@ -673,14 +567,6 @@ httpd_handle_t start_webserver(void) {
             .user_ctx  = "/templates/display.html"
         };
         httpd_register_uri_handler(server, &display_uri);
-
-        httpd_uri_t alert_uri = {
-            .uri       = "/alert",
-            .method    = HTTP_GET,
-            .handler   = alert_handler,
-            .user_ctx  = "/templates/alert.html"
-        };
-        httpd_register_uri_handler(server, &alert_uri);
 
         httpd_uri_t ws_uri = {
             .uri = "/browser_ws",
@@ -1069,6 +955,7 @@ void websocket_task(void *pvParameters) {
         cJSON_AddNumberToObject(data, "CITH", two_bytes[0] << 8 | two_bytes[1]);
 
         cJSON_AddStringToObject(data, "IP", ESP_IP);
+        cJSON_AddBoolToObject(data, "connected_to_WiFi", connected_to_WiFi);
         char *data_string = cJSON_PrintUnformatted(data);
 
         cJSON_AddItemToObject(json, ESP_ID, data);
