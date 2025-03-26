@@ -20,8 +20,8 @@
                     Object.keys(data).forEach(esp_id => {
                         if ("{{ esp_id }}" == esp_id) {
                             const status_box = document.querySelector(".status-box"); if (status_box) status_box.className = `status-box ${data[esp_id].connected_to_WiFi ? "true" : "false"}`;
-                            const charge = document.getElementById('charge'); if (charge) charge.innerHTML = data[esp_id].charge.toFixed(2);
-                            const health = document.getElementById('health'); if (health) health.innerHTML = data[esp_id].health.toFixed(2);
+                            const charge = document.getElementById('charge'); if (charge) charge.innerHTML = data[esp_id].charge;
+                            const health = document.getElementById('health'); if (health) health.innerHTML = data[esp_id].health;
                             const voltage = document.getElementById('voltage'); if (voltage) voltage.innerHTML = data[esp_id].voltage.toFixed(2);
                             const current = document.getElementById('current'); if (current) current.innerHTML = data[esp_id].current.toFixed(2);
                             const temperature = document.getElementById('temperature'); if (temperature) temperature.innerHTML = data[esp_id].temperature.toFixed(2);
