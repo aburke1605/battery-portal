@@ -2,7 +2,6 @@
 
 
 {% block content %}
-    <div class='container'>
         <h2>AP Login Form</h2>
         <form action='{{ prefix }}/validate_login' method='post'>
             <label for='username'>Username</label>
@@ -19,5 +18,5 @@
             <button type='submit'>Get started</button>
         </form>
         <img src='/static/portal/images/aceon.png' alt='Company Logo'>
-    </div>
+    </div> <!-- ends <div class='container'> -->
 {% endblock %}
