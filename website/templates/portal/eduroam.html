@@ -2,7 +2,6 @@
 
 
 {% block content %}
-    <div class='container'>
         <h2>Eduroam connection</h2>
         <form id='eduroam-form'>
             <label>University Username: </label>
@@ -17,7 +16,7 @@
         <div>
             <a href='{{ prefix }}/display?esp_id={{ esp_id }}'>Home</a>
         </div>
-    </div>
+    </div> <!-- ends <div class='container'> -->
 
     <script>
         document.getElementById("eduroam-form").addEventListener("submit", function(event) {

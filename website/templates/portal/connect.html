@@ -2,7 +2,6 @@
 
 
 {% block content %}
-    <div class='container'>
         <div class='section'>
             <h2>WiFi router connection</h2>
             <form id='connect-form'>
@@ -23,7 +22,7 @@
         <div>
             <a href='{{ prefix }}/display?esp_id={{ esp_id }}'>Home</a>
         </div>
-    </div>
+    </div> <!-- ends <div class='container'> -->
 
     <script>
         document.getElementById("connect-form").addEventListener("submit", function(event) {
