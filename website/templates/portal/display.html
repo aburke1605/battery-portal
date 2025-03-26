@@ -3,6 +3,11 @@
 
 {% block content %}
     <div class='container'>
+        <div class="status-container">
+            <span>Internet connection</span>
+            <div class="status-box false"></div>
+        </div>
+
         <div class='section'>
             <h2>Battery Information</h2>
             <div class='info'>
@@ -61,6 +66,7 @@
                     let data = JSON.parse(event.data);
                     Object.keys(data).forEach(esp_id => {
                         if ("{{ esp_id }}" == esp_id) {
+                            document.querySelector(".status-box").className = "status-box " + (data[esp_id].connected_to_WiFi ? "true" : "false");
                             document.getElementById('charge').innerHTML = data[esp_id].charge;
                             document.getElementById('voltage').innerHTML = data[esp_id].voltage.toFixed(2);
                             document.getElementById('current').innerHTML = data[esp_id].current.toFixed(2);

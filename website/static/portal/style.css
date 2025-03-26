@@ -157,3 +157,17 @@ a:hover {
     font-size: 1.125rem; /* matches text-lg */
     color: rgb(55, 65, 81); /* matches text-gray-700 */
 }
+
+.status-container {
+    display: flex;
+    align-items: center;
+    font-family: Arial, sans-serif;
+}
+.status-box {
+    width: 20px;
+    height: 20px;
+    margin-left: 8px;
+    border-radius: 4px;
+}
+.true { background-color: green; }
+.false { background-color: red; }

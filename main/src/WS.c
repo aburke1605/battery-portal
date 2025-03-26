@@ -905,6 +905,7 @@ void websocket_task(void *pvParameters) {
         cJSON_AddNumberToObject(data, "CITL", iCITL);
         cJSON_AddNumberToObject(data, "CITH", iCITH);
         cJSON_AddStringToObject(data, "IP", ESP_IP);
+        cJSON_AddBoolToObject(data, "connected_to_WiFi", connected_to_WiFi);
         char *data_string = cJSON_PrintUnformatted(data);
 
         cJSON_AddItemToObject(json, ESP_ID, data);
