@@ -25,6 +25,7 @@
                             const voltage = document.getElementById('voltage'); if (voltage) voltage.innerHTML = data[esp_id].voltage.toFixed(2);
                             const current = document.getElementById('current'); if (current) current.innerHTML = data[esp_id].current.toFixed(2);
                             const temperature = document.getElementById('temperature'); if (temperature) temperature.innerHTML = data[esp_id].temperature.toFixed(2);
+                            const internal_temperature = document.getElementById('internal_temperature'); if (internal_temperature) internal_temperature.innerHTML = data[esp_id].internal_temperature.toFixed(2);
                             const name = document.getElementById('name'); if (name) name.innerHTML = data[esp_id].name;
                             const BL = document.getElementById('BL'); if (BL) BL.innerHTML = data[esp_id].BL;
                             const BH = document.getElementById('BH'); if (BH) BH.innerHTML = data[esp_id].BH;

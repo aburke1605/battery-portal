@@ -41,6 +41,7 @@
 #define I2C_VOLTAGE_REG CONFIG_VOLTAGE_REG                 // Register address for Voltage
 #define I2C_CURRENT_REG CONFIG_CURRENT_REG                 // Register address for AverageCurrent
 #define I2C_TEMPERATURE_REG CONFIG_TEMPERATURE_REG         // Register address for Temperature
+#define I2C_INT_TEMPERATURE_REG CONFIG_INT_TEMPERATURE_REG // Register address for InternalTemperature
 
 #define I2C_CONTROL_REG             0x00  // Control register address
 #define I2C_CONTROL_RESET_SUBCMD    0x0041 // Reset subcommand

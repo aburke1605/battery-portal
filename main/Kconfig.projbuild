@@ -106,6 +106,12 @@ config TEMPERATURE_REG
     help
       Set the register address for the BMS to read the battery temperature.
 
+config INT_TEMPERATURE_REG
+    hex "BMS Internal Temperature Address"
+    default 0x28
+    help
+      Set the register address for the BMS to read the battery internal temperature.
+
 endmenu
 
 

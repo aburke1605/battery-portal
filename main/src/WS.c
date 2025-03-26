@@ -880,6 +880,8 @@ void websocket_task(void *pvParameters) {
         if (fCurrent < 65.536 && fCurrent > 32.767) fCurrent = 65.536 - fCurrent; // this is something to do with 16 bit binary
         uint16_t iTemperature = read_2byte_data(I2C_TEMPERATURE_REG);
         float fTemperature = (float)iTemperature / 10.0 - 273.15;
+        uint16_t iIntTemperature = read_2byte_data(I2C_INT_TEMPERATURE_REG);
+        float fIntTemperature = (float)iIntTemperature / 10.0 - 273.15;
 
         // configurable data too
         read_name(I2C_DATA_SUBCLASS_ID, I2C_NAME_OFFSET, ESP_ID);
@@ -899,6 +901,7 @@ void websocket_task(void *pvParameters) {
         cJSON_AddNumberToObject(data, "voltage", fVoltage);
         cJSON_AddNumberToObject(data, "current", fCurrent);
         cJSON_AddNumberToObject(data, "temperature", fTemperature);
+        cJSON_AddNumberToObject(data, "internal_temperature", fIntTemperature);
         cJSON_AddStringToObject(data, "name", ESP_ID);
         cJSON_AddNumberToObject(data, "BL", iBL);
         cJSON_AddNumberToObject(data, "BH", iBH);
