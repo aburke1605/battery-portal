@@ -123,17 +123,19 @@ def validate_connect():
 def nearby():
     esp_id = request.args.get("esp_id")
     print('Request for nearby page received')
-    return render_template('portal/nearby.html', esp_id=esp_id)
+    return render_template('portal/nearby.html', prefix="/portal", esp_id=esp_id)
 
 @portal.route('/about')
 def about():
+    esp_id = request.args.get("esp_id")
     print('Request for about page received')
-    return render_template('portal/about.html', prefix="/portal")
+    return render_template('portal/about.html', prefix="/portal", esp_id=esp_id)
 
 @portal.route('/device')
 def device():
+    esp_id = request.args.get("esp_id")
     print('Request for device page received')
-    return render_template('portal/device.html', prefix="/portal")
+    return render_template('portal/device.html', prefix="/portal", esp_id=esp_id)
 
 @portal.route('/toggle', methods=['POST'])
 def toggle():
