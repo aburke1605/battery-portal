@@ -18,16 +18,18 @@ void send_fake_post_request() {
         esp_http_client_handle_t client = esp_http_client_init(&config);
 
         char post_data[128];
+        char encoded_ssid[32];
+        char encoded_password[32];
         if (UTILS_EDUROAM) {
-            snprintf(post_data, sizeof(post_data), "ssid=%s@liverpool.ac.uk&password=%s", UTILS_EDUROAM_USERNAME, UTILS_EDUROAM_PASSWORD);
+            url_encode(encoded_ssid, UTILS_EDUROAM_USERNAME, sizeof(encoded_ssid));
+            url_encode(encoded_password, UTILS_EDUROAM_PASSWORD, sizeof(encoded_password));
+            snprintf(post_data, sizeof(post_data), "ssid=%s@liverpool.ac.uk&password=%s", encoded_ssid, encoded_password);
         } else {
-            char encoded_ssid[32];
             url_encode(encoded_ssid, UTILS_ROUTER_SSID, sizeof(encoded_ssid));
-            char encoded_password[32];
             url_encode(encoded_password, UTILS_ROUTER_PASSWORD, sizeof(encoded_password));
             snprintf(post_data, sizeof(post_data), "ssid=%s&password=%s", encoded_ssid, encoded_password);
-            post_data[strlen(post_data)] = '\0';
         }
+        post_data[strlen(post_data)] = '\0';
         esp_http_client_set_header(client, "Content-Type", "application/x-www-form-urlencoded");
         esp_http_client_set_post_field(client, post_data, strlen(post_data));
 

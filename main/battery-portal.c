@@ -76,7 +76,7 @@ void app_main(void) {
     xTaskCreate(&dns_server_task, dns_server_params.task_name, dns_server_params.stack_size, &dns_server_params, 5, NULL);
 
     esp_log_level_set("wifi", ESP_LOG_ERROR);
-    TaskParams check_wifi_params = {.stack_size = 2048, .task_name = "check_wifi_task"};
+    TaskParams check_wifi_params = {.stack_size = 4096, .task_name = "check_wifi_task"};
     xTaskCreate(&check_wifi_task, check_wifi_params.task_name, check_wifi_params.stack_size, &check_wifi_params, 5, NULL);
 
     ws_queue = xQueueCreate(WS_QUEUE_SIZE, WS_MESSAGE_MAX_LEN);

@@ -308,7 +308,7 @@ esp_err_t validate_connect_handler(httpd_req_t *req) {
             }
             tries++;
 
-            vTaskDelay(pdMS_TO_TICKS(1000));
+            vTaskDelay(pdMS_TO_TICKS(3000));
         }
     } else {
         ESP_LOGW("WS", "Already connected to Wi-Fi. Redirecting...");
@@ -691,11 +691,12 @@ void check_wifi_task(void* pvParameters) {
         wifi_ap_record_t ap_info;
         if (esp_wifi_sta_get_ap_info(&ap_info) != ESP_OK) {
             connected_to_WiFi = false;
+            if (DEV) send_fake_post_request();
         }
 
         check_bytes((TaskParams *)pvParameters);
 
-        vTaskDelay(1000 / portTICK_PERIOD_MS);
+        vTaskDelay(60000 / portTICK_PERIOD_MS);
     }
 }
 
@@ -915,8 +916,6 @@ void websocket_event_handler(void *arg, esp_event_base_t event_base, int32_t eve
 
 void websocket_task(void *pvParameters) {
     while (true) {
-        if (DEV) send_fake_post_request();
-
         // create JSON object with sensor data
         cJSON *json = cJSON_CreateObject();
         cJSON *data = cJSON_CreateObject();
