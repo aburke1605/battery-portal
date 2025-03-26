@@ -53,36 +53,4 @@
 
         <img src='/static/portal/images/aceon2.png' alt='Company Logo'>
     </div>
-
-
-    <script>
-        document.addEventListener('DOMContentLoaded', function() {
-            let socket = new WebSocket('wss://' + location.host + '/browser_ws');
-            socket.onopen = function() {
-                console.log('WebSocket connection established');
-            };
-            socket.onmessage = function(event) {
-                try {
-                    let data = JSON.parse(event.data);
-                    Object.keys(data).forEach(esp_id => {
-                        if ("{{ esp_id }}" == esp_id) {
-                            document.querySelector(".status-box").className = "status-box " + (data[esp_id].connected_to_WiFi ? "true" : "false");
-                            document.getElementById('charge').innerHTML = data[esp_id].charge;
-                            document.getElementById('voltage').innerHTML = data[esp_id].voltage.toFixed(2);
-                            document.getElementById('current').innerHTML = data[esp_id].current.toFixed(2);
-                            document.getElementById('temperature').innerHTML = data[esp_id].temperature.toFixed(2);
-                        }
-                    });
-                } catch (error) {
-                    console.error('Error parsing JSON:', error);
-                }
-            };
-            socket.onerror = function(error) {
-                console.error('WebSocket error:', error);
-            };
-            socket.onclose = function() {
-                console.log('WebSocket connection closed');
-            };
-        });
-    </script>
 {% endblock %}

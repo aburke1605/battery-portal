@@ -46,37 +46,6 @@
 
 
     <script>
-        document.addEventListener('DOMContentLoaded', function() {
-            let socket = new WebSocket('wss://' + location.host + '/browser_ws');
-            socket.onopen = function() {
-                console.log('WebSocket connection established');
-            };
-            socket.onmessage = function(event) {
-                try {
-                    let data = JSON.parse(event.data);
-                    Object.keys(data).forEach(esp_id => {
-                        if ("{{ esp_id }}" == esp_id) {
-                            document.getElementById('name').innerHTML = data[esp_id].name;
-                            document.getElementById('BL').innerHTML = data[esp_id].BL;
-                            document.getElementById('BH').innerHTML = data[esp_id].BH;
-                            document.getElementById('CCT').innerHTML = data[esp_id].CCT;
-                            document.getElementById('DCT').innerHTML = data[esp_id].DCT;
-                            document.getElementById('CITL').innerHTML = data[esp_id].CITL;
-                            document.getElementById('CITH').innerHTML = data[esp_id].CITH;
-                        }
-                    });
-                } catch (error) {
-                    console.error('Error parsing JSON:', error);
-                }
-            };
-            socket.onerror = function(error) {
-                console.error('WebSocket error:', error);
-            };
-            socket.onclose = function() {
-                console.log('WebSocket connection closed');
-            };
-        });
-
         document.getElementById("change-form").addEventListener("submit", function(event) {
             event.preventDefault(); // prevent normal form submission
 
