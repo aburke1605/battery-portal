@@ -2,7 +2,6 @@
 
 
 {% block content %}
-    <div class='container'>
         <div class='section'>
             <h2>Battery Information</h2>
             <div class='info'>
@@ -32,9 +31,11 @@
         <div class='section'>
             <h2>ESP32 LED Control</h2>
             <div class='button-container'>
-                <form action='{{ prefix }}/toggle?esp_id={{ esp_id }}' method='post'>
-                    <button type='submit'>Toggle LED</button>
-                </form>
+                <button onclick="
+                    fetch('{{ prefix }}/toggle?esp_id={{ esp_id }}', { method: 'POST' });
+                ">
+                    Toggle LED
+                </button>
             </div>
         </div>
 
@@ -49,37 +50,5 @@
         </div>
 
         <img src='/static/portal/images/aceon2.png' alt='Company Logo'>
-    </div>
-
-
-    <script>
-        document.addEventListener('DOMContentLoaded', function() {
-            let socket = new WebSocket('wss://' + location.host + '/browser_ws');
-            socket.onopen = function() {
-                console.log('WebSocket connection established');
-            };
-            socket.onmessage = function(event) {
-                try {
-                    let data = JSON.parse(event.data);
-                    Object.keys(data).forEach(esp_id => {
-                        if ("{{ esp_id }}" == esp_id) {
-                            document.getElementById('charge').innerHTML = data[esp_id].charge;
-                            document.getElementById('health').innerHTML = data[esp_id].health;
-                            document.getElementById('voltage').innerHTML = data[esp_id].voltage.toFixed(2);
-                            document.getElementById('current').innerHTML = data[esp_id].current.toFixed(2);
-                            document.getElementById('temperature').innerHTML = data[esp_id].temperature.toFixed(2);
-                        }
-                    });
-                } catch (error) {
-                    console.error('Error parsing JSON:', error);
-                }
-            };
-            socket.onerror = function(error) {
-                console.error('WebSocket error:', error);
-            };
-            socket.onclose = function() {
-                console.log('WebSocket connection closed');
-            };
-        })
-    </script>
+    </div> <!-- ends <div class='container'> -->
 {% endblock %}

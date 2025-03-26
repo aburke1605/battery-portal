@@ -28,6 +28,12 @@ config DEV
     help
       Set to true to enable ESP32 developer mode.
 
+config AZURE_URL
+    string "URL of Azure Web App"
+    default "batteryportal-{identifier}.{location}-01.azurewebsites.net"
+    help
+      URL of Azure Web App running Flask app online.
+
 config LOCAL
     bool "Local network mode"
     default n
@@ -103,22 +109,34 @@ config TEMPERATURE_REG
 endmenu
 
 
-menu "[CUSTOM] Eduroam Configuration"
+menu "[CUSTOM] Router Configuration"
+
+config ROUTER_SSID
+    string "Wi-Fi router SSID"
+    default "SSID"
+    help
+      SSID of the router to connect to.
+
+config ROUTER_PASSWORD
+    string "Wi-Fi router password"
+    default "PASSWORD"
+    help
+      Password of the router to connect to.
 
 config EDUROAM
     bool "Use Eduroam"
-    default y
+    default n
     help
       Set to true to connect to Eduroam.
 
 config EDUROAM_USERNAME
-    string "Username"
+    string "Eduroam username"
     default "USERNAME"
     help
       University account username (without @liverpool.ac.uk).
 
 config EDUROAM_PASSWORD
-    string "Password"
+    string "Eduroam password"
     default "PASSWORD"
     help
       University account password.
