@@ -8,6 +8,53 @@
 </head>
 
 <body>
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            let socket = new WebSocket('wss://' + location.host + '/browser_ws');
+            socket.onopen = function() {
+                console.log('WebSocket connection established');
+            };
+            socket.onmessage = function(event) {
+                try {
+                    let data = JSON.parse(event.data);
+                    Object.keys(data).forEach(esp_id => {
+                        if ("{{ esp_id }}" == esp_id) {
+                            const status_box = document.querySelector(".status-box"); if (status_box) status_box.className = `status-box ${data[esp_id].connected_to_WiFi ? "true" : "false"}`;
+                            const charge = document.getElementById('charge'); if (charge) charge.innerHTML = data[esp_id].charge.toFixed(2);
+                            const voltage = document.getElementById('voltage'); if (voltage) voltage.innerHTML = data[esp_id].voltage.toFixed(2);
+                            const current = document.getElementById('current'); if (current) current.innerHTML = data[esp_id].current.toFixed(2);
+                            const temperature = document.getElementById('temperature'); if (temperature) temperature.innerHTML = data[esp_id].temperature.toFixed(2);
+                            const name = document.getElementById('name'); if (name) name.innerHTML = data[esp_id].name;
+                            const BL = document.getElementById('BL'); if (BL) BL.innerHTML = data[esp_id].BL;
+                            const BH = document.getElementById('BH'); if (BH) BH.innerHTML = data[esp_id].BH;
+                            const CCT = document.getElementById('CCT'); if (CCT) CCT.innerHTML = data[esp_id].CCT;
+                            const DCT = document.getElementById('DCT'); if (DCT) DCT.innerHTML = data[esp_id].DCT;
+                            const CITL = document.getElementById('CITL'); if (CITL) CITL.innerHTML = data[esp_id].CITL;
+                            const CITH = document.getElementById('CITH'); if (CITH) CITH.innerHTML = data[esp_id].CITH;
+                        }
+                    });
+                } catch (error) {
+                    console.error('Error parsing JSON:', error);
+                }
+            };
+            socket.onerror = function(error) {
+                console.error('WebSocket error:', error);
+            };
+            socket.onclose = function() {
+                console.log('WebSocket connection closed');
+            };
+        });
+    </script>
+
+    <div class='container'>
+        <div class="status-container">
+            <span>Internet connection</span>
+            <div class="status-box default"></div>
+        </div>
+
     {% block content %}{% endblock %}
+
+    <div class="overlay" id="overlay">Loading...</div>
+
 </body>
 </html>

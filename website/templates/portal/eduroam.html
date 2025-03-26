@@ -2,16 +2,34 @@
 
 
 {% block content %}
-    <div class='container'>
         <h2>Eduroam connection</h2>
-        <form action='{{ prefix }}/validate_connect?esp_id={{ esp_id }}&eduroam=true' method='post'>
+        <form id='eduroam-form'>
             <label>University Username: </label>
-            <input type='text' placeholder='Enter University Username' name='ssid' required>
+            <input type='text' placeholder='Enter University Username' name='ssid' id='ssid' required>
 
             <label>Password: </label>
-            <input type='password' placeholder='Enter Password' name='password' required>
+            <input type='password' placeholder='Enter Password' name='password' id='password' required>
 
             <button type='submit'>Connect</button>
         </form>
-    </div>
+
+        <div>
+            <a href='{{ prefix }}/display?esp_id={{ esp_id }}'>Home</a>
+        </div>
+    </div> <!-- ends <div class='container'> -->
+
+    <script>
+        document.getElementById("eduroam-form").addEventListener("submit", function(event) {
+            event.preventDefault(); // prevent normal form submission
+
+            fetch('{{ prefix }}/validate_connect?esp_id={{ esp_id }}&eduroam=true', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                body: new URLSearchParams({
+                    ssid: document.getElementById("ssid").value,
+                    password: document.getElementById("password").value,
+                }),
+            });
+        });
+    </script>
 {% endblock %}
