@@ -9,7 +9,7 @@ interface BatteriesPageProps {
     isFromEsp32?: boolean;
 }
 
-  export default function BatteriesPage({ isFromEsp32 = false }: BatteriesPageProps) {
+export default function BatteriesPage({ isFromEsp32 = false }: BatteriesPageProps) {
       let queryString = window.location.search;
       if (!isFromEsp32) {
           const hash = window.location.hash;  // e.g., "#/battery-detail?id=BMS_02"
@@ -22,10 +22,11 @@ interface BatteriesPageProps {
     const [batteryItem, setSelectedBattery] = useState<BatteryData | null>(null);
     //const [setBatteries] = useState<BatteryData[]>(initialBatteries);
     const [voltageThreshold] = useState(46.5);
-
-     // Get data from Webscocket
-      useEffect(() => {
-          const ws = new WebSocket(apiConfig.WEBSOCKET_BROWSER);
+    
+    // Get data from Webscocket
+    useEffect(() => {
+       
+        const ws = new WebSocket(apiConfig.WEBSOCKET_BROWSER);
 
         ws.onopen = () => {
           console.log('WebSocket connected');
