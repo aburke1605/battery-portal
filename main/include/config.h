@@ -14,6 +14,7 @@
     #define DEV false
 #endif
 
+# define AZURE_URL CONFIG_AZURE_URL
 #ifdef CONFIG_LOCAL
     #define LOCAL true
 #else
@@ -74,6 +75,8 @@
 
 #define UTILS_KEY_LENGTH 10
 
+#define UTILS_ROUTER_SSID CONFIG_ROUTER_SSID
+#define UTILS_ROUTER_PASSWORD CONFIG_ROUTER_PASSWORD
 #ifdef CONFIG_EDUROAM
     #define UTILS_EDUROAM true
 #else
@@ -89,7 +92,7 @@
 #define WS_QUEUE_SIZE 10
 #define WS_MESSAGE_MAX_LEN 1024
 
-#define WS_MAX_HTML_SIZE 5000
+#define WS_MAX_HTML_SIZE 7200
 #define WS_MAX_N_HTML_PAGES 16
 #define WS_MAX_HTML_PAGE_NAME_LENGTH 32
 #define WS_CONFIG_MAX_CLIENTS 5
