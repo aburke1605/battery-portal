@@ -90,16 +90,16 @@ def validate_change():
     esp_id = request.args.get("esp_id")
     response = forward_request_to_esp32("/validate_change", esp_id=esp_id, delay=20)
     if response.get("status") == "success" and response["response"] == "success":
-        return redirect(f"/portal/change?esp_id={esp_id}")
-    return "", 204
+        return "", 204
+    return "", 500
 
 @portal.route('/reset', methods=['POST'])
 def reset():
     esp_id = request.args.get("esp_id")
     response = forward_request_to_esp32("/reset", esp_id=esp_id)
     if response.get("status") == "success" and response["response"] == "success":
-        return redirect(f"/portal/change?esp_id={esp_id}")
-    return "", 204
+        return "", 204
+    return "", 500
 
 @portal.route('/connect')
 def connect():
@@ -118,15 +118,9 @@ def validate_connect():
     esp_id = request.args.get("esp_id")
     use_eduroam = request.args.get("eduroam")
     response = forward_request_to_esp32(f"/validate_connect{'?eduroam=true' if use_eduroam else ''}", esp_id=esp_id, delay=15)
-    if response.get("status") == "success":
-        message = "Empty message"
-        if response["response"] == "success":
-            message = "Success!"
-        elif response["response"] == "already connected":
-            message = "Already connected to Wi-Fi"
-        encoded_message = urllib.parse.quote(message)
-        return redirect(f"/portal/alert?esp_id={esp_id}&message={encoded_message}")
-    return response.get("error"), 204
+    if response.get("status") == "success" and response["response"] == "success":
+        return "", 204
+    return "", 500
 
 
 @portal.route('/nearby')
@@ -149,8 +143,6 @@ def device():
 def toggle():
     esp_id = request.args.get("esp_id")
     response = forward_request_to_esp32("/toggle", esp_id=esp_id)
-    if response.get("status") == "success" and response["response"] == "led toggled":
-        message = "LED Toggled"
-        encoded_message = urllib.parse.quote(message)
-        return redirect(f"/portal/alert?esp_id={esp_id}&message={encoded_message}")
-    return "", 204
+    if response.get("status") == "success" and response["response"] == "success":
+        return "", 204
+    return "", 500

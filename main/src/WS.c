@@ -280,7 +280,7 @@ esp_err_t toggle_handler(httpd_req_t *req) {
     gpio_set_level(I2C_LED_GPIO_PIN, led_on ? 1 : 0);
     ESP_LOGI("WS", "LED is now %s", led_on ? "ON" : "OFF");
 
-    req->user_ctx = "led toggled";
+    req->user_ctx = "success";
 
     return ESP_OK;
 }
