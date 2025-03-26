@@ -67,10 +67,6 @@ def display():
     print('Request for display page received')
     return render_template('portal/display.html', prefix="/portal", esp_id=esp_id)
 
-@portal.route("/alert")
-def alert():
-    return render_template("portal/alert.html", prefix="/portal")
-
 @portal.route("/purge")
 def purge():
     global esp_clients
