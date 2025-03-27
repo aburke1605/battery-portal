@@ -24,7 +24,8 @@ export default defineConfig(({ mode }) => ({
     rollupOptions: {
       input: {
         main: path.resolve(__dirname, "index.html"),
-        extra: path.resolve(__dirname, "esp32.html"),
+        esp: path.resolve(__dirname, "esp32.html"),
+        home: path.resolve(__dirname, "home.html"),
       },
     },
   },
