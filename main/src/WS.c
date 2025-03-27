@@ -638,14 +638,15 @@ void websocket_event_handler(void *arg, esp_event_base_t event_base, int32_t eve
 
                 else if (strcmp(endpoint, "/validate_change") == 0 && strcmp(method, "POST") == 0) {
                     // create a mock HTTP request
-                    cJSON *device_name = cJSON_GetObjectItem(data, "device_name");
-                    cJSON *BL_voltage_threshold = cJSON_GetObjectItem(data, "BL_voltage_threshold");
-                    cJSON *BH_voltage_threshold = cJSON_GetObjectItem(data, "BH_voltage_threshold");
-                    cJSON *charge_current_threshold = cJSON_GetObjectItem(data, "charge_current_threshold");
-                    cJSON *discharge_current_threshold = cJSON_GetObjectItem(data, "discharge_current_threshold");
-                    cJSON *chg_inhibit_temp_low = cJSON_GetObjectItem(data, "chg_inhibit_temp_low");
-                    cJSON *chg_inhibit_temp_high = cJSON_GetObjectItem(data, "chg_inhibit_temp_high");
+                    cJSON *device_name = cJSON_GetObjectItem(data, "id");
+                    cJSON *BL_voltage_threshold = cJSON_GetObjectItem(data, "BL");
+                    cJSON *BH_voltage_threshold = cJSON_GetObjectItem(data, "BH");
+                    cJSON *charge_current_threshold = cJSON_GetObjectItem(data, "CCT");
+                    cJSON *discharge_current_threshold = cJSON_GetObjectItem(data, "DCT");
+                    cJSON *chg_inhibit_temp_low = cJSON_GetObjectItem(data, "CITL");
+                    cJSON *chg_inhibit_temp_high = cJSON_GetObjectItem(data, "CITH");
 
+                    /*
                     req_len = snprintf(NULL, 0,
                         "device_name=%s&BL_voltage_threshold=%s&BH_voltage_threshold=%s&charge_current_threshold=%s&discharge_current_threshold=%s&chg_inhibit_temp_low=%s&chg_inhibit_temp_high=%s",
                         device_name->valuestring,
@@ -665,6 +666,11 @@ void websocket_event_handler(void *arg, esp_event_base_t event_base, int32_t eve
                         discharge_current_threshold->valuestring,
                         chg_inhibit_temp_low->valuestring,
                         chg_inhibit_temp_high->valuestring);
+                    */
+
+                        req_len = snprintf(NULL, 0, "BH_voltage_threshold=%d", BH_voltage_threshold->valueint);
+                        req_content = malloc(req_len + 1);
+                        snprintf(req_content, req_len + 1, "BH_voltage_threshold=%d", BH_voltage_threshold->valueint);
 
                     req.content_len = req_len;
                     req.user_ctx = req_content;
