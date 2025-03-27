@@ -46,11 +46,28 @@ const BatteryDetail: React.FC<BatteryDetailProps> = ({
   const BH_min = 4000;
   const BH_max = 5000;
   // initialise
-  const [value, setValue] = useState(battery.BH);
-  // update
+  const [values, setValues] = useState({
+    BL: battery.BL,
+    BH: battery.BH,
+    CITL: battery.CITL,
+    CITH: battery.CITH,
+  });
+  // websocket update
   useEffect(() => {
-    setValue(battery.BH);
-  }, [battery.BH, battery.timestamp]);
+    setValues({
+      BL: battery.BL,
+      BH: battery.BH,
+      CITL: battery.CITL,
+      CITH: battery.CITH,
+    });
+  }, [battery]);
+  // slider update
+  const handleChange = (key: string) => (e: React.ChangeEvent<HTMLInputElement>) => {
+    setValues((prevValues) => ({
+      ...prevValues,
+      [key]: Number(e.target.value),
+    }));
+  };
 
   const renderTabContent = () => {
     switch (activeTab) {
@@ -317,14 +334,14 @@ const BatteryDetail: React.FC<BatteryDetailProps> = ({
                           className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer mt-2"
                           min={BH_min}
                           max={BH_max}
-                          value={value}
-                          onChange={(e) => setValue(Number(e.target.value))}
+                          value={values.BH}
+                          onChange={handleChange("BH")}
                         />
                         <div className="flex justify-between text-xs text-gray-500 mt-1">
                           <span>{BH_min}V</span>
                           <span>{BH_max}V</span>
                         </div>
-                        <p className="mt-2 text-sm text-gray-700">{value}V</p>
+                        <p className="mt-2 text-sm text-gray-700">{values.BH}V</p>
                       </div>
                     </div>
                   </div>
