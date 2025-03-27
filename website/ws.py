@@ -38,6 +38,38 @@ def broadcast():
             except Exception:
                 browser_clients.discard(browser) # remove disconnected clients
 
+def forward_to_esp32(endpoint, esp_id, data):
+    message = {
+        "type": "request",
+        "content": {
+            "endpoint": endpoint,
+            "method": "POST"
+        }
+    }
+
+    with lock:
+        for esp in set(esp_clients):
+            content = dict(esp)["content"]
+            if content == None:
+                # still registering
+                continue
+
+            try:
+                content = json.loads(content)
+                if content.get("esp_id") != esp_id:
+                    # not the right one
+                    continue
+
+                message["content"]["data"] = data
+
+                ws = dict(set(esp))["ws"]
+                ws.send(json.dumps(message))
+
+                return {"esp_id": esp_id, "message": "request sent to esp32"}
+
+            except Exception as e:
+                print(f"Error communicating with {esp_id}: {e}")
+                return {"esp_id": esp_id, "error": str(e)}
 
 @sock.route('/browser_ws')
 def browser_ws(ws):
@@ -48,8 +80,17 @@ def browser_ws(ws):
 
     try:
         while True:
-            if ws.receive() is None: # browser disconnected
+            message = ws.receive()
+            if message is None: # browser disconnected
                 break
+            try:
+                data = json.loads(message)
+                esp_id = data["id"] # TODO change to esp_id everywhere
+                endpoint = data.pop("endpoint")
+                forward_to_esp32(endpoint, esp_id, data)
+
+            except json.JSONDecodeError:
+                print("/browser_ws: invalid JSON")
 
     except Exception as e:
         print(f"Browser WebSocket error: {e}")
