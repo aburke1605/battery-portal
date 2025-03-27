@@ -341,7 +341,6 @@ const BatteryDetail: React.FC<BatteryDetailProps> = ({
                       <div>
                         <label className="block text-sm font-medium text-gray-700">BH Set Volt Threshold</label>
                         <input
-                          id="test"
                           type="range"
                           className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer mt-2"
                           min={BH_min}
