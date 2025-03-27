@@ -86,6 +86,21 @@ export default function BatteryPage({ isFromEsp32 = false }: BatteriesPageProps)
         };
     }, [id]);
 
+    // Function to send updated values to the WebSocket
+    const sendBatteryUpdate = (updatedValues: Partial<BatteryData>) => {
+      if (ws.current && ws.current.readyState === WebSocket.OPEN) {
+          const message = JSON.stringify({
+              id, // Send the battery ID so the server knows which battery to update
+              ...updatedValues, // Send only the changed values
+              endpoint: "/validate_change",
+          });
+          ws.current.send(message);
+          console.log("Sent update:", message);
+      } else {
+          console.warn("WebSocket not connected, cannot send update.");
+      }
+  };
+
     // TODO
     const toggleCharging = (batteryId: string, e?: React.MouseEvent) => {
         if (e) {
@@ -138,6 +153,7 @@ export default function BatteryPage({ isFromEsp32 = false }: BatteriesPageProps)
                         onToggleCharging={toggleCharging}
                         onToggleLED={toggleLED}
                         voltageThreshold={voltageThreshold}
+                        sendBatteryUpdate={sendBatteryUpdate} // pass function to BatteryDetail
                     />
                 ) : (
                     <p>Loading battery data...</p> // fallback UI

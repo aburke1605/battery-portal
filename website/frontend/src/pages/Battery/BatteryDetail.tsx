@@ -31,13 +31,15 @@ interface BatteryDetailProps {
   onToggleCharging: (batteryId: string) => void;
   onToggleLED: (batteryId: string) => void;
   voltageThreshold: number;
+  sendBatteryUpdate: (updatedValues: Partial<BatteryData>) => void;
 }
 
 const BatteryDetail: React.FC<BatteryDetailProps> = ({ 
   battery, 
   onToggleCharging, 
   onToggleLED,
-  voltageThreshold
+  voltageThreshold,
+  sendBatteryUpdate // receive function from BatteryPage
 }) => {
   
   const [activeTab, setActiveTab] = useState('overview');
@@ -74,6 +76,10 @@ const BatteryDetail: React.FC<BatteryDetailProps> = ({
       [key]: Number(e.target.value),
     }));
   };
+  // send websocket-update message
+  const handleSubmit = () => {
+    sendBatteryUpdate(values);
+  }
 
   const renderTabContent = () => {
     switch (activeTab) {
@@ -348,6 +354,9 @@ const BatteryDetail: React.FC<BatteryDetailProps> = ({
                           <span>{BH_max}V</span>
                         </div>
                         <p className="mt-2 text-sm text-gray-700">{values.BH}V</p>
+                        <button onClick={handleSubmit} className="mt-2 p-2 bg-blue-500 text-white rounded">
+                          Submit Updates
+                        </button>
                       </div>
                     </div>
                   </div>
