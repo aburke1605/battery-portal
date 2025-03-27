@@ -6,6 +6,7 @@ import { ChevronDown, ChevronLeft, ChevronRight } from 'lucide-react';
 import { BatteryData } from '../../types';
 import BatteryCard from './BatteryCard';
 import apiConfig from '../../apiConfig';
+import { setupMockWebSocket } from '../../mock/ws';
 
 
 export default function BatteriesPage() {
@@ -16,8 +17,9 @@ export default function BatteriesPage() {
 
   // Get data from Webscocket
   useEffect(() => {
+    setupMockWebSocket();
     const ws = new WebSocket(apiConfig.WEBSOCKET_BROWSER);
-  
+    console.log(apiConfig.WEBSOCKET_BROWSER);
     ws.onopen = () => {
       console.log('WebSocket connected');
     };
@@ -28,7 +30,7 @@ export default function BatteriesPage() {
         if (data) {
           console.log('Parsed ESPs:', data);
           const batteryArray: BatteryData[] = Object.values(data).map((battery: any) => ({
-            id: battery.name,
+            id: battery.id,
             name: battery.name,
             charge: battery.charge,
             voltage: battery.voltage?.toFixed(1) || 0,
@@ -43,9 +45,7 @@ export default function BatteriesPage() {
             type: "Lithium-Ion",
             capacity: 100,
             cycleCount: 124
-          }));
-  
-          console.log('Parsed batteries:', batteryArray);
+          }));  
           setBatteries(batteryArray);
         }
       } catch (err) {

@@ -70,10 +70,9 @@ function App() {
             <div className="relative">
               <div className="absolute -inset-4 bg-gradient-to-r from-green-100 via-blue-50 to-purple-100 rounded-2xl opacity-10"></div>
               <div className="relative space-y-6">
-                <p className="text-2xl font-light leading-relaxed text-gray-800">
+                <p className="text-2xl font-light leading-relaxed text-gray-800" style={{ textAlign: 'justify' }}>
                   AceOn Group, UK renewable energy and battery specialists, are very pleased to announce that its development of 'HIGHESS' has been awarded significant grant funding from Innovate UK.
-                </p>
-                <p className="text-xl text-gray-700 leading-relaxed">
+               
                   This transformative project is set to revolutionise energy access in Sub-Saharan Africa through innovative battery technology and sustainable energy solutions. Commencing in May 2024, this two-year initiative represents a significant step forward in addressing global energy challenges through high-capacity flexible energy storage systems.
                 </p>
               </div>

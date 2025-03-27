@@ -39,8 +39,6 @@ export default function BatteriesPage({ isFromEsp32 = false }: BatteriesPageProp
             }
             try {
                 const data = JSON.parse(event.data);
-                console.log('Received WebSocket message:', data);
-                console.log('No state, looking up battery by id...');
                 const battery = data[id];
                 const batteryItem: BatteryData = {
                     id: battery.name,
