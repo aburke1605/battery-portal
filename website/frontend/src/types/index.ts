@@ -10,6 +10,8 @@ export interface BatteryData {
   BH: number;
   CITL: number;
   CITH: number;
+  CCT: number;
+  DCT: number;
   voltage: number;
   current: number;
   health: number;

@@ -47,18 +47,24 @@ const BatteryDetail: React.FC<BatteryDetailProps> = ({
   const BH_max = 5000;
   // initialise
   const [values, setValues] = useState({
+    id: battery.id,
     BL: battery.BL,
     BH: battery.BH,
     CITL: battery.CITL,
     CITH: battery.CITH,
+    CCT: battery.CCT,
+    DCT: battery.DCT,
   });
   // websocket update
   useEffect(() => {
     setValues({
+      id: battery.id,
       BL: battery.BL,
       BH: battery.BH,
       CITL: battery.CITL,
       CITH: battery.CITH,
+      CCT: battery.CCT,
+      DCT: battery.DCT,
     });
   }, [battery]);
   // slider update

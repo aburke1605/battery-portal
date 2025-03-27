@@ -38,6 +38,8 @@ export default function ListPage() {
             BH: battery?.BH || 0,
             CITL: battery?.CITL || 0,
             CITH: battery?.CITH || 0,
+            CCT: battery?.CCT || 0,
+            DCT: battery?.DCT || 0,
             IP: battery?.IP || "xxx.xxx.xxx.xxx",
             location: "Unknown",
             health: 100,
