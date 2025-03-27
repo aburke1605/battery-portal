@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import PageBreadcrumb from "../../components/common/PageBreadCrumb";
 import PageMeta from "../../components/common/PageMeta";
 import { BatteryData } from '../../types';
@@ -23,15 +23,16 @@ export default function BatteryPage({ isFromEsp32 = false }: BatteriesPageProps)
     const [voltageThreshold] = useState(46.5);
     
     // Get data from Webscocket
+    const ws = useRef<WebSocket | null>(null);
     useEffect(() => {
        
-        const ws = new WebSocket(apiConfig.WEBSOCKET_BROWSER);
+        ws.current = new WebSocket(apiConfig.WEBSOCKET_BROWSER);
 
-        ws.onopen = () => {
+        ws.current.onopen = () => {
           console.log('WebSocket connected');
         };
       
-        ws.onmessage = (event) => {
+        ws.current.onmessage = (event) => {
             console.log('Received message', event.data);
             if (!id) {
                 return;
@@ -72,16 +73,16 @@ export default function BatteryPage({ isFromEsp32 = false }: BatteriesPageProps)
             }
         };
       
-        ws.onclose = () => {
+        ws.current.onclose = () => {
           console.log('WebSocket disconnected');
         };
       
-        ws.onerror = (err) => {
+        ws.current.onerror = (err) => {
           console.error('WebSocket error:', err);
         };
       
         return () => {
-          ws.close();
+          ws.current?.close();
         };
     }, [id]);
 
