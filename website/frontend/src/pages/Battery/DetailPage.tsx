@@ -33,7 +33,6 @@ export default function BatteriesPage({ isFromEsp32 = false }: BatteriesPageProp
         };
       
         ws.onmessage = (event) => {
-            console.log('Received message', event.data);
             if (!id) {
                 return;
             }
