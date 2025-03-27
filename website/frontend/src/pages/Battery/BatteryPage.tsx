@@ -9,7 +9,7 @@ interface BatteriesPageProps {
     isFromEsp32?: boolean;
 }
 
-export default function BatteriesPage({ isFromEsp32 = false }: BatteriesPageProps) {
+export default function BatteryPage({ isFromEsp32 = false }: BatteriesPageProps) {
       let queryString = window.location.search;
       if (!isFromEsp32) {
           const hash = window.location.hash;  // e.g., "#/battery-detail?id=BMS_02"

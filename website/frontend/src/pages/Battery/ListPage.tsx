@@ -8,7 +8,7 @@ import BatteryCard from './BatteryCard';
 import apiConfig from '../../apiConfig';
 
 
-export default function BatteriesPage() {
+export default function ListPage() {
   const [statusFilter, setStatusFilter] = useState('all');
   const [sortBy, setSortBy] = useState('status');
   const [batteries, setBatteries] = useState<BatteryData[]>([]);

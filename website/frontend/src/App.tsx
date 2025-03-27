@@ -18,8 +18,8 @@ import Blank from "./pages/Blank";
 import AppLayout from "./layout/AppLayout";
 import { ScrollToTop } from "./components/common/ScrollToTop";
 import Home from "./pages/Dashboard/Home";
-import BatteriesPage from "./pages/Battery/ListPage";
-import DetailPage from "./pages/Battery/DetailPage";
+import ListPage from "./pages/Battery/ListPage";
+import BatteryPage from "./pages/Battery/BatteryPage";
 
 export default function App() {
 
@@ -39,9 +39,8 @@ export default function App() {
 
             {/* Forms */}
             <Route path="/form-elements" element={<FormElements />} />
-            <Route path="/batteries" element={<BatteriesPage />} />
-            <Route path="/batteries" element={<BatteriesPage />} />
-            <Route path="/battery-detail" element={<DetailPage />} />
+            <Route path="/batteries" element={<ListPage />} />
+            <Route path="/battery-detail" element={<BatteryPage />} />
 
             {/* Tables */}
             <Route path="/basic-tables" element={<BasicTables />} />
