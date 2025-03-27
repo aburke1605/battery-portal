@@ -50,7 +50,7 @@ const BatteryDetail: React.FC<BatteryDetailProps> = ({
   // update
   useEffect(() => {
     setValue(battery.BH);
-  }, [battery.BH]);
+  }, [battery.BH, battery.timestamp]);
 
   const renderTabContent = () => {
     switch (activeTab) {

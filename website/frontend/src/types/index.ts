@@ -16,6 +16,7 @@ export interface BatteryData {
   capacity: number;
   cycleCount: number;
   isCharging: boolean;
+  timestamp: number;
 }
 
 

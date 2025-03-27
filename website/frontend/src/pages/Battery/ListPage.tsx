@@ -43,7 +43,8 @@ export default function BatteriesPage() {
             lastMaintenance: "2025-03-15",
             type: "Lithium-Ion",
             capacity: 100,
-            cycleCount: 124
+            cycleCount: 124,
+            timestamp: Date.now(),
           }));
   
           console.log('Parsed batteries:', batteryArray);
