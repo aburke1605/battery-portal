@@ -1,4 +1,4 @@
-import React, {useState} from 'react';
+import React, {useEffect, useState} from 'react';
 import { BatteryData } from '../../types';
 import { 
   Share2, 
@@ -41,6 +41,16 @@ const BatteryDetail: React.FC<BatteryDetailProps> = ({
 }) => {
   
   const [activeTab, setActiveTab] = useState('overview');
+
+  // range
+  const BH_min = 4000;
+  const BH_max = 5000;
+  // initialise
+  const [value, setValue] = useState(battery.BH);
+  // update
+  useEffect(() => {
+    setValue(battery.BH);
+  }, [battery.BH]);
 
   const renderTabContent = () => {
     switch (activeTab) {
@@ -298,6 +308,23 @@ const BatteryDetail: React.FC<BatteryDetailProps> = ({
                           <span>48V</span>
                           <span>50V</span>
                         </div>
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700">BH Set Volt Threshold</label>
+                        <input
+                          id="test"
+                          type="range"
+                          className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer mt-2"
+                          min={BH_min}
+                          max={BH_max}
+                          value={value}
+                          onChange={(e) => setValue(Number(e.target.value))}
+                        />
+                        <div className="flex justify-between text-xs text-gray-500 mt-1">
+                          <span>{BH_min}V</span>
+                          <span>{BH_max}V</span>
+                        </div>
+                        <p className="mt-2 text-sm text-gray-700">{value}V</p>
                       </div>
                     </div>
                   </div>

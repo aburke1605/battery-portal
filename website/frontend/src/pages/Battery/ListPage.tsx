@@ -28,13 +28,14 @@ export default function BatteriesPage() {
         if (data) {
           console.log('Parsed ESPs:', data);
           const batteryArray: BatteryData[] = Object.values(data).map((battery: any) => ({
-            id: battery.name,
-            name: battery.name,
-            charge: battery.charge,
-            voltage: battery.voltage?.toFixed(1) || 0,
-            current: battery.current,
-            temperature: battery.temperature?.toFixed(1) || 0,
-            IP: battery.IP,
+            id: battery?.name || "id",
+            name: battery?.name || "name",
+            charge: battery?.charge  || 0,
+            voltage: battery?.voltage.toFixed(1) || 0,
+            current: battery?.current.toFixed(1) || 0,
+            temperature: battery?.temperature.toFixed(1) || 0,
+            BH: battery?.BH.toFixed(1) || 0,
+            IP: battery?.IP || "xxx.xxx.xxx.xxx",
             location: "Unknown",
             health: 100,
             isCharging: false,

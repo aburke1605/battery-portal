@@ -6,6 +6,7 @@ export interface BatteryData {
   IP: string;
   charge: number;
   temperature: number;
+  BH: number;
   voltage: number;
   current: number;
   health: number;

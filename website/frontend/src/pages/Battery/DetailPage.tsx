@@ -48,6 +48,7 @@ export default function BatteriesPage({ isFromEsp32 = false }: BatteriesPageProp
                     voltage: battery?.voltage.toFixed(1) || 0,
                     current: battery?.current.toFixed(1) || 0,
                     temperature: battery?.temperature.toFixed(1) || 0,
+                    BH: battery?.BH.toFixed(1) || 0,
                     IP: battery?.IP || "xxx.xxx.xxx.xxx",
                     location: "Unknown",
                     health: 100,
