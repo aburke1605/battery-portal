@@ -5,6 +5,10 @@ let mockServer: Server | null = null;
 
 export function setupMockWebSocket() {
   
+  if (import.meta.env.MODE !== "development") {
+    return;
+  }
+
   if (mockServer) {
     return;
   }

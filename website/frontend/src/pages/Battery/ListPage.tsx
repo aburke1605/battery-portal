@@ -6,8 +6,6 @@ import { ChevronDown, ChevronLeft, ChevronRight } from 'lucide-react';
 import { BatteryData } from '../../types';
 import BatteryCard from './BatteryCard';
 import apiConfig from '../../apiConfig';
-import { setupMockWebSocket } from '../../mock/ws';
-
 
 export default function BatteriesPage() {
   const [statusFilter, setStatusFilter] = useState('all');
@@ -17,7 +15,6 @@ export default function BatteriesPage() {
 
   // Get data from Webscocket
   useEffect(() => {
-    setupMockWebSocket();
     const ws = new WebSocket(apiConfig.WEBSOCKET_BROWSER);
     console.log(apiConfig.WEBSOCKET_BROWSER);
     ws.onopen = () => {

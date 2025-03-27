@@ -8,8 +8,9 @@ import { ThemeProvider } from "./context/ThemeContext.tsx";
 import BatteriesPage from "./pages/Battery/DetailPage.tsx";
 import { BrowserRouter as Router } from "react-router";
 import { ScrollToTop } from "./components/common/ScrollToTop";
+import { setupMockWebSocket } from './mock/ws';
 
-
+setupMockWebSocket();
 
 createRoot(document.getElementById("root")!).render(
     <ThemeProvider>
