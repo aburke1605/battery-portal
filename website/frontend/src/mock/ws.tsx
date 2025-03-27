@@ -22,6 +22,6 @@ export function setupMockWebSocket() {
 
     setInterval(() => {
       socket.send(JSON.stringify(Batteries));
-    }, 1000);
+    }, 2000);
   });
 }
