@@ -130,24 +130,40 @@ esp_err_t websocket_handler(httpd_req_t *req) {
                     return ESP_FAIL;
                 }
                 const char* esp_id = cJSON_GetObjectItem(data, "id")->valuestring;
-                int BL_voltage_threshold = cJSON_GetObjectItem(data, "BL")->valueint;
-                int BH_voltage_threshold = cJSON_GetObjectItem(data, "BH")->valueint;
-                int charge_current_threshold = cJSON_GetObjectItem(data, "CCT")->valueint;
-                int discharge_current_threshold = cJSON_GetObjectItem(data, "DCT")->valueint;
-                int chg_inhibit_temp_low = cJSON_GetObjectItem(data, "CITL")->valueint;
-                int chg_inhibit_temp_high = cJSON_GetObjectItem(data, "CITH")->valueint;
+                int BL = cJSON_GetObjectItem(data, "BL")->valueint;
+                int BH = cJSON_GetObjectItem(data, "BH")->valueint;
+                int CITL = cJSON_GetObjectItem(data, "CITL")->valueint;
+                int CITH = cJSON_GetObjectItem(data, "CITH")->valueint;
+                int CCT = cJSON_GetObjectItem(data, "CCT")->valueint;
+                int DCT = cJSON_GetObjectItem(data, "DCT")->valueint;
                 // use validate_change_handler logic directly
                 // TODO: change the `websocket_event_handler` to do the same
                 //       rather than using the `/validate_change` endpoint
                 //       and sending mock htto requests to it
 
-                if (BL_voltage_threshold != test_read(I2C_DISCHARGE_SUBCLASS_ID, I2C_BL_OFFSET)) {
+                if (BL != test_read(I2C_DISCHARGE_SUBCLASS_ID, I2C_BL_OFFSET)) {
                     ESP_LOGI("I2C", "Changing BL voltage...");
-                    set_I2_value(I2C_DISCHARGE_SUBCLASS_ID, I2C_BL_OFFSET, BL_voltage_threshold);
+                    set_I2_value(I2C_DISCHARGE_SUBCLASS_ID, I2C_BL_OFFSET, BL);
                 }
-                if (BH_voltage_threshold != test_read(I2C_DISCHARGE_SUBCLASS_ID, I2C_BH_OFFSET)) {
+                if (BH != test_read(I2C_DISCHARGE_SUBCLASS_ID, I2C_BH_OFFSET)) {
                     ESP_LOGI("I2C", "Changing BH voltage...");
-                    set_I2_value(I2C_DISCHARGE_SUBCLASS_ID, I2C_BH_OFFSET, BH_voltage_threshold);
+                    set_I2_value(I2C_DISCHARGE_SUBCLASS_ID, I2C_BH_OFFSET, BH);
+                }
+                if (CITL != test_read(I2C_CHARGE_INHIBIT_CFG_SUBCLASS_ID, I2C_CHG_INHIBIT_TEMP_LOW_OFFSET)) {
+                    ESP_LOGI("I2C", "Changing charge inhibit low temperature threshold...");
+                    set_I2_value(I2C_CHARGE_INHIBIT_CFG_SUBCLASS_ID, I2C_CHG_INHIBIT_TEMP_LOW_OFFSET, CITL);
+                }
+                if (CITH != test_read(I2C_CHARGE_INHIBIT_CFG_SUBCLASS_ID, I2C_CHG_INHIBIT_TEMP_HIGH_OFFSET)) {
+                    ESP_LOGI("I2C", "Changing charge inhibit high temperature threshold...");
+                    set_I2_value(I2C_CHARGE_INHIBIT_CFG_SUBCLASS_ID, I2C_CHG_INHIBIT_TEMP_HIGH_OFFSET, CITH);
+                }
+                if (CCT != test_read(I2C_CHARGE_INHIBIT_CFG_SUBCLASS_ID, I2C_CHG_INHIBIT_TEMP_LOW_OFFSET)) {
+                    ESP_LOGI("I2C", "Changing charge current threshold...");
+                    set_I2_value(I2C_CURRENT_THRESHOLDS_SUBCLASS_ID, I2C_CHG_CURRENT_THRESHOLD_OFFSET, CCT);
+                }
+                if (DCT != test_read(I2C_CHARGE_INHIBIT_CFG_SUBCLASS_ID, I2C_CHG_INHIBIT_TEMP_HIGH_OFFSET)) {
+                    ESP_LOGI("I2C", "Changing discharge current threshold...");
+                    set_I2_value(I2C_CURRENT_THRESHOLDS_SUBCLASS_ID, I2C_DSG_CURRENT_THRESHOLD_OFFSET, DCT);
                 }
             }
         }
