@@ -733,9 +733,9 @@ void websocket_event_handler(void *arg, esp_event_base_t event_base, int32_t eve
                         chg_inhibit_temp_high->valuestring);
                     */
 
-                        req_len = snprintf(NULL, 0, "BH_voltage_threshold=%d", BH_voltage_threshold->valueint);
-                        req_content = malloc(req_len + 1);
-                        snprintf(req_content, req_len + 1, "BH_voltage_threshold=%d", BH_voltage_threshold->valueint);
+                    req_len = snprintf(NULL, 0, "BH_voltage_threshold=%d", BH_voltage_threshold->valueint);
+                    req_content = malloc(req_len + 1);
+                    snprintf(req_content, req_len + 1, "BH_voltage_threshold=%d", BH_voltage_threshold->valueint);
 
                     req.content_len = req_len;
                     req.user_ctx = req_content;
