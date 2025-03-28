@@ -48,8 +48,18 @@ const BatteryDetail: React.FC<BatteryDetailProps> = ({
   const [hasChanges, setHasChanges] = useState(false);
 
   // range
+  const BL_min = 2000;
+  const BL_max = 3000;
   const BH_min = 4000;
   const BH_max = 5000;
+  const CITL_min = -50;
+  const CITL_max =  50;
+  const CITH_min = 400;
+  const CITH_max = 500;
+  const CCT_min = 70;
+  const CCT_max = 80;
+  const DCT_min = 55;
+  const DCT_max = 65;
   // initialise
   const [values, setValues] = useState<Partial<BatteryData>>({
     id: battery.id,
@@ -336,37 +346,21 @@ const BatteryDetail: React.FC<BatteryDetailProps> = ({
                     <h4 className="text-sm font-medium text-gray-900 mb-4">Charging Parameters</h4>
                     <div className="space-y-4">
                       <div>
-                        <label className="block text-sm font-medium text-gray-700">Maximum Charging Current</label>
+                        <label className="block text-sm font-medium text-gray-700">BL: {values.BL} [mV]</label>
                         <input
                           type="range"
                           className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer mt-2"
-                          min="0"
-                          max="100"
-                          value="80"
+                          min={BL_min}
+                          max={BL_max}
+                          value={values.BL}
+                          onChange={handleChange("BL")}
                         />
                         <div className="flex justify-between text-xs text-gray-500 mt-1">
-                          <span>0A</span>
-                          <span>80A</span>
-                          <span>100A</span>
+                          <span>{BL_min} [mV]</span>
+                          <span>{BL_max} [mV]</span>
                         </div>
-                      </div>
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700">Charging Cut-off Voltage</label>
-                        <input
-                          type="range"
-                          className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer mt-2"
-                          min="0"
-                          max="100"
-                          value="90"
-                        />
-                        <div className="flex justify-between text-xs text-gray-500 mt-1">
-                          <span>45V</span>
-                          <span>48V</span>
-                          <span>50V</span>
-                        </div>
-                      </div>
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700">BH Set Volt Threshold</label>
+
+                        <label className="block text-sm font-medium text-gray-700">BH: {values.BH} [mV]</label>
                         <input
                           type="range"
                           className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer mt-2"
@@ -376,10 +370,66 @@ const BatteryDetail: React.FC<BatteryDetailProps> = ({
                           onChange={handleChange("BH")}
                         />
                         <div className="flex justify-between text-xs text-gray-500 mt-1">
-                          <span>{BH_min}V</span>
-                          <span>{BH_max}V</span>
+                          <span>{BH_min} [mV]</span>
+                          <span>{BH_max} [mV]</span>
                         </div>
-                        <p className="mt-2 text-sm text-gray-700">{values.BH}V</p>
+
+                        <label className="block text-sm font-medium text-gray-700">CITL: {values.CITL} [0.1 °C]</label>
+                        <input
+                          type="range"
+                          className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer mt-2"
+                          min={CITL_min}
+                          max={CITL_max}
+                          value={values.CITL}
+                          onChange={handleChange("CITL")}
+                        />
+                        <div className="flex justify-between text-xs text-gray-500 mt-1">
+                          <span>{CITL_min} [0.1 °C]</span>
+                          <span>{CITL_max} [0.1 °C]</span>
+                        </div>
+
+                        <label className="block text-sm font-medium text-gray-700">CITH: {values.CITH} [0.1 °C]</label>
+                        <input
+                          type="range"
+                          className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer mt-2"
+                          min={CITH_min}
+                          max={CITH_max}
+                          value={values.CITH}
+                          onChange={handleChange("CITH")}
+                        />
+                        <div className="flex justify-between text-xs text-gray-500 mt-1">
+                          <span>{CITH_min} [0.1 °C]</span>
+                          <span>{CITH_max} [0.1 °C]</span>
+                        </div>
+
+                        <label className="block text-sm font-medium text-gray-700">CCT: {values.CCT} [0.1 °C]</label>
+                        <input
+                          type="range"
+                          className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer mt-2"
+                          min={CCT_min}
+                          max={CCT_max}
+                          value={values.CCT}
+                          onChange={handleChange("CCT")}
+                        />
+                        <div className="flex justify-between text-xs text-gray-500 mt-1">
+                          <span>{CCT_min} [mA]</span>
+                          <span>{CCT_max} [mA]</span>
+                        </div>
+
+                        <label className="block text-sm font-medium text-gray-700">DCT: {values.DCT} [0.1 °C]</label>
+                        <input
+                          type="range"
+                          className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer mt-2"
+                          min={DCT_min}
+                          max={DCT_max}
+                          value={values.DCT}
+                          onChange={handleChange("DCT")}
+                        />
+                        <div className="flex justify-between text-xs text-gray-500 mt-1">
+                          <span>{DCT_min} [mA]</span>
+                          <span>{DCT_max} [mA]</span>
+                        </div>
+
                         {hasChanges && (
                           <div className="flex gap-2 mt-2">
                             <button onClick={handleSubmit} className="p-2 bg-blue-500 text-white rounded">
