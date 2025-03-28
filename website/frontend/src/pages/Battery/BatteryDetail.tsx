@@ -44,11 +44,14 @@ const BatteryDetail: React.FC<BatteryDetailProps> = ({
   
   const [activeTab, setActiveTab] = useState('overview');
 
+  const [isEditing, setIsEditing] = useState(false);
+  const [hasChanges, setHasChanges] = useState(false);
+
   // range
   const BH_min = 4000;
   const BH_max = 5000;
   // initialise
-  const [values, setValues] = useState({
+  const [values, setValues] = useState<Partial<BatteryData>>({
     id: battery.id,
     BL: battery.BL,
     BH: battery.BH,
@@ -59,26 +62,36 @@ const BatteryDetail: React.FC<BatteryDetailProps> = ({
   });
   // websocket update
   useEffect(() => {
-    setValues({
-      id: battery.id,
-      BL: battery.BL,
-      BH: battery.BH,
-      CITL: battery.CITL,
-      CITH: battery.CITH,
-      CCT: battery.CCT,
-      DCT: battery.DCT,
-    });
-  }, [battery.id, battery.BL, battery.BH, battery.CITL, battery.CITH, battery.CCT, battery.DCT]);
+    if (!isEditing) {
+      setValues({
+        id: battery.id,
+        BL: battery.BL,
+        BH: battery.BH,
+        CITL: battery.CITL,
+        CITH: battery.CITH,
+        CCT: battery.CCT,
+        DCT: battery.DCT,
+      });
+      setHasChanges(false);
+    }
+  }, [battery.id, battery.BL, battery.BH, battery.CITL, battery.CITH, battery.CCT, battery.DCT, isEditing]);
   // slider update
   const handleChange = (key: string) => (e: React.ChangeEvent<HTMLInputElement>) => {
-    setValues((prevValues) => ({
-      ...prevValues,
-      [key]: Number(e.target.value),
-    }));
+    const newValue = Number(e.target.value);
+    setValues((prevValues) => {
+      const updatedValues = { ...prevValues, [key]: newValue };
+      // check if any slider has moved
+      const hasAnyChange = (Object.keys(values) as Array<keyof BatteryData>).some((k) => values[k] !== battery[k as keyof BatteryData]);
+      setHasChanges(hasAnyChange);
+      setIsEditing(true);
+      return updatedValues;
+    });
   };
   // send websocket-update message
   const handleSubmit = () => {
     sendBatteryUpdate(values);
+    setIsEditing(false);
+    setHasChanges(false);
   }
 
   const renderTabContent = () => {
@@ -353,9 +366,13 @@ const BatteryDetail: React.FC<BatteryDetailProps> = ({
                           <span>{BH_max}V</span>
                         </div>
                         <p className="mt-2 text-sm text-gray-700">{values.BH}V</p>
-                        <button onClick={handleSubmit} className="mt-2 p-2 bg-blue-500 text-white rounded">
-                          Submit Updates
-                        </button>
+                        {hasChanges && (
+                          <div className="flex gap-2 mt-2">
+                            <button onClick={handleSubmit} className="p-2 bg-blue-500 text-white rounded">
+                              Submit Updates
+                            </button>
+                          </div>
+                        )}
                       </div>
                     </div>
                   </div>
