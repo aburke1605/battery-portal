@@ -121,9 +121,8 @@ esp_err_t websocket_handler(httpd_req_t *req) {
                 free(ws_pkt.payload);
                 return ESP_FAIL;
             }
-            cJSON *endpoint = cJSON_GetObjectItem(content, "endpoint");
-            cJSON *method = cJSON_GetObjectItem(content, "method");
-            if (endpoint && strcmp(endpoint->valuestring, "/validate_change") == 0) {
+            cJSON *summary = cJSON_GetObjectItem(content, "summary");
+            if (summary && strcmp(summary->valuestring, "change-settings") == 0) {
                 cJSON *data = cJSON_GetObjectItem(content, "data");
                 if (!data) {
                     ESP_LOGE("WS", "Failed to parse JSON");

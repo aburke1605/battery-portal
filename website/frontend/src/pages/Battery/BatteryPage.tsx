@@ -92,8 +92,7 @@ export default function BatteryPage({ isFromEsp32 = false }: BatteriesPageProps)
             const message = JSON.stringify({
                 type: "request",
                 content : {
-                    endpoint: "/validate_change",
-                    method: "POST",
+                    summary: "change-settings",
                     data : {
                         id, // Send the battery ID so the server knows which battery to update
                         ...updatedValues, // Send only the changed values
