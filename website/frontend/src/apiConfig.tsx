@@ -7,7 +7,6 @@ const WS_BASE_URL = WS_PROTOCAL + '://' + HOST;
 const apiConfig = {
   HTTP_API_BASE_URL: HTTP_API_BASE_URL,
   WS_BASE_URL: WS_BASE_URL,
-  TOGGLE_LED: `${HTTP_API_BASE_URL}/toggle-led`,
   WEBSOCKET_BROWSER: `${WS_BASE_URL}/browser_ws`,
 };
 

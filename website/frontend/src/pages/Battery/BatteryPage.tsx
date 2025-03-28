@@ -114,29 +114,6 @@ export default function BatteryPage({ isFromEsp32 = false }: BatteriesPageProps)
         alert(`Charging toggled for battery ${batteryId}`);
     };
 
-    const toggleLED = async (batteryId: string, e?: React.MouseEvent) => {
-        if (e) {
-          e.stopPropagation();
-        }
-      
-        try {
-          const response = await fetch(apiConfig.TOGGLE_LED + '?esp_id='+batteryId, {
-            method: 'POST'
-          });
-      
-          if (!response.ok) {
-            throw new Error(`HTTP error! status: ${response.status}`);
-          }
-      
-          const result = await response.json();
-          console.log('LED toggle success:', result);
-          alert(`LED toggled for battery ${batteryId}`);
-        } catch (error) {
-          console.error('Error toggling LED:', error);
-          alert(`Failed to toggle LED for battery ${batteryId}`);
-        }
-    };
-
     return (
         <div>
             { 
@@ -156,7 +133,6 @@ export default function BatteryPage({ isFromEsp32 = false }: BatteriesPageProps)
                     <BatteryDetail 
                         battery={batteryItem}
                         onToggleCharging={toggleCharging}
-                        onToggleLED={toggleLED}
                         voltageThreshold={voltageThreshold}
                         sendBatteryUpdate={sendBatteryUpdate} // pass function to BatteryDetail
                     />

@@ -29,7 +29,6 @@ import { getStatusColor } from '../../utils/helpers';
 interface BatteryDetailProps {
   battery: BatteryData;
   onToggleCharging: (batteryId: string) => void;
-  onToggleLED: (batteryId: string) => void;
   voltageThreshold: number;
   sendBatteryUpdate: (updatedValues: Partial<BatteryData>) => void;
 }
@@ -37,7 +36,6 @@ interface BatteryDetailProps {
 const BatteryDetail: React.FC<BatteryDetailProps> = ({ 
   battery, 
   onToggleCharging, 
-  onToggleLED,
   voltageThreshold,
   sendBatteryUpdate // receive function from BatteryPage
 }) => {
@@ -630,7 +628,6 @@ const BatteryDetail: React.FC<BatteryDetailProps> = ({
                     Generate Report
                   </button>
                   <button 
-                    onClick={() => onToggleLED(battery.id)}
                     className="w-full flex items-center justify-center px-4 py-2 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
                   >
                     <ArrowLeft size={16} className="mr-2" />

@@ -382,17 +382,6 @@ esp_err_t validate_connect_handler(httpd_req_t *req) {
     return ESP_OK;
 }
 
-esp_err_t toggle_handler(httpd_req_t *req) {
-    static bool led_on = false;
-    led_on = !led_on;
-    gpio_set_level(I2C_LED_GPIO_PIN, led_on ? 1 : 0);
-    ESP_LOGI("WS", "LED is now %s", led_on ? "ON" : "OFF");
-
-    req->user_ctx = "success";
-
-    return ESP_OK;
-}
-
 esp_err_t file_serve_handler(httpd_req_t *req) {
     const char *file_path = (const char *)req->user_ctx;
 
@@ -793,14 +782,6 @@ void websocket_event_handler(void *arg, esp_event_base_t event_base, int32_t eve
                     err = reset_handler(&req);
                     if (err != ESP_OK) {
                         ESP_LOGE("WS", "Error in reset_handler: %d", err);
-                    }
-                }
-
-                else if (strcmp(endpoint, "/toggle") == 0 && strcmp(method, "POST") == 0) {
-                    // call toggle_handler
-                    err = toggle_handler(&req);
-                    if (err != ESP_OK) {
-                        ESP_LOGE("WS", "Error in toggle_handler: %d", err);
                     }
                 }
 
