@@ -37,12 +37,18 @@ esp_err_t perform_request(cJSON *message, cJSON *response) {
     cJSON *response_content = cJSON_CreateObject();
 
     cJSON *type = cJSON_GetObjectItem(message, "type");
-    if (type && strcmp(type->valuestring, "request") == 0) {
-        cJSON *content = cJSON_GetObjectItem(message, "content");
-        if (!content) {
-            ESP_LOGE("WS", "Failed to parse JSON");
-            return ESP_FAIL;
+    cJSON *content = cJSON_GetObjectItem(message, "content");
+    if (!type || !content) {
+        ESP_LOGE("WS", "Error in request message");
+        return ESP_FAIL;
+    }
+
+    if (strcmp(type->valuestring, "query") == 0) {
+        if (strcmp(content->valuestring, "are you still there?") == 0) {
+            cJSON_AddStringToObject(response_content, "response", "yes");
+            xQueueReset(ws_queue); // prioritise this reply(?)
         }
+    } else if (strcmp(type->valuestring, "request") == 0) {
         cJSON *summary = cJSON_GetObjectItem(content, "summary");
         if (summary && strcmp(summary->valuestring, "change-settings") == 0) {
             cJSON *data = cJSON_GetObjectItem(content, "data");
@@ -668,6 +674,15 @@ void websocket_event_handler(void *arg, esp_event_base_t event_base, int32_t eve
                 cJSON_Delete(message);
                 break;
             }
+
+            cJSON *response = cJSON_CreateObject();
+            perform_request(message, response);
+
+            char *response_str = cJSON_PrintUnformatted(response);
+            cJSON_Delete(response);
+            send_ws_message(response_str);
+            free(response_str);
+            break;
 
             cJSON *typeItem = cJSON_GetObjectItem(message, "type");
             if (!typeItem) {
