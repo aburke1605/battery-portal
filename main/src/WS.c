@@ -129,6 +129,9 @@ esp_err_t websocket_handler(httpd_req_t *req) {
                     free(ws_pkt.payload);
                     return ESP_FAIL;
                 }
+
+                gpio_set_level(I2C_LED_GPIO_PIN, 1);
+
                 const char* esp_id = cJSON_GetObjectItem(data, "id")->valuestring;
                 int BL = cJSON_GetObjectItem(data, "BL")->valueint;
                 int BH = cJSON_GetObjectItem(data, "BH")->valueint;
@@ -165,6 +168,8 @@ esp_err_t websocket_handler(httpd_req_t *req) {
                     ESP_LOGI("I2C", "Changing discharge current threshold...");
                     set_I2_value(I2C_CURRENT_THRESHOLDS_SUBCLASS_ID, I2C_DSG_CURRENT_THRESHOLD_OFFSET, DCT);
                 }
+
+                gpio_set_level(I2C_LED_GPIO_PIN, 0);
             }
         }
 
