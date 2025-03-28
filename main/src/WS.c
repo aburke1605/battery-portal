@@ -68,6 +68,7 @@ esp_err_t validate_login_handler(httpd_req_t *req) {
 }
 
 esp_err_t websocket_handler(httpd_req_t *req) {
+    // register new clients...
     if (req->method == HTTP_GET) {
         int fd = httpd_req_to_sockfd(req);
         ESP_LOGI("WS", "WebSocket handshake complete for client %d", fd);
@@ -75,7 +76,71 @@ esp_err_t websocket_handler(httpd_req_t *req) {
         return ESP_OK;  // WebSocket handshake happens here
     }
 
-    return ESP_FAIL;
+    // ...otherwise listen for messages
+    httpd_ws_frame_t ws_pkt;
+    memset(&ws_pkt, 0, sizeof(httpd_ws_frame_t));
+    // first call with ws_pkt.len = 0 to determine required length
+    esp_err_t ret = httpd_ws_recv_frame(req, &ws_pkt, 0);
+    if (ret != ESP_OK) {
+        ESP_LOGE("WS", "Failed to fetch WebSocket frame length: %s", esp_err_to_name(ret));
+        return ret;
+    }
+    if (ws_pkt.len > 0) {
+        // allocate buffer
+        ws_pkt.payload = malloc(ws_pkt.len + 1);
+        if (!ws_pkt.payload) {
+            ESP_LOGE("WS", "Failed to allocate memory for WebSocket payload");
+            return ESP_ERR_NO_MEM;
+        }
+        // receive payload
+        ret = httpd_ws_recv_frame(req, &ws_pkt, ws_pkt.len);
+        if (ret != ESP_OK) {
+            ESP_LOGE("WS", "Failed to receive WebSocket frame: %s", esp_err_to_name(ret));
+            free(ws_pkt.payload);
+            return ret;
+        }
+        ws_pkt.payload[ws_pkt.len] = '\0';
+    }
+
+    if (ws_pkt.type == HTTPD_WS_TYPE_TEXT) {
+        if (VERBOSE) ESP_LOGI("WS", "Received WebSocket message: %s", (char *)ws_pkt.payload);
+
+        // read messaage data
+        cJSON *data = cJSON_Parse((char *)ws_pkt.payload);
+        if (!data) {
+            ESP_LOGE("WS", "Failed to parse JSON");
+            free(ws_pkt.payload);
+            return ESP_FAIL;
+        }
+
+        const char *endpoint = cJSON_GetObjectItem(data, "endpoint")->valuestring;
+        if (strcmp(endpoint, "/validate_change") == 0) {
+            const char* esp_id = cJSON_GetObjectItem(data, "id")->valuestring;
+            int BL_voltage_threshold = cJSON_GetObjectItem(data, "BL")->valueint;
+            int BH_voltage_threshold = cJSON_GetObjectItem(data, "BH")->valueint;
+            int charge_current_threshold = cJSON_GetObjectItem(data, "CCT")->valueint;
+            int discharge_current_threshold = cJSON_GetObjectItem(data, "DCT")->valueint;
+            int chg_inhibit_temp_low = cJSON_GetObjectItem(data, "CITL")->valueint;
+            int chg_inhibit_temp_high = cJSON_GetObjectItem(data, "CITH")->valueint;
+            // use validate_change_handler logic directly
+            // TODO: change the `websocket_event_handler` to do the same
+            //       rather than using the `/validate_change` endpoint
+            //       and sending mock htto requests to it
+
+            if (BH_voltage_threshold != test_read(I2C_DISCHARGE_SUBCLASS_ID, I2C_BH_OFFSET)) {
+                ESP_LOGI("I2C", "Changing BH voltage...");
+                set_I2_value(I2C_DISCHARGE_SUBCLASS_ID, I2C_BH_OFFSET, BH_voltage_threshold);
+            }
+        }
+
+        cJSON_Delete(data);
+    } else {
+        ESP_LOGW("WS", "Received unsupported WebSocket frame type: %d", ws_pkt.type);
+    }
+
+    free(ws_pkt.payload);
+
+    return ESP_OK;
 }
 
 esp_err_t validate_change_handler(httpd_req_t *req) {
