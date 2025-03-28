@@ -106,14 +106,18 @@ esp_err_t websocket_handler(httpd_req_t *req) {
         if (VERBOSE) ESP_LOGI("WS", "Received WebSocket message: %s", (char *)ws_pkt.payload);
 
         // read messaage data
-        cJSON *data = cJSON_Parse((char *)ws_pkt.payload);
-        if (!data) {
+        cJSON *message = cJSON_Parse((char *)ws_pkt.payload);
+        if (!message) {
             ESP_LOGE("WS", "Failed to parse JSON");
             free(ws_pkt.payload);
             return ESP_FAIL;
         }
 
-        const char *endpoint = cJSON_GetObjectItem(data, "endpoint")->valuestring;
+        const char *type = cJSON_GetObjectItem(message, "type")->valuestring;
+        cJSON *content = cJSON_GetObjectItem(message, "content");
+        const char *endpoint = cJSON_GetObjectItem(content, "endpoint")->valuestring;
+        const char *method = cJSON_GetObjectItem(content, "method")->valuestring;
+        cJSON *data = cJSON_GetObjectItem(content, "data");
         if (strcmp(endpoint, "/validate_change") == 0) {
             const char* esp_id = cJSON_GetObjectItem(data, "id")->valuestring;
             int BL_voltage_threshold = cJSON_GetObjectItem(data, "BL")->valueint;
@@ -127,6 +131,10 @@ esp_err_t websocket_handler(httpd_req_t *req) {
             //       rather than using the `/validate_change` endpoint
             //       and sending mock htto requests to it
 
+            if (BL_voltage_threshold != test_read(I2C_DISCHARGE_SUBCLASS_ID, I2C_BL_OFFSET)) {
+                ESP_LOGI("I2C", "Changing BL voltage...");
+                set_I2_value(I2C_DISCHARGE_SUBCLASS_ID, I2C_BL_OFFSET, BL_voltage_threshold);
+            }
             if (BH_voltage_threshold != test_read(I2C_DISCHARGE_SUBCLASS_ID, I2C_BH_OFFSET)) {
                 ESP_LOGI("I2C", "Changing BH voltage...");
                 set_I2_value(I2C_DISCHARGE_SUBCLASS_ID, I2C_BH_OFFSET, BH_voltage_threshold);
@@ -733,9 +741,9 @@ void websocket_event_handler(void *arg, esp_event_base_t event_base, int32_t eve
                         chg_inhibit_temp_high->valuestring);
                     */
 
-                    req_len = snprintf(NULL, 0, "BH_voltage_threshold=%d", BH_voltage_threshold->valueint);
+                    req_len = snprintf(NULL, 0, "BL_voltage_threshold=%d&BH_voltage_threshold=%d", BL_voltage_threshold->valueint, BH_voltage_threshold->valueint);
                     req_content = malloc(req_len + 1);
-                    snprintf(req_content, req_len + 1, "BH_voltage_threshold=%d", BH_voltage_threshold->valueint);
+                    snprintf(req_content, req_len + 1, "BL_voltage_threshold=%d&BH_voltage_threshold=%d", BL_voltage_threshold->valueint, BH_voltage_threshold->valueint);
 
                     req.content_len = req_len;
                     req.user_ctx = req_content;

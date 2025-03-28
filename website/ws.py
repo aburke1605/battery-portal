@@ -38,15 +38,7 @@ def broadcast():
             except Exception:
                 browser_clients.discard(browser) # remove disconnected clients
 
-def forward_to_esp32(endpoint, esp_id, data):
-    message = {
-        "type": "request",
-        "content": {
-            "endpoint": endpoint,
-            "method": "POST"
-        }
-    }
-
+def forward_to_esp32(esp_id, message):
     with lock:
         for esp in set(esp_clients):
             content = dict(esp)["content"]
@@ -60,10 +52,9 @@ def forward_to_esp32(endpoint, esp_id, data):
                     # not the right one
                     continue
 
-                message["content"]["data"] = data
 
                 ws = dict(set(esp))["ws"]
-                ws.send(json.dumps(message))
+                ws.send(message)
 
                 return {"esp_id": esp_id, "message": "request sent to esp32"}
 
@@ -85,9 +76,8 @@ def browser_ws(ws):
                 break
             try:
                 data = json.loads(message)
-                esp_id = data["id"] # TODO change to esp_id everywhere
-                endpoint = data.pop("endpoint")
-                forward_to_esp32(endpoint, esp_id, data)
+                esp_id = data["content"]["data"]["id"] # TODO change to esp_id everywhere
+                forward_to_esp32(esp_id, message)
 
             except json.JSONDecodeError:
                 print("/browser_ws: invalid JSON")
