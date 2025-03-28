@@ -68,7 +68,7 @@ const BatteryDetail: React.FC<BatteryDetailProps> = ({
       CCT: battery.CCT,
       DCT: battery.DCT,
     });
-  }, [battery]);
+  }, [battery.id, battery.BL, battery.BH, battery.CITL, battery.CITH, battery.CCT, battery.DCT]);
   // slider update
   const handleChange = (key: string) => (e: React.ChangeEvent<HTMLInputElement>) => {
     setValues((prevValues) => ({
