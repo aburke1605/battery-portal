@@ -113,35 +113,47 @@ esp_err_t websocket_handler(httpd_req_t *req) {
             return ESP_FAIL;
         }
 
-        const char *type = cJSON_GetObjectItem(message, "type")->valuestring;
-        cJSON *content = cJSON_GetObjectItem(message, "content");
-        const char *endpoint = cJSON_GetObjectItem(content, "endpoint")->valuestring;
-        const char *method = cJSON_GetObjectItem(content, "method")->valuestring;
-        cJSON *data = cJSON_GetObjectItem(content, "data");
-        if (strcmp(endpoint, "/validate_change") == 0) {
-            const char* esp_id = cJSON_GetObjectItem(data, "id")->valuestring;
-            int BL_voltage_threshold = cJSON_GetObjectItem(data, "BL")->valueint;
-            int BH_voltage_threshold = cJSON_GetObjectItem(data, "BH")->valueint;
-            int charge_current_threshold = cJSON_GetObjectItem(data, "CCT")->valueint;
-            int discharge_current_threshold = cJSON_GetObjectItem(data, "DCT")->valueint;
-            int chg_inhibit_temp_low = cJSON_GetObjectItem(data, "CITL")->valueint;
-            int chg_inhibit_temp_high = cJSON_GetObjectItem(data, "CITH")->valueint;
-            // use validate_change_handler logic directly
-            // TODO: change the `websocket_event_handler` to do the same
-            //       rather than using the `/validate_change` endpoint
-            //       and sending mock htto requests to it
-
-            if (BL_voltage_threshold != test_read(I2C_DISCHARGE_SUBCLASS_ID, I2C_BL_OFFSET)) {
-                ESP_LOGI("I2C", "Changing BL voltage...");
-                set_I2_value(I2C_DISCHARGE_SUBCLASS_ID, I2C_BL_OFFSET, BL_voltage_threshold);
+        cJSON *type = cJSON_GetObjectItem(message, "type");
+        if (type && strcmp(type->valuestring, "request") == 0) {
+            cJSON *content = cJSON_GetObjectItem(message, "content");
+            if (!content) {
+                ESP_LOGE("WS", "Failed to parse JSON");
+                free(ws_pkt.payload);
+                return ESP_FAIL;
             }
-            if (BH_voltage_threshold != test_read(I2C_DISCHARGE_SUBCLASS_ID, I2C_BH_OFFSET)) {
-                ESP_LOGI("I2C", "Changing BH voltage...");
-                set_I2_value(I2C_DISCHARGE_SUBCLASS_ID, I2C_BH_OFFSET, BH_voltage_threshold);
+            cJSON *endpoint = cJSON_GetObjectItem(content, "endpoint");
+            cJSON *method = cJSON_GetObjectItem(content, "method");
+            if (endpoint && strcmp(endpoint->valuestring, "/validate_change") == 0) {
+                cJSON *data = cJSON_GetObjectItem(content, "data");
+                if (!data) {
+                    ESP_LOGE("WS", "Failed to parse JSON");
+                    free(ws_pkt.payload);
+                    return ESP_FAIL;
+                }
+                const char* esp_id = cJSON_GetObjectItem(data, "id")->valuestring;
+                int BL_voltage_threshold = cJSON_GetObjectItem(data, "BL")->valueint;
+                int BH_voltage_threshold = cJSON_GetObjectItem(data, "BH")->valueint;
+                int charge_current_threshold = cJSON_GetObjectItem(data, "CCT")->valueint;
+                int discharge_current_threshold = cJSON_GetObjectItem(data, "DCT")->valueint;
+                int chg_inhibit_temp_low = cJSON_GetObjectItem(data, "CITL")->valueint;
+                int chg_inhibit_temp_high = cJSON_GetObjectItem(data, "CITH")->valueint;
+                // use validate_change_handler logic directly
+                // TODO: change the `websocket_event_handler` to do the same
+                //       rather than using the `/validate_change` endpoint
+                //       and sending mock htto requests to it
+
+                if (BL_voltage_threshold != test_read(I2C_DISCHARGE_SUBCLASS_ID, I2C_BL_OFFSET)) {
+                    ESP_LOGI("I2C", "Changing BL voltage...");
+                    set_I2_value(I2C_DISCHARGE_SUBCLASS_ID, I2C_BL_OFFSET, BL_voltage_threshold);
+                }
+                if (BH_voltage_threshold != test_read(I2C_DISCHARGE_SUBCLASS_ID, I2C_BH_OFFSET)) {
+                    ESP_LOGI("I2C", "Changing BH voltage...");
+                    set_I2_value(I2C_DISCHARGE_SUBCLASS_ID, I2C_BH_OFFSET, BH_voltage_threshold);
+                }
             }
         }
 
-        cJSON_Delete(data);
+        cJSON_Delete(message);
     } else {
         ESP_LOGW("WS", "Received unsupported WebSocket frame type: %d", ws_pkt.type);
     }
