@@ -93,6 +93,20 @@ const BatteryDetail: React.FC<BatteryDetailProps> = ({
     setIsEditing(false);
     setHasChanges(false);
   }
+  // reset sliders
+  const handleReset = () => {
+    setValues({
+      id: battery.id,
+      BL: battery.BL,
+      BH: battery.BH,
+      CITL: battery.CITL,
+      CITH: battery.CITH,
+      CCT: battery.CCT,
+      DCT: battery.DCT,
+    });
+    setIsEditing(false);
+    setHasChanges(false);
+  };
 
   const renderTabContent = () => {
     switch (activeTab) {
@@ -370,6 +384,9 @@ const BatteryDetail: React.FC<BatteryDetailProps> = ({
                           <div className="flex gap-2 mt-2">
                             <button onClick={handleSubmit} className="p-2 bg-blue-500 text-white rounded">
                               Submit Updates
+                            </button>
+                            <button onClick={handleReset} className="p-2 bg-gray-500 text-white rounded">
+                              Reset
                             </button>
                           </div>
                         )}
