@@ -21,22 +21,24 @@ static char ESP_IP[16] = "xxx.xxx.xxx.xxx\0";
 static esp_websocket_client_handle_t ws_client = NULL;
 static uint8_t n_rendered_html_pages = 0;
 
+static const char* TAG = "WS";
+
 void add_client(int fd) {
     for (int i = 0; i < WS_CONFIG_MAX_CLIENTS; i++) {
         if (client_sockets[i] == -1) {
             client_sockets[i] = fd;
-            ESP_LOGI("WS", "Client %d added", fd);
+            ESP_LOGI(TAG, "Client %d added", fd);
             return;
         }
     }
-    ESP_LOGE("WS", "No space for client %d", fd);
+    ESP_LOGE(TAG, "No space for client %d", fd);
 }
 
 void remove_client(int fd) {
     for (int i = 0; i < WS_CONFIG_MAX_CLIENTS; i++) {
         if (client_sockets[i] == fd) {
             client_sockets[i] = -1;
-            ESP_LOGI("WS", "Client %d removed", fd);
+            ESP_LOGI(TAG, "Client %d removed", fd);
             return;
         }
     }
@@ -46,7 +48,7 @@ esp_err_t validate_login_handler(httpd_req_t *req) {
     char content[100];
     esp_err_t err = get_POST_data(req, content, sizeof(content));
     if (err != ESP_OK) {
-        ESP_LOGE("WS", "Problem with login POST request");
+        ESP_LOGE(TAG, "Problem with login POST request");
         return err;
     }
 
@@ -79,7 +81,7 @@ esp_err_t validate_login_handler(httpd_req_t *req) {
 esp_err_t websocket_handler(httpd_req_t *req) {
     if (req->method == HTTP_GET) {
         int fd = httpd_req_to_sockfd(req);
-        ESP_LOGI("WS", "WebSocket handshake complete for client %d", fd);
+        ESP_LOGI(TAG, "WebSocket handshake complete for client %d", fd);
         add_client(fd);
         return ESP_OK;  // WebSocket handshake happens here
     }
@@ -99,7 +101,7 @@ esp_err_t validate_change_handler(httpd_req_t *req) {
         // request is a real HTTP POST
         err = get_POST_data(req, content, sizeof(content));
         if (err != ESP_OK) {
-            ESP_LOGE("WS", "Problem with connect POST request");
+            ESP_LOGE(TAG, "Problem with connect POST request");
             return err;
         }
     }
@@ -122,9 +124,9 @@ esp_err_t validate_change_handler(httpd_req_t *req) {
         sscanf(name_start, "device_name=%10[^&]", device_name);
         device_name[sizeof(device_name)] = '\0';
         if (device_name[0] != '\0') {
-            ESP_LOGI("I2C", "Changing device name...");
+            ESP_LOGI(TAG, "Changing device name...");
             write_bytes(I2C_DATA_SUBCLASS_ID, I2C_NAME_OFFSET, (uint8_t *)device_name, sizeof(device_name));
-            ESP_LOGI("I2C", "Device name successfully set to %s", device_name);
+            ESP_LOGI(TAG, "Device name successfully set to %s", device_name);
         }
     }
 
@@ -135,12 +137,12 @@ esp_err_t validate_change_handler(httpd_req_t *req) {
         char BL_voltage_threshold[50] = {0};
         sscanf(BL_start, "BL_voltage_threshold=%49[^&]", BL_voltage_threshold);
         if (BL_voltage_threshold[0] != '\0') {
-            ESP_LOGI("I2C", "Changing BL voltage...");
+            ESP_LOGI(TAG, "Changing BL voltage...");
             value = atoi(BL_voltage_threshold);
             two_bytes[0] = (value >> 8) & 0xFF; // higher byte
             two_bytes[1] =  value       & 0xFF; // lower byte
             write_bytes(I2C_DISCHARGE_SUBCLASS_ID, I2C_BL_OFFSET, two_bytes, sizeof(two_bytes));
-            ESP_LOGI("I2C", "BL successfully set to %d", value);
+            ESP_LOGI(TAG, "BL successfully set to %d", value);
         }
     }
 
@@ -148,12 +150,12 @@ esp_err_t validate_change_handler(httpd_req_t *req) {
         char BH_voltage_threshold[50] = {0};
         sscanf(BH_start, "BH_voltage_threshold=%49[^&]", BH_voltage_threshold);
         if (BH_voltage_threshold[0] != '\0') {
-            ESP_LOGI("I2C", "Changing BH voltage...");
+            ESP_LOGI(TAG, "Changing BH voltage...");
             value = atoi(BH_voltage_threshold);
             two_bytes[0] = (value >> 8) & 0xFF; // higher byte
             two_bytes[1] =  value       & 0xFF; // lower byte
             write_bytes(I2C_DISCHARGE_SUBCLASS_ID, I2C_BH_OFFSET, two_bytes, sizeof(two_bytes));
-            ESP_LOGI("I2C", "BH successfully set to %d", value);
+            ESP_LOGI(TAG, "BH successfully set to %d", value);
         }
     }
 
@@ -161,12 +163,12 @@ esp_err_t validate_change_handler(httpd_req_t *req) {
         char charge_current_threshold[50] = {0};
         sscanf(CCT_start, "charge_current_threshold=%49[^&]", charge_current_threshold);
         if (charge_current_threshold[0] != '\0') {
-            ESP_LOGI("I2C", "Changing charge current threshold...");
+            ESP_LOGI(TAG, "Changing charge current threshold...");
             value = atoi(charge_current_threshold);
             two_bytes[0] = (value >> 8) & 0xFF; // higher byte
             two_bytes[1] =  value       & 0xFF; // lower byte
             write_bytes(I2C_CURRENT_THRESHOLDS_SUBCLASS_ID, I2C_CHG_CURRENT_THRESHOLD_OFFSET, two_bytes, sizeof(two_bytes));
-            ESP_LOGI("I2C", "CCT successfully set to %d", value);
+            ESP_LOGI(TAG, "CCT successfully set to %d", value);
         }
     }
 
@@ -174,12 +176,12 @@ esp_err_t validate_change_handler(httpd_req_t *req) {
         char discharge_current_threshold[50] = {0};
         sscanf(DCT_start, "discharge_current_threshold=%49[^&]", discharge_current_threshold);
         if (discharge_current_threshold[0] != '\0') {
-            ESP_LOGI("I2C", "Changing discharge current threshold...");
+            ESP_LOGI(TAG, "Changing discharge current threshold...");
             value = atoi(discharge_current_threshold);
             two_bytes[0] = (value >> 8) & 0xFF; // higher byte
             two_bytes[1] =  value       & 0xFF; // lower byte
             write_bytes(I2C_CURRENT_THRESHOLDS_SUBCLASS_ID, I2C_DSG_CURRENT_THRESHOLD_OFFSET, two_bytes, sizeof(two_bytes));
-            ESP_LOGI("I2C", "DCT successfully set to %d", value);
+            ESP_LOGI(TAG, "DCT successfully set to %d", value);
         }
     }
 
@@ -187,12 +189,12 @@ esp_err_t validate_change_handler(httpd_req_t *req) {
         char chg_inhibit_temp_low[50] = {0};
         sscanf(CITL_start, "chg_inhibit_temp_low=%49[^&]", chg_inhibit_temp_low);
         if (chg_inhibit_temp_low[0] != '\0') {
-            ESP_LOGI("I2C", "Changing charge inhibit low temperature threshold...");
+            ESP_LOGI(TAG, "Changing charge inhibit low temperature threshold...");
             value = atoi(chg_inhibit_temp_low);
             two_bytes[0] = (value >> 8) & 0xFF; // higher byte
             two_bytes[1] =  value       & 0xFF; // lower byte
             write_bytes(I2C_CHARGE_INHIBIT_CFG_SUBCLASS_ID, I2C_CHG_INHIBIT_TEMP_LOW_OFFSET, two_bytes, sizeof(two_bytes));
-            ESP_LOGI("I2C", "CITL successfully set to %d", value);
+            ESP_LOGI(TAG, "CITL successfully set to %d", value);
         }
     }
 
@@ -200,12 +202,12 @@ esp_err_t validate_change_handler(httpd_req_t *req) {
         char chg_inhibit_temp_high[50] = {0};
         sscanf(CITH_start, "chg_inhibit_temp_high=%49s", chg_inhibit_temp_high);
         if (chg_inhibit_temp_high[0] != '\0') {
-            ESP_LOGI("I2C", "Changing charge inhibit high temperature threshold...");
+            ESP_LOGI(TAG, "Changing charge inhibit high temperature threshold...");
             value = atoi(chg_inhibit_temp_high);
             two_bytes[0] = (value >> 8) & 0xFF; // higher byte
             two_bytes[1] =  value       & 0xFF; // lower byte
             write_bytes(I2C_CHARGE_INHIBIT_CFG_SUBCLASS_ID, I2C_CHG_INHIBIT_TEMP_HIGH_OFFSET, two_bytes, sizeof(two_bytes));
-            ESP_LOGI("I2C", "CITH successfully set to %d", value);
+            ESP_LOGI(TAG, "CITH successfully set to %d", value);
         }
     }
 
@@ -222,7 +224,7 @@ esp_err_t reset_handler(httpd_req_t *req) {
 
     // delay to allow reset to complete
     vTaskDelay(pdMS_TO_TICKS(1000));
-    ESP_LOGI("I2C", "Reset command sent successfully.");
+    ESP_LOGI(TAG, "Reset command sent successfully.");
 
     req->user_ctx = "success";
 
@@ -241,7 +243,7 @@ esp_err_t validate_connect_handler(httpd_req_t *req) {
         // request is a real HTTP POST
         err = get_POST_data(req, content, sizeof(content));
         if (err != ESP_OK) {
-            ESP_LOGE("WS", "Problem with connect POST request");
+            ESP_LOGE(TAG, "Problem with connect POST request");
             return err;
         }
     }
@@ -279,7 +281,7 @@ esp_err_t validate_connect_handler(httpd_req_t *req) {
         ESP_ERROR_CHECK(esp_wifi_set_config(ESP_IF_WIFI_STA, wifi_sta_config));
         // TODO: if reconnecting, it doesn't actually seem to drop the old connection in favour of the new one
 
-        ESP_LOGI("AP", "Connecting to AP... SSID: %s", wifi_sta_config->sta.ssid);
+        ESP_LOGI(TAG, "Connecting to AP... SSID: %s", wifi_sta_config->sta.ssid);
 
         // give some time to connect
         vTaskDelay(pdMS_TO_TICKS(5000));
@@ -296,14 +298,14 @@ esp_err_t validate_connect_handler(httpd_req_t *req) {
                     if (ip_info.ip.addr != IPADDR_ANY) {
                         connected_to_WiFi = true;
 
-                        ESP_LOGI("WS", "Connected to router. Signal strength: %d dBm", ap_info.rssi);
+                        ESP_LOGI(TAG, "Connected to router. Signal strength: %d dBm", ap_info.rssi);
                         req->user_ctx = "success";
 
                         break;
                     }
                 }
             } else {
-                if (VERBOSE) ESP_LOGI("WS", "Not connected. Retrying... %d", tries);
+                if (VERBOSE) ESP_LOGI(TAG, "Not connected. Retrying... %d", tries);
                 esp_wifi_connect();
             }
             tries++;
@@ -311,7 +313,7 @@ esp_err_t validate_connect_handler(httpd_req_t *req) {
             vTaskDelay(pdMS_TO_TICKS(3000));
         }
     } else {
-        ESP_LOGW("WS", "Already connected to Wi-Fi. Redirecting...");
+        ESP_LOGW(TAG, "Already connected to Wi-Fi. Redirecting...");
         req->user_ctx = "already connected";
     }
 
@@ -322,7 +324,7 @@ esp_err_t toggle_handler(httpd_req_t *req) {
     static bool led_on = false;
     led_on = !led_on;
     gpio_set_level(I2C_LED_GPIO_PIN, led_on ? 1 : 0);
-    ESP_LOGI("WS", "LED is now %s", led_on ? "ON" : "OFF");
+    ESP_LOGI(TAG, "LED is now %s", led_on ? "ON" : "OFF");
 
     req->user_ctx = "success";
 
@@ -331,7 +333,7 @@ esp_err_t toggle_handler(httpd_req_t *req) {
 
 esp_err_t file_serve_handler(httpd_req_t *req) {
     const char *file_path = (const char *)req->user_ctx; // Get file path from user_ctx
-    if (VERBOSE) ESP_LOGI("WS", "Serving file: %s", file_path);
+    if (VERBOSE) ESP_LOGI(TAG, "Serving file: %s", file_path);
 
     bool already_rendered = false;
     for (int i=0; i<n_rendered_html_pages; i++) {
@@ -354,13 +356,13 @@ esp_err_t file_serve_handler(httpd_req_t *req) {
         char *base_html = read_file("/templates/base.html");
         char *content_html = read_file(file_path);
         if (!base_html || !content_html) {
-            ESP_LOGE("WS", "Failed to read base or content HTML file");
+            ESP_LOGE(TAG, "Failed to read base or content HTML file");
             httpd_resp_send_err(req, HTTPD_404_NOT_FOUND, "File not found");
             return ESP_FAIL;
         }
 
         if (strlen(base_html) + strlen(content_html) + 1 >= WS_MAX_HTML_SIZE) {
-            ESP_LOGE("WS", "Response buffer overflow risk!");
+            ESP_LOGE(TAG, "Response buffer overflow risk!");
             httpd_resp_send_err(req, HTTPD_500_INTERNAL_SERVER_ERROR, "Buffer overflow");
             return ESP_FAIL;
         }
@@ -368,7 +370,7 @@ esp_err_t file_serve_handler(httpd_req_t *req) {
 
         char *page = malloc(WS_MAX_HTML_SIZE);
         if (!page) {
-            ESP_LOGE("WS", "Failed to allocate memory for page");
+            ESP_LOGE(TAG, "Failed to allocate memory for page");
             httpd_resp_send_err(req, HTTPD_500_INTERNAL_SERVER_ERROR, "Memory allocation failed");
             return ESP_FAIL;
         }
@@ -383,7 +385,7 @@ esp_err_t file_serve_handler(httpd_req_t *req) {
         base_jinja_string = "    {% block content %}{% endblock %}";
         base_insert_pos = strstr(base_html, base_jinja_string);
         if (!base_insert_pos) {
-            ESP_LOGE("WS", "Template placeholder not found in base.html");
+            ESP_LOGE(TAG, "Template placeholder not found in base.html");
             httpd_resp_send_err(req, HTTPD_500_INTERNAL_SERVER_ERROR, "Template error");
             return ESP_FAIL;
         }
@@ -423,7 +425,7 @@ esp_err_t file_serve_handler(httpd_req_t *req) {
         char *modified_page = replace_placeholder(page, placeholders, substitutes, 5);
 
         if (!modified_page) {
-            ESP_LOGE("WS", "Could not replace {{ prefix }} in %s", file_path);
+            ESP_LOGE(TAG, "Could not replace {{ prefix }} in %s", file_path);
             httpd_resp_send_err(req, HTTPD_500_INTERNAL_SERVER_ERROR, "Template error");
             return ESP_FAIL;
         }
@@ -457,7 +459,7 @@ esp_err_t file_serve_handler(httpd_req_t *req) {
     // for non-HTML files, serve normally
     FILE *file = fopen(file_path, "r");
     if (!file) {
-        ESP_LOGE("WS", "Failed to open file: %s", file_path);
+        ESP_LOGE(TAG, "Failed to open file: %s", file_path);
         httpd_resp_send_err(req, HTTPD_404_NOT_FOUND, "File not found");
         return ESP_FAIL;
     }
@@ -465,7 +467,7 @@ esp_err_t file_serve_handler(httpd_req_t *req) {
     // Get file size
     struct stat file_stat;
     if (stat(file_path, &file_stat) != 0) {
-        ESP_LOGE("WS", "Failed to get file stats: %s", file_path);
+        ESP_LOGE(TAG, "Failed to get file stats: %s", file_path);
         fclose(file);
         httpd_resp_send_err(req, HTTPD_500_INTERNAL_SERVER_ERROR, "Failed to retrieve file size");
         return ESP_FAIL;
@@ -498,7 +500,7 @@ esp_err_t file_serve_handler(httpd_req_t *req) {
     while ((read_bytes = fread(buffer, 1, sizeof(buffer), file)) > 0) {
         esp_err_t ret = httpd_resp_send_chunk(req, buffer, read_bytes);
         if (ret != ESP_OK) {
-            ESP_LOGE("WS", "Failed to send file chunk");
+            ESP_LOGE(TAG, "Failed to send file chunk");
             fclose(file);
             httpd_resp_send_err(req, HTTPD_500_INTERNAL_SERVER_ERROR, "Failed to send file");
             return ESP_FAIL;
@@ -523,10 +525,10 @@ httpd_handle_t start_webserver(void) {
     config.max_uri_handlers = 32; // Increase this number as needed
 
     // Start the httpd server
-    ESP_LOGI("WS", "Starting server on port: '%d'", config.server_port);
+    ESP_LOGI(TAG, "Starting server on port: '%d'", config.server_port);
 
     if (httpd_start(&server, &config) == ESP_OK) {
-        ESP_LOGI("WS", "Registering URI handlers");
+        ESP_LOGI(TAG, "Registering URI handlers");
 
         httpd_uri_t login_uri = {
             .uri       = "/",
@@ -681,7 +683,7 @@ httpd_handle_t start_webserver(void) {
         httpd_register_uri_handler(server, &image_uri_2);
 
     } else {
-        ESP_LOGE("WS", "Error starting server!");
+        ESP_LOGE(TAG, "Error starting server!");
     }
     return server;
 }
@@ -702,7 +704,7 @@ void check_wifi_task(void* pvParameters) {
 
 void send_ws_message(const char *message) {
     if (xQueueSend(ws_queue, message, portMAX_DELAY) != pdPASS) {
-        ESP_LOGE("WS", "WebSocket queue full! Dropping message: %s", message);
+        ESP_LOGE(TAG, "WebSocket queue full! Dropping message: %s", message);
     }
 }
 
@@ -712,10 +714,10 @@ void message_queue_task(void *pvParameters) {
     while (true) {
         if (xQueueReceive(ws_queue, message, portMAX_DELAY) == pdPASS) {
             if (esp_websocket_client_is_connected(ws_client)) {
-                if (VERBOSE) ESP_LOGI("WS", "Sending: %s", message);
+                if (VERBOSE) ESP_LOGI(TAG, "Sending: %s", message);
                 esp_websocket_client_send_text(ws_client, message, strlen(message), portMAX_DELAY);
             } else {
-                ESP_LOGW("WS", "WebSocket not connected, dropping message: %s", message);
+                ESP_LOGW(TAG, "WebSocket not connected, dropping message: %s", message);
             }
         }
 
@@ -730,14 +732,14 @@ void websocket_event_handler(void *arg, esp_event_base_t event_base, int32_t eve
 
     switch (event_id) {
         case WEBSOCKET_EVENT_CONNECTED:
-            if (VERBOSE) ESP_LOGI("WS", "WebSocket connected");
+            if (VERBOSE) ESP_LOGI(TAG, "WebSocket connected");
             char websocket_connect_message[128];
             snprintf(websocket_connect_message, sizeof(websocket_connect_message), "{\"type\": \"register\", \"esp_id\": \"%s\"}", ESP_ID);
             send_ws_message(websocket_connect_message);
             break;
 
         case WEBSOCKET_EVENT_DISCONNECTED:
-            if (VERBOSE) ESP_LOGI("WS", "WebSocket disconnected");
+            if (VERBOSE) ESP_LOGI(TAG, "WebSocket disconnected");
             esp_websocket_client_stop(ws_client);
             break;
 
@@ -746,19 +748,19 @@ void websocket_event_handler(void *arg, esp_event_base_t event_base, int32_t eve
 
             cJSON *message = cJSON_Parse((char *)ws_event_data->data_ptr);
             if (!message) {
-                ESP_LOGE("WS", "invalid json");
+                ESP_LOGE(TAG, "invalid json");
                 cJSON_Delete(message);
                 break;
             }
 
             cJSON *typeItem = cJSON_GetObjectItem(message, "type");
             if (!typeItem) {
-                ESP_LOGE("WS", "ilformatted json: %.*s", ws_event_data->data_len, (char *)ws_event_data->data_ptr);
+                ESP_LOGE(TAG, "ilformatted json: %.*s", ws_event_data->data_len, (char *)ws_event_data->data_ptr);
                 break;
             }
             const char *type = typeItem->valuestring;
 
-            if (VERBOSE) ESP_LOGI("WS", "WebSocket data received: %.*s", ws_event_data->data_len, (char *)ws_event_data->data_ptr);
+            if (VERBOSE) ESP_LOGI(TAG, "WebSocket data received: %.*s", ws_event_data->data_len, (char *)ws_event_data->data_ptr);
 
             if (strcmp(type, "query") == 0) {
                 const char *content = cJSON_GetObjectItem(message, "content")->valuestring;
@@ -785,7 +787,7 @@ void websocket_event_handler(void *arg, esp_event_base_t event_base, int32_t eve
             else if (strcmp(type, "request") == 0) {
                 cJSON *content = cJSON_GetObjectItem(message, "content");
                 if (!content) {
-                    ESP_LOGE("WS", "invalid request content");
+                    ESP_LOGE(TAG, "invalid request content");
                     cJSON_Delete(message);
                     break;
                 }
@@ -820,7 +822,7 @@ void websocket_event_handler(void *arg, esp_event_base_t event_base, int32_t eve
                     // call validate_connect_handler
                     err = validate_connect_handler(&req);
                     if (err != ESP_OK) {
-                        ESP_LOGE("WS", "Error in validate_connect_handler: %d", err);
+                        ESP_LOGE(TAG, "Error in validate_connect_handler: %d", err);
                     }
                     free(req_content);
                 }
@@ -861,7 +863,7 @@ void websocket_event_handler(void *arg, esp_event_base_t event_base, int32_t eve
                     // call validate_change_handler
                     err = validate_change_handler(&req);
                     if (err != ESP_OK) {
-                        ESP_LOGE("WS", "Error in validate_change_handler: %d", err);
+                        ESP_LOGE(TAG, "Error in validate_change_handler: %d", err);
                     }
                     free(req_content);
                 }
@@ -870,7 +872,7 @@ void websocket_event_handler(void *arg, esp_event_base_t event_base, int32_t eve
                     // call reset_handler
                     err = reset_handler(&req);
                     if (err != ESP_OK) {
-                        ESP_LOGE("WS", "Error in reset_handler: %d", err);
+                        ESP_LOGE(TAG, "Error in reset_handler: %d", err);
                     }
                 }
 
@@ -878,7 +880,7 @@ void websocket_event_handler(void *arg, esp_event_base_t event_base, int32_t eve
                     // call toggle_handler
                     err = toggle_handler(&req);
                     if (err != ESP_OK) {
-                        ESP_LOGE("WS", "Error in toggle_handler: %d", err);
+                        ESP_LOGE(TAG, "Error in toggle_handler: %d", err);
                     }
                 }
 
@@ -905,11 +907,11 @@ void websocket_event_handler(void *arg, esp_event_base_t event_base, int32_t eve
             break;
 
         case WEBSOCKET_EVENT_ERROR:
-            if (VERBOSE) ESP_LOGE("WS", "WebSocket error occurred");
+            if (VERBOSE) ESP_LOGE(TAG, "WebSocket error occurred");
             break;
 
         default:
-            if (VERBOSE) ESP_LOGI("WS", "WebSocket event ID: %ld", event_id);
+            if (VERBOSE) ESP_LOGI(TAG, "WebSocket event ID: %ld", event_id);
             break;
     }
 }
@@ -975,7 +977,7 @@ void websocket_task(void *pvParameters) {
 
                     esp_err_t err = httpd_ws_send_frame_async(server, client_sockets[i], &ws_pkt);
                     if (err != ESP_OK) {
-                        ESP_LOGE("WS", "Failed to send frame to client %d: %s", client_sockets[i], esp_err_to_name(err));
+                        ESP_LOGE(TAG, "Failed to send frame to client %d: %s", client_sockets[i], esp_err_to_name(err));
                         remove_client(client_sockets[i]);  // Clean up disconnected clients
                     }
                 }
@@ -1014,13 +1016,13 @@ void websocket_task(void *pvParameters) {
                 if (ws_client == NULL) {
                     ws_client = esp_websocket_client_init(&websocket_cfg);
                     if (ws_client == NULL) {
-                        ESP_LOGE("WS", "Failed to initialize WebSocket client");
+                        ESP_LOGE(TAG, "Failed to initialize WebSocket client");
                         vTaskDelay(pdMS_TO_TICKS(1000));
                         continue;
                     }
                     esp_websocket_register_events(ws_client, WEBSOCKET_EVENT_ANY, websocket_event_handler, NULL);
                     if (esp_websocket_client_start(ws_client) != ESP_OK) {
-                        ESP_LOGE("WS", "Failed to start WebSocket client");
+                        ESP_LOGE(TAG, "Failed to start WebSocket client");
                         esp_websocket_client_destroy(ws_client);
                         ws_client = NULL;
                         vTaskDelay(pdMS_TO_TICKS(1000));

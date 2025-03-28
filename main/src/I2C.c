@@ -9,6 +9,8 @@
 static i2c_master_bus_handle_t i2c_bus = NULL;
 static i2c_master_dev_handle_t i2c_device = NULL;
 
+static const char* TAG = "I2C";
+
 esp_err_t i2c_master_init(void) {
     i2c_master_bus_config_t bus_cfg = {
         .clk_source = I2C_CLK_SRC_DEFAULT,
@@ -33,29 +35,29 @@ esp_err_t i2c_master_init(void) {
 
 esp_err_t check_device() {
     esp_err_t ret = i2c_master_probe(i2c_bus, I2C_ADDR, I2C_MASTER_TIMEOUT_MS);
-    if (ret != ESP_OK) ESP_LOGE("I2C", "I2C device not found.");
+    if (ret != ESP_OK) ESP_LOGE(TAG, "I2C device not found.");
 
     return ret;
 }
 
 void device_scan(void) {
-    ESP_LOGI("I2C", "Scanning for devices...");
+    ESP_LOGI(TAG, "Scanning for devices...");
     uint8_t n_devices = 0;
     for (uint8_t i = 1; i < 127; i++) {
         esp_err_t ret = i2c_master_probe(i2c_bus, i, pdMS_TO_TICKS(1000));
 
         if (ret == ESP_OK) {
-            ESP_LOGI("I2C", "I2C device found at address 0x%02X", i);
+            ESP_LOGI(TAG, "I2C device found at address 0x%02X", i);
             n_devices++;
         }
     }
 
-    if (n_devices == 0) ESP_LOGW("I2C", "No devices found.");
+    if (n_devices == 0) ESP_LOGW(TAG, "No devices found.");
 }
 
 esp_err_t read_data(uint8_t reg, uint8_t* data, size_t n_bytes) {
     if (!data || n_bytes == 0) {
-        ESP_LOGE("I2C", "Invalid data buffer or length.");
+        ESP_LOGE(TAG, "Invalid data buffer or length.");
         return ESP_ERR_INVALID_ARG;
         // TODO: error check the rest of this function
     }
@@ -90,7 +92,7 @@ esp_err_t write_data(uint8_t reg, uint32_t data, size_t n_btyes) {
     ret = i2c_master_transmit(i2c_device, buffer, sizeof(buffer), pdMS_TO_TICKS(I2C_MASTER_TIMEOUT_MS));
 
     if (ret != ESP_OK) {
-        ESP_LOGE("I2C", "Failed to write byte to I2C device: %s", esp_err_to_name(ret));
+        ESP_LOGE(TAG, "Failed to write byte to I2C device: %s", esp_err_to_name(ret));
     }
 
     return ret;
@@ -129,7 +131,7 @@ esp_err_t write_bytes(uint8_t subclass, uint8_t offset, uint8_t* data, size_t n_
     char block_data[32] = {0};
     ret = read_data(I2C_BLOCK_DATA_START, (uint8_t*)block_data, sizeof(block_data));
     if (ret != ESP_OK) {
-        ESP_LOGE("I2C", "Failed to read Block Data.");
+        ESP_LOGE(TAG, "Failed to read Block Data.");
         return ret;
     }
 
@@ -141,7 +143,7 @@ esp_err_t write_bytes(uint8_t subclass, uint8_t offset, uint8_t* data, size_t n_
     for (int i = 0; i < sizeof(block_data); i++) {
         ret = write_data(I2C_BLOCK_DATA_START + i, block_data[i], 1);
         if (ret != ESP_OK) {
-            ESP_LOGE("I2C", "Failed to write Block Data at index %d.", i);
+            ESP_LOGE(TAG, "Failed to write Block Data at index %d.", i);
             return ret;
         }
     }
@@ -156,7 +158,7 @@ esp_err_t write_bytes(uint8_t subclass, uint8_t offset, uint8_t* data, size_t n_
     // Write new checksum
     ret = write_data(I2C_BLOCK_DATA_CHECKSUM, checksum, 1);
     if (ret != ESP_OK) {
-        ESP_LOGE("I2C", "Failed to write Block Data Checksum.");
+        ESP_LOGE(TAG, "Failed to write Block Data Checksum.");
         return ret;
     }
 

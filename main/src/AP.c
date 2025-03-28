@@ -8,6 +8,8 @@
 #include <nvs_flash.h>
 #include <esp_wifi.h>
 
+static const char* TAG = "AP";
+
 void wifi_init(void) {
     // Initialize NVS
     esp_err_t ret = nvs_flash_init();
@@ -81,8 +83,8 @@ void wifi_init(void) {
     ip_info_struct.gw = gateway;
     ESP_ERROR_CHECK(esp_netif_set_ip_info(ap_netif, &ip_info_struct));
     ESP_ERROR_CHECK(esp_netif_dhcps_start(ap_netif));
-    ESP_LOGI("AP", "AP initialized with IP: %s", ESP_subnet_IP);
+    ESP_LOGI(TAG, "AP initialized with IP: %s", ESP_subnet_IP);
 
-    ESP_LOGI("AP", "Starting WiFi AP... SSID: %s", wifi_ap_config.ap.ssid);
+    ESP_LOGI(TAG, "Starting WiFi AP... SSID: %s", wifi_ap_config.ap.ssid);
     ESP_ERROR_CHECK(esp_wifi_start());
 }
