@@ -469,18 +469,18 @@ httpd_handle_t start_webserver(void) {
         httpd_register_uri_handler(server, &validate_connect_uri);
 
         httpd_uri_t css_uri = {
-            .uri      = "/assets/DetailPage.css",
+            .uri      = "/assets/BatteryPage.css",
             .method   = HTTP_GET,
             .handler  = file_serve_handler,
-            .user_ctx = "/static/assets/DetailPage.css",
+            .user_ctx = "/static/assets/BatteryPage.css",
         };
         httpd_register_uri_handler(server, &css_uri);
 
         httpd_uri_t js_1_uri = {
-            .uri      = "/assets/DetailPage.js",
+            .uri      = "/assets/BatteryPage.js",
             .method   = HTTP_GET,
             .handler  = file_serve_handler,
-            .user_ctx = "/static/assets/DetailPage.js",
+            .user_ctx = "/static/assets/BatteryPage.js",
         };
         httpd_register_uri_handler(server, &js_1_uri);
 

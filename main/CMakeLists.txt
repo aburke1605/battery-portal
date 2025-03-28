@@ -18,8 +18,8 @@ execute_process(
     --include=esp32.html
     --include=assets/
     --include=assets/extra.js
-    --include=assets/DetailPage.js
-    --include=assets/DetailPage.css
+    --include=assets/BatteryPage.js
+    --include=assets/BatteryPage.css
     --exclude=assets/*
     --exclude=*
     ${CMAKE_SOURCE_DIR}/website/frontend/dist/ ${SPIFFS_BUILD_DIR}/
