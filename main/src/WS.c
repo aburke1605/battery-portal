@@ -100,6 +100,63 @@ esp_err_t perform_request(cJSON *message, cJSON *response) {
             gpio_set_level(I2C_LED_GPIO_PIN, 0);
 
             cJSON_AddStringToObject(response_content, "status", "success");
+        } else if (summary && strcmp(summary->valuestring, "connect-wifi") == 0) {
+            cJSON *data = cJSON_GetObjectItem(content, "data");
+            if (!data) {
+                ESP_LOGE("WS", "Failed to parse JSON");
+                cJSON_AddStringToObject(response_content, "status", "error");
+                return ESP_FAIL;
+            }
+
+            const char* ssid = cJSON_GetObjectItem(data, "ssid")->valuestring;
+            const char* password = cJSON_GetObjectItem(data, "password")->valuestring;
+
+            int tries = 0;
+            int max_tries = 10;
+            if (!connected_to_WiFi || reconnect) {
+                if (reconnect) {
+                    connected_to_WiFi = false;
+                }
+
+                wifi_config_t *wifi_sta_config = malloc(sizeof(wifi_config_t));
+                memset(wifi_sta_config, 0, sizeof(wifi_config_t));
+
+                strncpy((char *)wifi_sta_config->sta.ssid, ssid, sizeof(wifi_sta_config->sta.ssid) - 1);
+                strncpy((char *)wifi_sta_config->sta.password, password, sizeof(wifi_sta_config->sta.password) - 1);
+
+                ESP_ERROR_CHECK(esp_wifi_set_config(ESP_IF_WIFI_STA, wifi_sta_config));
+                // TODO: if reconnecting, it doesn't actually seem to drop the old connection in favour of the new one
+
+                ESP_LOGI("AP", "Connecting to AP... SSID: %s", wifi_sta_config->sta.ssid);
+
+                // give some time to connect
+                vTaskDelay(pdMS_TO_TICKS(5000));
+                while (true) {
+                    if (tries > max_tries) break;
+                    wifi_ap_record_t ap_info;
+                    if (esp_wifi_sta_get_ap_info(&ap_info) == ESP_OK) {
+
+                        esp_netif_t *sta_netif = esp_netif_get_handle_from_ifkey("WIFI_STA_DEF");
+                        if (sta_netif != NULL) {
+                            esp_netif_ip_info_t ip_info;
+                            esp_netif_get_ip_info(sta_netif, &ip_info);
+
+                            if (ip_info.ip.addr != IPADDR_ANY) {
+                                connected_to_WiFi = true;
+                                ESP_LOGI("WS", "Connected to router. Signal strength: %d dBm", ap_info.rssi);
+
+                                break;
+                            }
+                        }
+                    } else {
+                        if (VERBOSE) ESP_LOGI("WS", "Not connected. Retrying... %d", tries);
+                        esp_wifi_connect();
+                    }
+                    tries++;
+
+                    vTaskDelay(pdMS_TO_TICKS(1000));
+                }
+            }
         }
     } else {
         return ESP_ERR_NOT_SUPPORTED;
