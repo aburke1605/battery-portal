@@ -1,8 +1,10 @@
+#include <cJSON.h>
 #include <string.h>
 #include <math.h>
 
 #include "include/config.h"
 #include "include/utils.h"
+#include "include/WS.h"
 
 #include <esp_random.h>
 
@@ -20,33 +22,29 @@ void random_key(char *key) {
     key[UTILS_KEY_LENGTH] = '\0';
 }
 
-void send_fake_post_request() {
+void send_fake_request() {
     if (!connected_to_WiFi) {
-        char url[64];
-        snprintf(url, sizeof(url), "http://%s/validate_connect%s", ESP_subnet_IP, UTILS_EDUROAM ? "?eduroam=true" : "");
-        esp_http_client_config_t config = {
-            .url = url,
-            .method = HTTP_METHOD_POST,
-        };
-
-        esp_http_client_handle_t client = esp_http_client_init(&config);
-
-        char post_data[128];
+        cJSON *message = cJSON_CreateObject();
+        cJSON_AddStringToObject(message, "type", "request");
+        cJSON *content = cJSON_CreateObject();
+        cJSON_AddStringToObject(content, "summary", "connect-wifi");
+        cJSON *data = cJSON_CreateObject();
+        cJSON_AddStringToObject(data, "id", ESP_ID);
         if (UTILS_EDUROAM) {
-            snprintf(post_data, sizeof(post_data), "ssid=%s@liverpool.ac.uk&password=%s", UTILS_EDUROAM_USERNAME, UTILS_EDUROAM_PASSWORD);
+            cJSON_AddStringToObject(data, "username", UTILS_EDUROAM_USERNAME);
+            cJSON_AddStringToObject(data, "password", UTILS_EDUROAM_PASSWORD);
+            cJSON_AddBoolToObject(data, "eduroam", true);
         } else {
-            char encoded_ssid[32];
-            url_encode(encoded_ssid, UTILS_ROUTER_SSID, sizeof(encoded_ssid));
-            char encoded_password[32];
-            url_encode(encoded_password, UTILS_ROUTER_PASSWORD, sizeof(encoded_password));
-            snprintf(post_data, sizeof(post_data), "ssid=%s&password=%s", encoded_ssid, encoded_password);
-            post_data[strlen(post_data)] = '\0';
+            cJSON_AddStringToObject(data, "username", UTILS_ROUTER_SSID);
+            cJSON_AddStringToObject(data, "password", UTILS_ROUTER_PASSWORD);
+            cJSON_AddBoolToObject(data, "eduroam", false);
         }
-        esp_http_client_set_header(client, "Content-Type", "application/x-www-form-urlencoded");
-        esp_http_client_set_post_field(client, post_data, strlen(post_data));
+        cJSON_AddItemToObject(content, "data", data);
+        cJSON_AddItemToObject(message, "content", content);
 
-        esp_http_client_perform(client);
-        esp_http_client_cleanup(client);
+        cJSON *response = cJSON_CreateObject();
+        perform_request(message, response);
+
         vTaskDelay(pdMS_TO_TICKS(5000));
     }
 }

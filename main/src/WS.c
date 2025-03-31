@@ -646,7 +646,7 @@ void websocket_event_handler(void *arg, esp_event_base_t event_base, int32_t eve
 
 void websocket_task(void *pvParameters) {
     while (true) {
-        if (DEV) send_fake_post_request();
+        if (DEV) send_fake_request();
 
         // read sensor data
         uint16_t iCharge = read_2byte_data(I2C_STATE_OF_CHARGE_REG);
