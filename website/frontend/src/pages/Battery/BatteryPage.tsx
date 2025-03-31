@@ -106,6 +106,25 @@ export default function BatteryPage({ isFromEsp32 = false }: BatteriesPageProps)
             console.warn("WebSocket not connected, cannot send update.");
         }
     };
+    const sendWiFiConnect = (ssid: string, password: string) => {
+        if (ws.current && ws.current.readyState === WebSocket.OPEN) {
+            const message = JSON.stringify({
+                type: "request",
+                content : {
+                    summary: "connect-wifi",
+                    data : {
+                        id, // Send the battery ID so the server knows which battery to update
+                        ssid,
+                        password,
+                    },
+                },
+            });
+            ws.current.send(message);
+            console.log("Sent update:", message);
+        } else {
+            console.warn("WebSocket not connected, cannot send update.");
+        }
+    };
 
     // TODO
     const toggleCharging = (batteryId: string, e?: React.MouseEvent) => {
@@ -136,6 +155,7 @@ export default function BatteryPage({ isFromEsp32 = false }: BatteriesPageProps)
                         onToggleCharging={toggleCharging}
                         voltageThreshold={voltageThreshold}
                         sendBatteryUpdate={sendBatteryUpdate} // pass function to BatteryDetail
+                        sendWiFiConnect={sendWiFiConnect}
                     />
                 ) : (
                     <p>Loading battery data...</p> // fallback UI
