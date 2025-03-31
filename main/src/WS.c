@@ -101,6 +101,8 @@ esp_err_t perform_request(cJSON *message, cJSON *response) {
 
             cJSON_AddStringToObject(response_content, "status", "success");
         }
+    } else {
+        return ESP_ERR_NOT_SUPPORTED;
     }
     cJSON_AddItemToObject(response, "content", response_content);
     return ESP_OK;
@@ -676,12 +678,13 @@ void websocket_event_handler(void *arg, esp_event_base_t event_base, int32_t eve
             }
 
             cJSON *response = cJSON_CreateObject();
-            perform_request(message, response);
+            esp_err_t err = perform_request(message, response);
 
             char *response_str = cJSON_PrintUnformatted(response);
             cJSON_Delete(response);
-            send_ws_message(response_str);
+            if (err == ESP_OK) send_ws_message(response_str);
             free(response_str);
+            cJSON_Delete(message);
             break;
 
             cJSON *typeItem = cJSON_GetObjectItem(message, "type");
