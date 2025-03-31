@@ -24,7 +24,8 @@ export const initialBatteries: BatteryData[] = [
     cycleCount: 124,
     isCharging: false,
     IP: '127.0.0.1',
-    timestamp: Date.now()
+    timestamp: Date.now(),
+    isConnected: true,
   },
   {
     id: 'B-002',
@@ -48,7 +49,8 @@ export const initialBatteries: BatteryData[] = [
     cycleCount: 87,
     isCharging: true,
     IP: '127.0.0.1',
-    timestamp: Date.now()
+    timestamp: Date.now(),
+    isConnected: true,
   },
   {
     id: 'B-003',
@@ -72,7 +74,8 @@ export const initialBatteries: BatteryData[] = [
     cycleCount: 203,
     isCharging: false,
     IP: '127.0.0.1',
-    timestamp: Date.now()
+    timestamp: Date.now(),
+    isConnected: true,
   },
   {
     id: 'B-004',
@@ -96,7 +99,8 @@ export const initialBatteries: BatteryData[] = [
     cycleCount: 156,
     isCharging: false,
     IP: '127.0.0.1',
-    timestamp: Date.now()
+    timestamp: Date.now(),
+    isConnected: true,
   },
   {
     id: 'B-005',
@@ -120,7 +124,8 @@ export const initialBatteries: BatteryData[] = [
     cycleCount: 189,
     isCharging: true,
     IP: '127.0.0.1',
-    timestamp: Date.now()
+    timestamp: Date.now(),
+    isConnected: true,
   },
   {
     id: 'B-006',
@@ -144,7 +149,8 @@ export const initialBatteries: BatteryData[] = [
     cycleCount: 112,
     isCharging: false,
     IP: '127.0.0.1',
-    timestamp: Date.now()
+    timestamp: Date.now(),
+    isConnected: true,
   },
   {
     id: 'B-007',
@@ -168,7 +174,8 @@ export const initialBatteries: BatteryData[] = [
     cycleCount: 201,
     isCharging: false,
     IP: '127.0.0.1',
-    timestamp: Date.now()
+    timestamp: Date.now(),
+    isConnected: true,
   },
   {
     id: 'B-008',
@@ -192,7 +199,8 @@ export const initialBatteries: BatteryData[] = [
     cycleCount: 76,
     isCharging: true,
     IP: '127.0.0.1',
-    timestamp: Date.now()
+    timestamp: Date.now(),
+    isConnected: true,
   },
   {
     id: 'B-009',
@@ -216,7 +224,8 @@ export const initialBatteries: BatteryData[] = [
     cycleCount: 134,
     isCharging: false,
     IP: '127.0.0.1',
-    timestamp: Date.now()
+    timestamp: Date.now(),
+    isConnected: true,
   }
 ];
 

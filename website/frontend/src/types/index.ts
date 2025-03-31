@@ -22,6 +22,7 @@ export interface BatteryData {
   cycleCount: number;
   isCharging: boolean;
   timestamp: number;
+  isConnected: boolean;
 }
 
 

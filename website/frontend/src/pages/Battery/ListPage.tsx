@@ -41,6 +41,7 @@ export default function ListPage() {
             CCT: battery?.CCT || 0,
             DCT: battery?.DCT || 0,
             IP: battery?.IP || "xxx.xxx.xxx.xxx",
+            isConnected: battery?.connected_to_WiFi || false,
             location: "Unknown",
             health: 100,
             isCharging: false,

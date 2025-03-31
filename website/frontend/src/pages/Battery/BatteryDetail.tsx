@@ -9,6 +9,7 @@ import {
   ThermometerSun, 
   Info, 
   RefreshCw, 
+  Wifi, 
   Power, 
   Calendar, 
   FileText, 
@@ -757,9 +758,11 @@ const BatteryDetail: React.FC<BatteryDetailProps> = ({
 
           <div className="bg-purple-50 p-4 rounded-lg">
             <h3 className="text-sm font-medium text-purple-700 flex items-center mb-2">
-              <RefreshCw size={16} className="mr-1" /> Cycle Count
+              <Wifi size={16} className="mr-1" /> Wi-Fi
             </h3>
-            <span className="text-3xl font-bold text-purple-700">{battery.cycleCount}</span>
+            <div className="flex items-end space-x-2">
+              <span className="text-3xl font-bold text-purple-700">{battery.isConnected? "Connected":"!! no connection"}</span>
+            </div>
           </div>
         </div>
 
