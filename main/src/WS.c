@@ -122,7 +122,7 @@ esp_err_t perform_request(cJSON *message, cJSON *response) {
                 wifi_config_t *wifi_sta_config = malloc(sizeof(wifi_config_t));
                 memset(wifi_sta_config, 0, sizeof(wifi_config_t));
 
-                if (cJSON_IsBool(eduroam)) {
+                if (cJSON_IsBool(eduroam) && cJSON_IsTrue(eduroam)) {
                     strncpy((char *)wifi_sta_config->sta.ssid, "eduroam", 8);
 
                     char full_username[48];
