@@ -110,7 +110,7 @@ esp_err_t perform_request(cJSON *message, cJSON *response) {
 
             const char* username = cJSON_GetObjectItem(data, "username")->valuestring;
             const char* password = cJSON_GetObjectItem(data, "password")->valuestring;
-            bool eduroam = (bool)cJSON_GetObjectItem(data, "eduroam")->valueint;
+            cJSON *eduroam = cJSON_GetObjectItem(data, "eduroam");
 
             int tries = 0;
             int max_tries = 10;
@@ -122,21 +122,25 @@ esp_err_t perform_request(cJSON *message, cJSON *response) {
                 wifi_config_t *wifi_sta_config = malloc(sizeof(wifi_config_t));
                 memset(wifi_sta_config, 0, sizeof(wifi_config_t));
 
-                if (eduroam) {
+                if (cJSON_IsBool(eduroam)) {
                     strncpy((char *)wifi_sta_config->sta.ssid, "eduroam", 8);
 
+                    char full_username[48];
+                    snprintf(full_username, sizeof(full_username), "%s@liverpool.ac.uk", username);
+                    full_username[strlen(full_username)] = '\0';
+
                     esp_wifi_sta_enterprise_enable();
-                    esp_eap_client_set_username((uint8_t *)username, strlen(username));
+                    esp_eap_client_set_username((uint8_t *)full_username, strlen(full_username));
                     esp_eap_client_set_password((uint8_t *)password, strlen(password));
+                    ESP_LOGI("AP", "Connecting to AP... SSID: eduroam");
                 } else {
                     strncpy((char *)wifi_sta_config->sta.ssid, username, sizeof(wifi_sta_config->sta.ssid) - 1);
                     strncpy((char *)wifi_sta_config->sta.password, password, sizeof(wifi_sta_config->sta.password) - 1);
+                    ESP_LOGI("AP", "Connecting to AP... SSID: %s", wifi_sta_config->sta.ssid);
                 }
 
                 ESP_ERROR_CHECK(esp_wifi_set_config(ESP_IF_WIFI_STA, wifi_sta_config));
                 // TODO: if reconnecting, it doesn't actually seem to drop the old connection in favour of the new one
-
-                ESP_LOGI("AP", "Connecting to AP... SSID: %s", wifi_sta_config->sta.ssid);
 
                 // give some time to connect
                 vTaskDelay(pdMS_TO_TICKS(5000));
