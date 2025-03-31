@@ -544,7 +544,7 @@ const BatteryDetail: React.FC<BatteryDetailProps> = ({
 
                         <label className="block text-sm font-medium text-gray-700">Password:</label>
                         <input
-                          type="text"
+                          type="password"
                           className="border p-1 w-full"
                           value={password}
                           name="password"

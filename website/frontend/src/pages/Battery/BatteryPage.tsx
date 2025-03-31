@@ -21,7 +21,7 @@ export default function BatteryPage({ isFromEsp32 = false }: BatteriesPageProps)
     const [batteryItem, setSelectedBattery] = useState<BatteryData | null>(null);
     //const [setBatteries] = useState<BatteryData[]>(initialBatteries);
     const [voltageThreshold] = useState(46.5);
-    
+
     // Get data from Webscocket
     const ws = useRef<WebSocket | null>(null);
     useEffect(() => {
