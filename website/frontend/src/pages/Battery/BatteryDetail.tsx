@@ -32,7 +32,7 @@ interface BatteryDetailProps {
   onToggleCharging: (batteryId: string) => void;
   voltageThreshold: number;
   sendBatteryUpdate: (updatedValues: Partial<BatteryData>) => void;
-  sendWiFiConnect: (ssid: string, password: string) => void;
+  sendWiFiConnect: (username: string, password: string, eduroam: boolean) => void;
 }
 
 const BatteryDetail: React.FC<BatteryDetailProps> = ({ 
@@ -50,6 +50,8 @@ const BatteryDetail: React.FC<BatteryDetailProps> = ({
 
   const [ssid, setSSID] = useState("");
   const [password, setPassword] = useState("");
+  const [eduroam_username, setEduroamUsername] = useState("");
+  const [eduroam_password, setEduroamPassword] = useState("");
 
   // range
   const BL_min = 2000;
@@ -129,10 +131,15 @@ const BatteryDetail: React.FC<BatteryDetailProps> = ({
   };
   // send websocket-connect message
   const handleConnect = () => {
-    sendWiFiConnect(ssid, password);
+    if (ssid == "" && password == "")
+      sendWiFiConnect(eduroam_username, eduroam_password, true);
+    else if (eduroam_username == "" && eduroam_password == "")
+      sendWiFiConnect(ssid, password, false);
     setSSID("");
     setPassword("");
     setHasChanges(false);
+    setEduroamUsername("");
+    setEduroamPassword("");
   }
 
   const renderTabContent = () => {
@@ -544,8 +551,37 @@ const BatteryDetail: React.FC<BatteryDetailProps> = ({
                           required
                           onChange={handleTextChange(setPassword)}
                         />
+                      </div>
+                    </div>
+                  </div>
 
                         {hasChanges && (
+                  <div>
+                    <h4 className="text-sm font-medium text-gray-900 mb-4">Eduroam Information</h4>
+                    <div className="space-y-4">
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700">Username:</label>
+                        <input
+                          type="text"
+                          className="border p-1 w-full"
+                          value={eduroam_username}
+                          name="eduroam_username"
+                          id="eduroam_username"
+                          required
+                          onChange={handleTextChange(setEduroamUsername)}
+                        />
+
+                        <label className="block text-sm font-medium text-gray-700">Password:</label>
+                        <input
+                          type="password"
+                          className="border p-1 w-full"
+                          value={eduroam_password}
+                          name="eduroam_password"
+                          id="eduroam_password"
+                          required
+                          onChange={handleTextChange(setEduroamPassword)}
+                        />
+
                           <div className="flex gap-2 mt-2">
                             <button onClick={handleConnect} className="p-2 bg-blue-500 text-white rounded">
                               Connect

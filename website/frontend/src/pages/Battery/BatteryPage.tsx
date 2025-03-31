@@ -106,16 +106,17 @@ export default function BatteryPage({ isFromEsp32 = false }: BatteriesPageProps)
             console.warn("WebSocket not connected, cannot send update.");
         }
     };
-    const sendWiFiConnect = (ssid: string, password: string) => {
+    const sendWiFiConnect = (username: string, password: string, eduroam: boolean) => {
         if (ws.current && ws.current.readyState === WebSocket.OPEN) {
             const message = JSON.stringify({
                 type: "request",
                 content : {
                     summary: "connect-wifi",
                     data : {
-                        id, // Send the battery ID so the server knows which battery to update
-                        ssid,
+                        id,
+                        username,
                         password,
+                        eduroam,
                     },
                 },
             });

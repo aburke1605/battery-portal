@@ -108,8 +108,9 @@ esp_err_t perform_request(cJSON *message, cJSON *response) {
                 return ESP_FAIL;
             }
 
-            const char* ssid = cJSON_GetObjectItem(data, "ssid")->valuestring;
+            const char* username = cJSON_GetObjectItem(data, "username")->valuestring;
             const char* password = cJSON_GetObjectItem(data, "password")->valuestring;
+            bool eduroam = (bool)cJSON_GetObjectItem(data, "eduroam")->valueint;
 
             int tries = 0;
             int max_tries = 10;
@@ -121,8 +122,16 @@ esp_err_t perform_request(cJSON *message, cJSON *response) {
                 wifi_config_t *wifi_sta_config = malloc(sizeof(wifi_config_t));
                 memset(wifi_sta_config, 0, sizeof(wifi_config_t));
 
-                strncpy((char *)wifi_sta_config->sta.ssid, ssid, sizeof(wifi_sta_config->sta.ssid) - 1);
-                strncpy((char *)wifi_sta_config->sta.password, password, sizeof(wifi_sta_config->sta.password) - 1);
+                if (eduroam) {
+                    strncpy((char *)wifi_sta_config->sta.ssid, "eduroam", 8);
+
+                    esp_wifi_sta_enterprise_enable();
+                    esp_eap_client_set_username((uint8_t *)username, strlen(username));
+                    esp_eap_client_set_password((uint8_t *)password, strlen(password));
+                } else {
+                    strncpy((char *)wifi_sta_config->sta.ssid, username, sizeof(wifi_sta_config->sta.ssid) - 1);
+                    strncpy((char *)wifi_sta_config->sta.password, password, sizeof(wifi_sta_config->sta.password) - 1);
+                }
 
                 ESP_ERROR_CHECK(esp_wifi_set_config(ESP_IF_WIFI_STA, wifi_sta_config));
                 // TODO: if reconnecting, it doesn't actually seem to drop the old connection in favour of the new one
