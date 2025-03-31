@@ -47,6 +47,7 @@ const BatteryDetail: React.FC<BatteryDetailProps> = ({
 
   const [isEditing, setIsEditing] = useState(false);
   const [hasChanges, setHasChanges] = useState(false);
+  const [hasWiFiChanges, setHasWiFiChanges] = useState(false);
 
   const [ssid, setSSID] = useState("");
   const [password, setPassword] = useState("");
@@ -127,7 +128,7 @@ const BatteryDetail: React.FC<BatteryDetailProps> = ({
   const handleTextChange = (setter: React.Dispatch<React.SetStateAction<string>>) =>
     (e: React.ChangeEvent<HTMLInputElement>) => {
       setter(e.target.value);
-    setHasChanges(true);
+      setHasWiFiChanges(true);
   };
   // send websocket-connect message
   const handleConnect = () => {
@@ -137,9 +138,9 @@ const BatteryDetail: React.FC<BatteryDetailProps> = ({
       sendWiFiConnect(ssid, password, false);
     setSSID("");
     setPassword("");
-    setHasChanges(false);
     setEduroamUsername("");
     setEduroamPassword("");
+    setHasWiFiChanges(false);
   }
 
   const renderTabContent = () => {
@@ -555,7 +556,6 @@ const BatteryDetail: React.FC<BatteryDetailProps> = ({
                     </div>
                   </div>
 
-                        {hasChanges && (
                   <div>
                     <h4 className="text-sm font-medium text-gray-900 mb-4">Eduroam Information</h4>
                     <div className="space-y-4">
@@ -582,6 +582,7 @@ const BatteryDetail: React.FC<BatteryDetailProps> = ({
                           onChange={handleTextChange(setEduroamPassword)}
                         />
 
+                        {hasWiFiChanges && (
                           <div className="flex gap-2 mt-2">
                             <button onClick={handleConnect} className="p-2 bg-blue-500 text-white rounded">
                               Connect
