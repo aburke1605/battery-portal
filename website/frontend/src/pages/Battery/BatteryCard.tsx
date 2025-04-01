@@ -31,13 +31,13 @@ const BatteryCard: React.FC<BatteryCardProps> = ({ battery, onToggleCharging, on
     >
       <div className="p-5">
         <div className="flex justify-between items-start mb-3">
-          <h3 className="text-lg font-semibold text-gray-900">{battery.name}</h3>
+          <h3 className="text-lg font-semibold text-gray-900">{battery.esp_id}</h3>
           <span className={`text-xs px-2 py-1 rounded-full ${getStatusColor(battery.status)}`}>
             {battery.status.charAt(0).toUpperCase() + battery.status.slice(1)}
           </span>
         </div>
         
-        <div className="text-sm text-gray-600 mb-1">ID: {battery.id}</div>
+        <div className="text-sm text-gray-600 mb-1">ID: {battery.esp_id}</div>
         <div className="text-sm text-gray-600 mb-4">Location: {battery.location}</div>
         
         <div className="mb-4">
@@ -74,7 +74,7 @@ const BatteryCard: React.FC<BatteryCardProps> = ({ battery, onToggleCharging, on
 
         <div className="mt-4 flex justify-between items-center">
           <button 
-            onClick={(e) => onToggleCharging(battery.id, e)}
+            onClick={(e) => onToggleCharging(battery.esp_id, e)}
             className="flex items-center text-gray-600 hover:text-gray-900"
           >
             {battery.isCharging ? (

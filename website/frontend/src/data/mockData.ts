@@ -3,8 +3,7 @@ import { BatteryData, AlertData, UserData } from '../types';
 // Sample battery data
 export const initialBatteries: BatteryData[] = [
   {
-    id: 'B-0012',
-    name: 'Battery Pack Alpha',
+    esp_id: 'B-0012',
     status: 'good',
     charge: 87,
     temperature: 32,
@@ -28,8 +27,7 @@ export const initialBatteries: BatteryData[] = [
     isConnected: true,
   },
   {
-    id: 'B-002',
-    name: 'Battery Pack Beta',
+    esp_id: 'B-002',
     status: 'good',
     charge: 92,
     temperature: 29,
@@ -53,8 +51,7 @@ export const initialBatteries: BatteryData[] = [
     isConnected: true,
   },
   {
-    id: 'B-003',
-    name: 'Battery Pack Gamma',
+    esp_id: 'B-003',
     status: 'critical',
     charge: 65,
     temperature: 58,
@@ -78,8 +75,7 @@ export const initialBatteries: BatteryData[] = [
     isConnected: true,
   },
   {
-    id: 'B-004',
-    name: 'Battery Pack Delta',
+    esp_id: 'B-004',
     status: 'good',
     charge: 78,
     temperature: 31,
@@ -103,8 +99,7 @@ export const initialBatteries: BatteryData[] = [
     isConnected: true,
   },
   {
-    id: 'B-005',
-    name: 'Battery Pack Epsilon',
+    esp_id: 'B-005',
     status: 'warning',
     charge: 45,
     temperature: 42,
@@ -128,8 +123,7 @@ export const initialBatteries: BatteryData[] = [
     isConnected: true,
   },
   {
-    id: 'B-006',
-    name: 'Battery Pack Zeta',
+    esp_id: 'B-006',
     status: 'good',
     charge: 82,
     temperature: 30,
@@ -153,8 +147,7 @@ export const initialBatteries: BatteryData[] = [
     isConnected: true,
   },
   {
-    id: 'B-007',
-    name: 'Battery Pack Eta',
+    esp_id: 'B-007',
     status: 'warning',
     charge: 12,
     temperature: 33,
@@ -178,8 +171,7 @@ export const initialBatteries: BatteryData[] = [
     isConnected: true,
   },
   {
-    id: 'B-008',
-    name: 'Battery Pack Theta',
+    esp_id: 'B-008',
     status: 'good',
     charge: 90,
     temperature: 28,
@@ -203,8 +195,7 @@ export const initialBatteries: BatteryData[] = [
     isConnected: true,
   },
   {
-    id: 'B-009',
-    name: 'Battery Pack Iota',
+    esp_id: 'B-009',
     status: 'good',
     charge: 85,
     temperature: 31,

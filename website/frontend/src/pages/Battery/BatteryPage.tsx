@@ -12,11 +12,11 @@ interface BatteriesPageProps {
 export default function BatteryPage({ isFromEsp32 = false }: BatteriesPageProps) {
       let queryString = window.location.search;
       if (!isFromEsp32) {
-          const hash = window.location.hash;  // e.g., "#/battery-detail?id=BMS_02"
-          queryString = hash.split('?')[1];  // Extract "id=BMS_02"
+          const hash = window.location.hash;  // e.g., "#/battery-detail?esp_id=BMS_02"
+          queryString = hash.split('?')[1];  // Extract "esp_id=BMS_02"
     }
     const urlParams = new URLSearchParams(queryString);
-    const id = urlParams.get('id');
+    const esp_id = urlParams.get('esp_id');
 
     const [batteryItem, setSelectedBattery] = useState<BatteryData | null>(null);
     //const [setBatteries] = useState<BatteryData[]>(initialBatteries);
@@ -34,17 +34,15 @@ export default function BatteryPage({ isFromEsp32 = false }: BatteriesPageProps)
       
         ws.current.onmessage = (event) => {
             console.log('Received message', event.data);
-            if (!id) {
+            if (!esp_id) {
                 return;
             }
             try {
                 const data = JSON.parse(event.data);
                 console.log('Received WebSocket message:', data);
-                console.log('No state, looking up battery by id...');
-                const battery = data[id];
+                const battery = data[esp_id];
                 const batteryItem: BatteryData = {
-                    id: battery?.name || "id",
-                    name: battery?.name || "name",
+                    esp_id: esp_id,
                     charge: battery?.charge  || 0,
                     voltage: battery?.voltage.toFixed(1) || 0,
                     current: battery?.current.toFixed(1) || 0,
@@ -85,7 +83,7 @@ export default function BatteryPage({ isFromEsp32 = false }: BatteriesPageProps)
         return () => {
           ws.current?.close();
         };
-    }, [id]);
+    }, [esp_id]);
 
     // Function to send updated values to the WebSocket
     const sendBatteryUpdate = (updatedValues: Partial<BatteryData>) => {
@@ -95,7 +93,7 @@ export default function BatteryPage({ isFromEsp32 = false }: BatteriesPageProps)
                 content : {
                     summary: "change-settings",
                     data : {
-                        id, // Send the battery ID so the server knows which battery to update
+                        esp_id, // Send the battery ID so the server knows which battery to update
                         ...updatedValues, // Send only the changed values
                     },
                 },
@@ -113,7 +111,7 @@ export default function BatteryPage({ isFromEsp32 = false }: BatteriesPageProps)
                 content : {
                     summary: "connect-wifi",
                     data : {
-                        id,
+                        esp_id,
                         username,
                         password,
                         eduroam,

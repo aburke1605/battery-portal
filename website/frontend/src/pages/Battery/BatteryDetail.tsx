@@ -69,7 +69,7 @@ const BatteryDetail: React.FC<BatteryDetailProps> = ({
   const DCT_max = 65;
   // initialise
   const [values, setValues] = useState<Partial<BatteryData>>({
-    id: battery.id,
+    esp_id: battery.esp_id,
     BL: battery.BL,
     BH: battery.BH,
     CITL: battery.CITL,
@@ -81,7 +81,7 @@ const BatteryDetail: React.FC<BatteryDetailProps> = ({
   useEffect(() => {
     if (!isEditing) {
       setValues({
-        id: battery.id,
+        esp_id: battery.esp_id,
         BL: battery.BL,
         BH: battery.BH,
         CITL: battery.CITL,
@@ -709,7 +709,7 @@ const BatteryDetail: React.FC<BatteryDetailProps> = ({
                 </div>
                 <div className="px-4 py-5 sm:p-6 space-y-4">
                   <button 
-                    onClick={() => onToggleCharging(battery.id)}
+                    onClick={() => onToggleCharging(battery.esp_id)}
                     className={`w-full flex items-center justify-center px-4 py-2 border rounded-md shadow-sm text-sm font-medium focus:outline-none focus:ring-2 focus:ring-offset-2 ${
                       battery.isCharging 
                         ? 'border-red-300 text-red-700 bg-red-50 hover:bg-red-100 focus:ring-red-500' 
@@ -753,7 +753,7 @@ const BatteryDetail: React.FC<BatteryDetailProps> = ({
                   <dl className="grid grid-cols-1 gap-x-4 gap-y-6 sm:grid-cols-2">
                     <div className="sm:col-span-1">
                       <dt className="text-sm font-medium text-gray-500">Battery ID</dt>
-                      <dd className="mt-1 text-sm text-gray-900">{battery.id}</dd>
+                      <dd className="mt-1 text-sm text-gray-900">{battery.esp_id}</dd>
                     </div>
                     <div className="sm:col-span-1">
                       <dt className="text-sm font-medium text-gray-500">Type</dt>
@@ -788,9 +788,9 @@ const BatteryDetail: React.FC<BatteryDetailProps> = ({
       <div className="p-6 border-b border-gray-200 bg-gray-50">
         <div className="flex justify-between items-start">
           <div>
-            <h2 className="text-2xl font-bold text-gray-800">{battery.name}</h2>
+            <h2 className="text-2xl font-bold text-gray-800">{battery.esp_id}</h2>
             <div className="flex items-center mt-1 space-x-2 text-gray-600">
-              <span>{battery.id}</span>
+              <span>{battery.esp_id}</span>
               <span>•</span>
               <span>{battery.type}</span>
               <span>•</span>
