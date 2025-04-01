@@ -33,6 +33,7 @@ interface BatteryDetailProps {
   voltageThreshold: number;
   sendBatteryUpdate: (updatedValues: Partial<BatteryData>) => void;
   sendWiFiConnect: (username: string, password: string, eduroam: boolean) => void;
+  sendReset: () => void;
 }
 
 const BatteryDetail: React.FC<BatteryDetailProps> = ({ 
@@ -41,6 +42,7 @@ const BatteryDetail: React.FC<BatteryDetailProps> = ({
   voltageThreshold,
   sendBatteryUpdate, // receive function from BatteryPage
   sendWiFiConnect,
+  sendReset,
 }) => {
   
   const [activeTab, setActiveTab] = useState('overview');
@@ -739,6 +741,12 @@ const BatteryDetail: React.FC<BatteryDetailProps> = ({
                   <button className="w-full flex items-center justify-center px-4 py-2 border border-blue-300 shadow-sm text-sm font-medium rounded-md text-blue-700 bg-blue-50 hover:bg-blue-100 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
                     <Calendar size={16} className="mr-2" />
                     Schedule Maintenance
+                  </button>
+                  <button
+                    onClick={() => sendReset()}
+                    className="w-full flex items-center justify-center px-4 py-2 border border-red-300 shadow-sm text-sm font-medium rounded-md text-red-700 bg-red-50 hover:bg-red-100 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500">
+                    <RefreshCw size={16} className="mr-2" />
+                    Reset BMS
                   </button>
                   <button className="w-full flex items-center justify-center px-4 py-2 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
                     <FileText size={16} className="mr-2" />

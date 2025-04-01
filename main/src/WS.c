@@ -161,6 +161,7 @@ esp_err_t perform_request(cJSON *message, cJSON *response) {
                             if (ip_info.ip.addr != IPADDR_ANY) {
                                 connected_to_WiFi = true;
                                 ESP_LOGI("WS", "Connected to router. Signal strength: %d dBm", ap_info.rssi);
+                                cJSON_AddStringToObject(response_content, "status", "success");
 
                                 break;
                             }
@@ -174,6 +175,9 @@ esp_err_t perform_request(cJSON *message, cJSON *response) {
                     vTaskDelay(pdMS_TO_TICKS(1000));
                 }
             }
+        } else if (summary && strcmp(summary->valuestring, "reset-bms") == 0) {
+            reset_BMS();
+            cJSON_AddStringToObject(response_content, "status", "success");
         }
     } else {
         return ESP_ERR_NOT_SUPPORTED;
