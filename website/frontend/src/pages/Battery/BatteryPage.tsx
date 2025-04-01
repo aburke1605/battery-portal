@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
+import { useNavigate } from 'react-router-dom';
 import PageBreadcrumb from "../../components/common/PageBreadCrumb";
 import PageMeta from "../../components/common/PageMeta";
 import { BatteryData } from '../../types';
@@ -16,11 +17,14 @@ export default function BatteryPage({ isFromEsp32 = false }: BatteriesPageProps)
           queryString = hash.split('?')[1];  // Extract "esp_id=BMS_02"
     }
     const urlParams = new URLSearchParams(queryString);
-    const [esp_id, reset_esp_id] = useState(urlParams.get('esp_id'));
+    const esp_id = urlParams.get('esp_id');
 
     const [batteryItem, setSelectedBattery] = useState<BatteryData | null>(null);
     //const [setBatteries] = useState<BatteryData[]>(initialBatteries);
     const [voltageThreshold] = useState(46.5);
+
+    const navigate = useNavigate();
+    const sleep = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
 
     // Get data from Webscocket
     const ws = useRef<WebSocket | null>(null);
@@ -87,7 +91,7 @@ export default function BatteryPage({ isFromEsp32 = false }: BatteriesPageProps)
     }, [esp_id]);
 
     // Function to send updated values to the WebSocket
-    const sendBatteryUpdate = (updatedValues: Partial<BatteryData>) => {
+    const sendBatteryUpdate = async (updatedValues: Partial<BatteryData>) => {
         if (ws.current && ws.current.readyState === WebSocket.OPEN) {
             const message = JSON.stringify({
                 type: "request",
@@ -101,7 +105,11 @@ export default function BatteryPage({ isFromEsp32 = false }: BatteriesPageProps)
             });
             ws.current.send(message);
             console.log("Sent update:", message);
-            reset_esp_id(updatedValues?.new_esp_id || esp_id);
+            if (updatedValues.new_esp_id != esp_id) {
+                console.log("ESP ID changed, redirecting in 5s...");
+                await sleep(5000);
+                navigate(`/batteries`);
+            }
         } else {
             console.warn("WebSocket not connected, cannot send update.");
         }
