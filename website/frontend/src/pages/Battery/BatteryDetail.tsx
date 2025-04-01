@@ -4,7 +4,9 @@ import {
   Share2, 
   Download, 
   Printer, 
-  Percent, 
+  BatteryLow, 
+  BatteryMedium, 
+  BatteryFull, 
   Zap, 
   ThermometerSun, 
   Info, 
@@ -839,7 +841,22 @@ const BatteryDetail: React.FC<BatteryDetailProps> = ({
           <div className="bg-blue-50 p-4 rounded-lg">
             <div className="flex items-center justify-between mb-2">
               <h3 className="text-sm font-medium text-blue-700 flex items-center">
-                <Percent size={16} className="mr-1" /> Charge Level
+                {battery.charge > 90 ? (
+                    <>
+                      <BatteryFull size={16} className="mr-1" />
+                    </>
+                  ) : (
+                    battery.charge > 35 ? (
+                      <>
+                        <BatteryMedium size={16} className="mr-1" />
+                      </>
+                    ) : (
+                      <>
+                        <BatteryLow size={16} className="mr-1" />
+                      </>
+                    )
+                  )
+                } Charge Level
               </h3>
               {battery.isCharging && (
                 <span className="bg-yellow-100 text-yellow-800 text-xs px-2 py-1 rounded-full flex items-center">
