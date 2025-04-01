@@ -1,6 +1,7 @@
 // Battery Data Types
 export interface BatteryData {
   esp_id: string;
+  new_esp_id: string;
   status: 'good' | 'warning' | 'critical' | 'offline';
   IP: string;
   charge: number;

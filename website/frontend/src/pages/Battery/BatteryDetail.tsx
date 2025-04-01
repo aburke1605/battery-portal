@@ -91,10 +91,11 @@ const BatteryDetail: React.FC<BatteryDetailProps> = ({
       });
       setHasChanges(false);
     }
-  }, [battery.id, battery.BL, battery.BH, battery.CITL, battery.CITH, battery.CCT, battery.DCT, isEditing]);
+  }, [battery.esp_id, battery.BL, battery.BH, battery.CITL, battery.CITH, battery.CCT, battery.DCT, isEditing]);
   // slider update
   const handleSliderChange = (key: string) => (e: React.ChangeEvent<HTMLInputElement>) => {
-    const newValue = Number(e.target.value);
+    const { value, type } = e.target;
+    const newValue = type === "number" || type === "range" ? Number(value) : value; // Convert numbers only for sliders
     setValues((prevValues) => {
       const updatedValues = { ...prevValues, [key]: newValue };
       // check if any slider has moved
@@ -113,7 +114,6 @@ const BatteryDetail: React.FC<BatteryDetailProps> = ({
   // reset sliders
   const handleReset = () => {
     setValues({
-      id: battery.id,
       BL: battery.BL,
       BH: battery.BH,
       CITL: battery.CITL,
@@ -371,6 +371,14 @@ const BatteryDetail: React.FC<BatteryDetailProps> = ({
                     <h4 className="text-sm font-medium text-gray-900 mb-4">Charging Parameters</h4>
                     <div className="space-y-4">
                       <div>
+                        <label className="block text-sm font-medium text-gray-700">Device name:</label>
+                        <input
+                          type="text"
+                          className="border p-1 w-full"
+                          placeholder={battery.esp_id}
+                          onChange={handleSliderChange("new_esp_id")}
+                        />
+
                         <label className="block text-sm font-medium text-gray-700">BL: {values.BL} [mV]</label>
                         <input
                           type="range"

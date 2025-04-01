@@ -29,6 +29,7 @@ export default function ListPage() {
           console.log('Parsed ESPs:', data);
           const batteryArray: BatteryData[] = Object.entries(data).map(([esp_id, battery]: [string, any]) => ({
             esp_id: esp_id,
+            new_esp_id: "",
             charge: battery?.charge  || 0,
             voltage: battery?.voltage.toFixed(1) || 0,
             current: battery?.current.toFixed(1) || 0,

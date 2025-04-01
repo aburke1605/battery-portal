@@ -60,7 +60,7 @@ esp_err_t perform_request(cJSON *message, cJSON *response) {
 
             gpio_set_level(I2C_LED_GPIO_PIN, 1);
 
-            const char* esp_id = cJSON_GetObjectItem(data, "id")->valuestring;
+            const char* esp_id = cJSON_GetObjectItem(data, "new_esp_id")->valuestring;
             int BL = cJSON_GetObjectItem(data, "BL")->valueint;
             int BH = cJSON_GetObjectItem(data, "BH")->valueint;
             int CITL = cJSON_GetObjectItem(data, "CITL")->valueint;
@@ -72,6 +72,10 @@ esp_err_t perform_request(cJSON *message, cJSON *response) {
             //       rather than using the `/validate_change` endpoint
             //       and sending mock htto requests to it
 
+            if (esp_id != ESP_ID) {
+                ESP_LOGI("I2C", "Changing device name...");
+                set_device_name(I2C_DATA_SUBCLASS_ID, I2C_NAME_OFFSET, esp_id);
+            }
             if (BL != test_read(I2C_DISCHARGE_SUBCLASS_ID, I2C_BL_OFFSET)) {
                 ESP_LOGI("I2C", "Changing BL voltage...");
                 set_I2_value(I2C_DISCHARGE_SUBCLASS_ID, I2C_BL_OFFSET, BL);

@@ -4,6 +4,7 @@ import { BatteryData, AlertData, UserData } from '../types';
 export const initialBatteries: BatteryData[] = [
   {
     esp_id: 'B-0012',
+    new_esp_id: 'B-0012',
     status: 'good',
     charge: 87,
     temperature: 32,
@@ -28,6 +29,7 @@ export const initialBatteries: BatteryData[] = [
   },
   {
     esp_id: 'B-002',
+    new_esp_id: 'B-002',
     status: 'good',
     charge: 92,
     temperature: 29,
@@ -52,6 +54,7 @@ export const initialBatteries: BatteryData[] = [
   },
   {
     esp_id: 'B-003',
+    new_esp_id: 'B-003',
     status: 'critical',
     charge: 65,
     temperature: 58,
@@ -76,6 +79,7 @@ export const initialBatteries: BatteryData[] = [
   },
   {
     esp_id: 'B-004',
+    new_esp_id: 'B-004',
     status: 'good',
     charge: 78,
     temperature: 31,
@@ -100,6 +104,7 @@ export const initialBatteries: BatteryData[] = [
   },
   {
     esp_id: 'B-005',
+    new_esp_id: 'B-005',
     status: 'warning',
     charge: 45,
     temperature: 42,
@@ -124,6 +129,7 @@ export const initialBatteries: BatteryData[] = [
   },
   {
     esp_id: 'B-006',
+    new_esp_id: 'B-006',
     status: 'good',
     charge: 82,
     temperature: 30,
@@ -148,6 +154,7 @@ export const initialBatteries: BatteryData[] = [
   },
   {
     esp_id: 'B-007',
+    new_esp_id: 'B-007',
     status: 'warning',
     charge: 12,
     temperature: 33,
@@ -172,6 +179,7 @@ export const initialBatteries: BatteryData[] = [
   },
   {
     esp_id: 'B-008',
+    new_esp_id: 'B-008',
     status: 'good',
     charge: 90,
     temperature: 28,
@@ -196,6 +204,7 @@ export const initialBatteries: BatteryData[] = [
   },
   {
     esp_id: 'B-009',
+    new_esp_id: 'B-009',
     status: 'good',
     charge: 85,
     temperature: 31,

@@ -16,7 +16,7 @@ export default function BatteryPage({ isFromEsp32 = false }: BatteriesPageProps)
           queryString = hash.split('?')[1];  // Extract "esp_id=BMS_02"
     }
     const urlParams = new URLSearchParams(queryString);
-    const esp_id = urlParams.get('esp_id');
+    const [esp_id, reset_esp_id] = useState(urlParams.get('esp_id'));
 
     const [batteryItem, setSelectedBattery] = useState<BatteryData | null>(null);
     //const [setBatteries] = useState<BatteryData[]>(initialBatteries);
@@ -43,6 +43,7 @@ export default function BatteryPage({ isFromEsp32 = false }: BatteriesPageProps)
                 const battery = data[esp_id];
                 const batteryItem: BatteryData = {
                     esp_id: esp_id,
+                    new_esp_id: "",
                     charge: battery?.charge  || 0,
                     voltage: battery?.voltage.toFixed(1) || 0,
                     current: battery?.current.toFixed(1) || 0,
@@ -100,6 +101,7 @@ export default function BatteryPage({ isFromEsp32 = false }: BatteriesPageProps)
             });
             ws.current.send(message);
             console.log("Sent update:", message);
+            reset_esp_id(updatedValues?.new_esp_id || esp_id);
         } else {
             console.warn("WebSocket not connected, cannot send update.");
         }

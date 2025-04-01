@@ -76,7 +76,7 @@ def browser_ws(ws):
                 break
             try:
                 data = json.loads(message)
-                esp_id = data["content"]["data"]["id"] # TODO change to esp_id everywhere
+                esp_id = data["content"]["data"]["esp_id"] # TODO change to esp_id everywhere
                 forward_to_esp32(esp_id, message)
 
             except json.JSONDecodeError:
