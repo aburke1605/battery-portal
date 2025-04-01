@@ -453,7 +453,15 @@ httpd_handle_t start_webserver(void) {
             .user_ctx  = "/static/esp32.html"
         };
         httpd_register_uri_handler(server, &esp32_uri);
-        
+
+        httpd_uri_t favicon_uri = {
+            .uri       = "/favicon.png",
+            .method    = HTTP_GET,
+            .handler   = file_serve_handler,
+            .user_ctx  = "/static/favicon.png"
+        };
+        httpd_register_uri_handler(server, &favicon_uri);
+
         httpd_uri_t css_uri = {
             .uri      = "/assets/BatteryPage.css",
             .method   = HTTP_GET,

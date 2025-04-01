@@ -16,6 +16,7 @@ execute_process(
 execute_process(
     COMMAND rsync -av
     --include=esp32.html
+    --include=favicon.png
     --include=assets/
     --include=assets/extra.js
     --include=assets/BatteryPage.js
