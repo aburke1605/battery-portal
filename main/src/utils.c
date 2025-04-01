@@ -29,7 +29,7 @@ void send_fake_request() {
         cJSON *content = cJSON_CreateObject();
         cJSON_AddStringToObject(content, "summary", "connect-wifi");
         cJSON *data = cJSON_CreateObject();
-        cJSON_AddStringToObject(data, "id", ESP_ID);
+        cJSON_AddStringToObject(data, "esp_id", ESP_ID);
         if (UTILS_EDUROAM) {
             cJSON_AddStringToObject(data, "username", UTILS_EDUROAM_USERNAME);
             cJSON_AddStringToObject(data, "password", UTILS_EDUROAM_PASSWORD);

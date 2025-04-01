@@ -211,8 +211,8 @@ esp_err_t validate_login_handler(httpd_req_t *req) {
         // credentials correct
         admin_verified = true;
         httpd_resp_set_status(req, "302 Found");
-        char redirect_url[21];
-        snprintf(redirect_url, sizeof(redirect_url), "/esp32?id=%s", ESP_ID);
+        char redirect_url[25];
+        snprintf(redirect_url, sizeof(redirect_url), "/esp32?esp_id=%s", ESP_ID);
         httpd_resp_set_hdr(req, "Location", redirect_url);
         httpd_resp_send(req, NULL, 0); // no response body
     } else {
@@ -600,7 +600,6 @@ void websocket_task(void *pvParameters) {
         cJSON_AddNumberToObject(data, "voltage", fVoltage);
         cJSON_AddNumberToObject(data, "current", fCurrent);
         cJSON_AddNumberToObject(data, "temperature", fTemperature);
-        cJSON_AddStringToObject(data, "name", ESP_ID);
         cJSON_AddNumberToObject(data, "BL", iBL);
         cJSON_AddNumberToObject(data, "BH", iBH);
         cJSON_AddNumberToObject(data, "CCT", iCCT);
