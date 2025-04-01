@@ -282,14 +282,6 @@ esp_err_t websocket_handler(httpd_req_t *req) {
     return ESP_OK;
 }
 
-esp_err_t reset_handler(httpd_req_t *req) {
-    reset_BMS();
-
-    req->user_ctx = "success";
-
-    return ESP_OK;
-}
-
 esp_err_t file_serve_handler(httpd_req_t *req) {
     const char *file_path = (const char *)req->user_ctx;
 
@@ -564,86 +556,7 @@ void websocket_event_handler(void *arg, esp_event_base_t event_base, int32_t eve
             if (err == ESP_OK) send_ws_message(response_str);
             free(response_str);
             cJSON_Delete(message);
-            break;
 
-            cJSON *typeItem = cJSON_GetObjectItem(message, "type");
-            if (!typeItem) {
-                ESP_LOGE("WS", "ilformatted json: %.*s", ws_event_data->data_len, (char *)ws_event_data->data_ptr);
-                break;
-            }
-            const char *type = typeItem->valuestring;
-
-            if (VERBOSE) ESP_LOGI("WS", "WebSocket data received: %.*s", ws_event_data->data_len, (char *)ws_event_data->data_ptr);
-
-            if (strcmp(type, "query") == 0) {
-                const char *content = cJSON_GetObjectItem(message, "content")->valuestring;
-                if (strcmp(content, "are you still there?") == 0) {
-
-                    cJSON *response_content = cJSON_CreateObject();
-                    cJSON_AddStringToObject(response_content, "response", "yes");
-
-                    cJSON *response = cJSON_CreateObject();
-                    cJSON_AddStringToObject(response, "type", "response");
-                    cJSON_AddStringToObject(response, "esp_id", ESP_ID);
-                    cJSON_AddItemToObject(response, "content", response_content);
-
-                    char *response_str = cJSON_PrintUnformatted(response);
-                    cJSON_Delete(response);
-
-                    xQueueReset(ws_queue);
-                    send_ws_message(response_str);
-
-                    free(response_str);
-                }
-            }
-
-            else if (strcmp(type, "request") == 0) {
-                cJSON *content = cJSON_GetObjectItem(message, "content");
-                if (!content) {
-                    ESP_LOGE("WS", "invalid request content");
-                    cJSON_Delete(message);
-                    break;
-                }
-
-                const char *endpoint = cJSON_GetObjectItem(content, "endpoint")->valuestring;
-                const char *method = cJSON_GetObjectItem(content, "method")->valuestring;
-                cJSON *data = cJSON_GetObjectItem(content, "data");
-
-                httpd_req_t req = {
-                    .uri = {*endpoint}
-                };
-                size_t req_len;
-                char *req_content;
-                esp_err_t err = ESP_OK;
-
-                else if (strcmp(endpoint, "/reset") == 0 && strcmp(method, "POST") == 0) {
-                    // call reset_handler
-                    err = reset_handler(&req);
-                    if (err != ESP_OK) {
-                        ESP_LOGE("WS", "Error in reset_handler: %d", err);
-                    }
-                }
-
-                cJSON *response_content = cJSON_CreateObject();
-                cJSON_AddStringToObject(response_content, "endpoint", endpoint);
-                cJSON_AddStringToObject(response_content, "status", err == ESP_OK ? "success" : "error");
-                cJSON_AddNumberToObject(response_content, "error_code", err);
-                cJSON_AddStringToObject(response_content, "response", req.user_ctx);
-
-                cJSON *response = cJSON_CreateObject();
-                cJSON_AddStringToObject(response, "type", "response");
-                cJSON_AddStringToObject(response, "esp_id", ESP_ID);
-                cJSON_AddItemToObject(response, "content", response_content);
-
-                char *response_str = cJSON_PrintUnformatted(response);
-                cJSON_Delete(response);
-
-                send_ws_message(response_str);
-
-                free(response_str);
-            }
-
-            cJSON_Delete(message);
             break;
 
         case WEBSOCKET_EVENT_ERROR:
