@@ -17,7 +17,7 @@ export default function ListPage() {
   // Get data from Webscocket
   useEffect(() => {
     const ws = new WebSocket(apiConfig.WEBSOCKET_BROWSER);
-  
+    console.log(apiConfig.WEBSOCKET_BROWSER);
     ws.onopen = () => {
       console.log('WebSocket connected');
     };

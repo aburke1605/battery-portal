@@ -1,7 +1,7 @@
 import{ useState } from 'react';
 import PageMeta from "../../components/common/PageMeta";
 import { BatteryData, AlertData } from '../..//types';
-import { initialBatteries, initialAlerts } from '../../data/mockData';
+import { initialBatteries, initialAlerts } from '../../mock/mockData';
 import { AlertTriangle, Info } from 'lucide-react';
 import { formatDateTime, getAlertTypeColor } from '../../utils/helpers';
 
