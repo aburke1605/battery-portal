@@ -76,10 +76,8 @@ export default function Home() {
             </div>
             <div className="bg-gray-50 p-4 rounded-lg">
               <div className="text-sm text-gray-500 mb-1">Temperature</div>
-              <div className="text-2xl font-bold text-gray-800">
-                {/* <div className="min-h-screen flex items-center justify-center bg-gray-100"> */}
-                  <DataChart />
-                {/* </div> */}
+              <div className="h-64 w-full">
+                <DataChart />
               </div>
             </div>
           </div>
