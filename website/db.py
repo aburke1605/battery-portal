@@ -161,3 +161,24 @@ def display():
     # img.seek(0) # rewind the buffer (needed?)
 
     return render_template("db/display.html", table=table, plot_url=base64.b64encode(img.getvalue()).decode())
+
+@db.route('/data')
+def data():
+    esp_id = request.args.get("esp_id")
+
+    try:
+        DB = mysql.connector.connect(**DB_CONFIG)
+        cursor = DB.cursor()
+
+        cursor.execute(f"           SELECT timestamp, temperature FROM {esp_id} ORDER BY timestamp")
+        data = [{"timestamp": row[0], "value": row[1]} for row in cursor.fetchall()]
+
+        cursor.close()
+        DB.close()
+
+        return jsonify(data)
+
+    except mysql.connector.Error as err:
+        print(f"Error: {err}")
+
+        return jsonify({})
