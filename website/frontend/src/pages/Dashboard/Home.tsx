@@ -4,6 +4,7 @@ import { BatteryData, AlertData } from '../..//types';
 import { initialBatteries, initialAlerts } from '../../mock/mockData';
 import { AlertTriangle, Info } from 'lucide-react';
 import { formatDateTime, getAlertTypeColor } from '../../utils/helpers';
+import DataChart from '../../components/charts/DataChart';
 
 export default function Home() {
 
@@ -71,6 +72,14 @@ export default function Home() {
               <div className="text-sm text-gray-500 mb-1">Active Alerts</div>
               <div className="text-2xl font-bold text-gray-800">
                 {alerts.filter(a => !a.isRead).length}
+              </div>
+            </div>
+            <div className="bg-gray-50 p-4 rounded-lg">
+              <div className="text-sm text-gray-500 mb-1">Temperature</div>
+              <div className="text-2xl font-bold text-gray-800">
+                {/* <div className="min-h-screen flex items-center justify-center bg-gray-100"> */}
+                  <DataChart />
+                {/* </div> */}
               </div>
             </div>
           </div>
