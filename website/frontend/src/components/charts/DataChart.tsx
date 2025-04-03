@@ -49,7 +49,7 @@ const DataChart: React.FC<DataChartProps> = ({ esp_id, column }) => {
             <Label value={column} angle={-90} position="insideLeft" style={{ textAnchor: "middle" }} />
           </YAxis>
           <Tooltip labelFormatter={(label) => formatTimestamp(label)} />
-          <Line type="monotone" dataKey={column} stroke="#8884d8" />
+          <Line type="monotone" dataKey={column} stroke="#8884d8" dot={{ r: 1 }} />
         </LineChart>
       </ResponsiveContainer>
     </div>
