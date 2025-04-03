@@ -176,7 +176,11 @@ def data():
         rows = cursor.fetchall()
         previous = None
         data = []
+        count = 0
         for row in rows[::-1]: # work from end
+            if count > 50:
+                break
+
             # take only data from most recent date
             if row[0].date() != rows[-1][0].date():
                 continue
@@ -187,6 +191,7 @@ def data():
             previous = row[0]
 
             data.append({"timestamp": row[0], column: row[1]})
+            count += 1
 
         cursor.close()
         DB.close()
