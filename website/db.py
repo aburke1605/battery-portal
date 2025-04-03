@@ -174,27 +174,23 @@ def data():
         cursor.execute(f"           SELECT timestamp, soc FROM {esp_id} ORDER BY timestamp")
         rows = cursor.fetchall()
         previous = None
-        data = [{"timestamp": [], "value": []}]
-        print(type(rows), dir(rows))
-        for row in rows.reverse(): # work from end
+        data = []
+        for row in rows[::-1]: # work from end
             # take only data from most recent date
             if row[0].date() != rows[-1][0].date():
                 continue
 
             if previous is not None:
-                if previous - datetime.timedelta(minutes = 5) > row[0].time():
-                    continue
-            previous = row[0].time()
+                if previous - row[0] > datetime.timedelta(minutes = 5):
+                    break
+            previous = row[0]
 
-            data["timestamp"].append(row[0])
-            data["value"].append(row[1])
-
-        # data = [{"timestamp": row[0], "value": row[1]} for row in cursor.fetchall()]
+            data.append({"timestamp": row[0], "value": row[1]})
 
         cursor.close()
         DB.close()
 
-        return jsonify(data)
+        return jsonify(data[::-1])
 
     except mysql.connector.Error as err:
         print(f"Error: {err}")
