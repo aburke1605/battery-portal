@@ -7,6 +7,16 @@ interface DataPoint {
   value: number;
 }
 
+const formatTimestamp = (timestamp: string) => {
+  return new Date(timestamp).toLocaleString("en-GB", {
+    hour: "2-digit",
+    minute: "2-digit",
+    second: "2-digit",
+    hour12: false, // Forces 24-hour format
+    timeZoneName: "short",
+  });
+};
+
 const DataChart = () => {
   const [data, setData] = useState<DataPoint[]>([]);
 
@@ -21,13 +31,13 @@ const DataChart = () => {
       <ResponsiveContainer width="100%" height={200}>
         <LineChart data={data} margin={{ top: 10, right: 10, bottom: 15, left: 10 }}>
           <CartesianGrid strokeDasharray="3 3" />
-          <XAxis dataKey="timestamp" tickFormatter={(tick) => new Date(tick).toLocaleTimeString()} >
+          <XAxis dataKey="timestamp" tickFormatter={formatTimestamp} >
             <Label value="Time" offset={-10} position="insideBottom" />
           </XAxis>
           <YAxis>
             <Label value="Value" angle={-90} position="insideLeft" style={{ textAnchor: "middle" }} />
           </YAxis>
-          <Tooltip />
+          <Tooltip labelFormatter={(label) => formatTimestamp(label)} />
           <Line type="monotone" dataKey="value" stroke="#8884d8" />
         </LineChart>
       </ResponsiveContainer>
