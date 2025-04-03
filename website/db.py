@@ -172,7 +172,15 @@ def data():
         DB = mysql.connector.connect(**DB_CONFIG)
         cursor = DB.cursor()
 
-        cursor.execute(f"           SELECT timestamp, {column} FROM {esp_id} ORDER BY timestamp LIMIT 100")
+        cursor.execute(f"""
+                                    SELECT * FROM (
+                                        SELECT timestamp, {column}
+                                        FROM {esp_id}
+                                        ORDER BY timestamp DESC
+                                        LIMIT 100
+                                    ) sub
+                                    ORDER BY timestamp ASC;
+        """)
         rows = cursor.fetchall()
         previous = None
         data = []
