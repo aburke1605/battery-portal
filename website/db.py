@@ -1,6 +1,7 @@
 import os
 from flask import Blueprint, render_template, request, jsonify
 from flask_login import login_required
+import datetime
 
 import mysql.connector
 import time
@@ -170,8 +171,25 @@ def data():
         DB = mysql.connector.connect(**DB_CONFIG)
         cursor = DB.cursor()
 
-        cursor.execute(f"           SELECT timestamp, temperature FROM {esp_id} ORDER BY timestamp")
-        data = [{"timestamp": row[0], "value": row[1]} for row in cursor.fetchall()]
+        cursor.execute(f"           SELECT timestamp, soc FROM {esp_id} ORDER BY timestamp")
+        rows = cursor.fetchall()
+        previous = None
+        data = [{"timestamp": [], "value": []}]
+        print(type(rows), dir(rows))
+        for row in rows.reverse(): # work from end
+            # take only data from most recent date
+            if row[0].date() != rows[-1][0].date():
+                continue
+
+            if previous is not None:
+                if previous - datetime.timedelta(minutes = 5) > row[0].time():
+                    continue
+            previous = row[0].time()
+
+            data["timestamp"].append(row[0])
+            data["value"].append(row[1])
+
+        # data = [{"timestamp": row[0], "value": row[1]} for row in cursor.fetchall()]
 
         cursor.close()
         DB.close()

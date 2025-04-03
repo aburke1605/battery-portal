@@ -75,7 +75,7 @@ export default function Home() {
               </div>
             </div>
             <div className="bg-gray-50 p-4 rounded-lg">
-              <div className="text-sm text-gray-500 mb-1">Temperature</div>
+              <div className="text-sm text-gray-500 mb-1">SoC</div>
               <div className="h-64 w-full">
                 <DataChart />
               </div>
