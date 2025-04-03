@@ -177,17 +177,15 @@ def data():
                                         SELECT timestamp, {column}
                                         FROM {esp_id}
                                         ORDER BY timestamp DESC
-                                        LIMIT 100
+                                        LIMIT 250
                                     ) sub
                                     ORDER BY timestamp ASC;
         """)
         rows = cursor.fetchall()
+
         previous = None
         data = []
-        count = 0
         for row in rows[::-1]: # work from end
-            if count >= 50:
-                break
 
             # take only data from most recent date
             if row[0].date() != rows[-1][0].date():
@@ -199,7 +197,6 @@ def data():
             previous = row[0]
 
             data.append({"timestamp": row[0], column: row[1]})
-            count += 1
 
         cursor.close()
         DB.close()
