@@ -26,10 +26,16 @@ const DataChart: React.FC<DataChartProps> = ({ esp_id, column }) => {
   const [data, setData] = useState<DataPoint[]>([]);
 
   useEffect(() => {
-    axios.get(`https://localhost:5000/db/data?esp_id=${esp_id}&column=${column}`)
-      .then(response => setData(response.data))
-      .catch(error => console.error("Error fetching data:", error));
-  }, []);
+    const fetchData = () => {
+      axios.get(`https://localhost:5000/db/data?esp_id=${esp_id}&column=${column}`)
+        .then(response => setData(response.data))
+        .catch(error => console.error("Error fetching data:", error));
+    };
+
+    fetchData(); // fetch immediately
+    const interval = setInterval(fetchData, 60_000); // refresh every minute
+    return () => clearInterval(interval); // clean-up on unmount
+  }, [column]); // re-fetch if column changes(????)
 
   return (
     <div className="p-4 bg-white shadow rounded-lg">
