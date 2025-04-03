@@ -95,7 +95,7 @@
 #define WS_MAX_HTML_SIZE 7200
 #define WS_MAX_N_HTML_PAGES 16
 #define WS_MAX_HTML_PAGE_NAME_LENGTH 32
-#define WS_CONFIG_MAX_CLIENTS 5
+#define WS_CONFIG_MAX_CLIENTS 3
 
 
 typedef struct {
