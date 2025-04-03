@@ -2,6 +2,11 @@ import { useEffect, useState } from "react";
 import axios from "axios";
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Label } from "recharts";
 
+interface DataChartProps {
+  esp_id: string;
+  column: string;
+}
+
 interface DataPoint {
   timestamp: string;
   value: number;
@@ -17,11 +22,11 @@ const formatTimestamp = (timestamp: string) => {
   });
 };
 
-const DataChart = () => {
+const DataChart: React.FC<DataChartProps> = ({ esp_id, column }) => {
   const [data, setData] = useState<DataPoint[]>([]);
 
   useEffect(() => {
-    axios.get("https://localhost:5000/db/data?esp_id=BMS_03")
+    axios.get(`https://localhost:5000/db/data?esp_id=${esp_id}&column=${column}`)
       .then(response => setData(response.data))
       .catch(error => console.error("Error fetching data:", error));
   }, []);
@@ -35,10 +40,10 @@ const DataChart = () => {
             <Label value="Time" offset={-10} position="insideBottom" />
           </XAxis>
           <YAxis>
-            <Label value="Value" angle={-90} position="insideLeft" style={{ textAnchor: "middle" }} />
+            <Label value={column} angle={-90} position="insideLeft" style={{ textAnchor: "middle" }} />
           </YAxis>
           <Tooltip labelFormatter={(label) => formatTimestamp(label)} />
-          <Line type="monotone" dataKey="value" stroke="#8884d8" />
+          <Line type="monotone" dataKey={column} stroke="#8884d8" />
         </LineChart>
       </ResponsiveContainer>
     </div>

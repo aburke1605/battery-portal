@@ -166,12 +166,13 @@ def display():
 @db.route('/data')
 def data():
     esp_id = request.args.get("esp_id")
+    column = request.args.get("column")
 
     try:
         DB = mysql.connector.connect(**DB_CONFIG)
         cursor = DB.cursor()
 
-        cursor.execute(f"           SELECT timestamp, soc FROM {esp_id} ORDER BY timestamp")
+        cursor.execute(f"           SELECT timestamp, {column} FROM {esp_id} ORDER BY timestamp")
         rows = cursor.fetchall()
         previous = None
         data = []
@@ -185,7 +186,7 @@ def data():
                     break
             previous = row[0]
 
-            data.append({"timestamp": row[0], "value": row[1]})
+            data.append({"timestamp": row[0], column: row[1]})
 
         cursor.close()
         DB.close()
