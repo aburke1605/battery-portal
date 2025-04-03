@@ -204,9 +204,10 @@ def data():
         cursor.close()
         DB.close()
 
-        return jsonify(data[::-1])
+        # reverse it back
+        data = data[::-1]
 
     except mysql.connector.Error as err:
         print(f"Error: {err}")
 
-        return jsonify({})
+    return jsonify(data)
