@@ -19,7 +19,7 @@ const DataChart = () => {
   return (
     <div className="p-4 bg-white shadow rounded-lg">
       <ResponsiveContainer width="100%" height={200}>
-        <LineChart data={data}>
+        <LineChart data={data} margin={{ top: 10, right: 10, bottom: 15, left: 10 }}>
           <CartesianGrid strokeDasharray="3 3" />
           <XAxis dataKey="timestamp" tickFormatter={(tick) => new Date(tick).toLocaleTimeString()} >
             <Label value="Time" offset={-10} position="insideBottom" />
