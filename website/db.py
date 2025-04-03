@@ -168,6 +168,7 @@ def data():
     esp_id = request.args.get("esp_id")
     column = request.args.get("column")
 
+    data = []
     try:
         DB = mysql.connector.connect(**DB_CONFIG)
         cursor = DB.cursor()
@@ -184,7 +185,6 @@ def data():
         rows = cursor.fetchall()
 
         previous = None
-        data = []
         for row in rows[::-1]: # work from end
 
             # take only data from most recent date
