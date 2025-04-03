@@ -34,7 +34,7 @@ const DataChart: React.FC<DataChartProps> = ({ esp_id, column }) => {
     };
 
     fetchData(); // fetch immediately
-    const interval = setInterval(fetchData, 60_000); // refresh every minute
+    const interval = setInterval(fetchData, 5_000); // refresh every five seconds
     return () => clearInterval(interval); // clean-up on unmount
   }, [column]); // re-fetch if column changes(????)
 
