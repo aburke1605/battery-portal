@@ -172,13 +172,13 @@ def data():
         DB = mysql.connector.connect(**DB_CONFIG)
         cursor = DB.cursor()
 
-        cursor.execute(f"           SELECT timestamp, {column} FROM {esp_id} ORDER BY timestamp")
+        cursor.execute(f"           SELECT timestamp, {column} FROM {esp_id} ORDER BY timestamp LIMIT 100")
         rows = cursor.fetchall()
         previous = None
         data = []
         count = 0
         for row in rows[::-1]: # work from end
-            if count > 50:
+            if count >= 50:
                 break
 
             # take only data from most recent date
