@@ -462,29 +462,33 @@ httpd_handle_t start_webserver(void) {
         };
         httpd_register_uri_handler(server, &favicon_uri);
 
-        httpd_uri_t css_uri = {
-            .uri      = "/assets/BatteryPage.css",
+        httpd_uri_t js_uri = {
+            .uri      = "/assets/esp.js",
             .method   = HTTP_GET,
             .handler  = file_serve_handler,
-            .user_ctx = "/static/assets/BatteryPage.css",
+            .user_ctx = "/static/assets/esp.js",
+        };
+        httpd_register_uri_handler(server, &js_uri);
+
+        js_uri.uri = "/assets/zap.js";
+        js_uri.user_ctx = "/static/assets/zap.js";
+        httpd_register_uri_handler(server, &js_uri);
+
+        js_uri.uri = "/assets/mock-socket.js";
+        js_uri.user_ctx = "/static/assets/mock-socket.js";
+        httpd_register_uri_handler(server, &js_uri);
+
+        httpd_uri_t css_uri = {
+            .uri      = "/assets/zap.css",
+            .method   = HTTP_GET,
+            .handler  = file_serve_handler,
+            .user_ctx = "/static/assets/zap.css",
         };
         httpd_register_uri_handler(server, &css_uri);
 
-        httpd_uri_t js_1_uri = {
-            .uri      = "/assets/BatteryPage.js",
-            .method   = HTTP_GET,
-            .handler  = file_serve_handler,
-            .user_ctx = "/static/assets/BatteryPage.js",
-        };
-        httpd_register_uri_handler(server, &js_1_uri);
-
-        httpd_uri_t js_2_uri = {
-            .uri      = "/assets/extra.js",
-            .method   = HTTP_GET,
-            .handler  = file_serve_handler,
-            .user_ctx = "/static/assets/extra.js",
-        };
-        httpd_register_uri_handler(server, &js_2_uri);
+        css_uri.uri = "/assets/mock-socket.css";
+        css_uri.user_ctx = "/static/assets/mock-socket.css";
+        httpd_register_uri_handler(server, &css_uri);
 
     } else {
         ESP_LOGE("WS", "Error starting server!");

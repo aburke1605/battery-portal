@@ -18,9 +18,11 @@ execute_process(
     --include=esp32.html
     --include=favicon.png
     --include=assets/
-    --include=assets/extra.js
-    --include=assets/BatteryPage.js
-    --include=assets/BatteryPage.css
+    --include=assets/esp.js
+    --include=assets/zap.js
+    --include=assets/mock-socket.js
+    --include=assets/zap.css
+    --include=assets/mock-socket.css
     --exclude=assets/*
     --exclude=*
     ${CMAKE_SOURCE_DIR}/website/frontend/dist/ ${SPIFFS_BUILD_DIR}/
