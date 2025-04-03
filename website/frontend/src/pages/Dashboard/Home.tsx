@@ -53,6 +53,7 @@ export default function Home() {
         description="This is React.js Ecommerce Dashboard page for TailAdmin - React.js Tailwind CSS Admin Dashboard Template"
       />
       <div className="space-y-6">
+        {/* Overview */}
         <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 mb-6">
           <h2 className="text-xl font-semibold text-gray-800 mb-4">System Overview</h2>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
@@ -76,31 +77,15 @@ export default function Home() {
             </div>
           </div>
         </div>
+
+        {/* Live Data */}
         <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 mb-6">
           <h2 className="text-xl font-semibold text-gray-800 mb-4">Live Data</h2>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 gap-20">
             <div className="bg-gray-50 p-4 rounded-lg">
               <div className="text-sm text-gray-500 mb-1">BMS_01 SoC</div>
               <div className="h-64 w-full">
                 <DataChart esp_id="BMS_01" column="soc" />
-              </div>
-            </div>
-            <div className="bg-gray-50 p-4 rounded-lg">
-              <div className="text-sm text-gray-500 mb-1">BMS_01 Temp</div>
-              <div className="h-64 w-full">
-                <DataChart esp_id="BMS_01" column="temperature" />
-              </div>
-            </div>
-            <div className="bg-gray-50 p-4 rounded-lg">
-              <div className="text-sm text-gray-500 mb-1">BMS_01 Volt</div>
-              <div className="h-64 w-full">
-                <DataChart esp_id="BMS_01" column="voltage" />
-              </div>
-            </div>
-            <div className="bg-gray-50 p-4 rounded-lg">
-              <div className="text-sm text-gray-500 mb-1">BMS_01 Curr</div>
-              <div className="h-64 w-full">
-                <DataChart esp_id="BMS_01" column="current" />
               </div>
             </div>
             <div className="bg-gray-50 p-4 rounded-lg">
@@ -110,15 +95,33 @@ export default function Home() {
               </div>
             </div>
             <div className="bg-gray-50 p-4 rounded-lg">
+              <div className="text-sm text-gray-500 mb-1">BMS_01 Temp</div>
+              <div className="h-64 w-full">
+                <DataChart esp_id="BMS_01" column="temperature" />
+              </div>
+            </div>
+            <div className="bg-gray-50 p-4 rounded-lg">
               <div className="text-sm text-gray-500 mb-1">BMS_02 Temp</div>
               <div className="h-64 w-full">
                 <DataChart esp_id="BMS_02" column="temperature" />
               </div>
             </div>
             <div className="bg-gray-50 p-4 rounded-lg">
+              <div className="text-sm text-gray-500 mb-1">BMS_01 Volt</div>
+              <div className="h-64 w-full">
+                <DataChart esp_id="BMS_01" column="voltage" />
+              </div>
+            </div>
+            <div className="bg-gray-50 p-4 rounded-lg">
               <div className="text-sm text-gray-500 mb-1">BMS_02 Volt</div>
               <div className="h-64 w-full">
                 <DataChart esp_id="BMS_02" column="voltage" />
+              </div>
+            </div>
+            <div className="bg-gray-50 p-4 rounded-lg">
+              <div className="text-sm text-gray-500 mb-1">BMS_01 Curr</div>
+              <div className="h-64 w-full">
+                <DataChart esp_id="BMS_01" column="current" />
               </div>
             </div>
             <div className="bg-gray-50 p-4 rounded-lg">
