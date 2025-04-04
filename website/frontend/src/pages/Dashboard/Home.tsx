@@ -83,51 +83,51 @@ export default function Home() {
           <h2 className="text-xl font-semibold text-gray-800 mb-4">Live Data</h2>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 gap-20">
             <div className="bg-gray-50 p-4 rounded-lg">
-              <div className="text-sm text-gray-500 mb-1">BMS_01</div>
+              <div className="text-sm text-gray-500 mb-1">bms_01</div>
               <div className="h-64 w-full">
-                <DataChart esp_id="BMS_01" column="soc" />
+                <DataChart esp_id="bms_01" column="soc" />
               </div>
             </div>
             <div className="bg-gray-50 p-4 rounded-lg">
-              <div className="text-sm text-gray-500 mb-1">BMS_02</div>
+              <div className="text-sm text-gray-500 mb-1">bms_02</div>
               <div className="h-64 w-full">
-                <DataChart esp_id="BMS_02" column="soc" />
+                <DataChart esp_id="bms_02" column="soc" />
               </div>
             </div>
             <div className="bg-gray-50 p-4 rounded-lg">
-              <div className="text-sm text-gray-500 mb-1">BMS_01</div>
+              <div className="text-sm text-gray-500 mb-1">bms_01</div>
               <div className="h-64 w-full">
-                <DataChart esp_id="BMS_01" column="temperature" />
+                <DataChart esp_id="bms_01" column="temperature" />
               </div>
             </div>
             <div className="bg-gray-50 p-4 rounded-lg">
-              <div className="text-sm text-gray-500 mb-1">BMS_02</div>
+              <div className="text-sm text-gray-500 mb-1">bms_02</div>
               <div className="h-64 w-full">
-                <DataChart esp_id="BMS_02" column="temperature" />
+                <DataChart esp_id="bms_02" column="temperature" />
               </div>
             </div>
             <div className="bg-gray-50 p-4 rounded-lg">
-              <div className="text-sm text-gray-500 mb-1">BMS_01</div>
+              <div className="text-sm text-gray-500 mb-1">bms_01</div>
               <div className="h-64 w-full">
-                <DataChart esp_id="BMS_01" column="voltage" />
+                <DataChart esp_id="bms_01" column="voltage" />
               </div>
             </div>
             <div className="bg-gray-50 p-4 rounded-lg">
-              <div className="text-sm text-gray-500 mb-1">BMS_02</div>
+              <div className="text-sm text-gray-500 mb-1">bms_02</div>
               <div className="h-64 w-full">
-                <DataChart esp_id="BMS_02" column="voltage" />
+                <DataChart esp_id="bms_02" column="voltage" />
               </div>
             </div>
             <div className="bg-gray-50 p-4 rounded-lg">
-              <div className="text-sm text-gray-500 mb-1">BMS_01</div>
+              <div className="text-sm text-gray-500 mb-1">bms_01</div>
               <div className="h-64 w-full">
-                <DataChart esp_id="BMS_01" column="current" />
+                <DataChart esp_id="bms_01" column="current" />
               </div>
             </div>
             <div className="bg-gray-50 p-4 rounded-lg">
-              <div className="text-sm text-gray-500 mb-1">BMS_02</div>
+              <div className="text-sm text-gray-500 mb-1">bms_02</div>
               <div className="h-64 w-full">
-                <DataChart esp_id="BMS_02" column="current" />
+                <DataChart esp_id="bms_02" column="current" />
               </div>
             </div>
           </div>
