@@ -86,10 +86,9 @@ void app_main(void) {
     TaskParams dns_server_params = {.stack_size = 2500, .task_name = "dns_server_task"};
     xTaskCreate(&dns_server_task, dns_server_params.task_name, dns_server_params.stack_size, &dns_server_params, 2, NULL);
 
-    esp_log_level_set("wifi", ESP_LOG_ERROR);
-
     ws_queue = xQueueCreate(WS_QUEUE_SIZE, WS_MESSAGE_MAX_LEN);
 
+    esp_log_level_set("wifi", ESP_LOG_ERROR);
     esp_log_level_set("websocket_client", ESP_LOG_WARN);
     esp_log_level_set("transport_ws", ESP_LOG_WARN);
     esp_log_level_set("transport_base", ESP_LOG_WARN);
