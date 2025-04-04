@@ -83,8 +83,8 @@ void app_main(void) {
         return;
     }
 
-    TaskParams dns_server_params = {.stack_size = 4096, .task_name = "dns_server_task"};
     xTaskCreate(&dns_server_task, dns_server_params.task_name, dns_server_params.stack_size, &dns_server_params, 5, NULL);
+    TaskParams dns_server_params = {.stack_size = 2500, .task_name = "dns_server_task"};
 
     esp_log_level_set("wifi", ESP_LOG_ERROR);
     TaskParams check_wifi_params = {.stack_size = 2048, .task_name = "check_wifi_task"};
