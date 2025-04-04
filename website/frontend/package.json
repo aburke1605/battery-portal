@@ -7,8 +7,7 @@
     "dev": "vite",
     "build": "tsc -b && vite build",
     "lint": "eslint .",
-    "preview": "vite preview",
-    "build-cp": "tsc -b && vite build && cp ./dist/index.html ../templates/new_admin/index.html && cp ./dist/esp32.html ../templates/new_portal/esp32.html && cp -r ./dist/assets ../static && cp -r ./dist/images ../static"
+    "preview": "vite preview"
   },
   "dependencies": {
     "@fullcalendar/core": "^6.1.15",
