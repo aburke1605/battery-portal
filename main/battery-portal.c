@@ -93,7 +93,7 @@ void app_main(void) {
     esp_log_level_set("websocket_client", ESP_LOG_WARN);
     esp_log_level_set("transport_ws", ESP_LOG_WARN);
     esp_log_level_set("transport_base", ESP_LOG_WARN);
-    TaskParams websocket_params = {.stack_size = 8192, .task_name = "websocket_task"};
+    TaskParams websocket_params = {.stack_size = 4500, .task_name = "websocket_task"};
     xTaskCreate(&websocket_task, websocket_params.task_name, websocket_params.stack_size, &websocket_params, 1, NULL);
 
     while (true) {
