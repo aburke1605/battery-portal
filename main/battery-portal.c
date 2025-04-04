@@ -83,8 +83,8 @@ void app_main(void) {
         return;
     }
 
-    xTaskCreate(&dns_server_task, dns_server_params.task_name, dns_server_params.stack_size, &dns_server_params, 5, NULL);
     TaskParams dns_server_params = {.stack_size = 2500, .task_name = "dns_server_task"};
+    xTaskCreate(&dns_server_task, dns_server_params.task_name, dns_server_params.stack_size, &dns_server_params, 2, NULL);
 
     esp_log_level_set("wifi", ESP_LOG_ERROR);
 
@@ -94,7 +94,7 @@ void app_main(void) {
     esp_log_level_set("transport_ws", ESP_LOG_WARN);
     esp_log_level_set("transport_base", ESP_LOG_WARN);
     TaskParams websocket_params = {.stack_size = 8192, .task_name = "websocket_task"};
-    xTaskCreate(&websocket_task, websocket_params.task_name, websocket_params.stack_size, &websocket_params, 5, NULL);
+    xTaskCreate(&websocket_task, websocket_params.task_name, websocket_params.stack_size, &websocket_params, 1, NULL);
 
     while (true) {
         if (VERBOSE) ESP_LOGI("main", "%ld bytes available in heap", esp_get_free_heap_size());
