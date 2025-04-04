@@ -82,6 +82,12 @@ config I2C_FREQ_HZ
     help
       Set the clock frequency for the I2C device.
 
+config I2C_DELAY
+    int "I2C delay (ms)"
+    default 300
+    help
+      Set the time delay betwen successive I2C commands.
+
 config STATE_OF_CHARGE_REG
     hex "BMS SOC Address"
     default 0x2C

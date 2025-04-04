@@ -41,6 +41,7 @@
 #define I2C_MASTER_SDA_IO  CONFIG_I2C_MASTER_SDA_PIN // GPIO number for I2C master data
 #define I2C_MASTER_SCL_IO  CONFIG_I2C_MASTER_SCL_PIN // GPIO number for I2C master clock
 #define I2C_MASTER_FREQ_HZ CONFIG_I2C_FREQ_HZ        // I2C master clock frequency
+#define I2C_DELAY          CONFIG_I2C_DELAY          // I2C read / write delay
 #define I2C_MASTER_NUM     I2C_NUM_0                 // I2C port number for master dev
 
 #define I2C_STATE_OF_CHARGE_REG CONFIG_STATE_OF_CHARGE_REG // Register address for StateOfCharge
