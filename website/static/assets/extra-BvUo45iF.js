@@ -1,1 +1,0 @@
-import{t as r,j as e,v as s,A as o,w as t,S as a,B as i}from"./DetailPage-Byq6e-6Q.js";r.createRoot(document.getElementById("root")).render(e.jsx(s,{children:e.jsx(o,{children:e.jsxs(t,{children:[e.jsx(a,{}),e.jsx(i,{isFromEsp32:!0})]})})}));
