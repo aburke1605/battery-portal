@@ -497,41 +497,9 @@ httpd_handle_t start_webserver(void) {
     return server;
 }
 
-void check_wifi_task(void* pvParameters) {
-    while(true) {
-        wifi_ap_record_t ap_info;
-        if (esp_wifi_sta_get_ap_info(&ap_info) != ESP_OK) {
-            connected_to_WiFi = false;
-        }
-
-        check_bytes((TaskParams *)pvParameters);
-
-        vTaskDelay(1000 / portTICK_PERIOD_MS);
-    }
-}
-
 void send_ws_message(const char *message) {
     if (xQueueSend(ws_queue, message, portMAX_DELAY) != pdPASS) {
         ESP_LOGE("WS", "WebSocket queue full! Dropping message: %s", message);
-    }
-}
-
-void message_queue_task(void *pvParameters) {
-    char message[WS_MESSAGE_MAX_LEN];
-
-    while (true) {
-        if (xQueueReceive(ws_queue, message, portMAX_DELAY) == pdPASS) {
-            if (esp_websocket_client_is_connected(ws_client)) {
-                if (VERBOSE) ESP_LOGI("WS", "Sending: %s", message);
-                esp_websocket_client_send_text(ws_client, message, strlen(message), portMAX_DELAY);
-            } else {
-                ESP_LOGW("WS", "WebSocket not connected, dropping message: %s", message);
-            }
-        }
-
-        check_bytes((TaskParams *)pvParameters);
-
-        vTaskDelay(pdMS_TO_TICKS(1000));
     }
 }
 
@@ -583,6 +551,7 @@ void websocket_event_handler(void *arg, esp_event_base_t event_base, int32_t eve
 }
 
 void websocket_task(void *pvParameters) {
+    char message[WS_MESSAGE_MAX_LEN];
     while (true) {
         if (DEV) send_fake_request();
 
@@ -710,6 +679,22 @@ void websocket_task(void *pvParameters) {
             // clean up
             free(data_string);
             free(json_string);
+        }
+
+        // check wifi connection still exists
+        wifi_ap_record_t ap_info;
+        if (esp_wifi_sta_get_ap_info(&ap_info) != ESP_OK) {
+            connected_to_WiFi = false;
+        }
+
+        // send the next message in queue
+        if (xQueueReceive(ws_queue, message, portMAX_DELAY) == pdPASS) {
+            if (esp_websocket_client_is_connected(ws_client)) {
+                if (VERBOSE) ESP_LOGI("WS", "Sending: %s", message);
+                esp_websocket_client_send_text(ws_client, message, strlen(message), portMAX_DELAY);
+            } else {
+                ESP_LOGW("WS", "WebSocket not connected, dropping message: %s", message);
+            }
         }
 
         check_bytes((TaskParams *)pvParameters);

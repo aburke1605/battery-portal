@@ -45,11 +45,7 @@ esp_err_t file_serve_handler(httpd_req_t *req);
 
 httpd_handle_t start_webserver(void);
 
-void check_wifi_task(void* pvParameters);
-
 void send_ws_message(const char *message);
-
-void message_queue_task(void *pvParameters);
 
 void websocket_event_handler(void *arg, esp_event_base_t event_base, int32_t event_id, void *event_data);
 
