@@ -1,14 +1,17 @@
-import React, {useState} from 'react';
+import React, {useEffect, useState} from 'react';
 import { BatteryData } from '../../types';
 import { 
   Share2, 
   Download, 
   Printer, 
-  Percent, 
+  BatteryLow, 
+  BatteryMedium, 
+  BatteryFull, 
   Zap, 
   ThermometerSun, 
   Info, 
   RefreshCw, 
+  Wifi, 
   Power, 
   Calendar, 
   FileText, 
@@ -29,18 +32,120 @@ import { getStatusColor } from '../../utils/helpers';
 interface BatteryDetailProps {
   battery: BatteryData;
   onToggleCharging: (batteryId: string) => void;
-  onToggleLED: (batteryId: string) => void;
   voltageThreshold: number;
+  sendBatteryUpdate: (updatedValues: Partial<BatteryData>) => void;
+  sendWiFiConnect: (username: string, password: string, eduroam: boolean) => void;
+  sendReset: () => void;
 }
 
 const BatteryDetail: React.FC<BatteryDetailProps> = ({ 
   battery, 
   onToggleCharging, 
-  onToggleLED,
-  voltageThreshold
+  voltageThreshold,
+  sendBatteryUpdate, // receive function from BatteryPage
+  sendWiFiConnect,
+  sendReset,
 }) => {
   
   const [activeTab, setActiveTab] = useState('overview');
+
+  const [isEditing, setIsEditing] = useState(false);
+  const [hasChanges, setHasChanges] = useState(false);
+  const [hasWiFiChanges, setHasWiFiChanges] = useState(false);
+
+  const [ssid, setSSID] = useState("");
+  const [password, setPassword] = useState("");
+  const [eduroam_username, setEduroamUsername] = useState("");
+  const [eduroam_password, setEduroamPassword] = useState("");
+
+  // range
+  const BL_min = 2000;
+  const BL_max = 3000;
+  const BH_min = 4000;
+  const BH_max = 5000;
+  const CITL_min = -50;
+  const CITL_max =  50;
+  const CITH_min = 400;
+  const CITH_max = 500;
+  const CCT_min = 70;
+  const CCT_max = 80;
+  const DCT_min = 55;
+  const DCT_max = 65;
+  // initialise
+  const [values, setValues] = useState<Partial<BatteryData>>({
+    esp_id: battery.esp_id,
+    BL: battery.BL,
+    BH: battery.BH,
+    CITL: battery.CITL,
+    CITH: battery.CITH,
+    CCT: battery.CCT,
+    DCT: battery.DCT,
+  });
+  // websocket update
+  useEffect(() => {
+    if (!isEditing) {
+      setValues({
+        esp_id: battery.esp_id,
+        BL: battery.BL,
+        BH: battery.BH,
+        CITL: battery.CITL,
+        CITH: battery.CITH,
+        CCT: battery.CCT,
+        DCT: battery.DCT,
+      });
+      setHasChanges(false);
+    }
+  }, [battery.esp_id, battery.BL, battery.BH, battery.CITL, battery.CITH, battery.CCT, battery.DCT, isEditing]);
+  // slider update
+  const handleSliderChange = (key: string) => (e: React.ChangeEvent<HTMLInputElement>) => {
+    const { value, type } = e.target;
+    const newValue = type === "number" || type === "range" ? Number(value) : value; // Convert numbers only for sliders
+    setValues((prevValues) => {
+      const updatedValues = { ...prevValues, [key]: newValue };
+      // check if any slider has moved
+      const hasAnyChange = (Object.keys(values) as Array<keyof BatteryData>).some((k) => values[k] !== battery[k as keyof BatteryData]);
+      setHasChanges(hasAnyChange);
+      setIsEditing(true);
+      return updatedValues;
+    });
+  };
+  // send websocket-update message
+  const handleSubmit = () => {
+    sendBatteryUpdate(values);
+    setIsEditing(false);
+    setHasChanges(false);
+  }
+  // reset sliders
+  const handleReset = () => {
+    setValues({
+      BL: battery.BL,
+      BH: battery.BH,
+      CITL: battery.CITL,
+      CITH: battery.CITH,
+      CCT: battery.CCT,
+      DCT: battery.DCT,
+    });
+    setIsEditing(false);
+    setHasChanges(false);
+  };
+  // router entry
+  const handleTextChange = (setter: React.Dispatch<React.SetStateAction<string>>) =>
+    (e: React.ChangeEvent<HTMLInputElement>) => {
+      setter(e.target.value);
+      setHasWiFiChanges(true);
+  };
+  // send websocket-connect message
+  const handleConnect = () => {
+    if (ssid == "" && password == "")
+      sendWiFiConnect(eduroam_username, eduroam_password, true);
+    else if (eduroam_username == "" && eduroam_password == "")
+      sendWiFiConnect(ssid, password, false);
+    setSSID("");
+    setPassword("");
+    setEduroamUsername("");
+    setEduroamPassword("");
+    setHasWiFiChanges(false);
+  }
 
   const renderTabContent = () => {
     switch (activeTab) {
@@ -270,34 +375,108 @@ const BatteryDetail: React.FC<BatteryDetailProps> = ({
                     <h4 className="text-sm font-medium text-gray-900 mb-4">Charging Parameters</h4>
                     <div className="space-y-4">
                       <div>
-                        <label className="block text-sm font-medium text-gray-700">Maximum Charging Current</label>
+                        <label className="block text-sm font-medium text-gray-700">Device name:</label>
+                        <input
+                          type="text"
+                          className="border p-1 w-full"
+                          placeholder={battery.esp_id}
+                          onChange={handleSliderChange("new_esp_id")}
+                        />
+
+                        <label className="block text-sm font-medium text-gray-700">BL: {values.BL} [mV]</label>
                         <input
                           type="range"
                           className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer mt-2"
-                          min="0"
-                          max="100"
-                          value="80"
+                          min={BL_min}
+                          max={BL_max}
+                          value={values.BL}
+                          onChange={handleSliderChange("BL")}
                         />
                         <div className="flex justify-between text-xs text-gray-500 mt-1">
-                          <span>0A</span>
-                          <span>80A</span>
-                          <span>100A</span>
+                          <span>{BL_min} [mV]</span>
+                          <span>{BL_max} [mV]</span>
                         </div>
-                      </div>
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700">Charging Cut-off Voltage</label>
+
+                        <label className="block text-sm font-medium text-gray-700">BH: {values.BH} [mV]</label>
                         <input
                           type="range"
                           className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer mt-2"
-                          min="0"
-                          max="100"
-                          value="90"
+                          min={BH_min}
+                          max={BH_max}
+                          value={values.BH}
+                          onChange={handleSliderChange("BH")}
                         />
                         <div className="flex justify-between text-xs text-gray-500 mt-1">
-                          <span>45V</span>
-                          <span>48V</span>
-                          <span>50V</span>
+                          <span>{BH_min} [mV]</span>
+                          <span>{BH_max} [mV]</span>
                         </div>
+
+                        <label className="block text-sm font-medium text-gray-700">CITL: {values.CITL} [0.1 °C]</label>
+                        <input
+                          type="range"
+                          className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer mt-2"
+                          min={CITL_min}
+                          max={CITL_max}
+                          value={values.CITL}
+                          onChange={handleSliderChange("CITL")}
+                        />
+                        <div className="flex justify-between text-xs text-gray-500 mt-1">
+                          <span>{CITL_min} [0.1 °C]</span>
+                          <span>{CITL_max} [0.1 °C]</span>
+                        </div>
+
+                        <label className="block text-sm font-medium text-gray-700">CITH: {values.CITH} [0.1 °C]</label>
+                        <input
+                          type="range"
+                          className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer mt-2"
+                          min={CITH_min}
+                          max={CITH_max}
+                          value={values.CITH}
+                          onChange={handleSliderChange("CITH")}
+                        />
+                        <div className="flex justify-between text-xs text-gray-500 mt-1">
+                          <span>{CITH_min} [0.1 °C]</span>
+                          <span>{CITH_max} [0.1 °C]</span>
+                        </div>
+
+                        <label className="block text-sm font-medium text-gray-700">CCT: {values.CCT} [0.1 °C]</label>
+                        <input
+                          type="range"
+                          className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer mt-2"
+                          min={CCT_min}
+                          max={CCT_max}
+                          value={values.CCT}
+                          onChange={handleSliderChange("CCT")}
+                        />
+                        <div className="flex justify-between text-xs text-gray-500 mt-1">
+                          <span>{CCT_min} [mA]</span>
+                          <span>{CCT_max} [mA]</span>
+                        </div>
+
+                        <label className="block text-sm font-medium text-gray-700">DCT: {values.DCT} [0.1 °C]</label>
+                        <input
+                          type="range"
+                          className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer mt-2"
+                          min={DCT_min}
+                          max={DCT_max}
+                          value={values.DCT}
+                          onChange={handleSliderChange("DCT")}
+                        />
+                        <div className="flex justify-between text-xs text-gray-500 mt-1">
+                          <span>{DCT_min} [mA]</span>
+                          <span>{DCT_max} [mA]</span>
+                        </div>
+
+                        {hasChanges && (
+                          <div className="flex gap-2 mt-2">
+                            <button onClick={handleSubmit} className="p-2 bg-blue-500 text-white rounded">
+                              Submit Updates
+                            </button>
+                            <button onClick={handleReset} className="p-2 bg-gray-500 text-white rounded">
+                              Reset
+                            </button>
+                          </div>
+                        )}
                       </div>
                     </div>
                   </div>
@@ -340,6 +519,88 @@ const BatteryDetail: React.FC<BatteryDetailProps> = ({
                           <input type="checkbox" className="sr-only peer" checked />
                           <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
                         </label>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        );
+
+      case 'wifi':
+        return (
+          <div className="space-y-6">
+            <div className="bg-white border border-gray-200 rounded-lg shadow-sm">
+              <div className="px-4 py-5 sm:px-6 border-b border-gray-200">
+                <h3 className="text-lg font-medium text-gray-900 flex items-center">
+                  <Sliders size={20} className="mr-2" /> Wi-Fi Settings
+                </h3>
+              </div>
+              <div className="p-6">
+                <div className="space-y-6">
+                  <div>
+                    <h4 className="text-sm font-medium text-gray-900 mb-4">Router Information</h4>
+                    <div className="space-y-4">
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700">SSID:</label>
+                        <input
+                          type="text"
+                          className="border p-1 w-full"
+                          value={ssid}
+                          name="ssid"
+                          id="ssid"
+                          required
+                          onChange={handleTextChange(setSSID)}
+                        />
+
+                        <label className="block text-sm font-medium text-gray-700">Password:</label>
+                        <input
+                          type="password"
+                          className="border p-1 w-full"
+                          value={password}
+                          name="password"
+                          id="password"
+                          required
+                          onChange={handleTextChange(setPassword)}
+                        />
+                      </div>
+                    </div>
+                  </div>
+
+                  <div>
+                    <h4 className="text-sm font-medium text-gray-900 mb-4">Eduroam Information</h4>
+                    <div className="space-y-4">
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700">Username:</label>
+                        <input
+                          type="text"
+                          className="border p-1 w-full"
+                          value={eduroam_username}
+                          name="eduroam_username"
+                          id="eduroam_username"
+                          required
+                          onChange={handleTextChange(setEduroamUsername)}
+                        />
+
+                        <label className="block text-sm font-medium text-gray-700">Password:</label>
+                        <input
+                          type="password"
+                          className="border p-1 w-full"
+                          value={eduroam_password}
+                          name="eduroam_password"
+                          id="eduroam_password"
+                          required
+                          onChange={handleTextChange(setEduroamPassword)}
+                        />
+
+                        {hasWiFiChanges && (
+                          <div className="flex gap-2 mt-2">
+                            <button onClick={handleConnect} className="p-2 bg-blue-500 text-white rounded">
+                              Connect
+                            </button>
+                          </div>
+                        )}
                       </div>
                     </div>
                   </div>
@@ -460,7 +721,7 @@ const BatteryDetail: React.FC<BatteryDetailProps> = ({
                 </div>
                 <div className="px-4 py-5 sm:p-6 space-y-4">
                   <button 
-                    onClick={() => onToggleCharging(battery.id)}
+                    onClick={() => onToggleCharging(battery.esp_id)}
                     className={`w-full flex items-center justify-center px-4 py-2 border rounded-md shadow-sm text-sm font-medium focus:outline-none focus:ring-2 focus:ring-offset-2 ${
                       battery.isCharging 
                         ? 'border-red-300 text-red-700 bg-red-50 hover:bg-red-100 focus:ring-red-500' 
@@ -483,12 +744,17 @@ const BatteryDetail: React.FC<BatteryDetailProps> = ({
                     <Calendar size={16} className="mr-2" />
                     Schedule Maintenance
                   </button>
+                  <button
+                    onClick={() => sendReset()}
+                    className="w-full flex items-center justify-center px-4 py-2 border border-red-300 shadow-sm text-sm font-medium rounded-md text-red-700 bg-red-50 hover:bg-red-100 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500">
+                    <RefreshCw size={16} className="mr-2" />
+                    Reset BMS
+                  </button>
                   <button className="w-full flex items-center justify-center px-4 py-2 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
                     <FileText size={16} className="mr-2" />
                     Generate Report
                   </button>
                   <button 
-                    onClick={() => onToggleLED(battery.id)}
                     className="w-full flex items-center justify-center px-4 py-2 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
                   >
                     <ArrowLeft size={16} className="mr-2" />
@@ -505,7 +771,7 @@ const BatteryDetail: React.FC<BatteryDetailProps> = ({
                   <dl className="grid grid-cols-1 gap-x-4 gap-y-6 sm:grid-cols-2">
                     <div className="sm:col-span-1">
                       <dt className="text-sm font-medium text-gray-500">Battery ID</dt>
-                      <dd className="mt-1 text-sm text-gray-900">{battery.id}</dd>
+                      <dd className="mt-1 text-sm text-gray-900">{battery.esp_id}</dd>
                     </div>
                     <div className="sm:col-span-1">
                       <dt className="text-sm font-medium text-gray-500">Type</dt>
@@ -540,9 +806,9 @@ const BatteryDetail: React.FC<BatteryDetailProps> = ({
       <div className="p-6 border-b border-gray-200 bg-gray-50">
         <div className="flex justify-between items-start">
           <div>
-            <h2 className="text-2xl font-bold text-gray-800">{battery.name}</h2>
+            <h2 className="text-2xl font-bold text-gray-800">{battery.esp_id}</h2>
             <div className="flex items-center mt-1 space-x-2 text-gray-600">
-              <span>{battery.id}</span>
+              <span>{battery.esp_id}</span>
               <span>•</span>
               <span>{battery.type}</span>
               <span>•</span>
@@ -575,7 +841,22 @@ const BatteryDetail: React.FC<BatteryDetailProps> = ({
           <div className="bg-blue-50 p-4 rounded-lg">
             <div className="flex items-center justify-between mb-2">
               <h3 className="text-sm font-medium text-blue-700 flex items-center">
-                <Percent size={16} className="mr-1" /> Charge Level
+                {battery.charge > 90 ? (
+                    <>
+                      <BatteryFull size={16} className="mr-1" />
+                    </>
+                  ) : (
+                    battery.charge > 35 ? (
+                      <>
+                        <BatteryMedium size={16} className="mr-1" />
+                      </>
+                    ) : (
+                      <>
+                        <BatteryLow size={16} className="mr-1" />
+                      </>
+                    )
+                  )
+                } Charge Level
               </h3>
               {battery.isCharging && (
                 <span className="bg-yellow-100 text-yellow-800 text-xs px-2 py-1 rounded-full flex items-center">
@@ -618,9 +899,11 @@ const BatteryDetail: React.FC<BatteryDetailProps> = ({
 
           <div className="bg-purple-50 p-4 rounded-lg">
             <h3 className="text-sm font-medium text-purple-700 flex items-center mb-2">
-              <RefreshCw size={16} className="mr-1" /> Cycle Count
+              <Wifi size={16} className="mr-1" /> Wi-Fi
             </h3>
-            <span className="text-3xl font-bold text-purple-700">{battery.cycleCount}</span>
+            <div className="flex items-end space-x-2">
+              <span className="text-3xl font-bold text-purple-700">{battery.isConnected? "Connected":"!! no connection"}</span>
+            </div>
           </div>
         </div>
 
@@ -677,6 +960,16 @@ const BatteryDetail: React.FC<BatteryDetailProps> = ({
               }`}
             >
               Settings
+            </button>
+            <button
+              onClick={() => setActiveTab('wifi')}
+              className={`whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm ${
+                activeTab === 'wifi'
+                  ? 'border-blue-500 text-blue-600'
+                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+              }`}
+            >
+              Wi-Fi
             </button>
           </nav>
         </div>

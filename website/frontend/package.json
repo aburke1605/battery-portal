@@ -7,8 +7,7 @@
     "dev": "vite",
     "build": "tsc -b && vite build",
     "lint": "eslint .",
-    "preview": "vite preview",
-    "build-cp": "tsc -b && vite build && cp ./dist/index.html ../templates/new_admin/index.html && cp ./dist/esp32.html ../templates/new_portal/esp32.html && cp -r ./dist/assets ../static && cp -r ./dist/images ../static"
+    "preview": "vite preview"
   },
   "dependencies": {
     "@fullcalendar/core": "^6.1.15",
@@ -21,6 +20,7 @@
     "@react-jvectormap/world": "^1.1.2",
     "@tailwindcss/forms": "^0.5.10",
     "apexcharts": "^4.1.0",
+    "axios": "^1.8.4",
     "classnames": "^2.5.1",
     "clsx": "^2.1.1",
     "flatpickr": "^4.6.13",
@@ -35,6 +35,7 @@
     "react-helmet-async": "^2.0.5",
     "react-router": "^7.1.5",
     "react-router-dom": "^7.3.0",
+    "recharts": "^2.15.1",
     "simplebar-react": "^3.3.0",
     "swiper": "^11.2.3",
     "tailwind-merge": "^3.0.1",

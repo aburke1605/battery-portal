@@ -124,7 +124,7 @@ def subpage():
     return render_template('admin/battery.html')
 
 
-@app.route('/new_admin')
+@app.route('/admin')
 @login_required
 def new_admin():
     return send_from_directory("frontend/dist", "index.html")

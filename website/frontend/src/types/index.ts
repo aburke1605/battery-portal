@@ -1,11 +1,17 @@
 // Battery Data Types
 export interface BatteryData {
-  id: string;
-  name: string;
+  esp_id: string;
+  new_esp_id: string;
   status: 'good' | 'warning' | 'critical' | 'offline';
   IP: string;
   charge: number;
   temperature: number;
+  BL: number;
+  BH: number;
+  CITL: number;
+  CITH: number;
+  CCT: number;
+  DCT: number;
   voltage: number;
   current: number;
   health: number;
@@ -15,6 +21,8 @@ export interface BatteryData {
   capacity: number;
   cycleCount: number;
   isCharging: boolean;
+  timestamp: number;
+  isConnected: boolean;
 }
 
 

@@ -7,7 +7,8 @@ import { BatteryData } from '../../types';
 import BatteryCard from './BatteryCard';
 import apiConfig from '../../apiConfig';
 
-export default function BatteriesPage() {
+
+export default function ListPage() {
   const [statusFilter, setStatusFilter] = useState('all');
   const [sortBy, setSortBy] = useState('status');
   const [batteries, setBatteries] = useState<BatteryData[]>([]);
@@ -26,14 +27,21 @@ export default function BatteriesPage() {
         const data = JSON.parse(event.data);
         if (data) {
           console.log('Parsed ESPs:', data);
-          const batteryArray: BatteryData[] = Object.values(data).map((battery: any) => ({
-            id: battery.id,
-            name: battery.name,
-            charge: battery.charge,
-            voltage: battery.voltage?.toFixed(1) || 0,
-            current: battery.current,
-            temperature: battery.temperature?.toFixed(1) || 0,
-            IP: battery.IP,
+          const batteryArray: BatteryData[] = Object.entries(data).map(([esp_id, battery]: [string, any]) => ({
+            esp_id: esp_id,
+            new_esp_id: "",
+            charge: battery?.charge  || 0,
+            voltage: battery?.voltage.toFixed(1) || 0,
+            current: battery?.current.toFixed(1) || 0,
+            temperature: battery?.temperature.toFixed(1) || 0,
+            BL: battery?.BL || 0,
+            BH: battery?.BH || 0,
+            CITL: battery?.CITL || 0,
+            CITH: battery?.CITH || 0,
+            CCT: battery?.CCT || 0,
+            DCT: battery?.DCT || 0,
+            IP: battery?.IP || "xxx.xxx.xxx.xxx",
+            isConnected: battery?.connected_to_WiFi || false,
             location: "Unknown",
             health: 100,
             isCharging: false,
@@ -41,8 +49,11 @@ export default function BatteriesPage() {
             lastMaintenance: "2025-03-15",
             type: "Lithium-Ion",
             capacity: 100,
-            cycleCount: 124
-          }));  
+            cycleCount: 124,
+            timestamp: Date.now(),
+          }));
+  
+          console.log('Parsed batteries:', batteryArray);
           setBatteries(batteryArray);
         }
       } catch (err) {
@@ -74,7 +85,7 @@ export default function BatteriesPage() {
     
     setBatteries(prevBatteries => 
       prevBatteries.map(battery => 
-        battery.id === batteryId 
+        battery.esp_id === batteryId 
           ? { ...battery, isCharging: !battery.isCharging } 
           : battery
         )
@@ -84,14 +95,13 @@ export default function BatteriesPage() {
     const navigate = useNavigate();
     // View battery details
     const viewBatteryDetails = (battery: BatteryData) => {
-      navigate(`/battery-detail?id=${battery.id}`);
+      navigate(`/battery-detail?esp_id=${battery.esp_id}`);
     };
 
 
   const filteredBatteries = batteries.filter(battery => {
     const matchesSearch = 
-      battery.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      battery.id.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      battery.esp_id.toLowerCase().includes(searchTerm.toLowerCase()) ||
       battery.location.toLowerCase().includes(searchTerm.toLowerCase());
     
     const matchesStatus = statusFilter === 'all' || battery.status === statusFilter;
@@ -99,7 +109,7 @@ export default function BatteriesPage() {
     return matchesSearch && matchesStatus;
   }).sort((a, b) => {
     if (sortBy === 'name') {
-      return a.name.localeCompare(b.name);
+      return a.esp_id.localeCompare(b.esp_id);
     } else if (sortBy === 'chargeLevel') {
       return b.charge - a.charge;
     } else if (sortBy === 'health') {
@@ -205,7 +215,7 @@ export default function BatteriesPage() {
         <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
           {filteredBatteries.map(battery => (
             <BatteryCard 
-              key={battery.id} 
+              key={battery.esp_id} 
               battery={battery} 
               onToggleCharging={toggleCharging} 
               onViewDetails={viewBatteryDetails} 

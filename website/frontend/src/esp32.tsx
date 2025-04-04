@@ -5,7 +5,7 @@ import "simplebar-react/dist/simplebar.min.css";
 import "flatpickr/dist/flatpickr.css";
 import { AppWrapper } from "./components/common/PageMeta.tsx";
 import { ThemeProvider } from "./context/ThemeContext.tsx";
-import BatteriesPage from "./pages/Battery/DetailPage.tsx";
+import BatteryPage from "./pages/Battery/BatteryPage.tsx";
 import { BrowserRouter as Router } from "react-router";
 import { ScrollToTop } from "./components/common/ScrollToTop";
 import { setupMockWebSocket } from './mock/ws';
@@ -17,7 +17,7 @@ createRoot(document.getElementById("root")!).render(
       <AppWrapper>
         <Router>
         <ScrollToTop />
-        <BatteriesPage isFromEsp32={true}/>
+        <BatteryPage isFromEsp32={true}/>
         </Router>
       </AppWrapper>
     </ThemeProvider>
