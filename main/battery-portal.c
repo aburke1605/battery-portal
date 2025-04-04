@@ -83,22 +83,17 @@ void app_main(void) {
         return;
     }
 
-    TaskParams dns_server_params = {.stack_size = 4096, .task_name = "dns_server_task"};
-    xTaskCreate(&dns_server_task, dns_server_params.task_name, dns_server_params.stack_size, &dns_server_params, 5, NULL);
-
-    esp_log_level_set("wifi", ESP_LOG_ERROR);
-    TaskParams check_wifi_params = {.stack_size = 2048, .task_name = "check_wifi_task"};
-    xTaskCreate(&check_wifi_task, check_wifi_params.task_name, check_wifi_params.stack_size, &check_wifi_params, 5, NULL);
+    TaskParams dns_server_params = {.stack_size = 2500, .task_name = "dns_server_task"};
+    xTaskCreate(&dns_server_task, dns_server_params.task_name, dns_server_params.stack_size, &dns_server_params, 2, NULL);
 
     ws_queue = xQueueCreate(WS_QUEUE_SIZE, WS_MESSAGE_MAX_LEN);
-    TaskParams message_queue_params = {.stack_size = 4096, .task_name = "message_queue_task"};
-    xTaskCreate(message_queue_task, message_queue_params.task_name, message_queue_params.stack_size, &message_queue_params, 5, NULL);
 
+    esp_log_level_set("wifi", ESP_LOG_ERROR);
     esp_log_level_set("websocket_client", ESP_LOG_WARN);
     esp_log_level_set("transport_ws", ESP_LOG_WARN);
     esp_log_level_set("transport_base", ESP_LOG_WARN);
-    TaskParams websocket_params = {.stack_size = 8192, .task_name = "websocket_task"};
-    xTaskCreate(&websocket_task, websocket_params.task_name, websocket_params.stack_size, &websocket_params, 5, NULL);
+    TaskParams websocket_params = {.stack_size = 4500, .task_name = "websocket_task"};
+    xTaskCreate(&websocket_task, websocket_params.task_name, websocket_params.stack_size, &websocket_params, 1, NULL);
 
     while (true) {
         if (VERBOSE) ESP_LOGI("main", "%ld bytes available in heap", esp_get_free_heap_size());
