@@ -8,8 +8,7 @@ import { fileURLToPath } from "url";
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-export default defineConfig(({ mode }) => ({
-  base: mode === 'production' ? '/static/' : '/',
+export default defineConfig(() => ({
   plugins: [
     react(),
     svgr({
@@ -26,6 +25,12 @@ export default defineConfig(({ mode }) => ({
         main: path.resolve(__dirname, "index.html"),
         esp: path.resolve(__dirname, "esp32.html"),
         home: path.resolve(__dirname, "home.html"),
+      },
+      output: {
+        // no hash in output file names
+        entryFileNames: "assets/[name].js",
+        chunkFileNames: "assets/[name].js",
+        assetFileNames: "assets/[name].[ext]",
       },
     },
   },
