@@ -315,6 +315,10 @@ esp_err_t file_serve_handler(httpd_req_t *req) {
         }
 
         struct rendered_page* new_page = malloc(sizeof(struct rendered_page));
+        if (!new_page) {
+            ESP_LOGE("WS", "Couldn't allocate memory in heap!");
+            return ESP_FAIL;
+        }
 
         strncpy(new_page->name, file_path, WS_MAX_HTML_PAGE_NAME_LENGTH - 1);
         new_page->name[WS_MAX_HTML_PAGE_NAME_LENGTH - 1] = '\0';
