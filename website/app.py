@@ -134,7 +134,6 @@ def serve_react_static(path):
     return send_from_directory("frontend/dist", path)
 
 
-
 # Create admin
 admin = flask_admin.Admin(
     app,
