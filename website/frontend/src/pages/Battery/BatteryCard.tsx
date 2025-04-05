@@ -1,19 +1,20 @@
 import React from 'react';
 import { BatteryData } from '../..//types';
 import { 
-  ToggleRight,
-  ToggleLeft,
+  // ToggleRight,
+  // ToggleLeft,
   ExternalLink
 } from 'lucide-react';
 import { getStatusColor, getChargeLevelColor, getHealthColor, getTemperatureColor } from '../../utils/helpers';
 
 interface BatteryCardProps {
   battery: BatteryData;
-  onToggleCharging: (batteryId: string, e?: React.MouseEvent) => void;
+  // onToggleCharging: (batteryId: string, e?: React.MouseEvent) => void;
   onViewDetails: (battery: BatteryData) => void;
 }
 
-const BatteryCard: React.FC<BatteryCardProps> = ({ battery, onToggleCharging, onViewDetails }) => {
+// const BatteryCard: React.FC<BatteryCardProps> = ({ battery, onToggleCharging, onViewDetails }) => {
+const BatteryCard: React.FC<BatteryCardProps> = ({ battery, onViewDetails }) => {
   // Get battery icon based on charge level and status
   // const getBatteryIcon = (battery: BatteryData) => {
   //   if (battery.status === 'offline') return <Battery className="text-gray-400" />;
@@ -38,7 +39,7 @@ const BatteryCard: React.FC<BatteryCardProps> = ({ battery, onToggleCharging, on
         </div>
         
         <div className="text-sm text-gray-600 mb-1">ID: {battery.esp_id}</div>
-        <div className="text-sm text-gray-600 mb-4">Location: {battery.location}</div>
+        {/* <div className="text-sm text-gray-600 mb-4">Location: {battery.location}</div> */}
         
         <div className="mb-4">
           <div className="flex justify-between items-center mb-1">
@@ -66,14 +67,14 @@ const BatteryCard: React.FC<BatteryCardProps> = ({ battery, onToggleCharging, on
             <div className="text-sm text-gray-500">Health:</div>
             <div className={`font-medium ${getHealthColor(battery.health)}`}>{battery.health}%</div>
           </div>
-          <div>
+          {/* <div>
             <div className="text-sm text-gray-500">Cycles:</div>
             <div className="font-medium text-gray-700">{battery.cycleCount}</div>
-          </div>
+          </div> */}
         </div>
 
         <div className="mt-4 flex justify-between items-center">
-          <button 
+          {/* <button 
             onClick={(e) => onToggleCharging(battery.esp_id, e)}
             className="flex items-center text-gray-600 hover:text-gray-900"
           >
@@ -88,7 +89,7 @@ const BatteryCard: React.FC<BatteryCardProps> = ({ battery, onToggleCharging, on
                 <span className="text-sm">Not Charging</span>
               </>
             )}
-          </button>
+          </button> */}
           <button 
             onClick={() => onViewDetails(battery)}
             className="flex items-center text-blue-600 hover:text-blue-800"

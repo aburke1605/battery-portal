@@ -1,4 +1,5 @@
-import React, { useState, useEffect } from 'react';
+// import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import PageBreadcrumb from "../../components/common/PageBreadCrumb";
 import PageMeta from "../../components/common/PageMeta";
@@ -42,14 +43,14 @@ export default function ListPage() {
             DCT: battery?.DCT || 0,
             IP: battery?.IP || "xxx.xxx.xxx.xxx",
             isConnected: battery?.connected_to_WiFi || false,
-            location: "Unknown",
+            // location: "Unknown",
             health: 100,
-            isCharging: false,
+            // isCharging: false,
             status: "good",
-            lastMaintenance: "2025-03-15",
-            type: "Lithium-Ion",
-            capacity: 100,
-            cycleCount: 124,
+            // lastMaintenance: "2025-03-15",
+            // type: "Lithium-Ion",
+            // capacity: 100,
+            // cycleCount: 124,
             timestamp: Date.now(),
           }));
   
@@ -78,7 +79,7 @@ export default function ListPage() {
   
 
     // Toggle battery charging
-    const toggleCharging = (batteryId: string, e?: React.MouseEvent) => {
+    /* const toggleCharging = (batteryId: string, e?: React.MouseEvent) => {
       if (e) {
         e.stopPropagation();
       }
@@ -90,7 +91,7 @@ export default function ListPage() {
           : battery
         )
       );
-    };
+    }; */
 
     const navigate = useNavigate();
     // View battery details
@@ -101,8 +102,8 @@ export default function ListPage() {
 
   const filteredBatteries = batteries.filter(battery => {
     const matchesSearch = 
-      battery.esp_id.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      battery.location.toLowerCase().includes(searchTerm.toLowerCase());
+      battery.esp_id.toLowerCase().includes(searchTerm.toLowerCase());
+      // || battery.location.toLowerCase().includes(searchTerm.toLowerCase());
     
     const matchesStatus = statusFilter === 'all' || battery.status === statusFilter;
     
@@ -217,7 +218,7 @@ export default function ListPage() {
             <BatteryCard 
               key={battery.esp_id} 
               battery={battery} 
-              onToggleCharging={toggleCharging} 
+              // onToggleCharging={toggleCharging} 
               onViewDetails={viewBatteryDetails} 
             />
           ))}

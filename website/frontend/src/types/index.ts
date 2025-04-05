@@ -15,12 +15,12 @@ export interface BatteryData {
   voltage: number;
   current: number;
   health: number;
-  lastMaintenance: string;
-  location: string;
-  type: string;
-  capacity: number;
-  cycleCount: number;
-  isCharging: boolean;
+  // lastMaintenance: string;
+  // location: string;
+  // type: string;
+  // capacity: number;
+  // cycleCount: number;
+  // isCharging: boolean;
   timestamp: number;
   isConnected: boolean;
 }

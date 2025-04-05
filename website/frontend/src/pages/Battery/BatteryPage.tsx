@@ -60,14 +60,14 @@ export default function BatteryPage({ isFromEsp32 = false }: BatteriesPageProps)
                     DCT: battery?.DCT || 0,
                     IP: battery?.IP || "xxx.xxx.xxx.xxx",
                     isConnected: battery?.connected_to_WiFi || false,
-                    location: "Unknown",
+                    // location: "Unknown",
                     health: 100,
-                    isCharging: false,
+                    // isCharging: false,
                     status: "good",
-                    lastMaintenance: "2025-03-15",
-                    type: "Lithium-Ion",
-                    capacity: 100,
-                    cycleCount: 124,
+                    // lastMaintenance: "2025-03-15",
+                    // type: "Lithium-Ion",
+                    // capacity: 100,
+                    // cycleCount: 124,
                     timestamp: Date.now(),
                 };
                 console.log('Found battery:', batteryItem);
@@ -153,12 +153,12 @@ export default function BatteryPage({ isFromEsp32 = false }: BatteriesPageProps)
     };
 
     // TODO
-    const toggleCharging = (batteryId: string, e?: React.MouseEvent) => {
+    /* const toggleCharging = (batteryId: string, e?: React.MouseEvent) => {
         if (e) {
             e.stopPropagation();
           }
         alert(`Charging toggled for battery ${batteryId}`);
-    };
+    }; */
 
     return (
         <div>
@@ -178,7 +178,7 @@ export default function BatteryPage({ isFromEsp32 = false }: BatteriesPageProps)
                 {batteryItem ? (
                     <BatteryDetail 
                         battery={batteryItem}
-                        onToggleCharging={toggleCharging}
+                        // onToggleCharging={toggleCharging}
                         voltageThreshold={voltageThreshold}
                         sendBatteryUpdate={sendBatteryUpdate} // pass function to BatteryDetail
                         sendWiFiConnect={sendWiFiConnect}

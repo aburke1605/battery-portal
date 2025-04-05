@@ -12,7 +12,7 @@ import {
   Info, 
   RefreshCw, 
   Wifi, 
-  Power, 
+  // Power, 
   Calendar, 
   FileText, 
   History, 
@@ -31,7 +31,7 @@ import { getStatusColor } from '../../utils/helpers';
 
 interface BatteryDetailProps {
   battery: BatteryData;
-  onToggleCharging: (batteryId: string) => void;
+  // onToggleCharging: (batteryId: string) => void;
   voltageThreshold: number;
   sendBatteryUpdate: (updatedValues: Partial<BatteryData>) => void;
   sendWiFiConnect: (username: string, password: string, eduroam: boolean) => void;
@@ -40,7 +40,7 @@ interface BatteryDetailProps {
 
 const BatteryDetail: React.FC<BatteryDetailProps> = ({ 
   battery, 
-  onToggleCharging, 
+  // onToggleCharging, 
   voltageThreshold,
   sendBatteryUpdate, // receive function from BatteryPage
   sendWiFiConnect,
@@ -638,29 +638,29 @@ const BatteryDetail: React.FC<BatteryDetailProps> = ({
                       <h4 className="text-sm font-medium text-gray-500 mb-2">Current</h4>
                       <p className="text-2xl font-semibold text-gray-900">{battery.current} A</p>
                       <div className="mt-1 text-sm text-gray-500">
-                        {battery.isCharging ? (
+                        {/* {battery.isCharging ? (
                           <span className="text-blue-600">Charging current</span>
                         ) : (
                           <span>Discharge current</span>
-                        )}
+                        )} */}
                       </div>
                     </div>
-                    <div>
+                    {/* <div>
                       <h4 className="text-sm font-medium text-gray-500 mb-2">Capacity</h4>
                       <p className="text-2xl font-semibold text-gray-900">{battery.capacity} kWh</p>
                       <div className="mt-1 text-sm text-gray-500">
                         Nominal capacity
                       </div>
-                    </div>
+                    </div> */}
                     <div>
                       <h4 className="text-sm font-medium text-gray-500 mb-2">Last Maintenance</h4>
-                      <p className="text-2xl font-semibold text-gray-900">{battery.lastMaintenance}</p>
+                      {/* <p className="text-2xl font-semibold text-gray-900">{battery.lastMaintenance}</p> */}
                       <div className="mt-1 text-sm text-gray-500">
-                        {new Date(battery.lastMaintenance) < new Date(Date.now() - 90 * 24 * 60 * 60 * 1000) ? (
+                        {/* {new Date(battery.lastMaintenance) < new Date(Date.now() - 90 * 24 * 60 * 60 * 1000) ? (
                           <span className="text-amber-600">Maintenance due</span>
                         ) : (
                           <span className="text-green-600">Up to date</span>
-                        )}
+                        )} */}
                       </div>
                     </div>
                   </div>
@@ -720,7 +720,7 @@ const BatteryDetail: React.FC<BatteryDetailProps> = ({
                   <h3 className="text-lg font-medium leading-6 text-gray-900">Actions</h3>
                 </div>
                 <div className="px-4 py-5 sm:p-6 space-y-4">
-                  <button 
+                  {/* <button 
                     onClick={() => onToggleCharging(battery.esp_id)}
                     className={`w-full flex items-center justify-center px-4 py-2 border rounded-md shadow-sm text-sm font-medium focus:outline-none focus:ring-2 focus:ring-offset-2 ${
                       battery.isCharging 
@@ -739,7 +739,7 @@ const BatteryDetail: React.FC<BatteryDetailProps> = ({
                         Start Charging
                       </>
                     )}
-                  </button>
+                  </button> */}
                   <button className="w-full flex items-center justify-center px-4 py-2 border border-blue-300 shadow-sm text-sm font-medium rounded-md text-blue-700 bg-blue-50 hover:bg-blue-100 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
                     <Calendar size={16} className="mr-2" />
                     Schedule Maintenance
@@ -773,14 +773,14 @@ const BatteryDetail: React.FC<BatteryDetailProps> = ({
                       <dt className="text-sm font-medium text-gray-500">Battery ID</dt>
                       <dd className="mt-1 text-sm text-gray-900">{battery.esp_id}</dd>
                     </div>
-                    <div className="sm:col-span-1">
+                    {/* <div className="sm:col-span-1">
                       <dt className="text-sm font-medium text-gray-500">Type</dt>
                       <dd className="mt-1 text-sm text-gray-900">{battery.type}</dd>
-                    </div>
-                    <div className="sm:col-span-1">
+                    </div> */}
+                    {/* <div className="sm:col-span-1">
                       <dt className="text-sm font-medium text-gray-500">Location</dt>
                       <dd className="mt-1 text-sm text-gray-900">{battery.location}</dd>
-                    </div>
+                    </div> */}
                     <div className="sm:col-span-1">
                       <dt className="text-sm font-medium text-gray-500">Installation Date</dt>
                       <dd className="mt-1 text-sm text-gray-900">Jan 15, 2025</dd>
@@ -810,9 +810,9 @@ const BatteryDetail: React.FC<BatteryDetailProps> = ({
             <div className="flex items-center mt-1 space-x-2 text-gray-600">
               <span>{battery.esp_id}</span>
               <span>•</span>
-              <span>{battery.type}</span>
+              {/* <span>{battery.type}</span> */}
               <span>•</span>
-              <span>{battery.location}</span>
+              {/* <span>{battery.location}</span> */}
             </div>
           </div>
           <div className="flex items-center space-x-3">
@@ -858,7 +858,8 @@ const BatteryDetail: React.FC<BatteryDetailProps> = ({
                   )
                 } Charge Level
               </h3>
-              {battery.isCharging && (
+              {/* {battery.isCharging && ( */}
+              {battery.current > 0 && (
                 <span className="bg-yellow-100 text-yellow-800 text-xs px-2 py-1 rounded-full flex items-center">
                   <Zap size={12} className="mr-1" /> Charging
                 </span>
