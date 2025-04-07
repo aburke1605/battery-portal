@@ -75,7 +75,7 @@ esp_err_t perform_request(cJSON *message, cJSON *response) {
             gpio_set_level(I2C_LED_GPIO_PIN, 1);
 
             cJSON *esp_id = cJSON_GetObjectItem(data, "new_esp_id");
-            if (esp_id && esp_id->valuestring != ESP_ID) {
+            if (esp_id && strcmp(esp_id->valuestring, "") != 0 && esp_id->valuestring != ESP_ID) {
                 ESP_LOGI(TAG, "Changing device name...");
                 write_bytes(I2C_DATA_SUBCLASS_ID, I2C_NAME_OFFSET, (uint8_t *)esp_id, 11);
             }
