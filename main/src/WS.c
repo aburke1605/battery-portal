@@ -86,10 +86,6 @@ esp_err_t perform_request(cJSON *message, cJSON *response) {
             int CITH = cJSON_GetObjectItem(data, "CITH")->valueint;
             int CCT = cJSON_GetObjectItem(data, "CCT")->valueint;
             int DCT = cJSON_GetObjectItem(data, "DCT")->valueint;
-            // use validate_change_handler logic directly
-            // TODO: change the `websocket_event_handler` to do the same
-            //       rather than using the `/validate_change` endpoint
-            //       and sending mock htto requests to it
 
             uint8_t two_bytes[2];
             read_bytes(I2C_DISCHARGE_SUBCLASS_ID, I2C_BL_OFFSET, two_bytes, sizeof(two_bytes));
