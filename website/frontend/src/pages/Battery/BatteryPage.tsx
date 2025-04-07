@@ -108,7 +108,8 @@ export default function BatteryPage({ isFromEsp32 = false }: BatteriesPageProps)
             if (updatedValues.new_esp_id && updatedValues.new_esp_id != esp_id) {
                 console.log("ESP ID changed, redirecting in 5s...");
                 await sleep(5000);
-                navigate(`/batteries`);
+                const prefix = window.location.protocol == 'https:' ? 'battery-detail' : 'esp32';
+                navigate(`/${prefix}?esp_id=${updatedValues.new_esp_id}`);
             }
         } else {
             console.warn("WebSocket not connected, cannot send update.");
