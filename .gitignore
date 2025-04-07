@@ -10,3 +10,5 @@ dependencies.lock
 website/static/plots/
 
 test/
+
+website/frontend/node_modules/
