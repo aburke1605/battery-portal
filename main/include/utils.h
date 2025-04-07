@@ -6,7 +6,7 @@
 #include <esp_err.h>
 #include <esp_http_server.h>
 
-void send_fake_post_request();
+void send_fake_request();
 
 esp_err_t get_POST_data(httpd_req_t *req, char* content, size_t content_size);
 

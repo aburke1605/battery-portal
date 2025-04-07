@@ -3,7 +3,7 @@ import os
 import string
 import random
 
-from flask import Flask, render_template, request, redirect, url_for, abort
+from flask import Flask, render_template, send_from_directory, request, redirect, url_for, abort
 
 from flask_sqlalchemy import SQLAlchemy
 
@@ -123,6 +123,15 @@ def admin_index():
 def subpage():
     return render_template('admin/battery.html')
 
+
+@app.route('/admin')
+@login_required
+def new_admin():
+    return send_from_directory("frontend/dist", "index.html")
+
+@app.route("/<path:path>")
+def serve_react_static(path):
+    return send_from_directory("frontend/dist", path)
 
 
 # Create admin

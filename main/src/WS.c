@@ -11,7 +11,6 @@
 #include <esp_wifi.h>
 #include <esp_websocket_client.h>
 #include <esp_eap_client.h>
-#include <cJSON.h>
 #include <driver/gpio.h>
 
 static struct rendered_page rendered_html_pages[WS_MAX_N_HTML_PAGES];
@@ -20,6 +19,7 @@ static bool reconnect = false;
 static char ESP_IP[16] = "xxx.xxx.xxx.xxx\0";
 static esp_websocket_client_handle_t ws_client = NULL;
 static uint8_t n_rendered_html_pages = 0;
+static bool admin_verified = false;
 
 static const char* TAG = "WS";
 
@@ -44,6 +44,183 @@ void remove_client(int fd) {
     }
 }
 
+esp_err_t perform_request(cJSON *message, cJSON *response) {
+    // construct response message
+    cJSON_AddStringToObject(response, "type", "response");
+    cJSON_AddStringToObject(response, "esp_id", ESP_ID);
+    cJSON *response_content = cJSON_CreateObject();
+
+    cJSON *type = cJSON_GetObjectItem(message, "type");
+    cJSON *content = cJSON_GetObjectItem(message, "content");
+    if (!type || !content) {
+        ESP_LOGE(TAG, "Error in request message");
+        return ESP_FAIL;
+    }
+
+    if (strcmp(type->valuestring, "query") == 0) {
+        if (strcmp(content->valuestring, "are you still there?") == 0) {
+            cJSON_AddStringToObject(response_content, "response", "yes");
+            xQueueReset(ws_queue); // prioritise this reply(?)
+        }
+    } else if (strcmp(type->valuestring, "request") == 0) {
+        cJSON *summary = cJSON_GetObjectItem(content, "summary");
+        if (summary && strcmp(summary->valuestring, "change-settings") == 0) {
+            cJSON *data = cJSON_GetObjectItem(content, "data");
+            if (!data) {
+                ESP_LOGE(TAG, "Failed to parse JSON");
+                cJSON_AddStringToObject(response_content, "status", "error");
+                return ESP_FAIL;
+            }
+
+            gpio_set_level(I2C_LED_GPIO_PIN, 1);
+
+            const char* esp_id = cJSON_GetObjectItem(data, "new_esp_id")->valuestring;
+            int BL = cJSON_GetObjectItem(data, "BL")->valueint;
+            int BH = cJSON_GetObjectItem(data, "BH")->valueint;
+            int CITL = cJSON_GetObjectItem(data, "CITL")->valueint;
+            int CITH = cJSON_GetObjectItem(data, "CITH")->valueint;
+            int CCT = cJSON_GetObjectItem(data, "CCT")->valueint;
+            int DCT = cJSON_GetObjectItem(data, "DCT")->valueint;
+            // use validate_change_handler logic directly
+            // TODO: change the `websocket_event_handler` to do the same
+            //       rather than using the `/validate_change` endpoint
+            //       and sending mock htto requests to it
+
+            if (esp_id != ESP_ID) {
+                ESP_LOGI(TAG, "Changing device name...");
+                write_bytes(I2C_DATA_SUBCLASS_ID, I2C_NAME_OFFSET, (uint8_t *)esp_id, 11);
+            }
+
+            uint8_t two_bytes[2];
+            read_bytes(I2C_DISCHARGE_SUBCLASS_ID, I2C_BL_OFFSET, two_bytes, sizeof(two_bytes));
+            if (BL != (two_bytes[0] << 8 | two_bytes[1])) {
+                ESP_LOGI(TAG, "Changing BL voltage...");
+                two_bytes[0] = (BL >> 8) & 0xFF;
+                two_bytes[1] =  BL       & 0xFF;
+                write_bytes(I2C_DISCHARGE_SUBCLASS_ID, I2C_BL_OFFSET, two_bytes, sizeof(two_bytes));
+            }
+            read_bytes(I2C_DISCHARGE_SUBCLASS_ID, I2C_BH_OFFSET, two_bytes, sizeof(two_bytes));
+            if (BH != (two_bytes[0] << 8 | two_bytes[1])) {
+                ESP_LOGI(TAG, "Changing BH voltage...");
+                two_bytes[0] = (BH >> 8) & 0xFF;
+                two_bytes[1] =  BH       & 0xFF;
+                write_bytes(I2C_DISCHARGE_SUBCLASS_ID, I2C_BH_OFFSET, two_bytes, sizeof(two_bytes));
+            }
+            read_bytes(I2C_CHARGE_INHIBIT_CFG_SUBCLASS_ID, I2C_CHG_INHIBIT_TEMP_LOW_OFFSET, two_bytes, sizeof(two_bytes));
+            if (CITL != (two_bytes[0] << 8 | two_bytes[1])) {
+                ESP_LOGI(TAG, "Changing charge inhibit low temperature threshold...");
+                two_bytes[0] = (CITL >> 8) & 0xFF;
+                two_bytes[1] =  CITL       & 0xFF;
+                write_bytes(I2C_CHARGE_INHIBIT_CFG_SUBCLASS_ID, I2C_CHG_INHIBIT_TEMP_LOW_OFFSET, two_bytes, sizeof(two_bytes));
+            }
+            read_bytes(I2C_CHARGE_INHIBIT_CFG_SUBCLASS_ID, I2C_CHG_INHIBIT_TEMP_HIGH_OFFSET, two_bytes, sizeof(two_bytes));
+            if (CITH != (two_bytes[0] << 8 | two_bytes[1])) {
+                ESP_LOGI(TAG, "Changing charge inhibit high temperature threshold...");
+                two_bytes[0] = (CITH >> 8) & 0xFF;
+                two_bytes[1] =  CITH       & 0xFF;
+                write_bytes(I2C_CHARGE_INHIBIT_CFG_SUBCLASS_ID, I2C_CHG_INHIBIT_TEMP_HIGH_OFFSET, two_bytes, sizeof(two_bytes));
+            }
+            read_bytes(I2C_CHARGE_INHIBIT_CFG_SUBCLASS_ID, I2C_CHG_INHIBIT_TEMP_LOW_OFFSET, two_bytes, sizeof(two_bytes));
+            if (CCT != (two_bytes[0] << 8 | two_bytes[1])) {
+                ESP_LOGI(TAG, "Changing charge current threshold...");
+                two_bytes[0] = (CCT >> 8) & 0xFF;
+                two_bytes[1] =  CCT       & 0xFF;
+                write_bytes(I2C_CURRENT_THRESHOLDS_SUBCLASS_ID, I2C_CHG_CURRENT_THRESHOLD_OFFSET, two_bytes, sizeof(two_bytes));
+            }
+            read_bytes(I2C_CHARGE_INHIBIT_CFG_SUBCLASS_ID, I2C_CHG_INHIBIT_TEMP_HIGH_OFFSET, two_bytes, sizeof(two_bytes));
+            if (DCT != (two_bytes[0] << 8 | two_bytes[1])) {
+                ESP_LOGI(TAG, "Changing discharge current threshold...");
+                two_bytes[0] = (DCT >> 8) & 0xFF;
+                two_bytes[1] =  DCT       & 0xFF;
+                write_bytes(I2C_CURRENT_THRESHOLDS_SUBCLASS_ID, I2C_DSG_CURRENT_THRESHOLD_OFFSET, two_bytes, sizeof(two_bytes));
+            }
+
+            gpio_set_level(I2C_LED_GPIO_PIN, 0);
+
+            cJSON_AddStringToObject(response_content, "status", "success");
+        } else if (summary && strcmp(summary->valuestring, "connect-wifi") == 0) {
+            cJSON *data = cJSON_GetObjectItem(content, "data");
+            if (!data) {
+                ESP_LOGE(TAG, "Failed to parse JSON");
+                cJSON_AddStringToObject(response_content, "status", "error");
+                return ESP_FAIL;
+            }
+
+            const char* username = cJSON_GetObjectItem(data, "username")->valuestring;
+            const char* password = cJSON_GetObjectItem(data, "password")->valuestring;
+            cJSON *eduroam = cJSON_GetObjectItem(data, "eduroam");
+
+            int tries = 0;
+            int max_tries = 10;
+            if (!connected_to_WiFi || reconnect) {
+                if (reconnect) {
+                    connected_to_WiFi = false;
+                }
+
+                wifi_config_t *wifi_sta_config = malloc(sizeof(wifi_config_t));
+                memset(wifi_sta_config, 0, sizeof(wifi_config_t));
+
+                if (cJSON_IsBool(eduroam) && cJSON_IsTrue(eduroam)) {
+                    strncpy((char *)wifi_sta_config->sta.ssid, "eduroam", 8);
+
+                    char full_username[48];
+                    snprintf(full_username, sizeof(full_username), "%s@liverpool.ac.uk", username);
+                    full_username[strlen(full_username)] = '\0';
+
+                    esp_wifi_sta_enterprise_enable();
+                    esp_eap_client_set_username((uint8_t *)full_username, strlen(full_username));
+                    esp_eap_client_set_password((uint8_t *)password, strlen(password));
+                    ESP_LOGI(TAG, "Connecting to AP... SSID: eduroam");
+                } else {
+                    strncpy((char *)wifi_sta_config->sta.ssid, username, sizeof(wifi_sta_config->sta.ssid) - 1);
+                    strncpy((char *)wifi_sta_config->sta.password, password, sizeof(wifi_sta_config->sta.password) - 1);
+                    ESP_LOGI(TAG, "Connecting to AP... SSID: %s", wifi_sta_config->sta.ssid);
+                }
+
+                ESP_ERROR_CHECK(esp_wifi_set_config(ESP_IF_WIFI_STA, wifi_sta_config));
+                // TODO: if reconnecting, it doesn't actually seem to drop the old connection in favour of the new one
+
+                // give some time to connect
+                vTaskDelay(pdMS_TO_TICKS(5000));
+                while (true) {
+                    if (tries > max_tries) break;
+                    wifi_ap_record_t ap_info;
+                    if (esp_wifi_sta_get_ap_info(&ap_info) == ESP_OK) {
+
+                        esp_netif_t *sta_netif = esp_netif_get_handle_from_ifkey("WIFI_STA_DEF");
+                        if (sta_netif != NULL) {
+                            esp_netif_ip_info_t ip_info;
+                            esp_netif_get_ip_info(sta_netif, &ip_info);
+
+                            if (ip_info.ip.addr != IPADDR_ANY) {
+                                connected_to_WiFi = true;
+                                ESP_LOGI(TAG, "Connected to router. Signal strength: %d dBm", ap_info.rssi);
+                                cJSON_AddStringToObject(response_content, "status", "success");
+
+                                break;
+                            }
+                        }
+                    } else {
+                        if (VERBOSE) ESP_LOGI(TAG, "Not connected. Retrying... %d", tries);
+                        esp_wifi_connect();
+                    }
+                    tries++;
+
+                    vTaskDelay(pdMS_TO_TICKS(1000));
+                }
+            }
+        } else if (summary && strcmp(summary->valuestring, "reset-bms") == 0) {
+            write_data(I2C_CONTROL_REG, I2C_CONTROL_RESET_SUBCMD, 2);
+            ESP_LOGI(TAG, "Reset command sent successfully.");
+            cJSON_AddStringToObject(response_content, "status", "success");
+        }
+    } else {
+        return ESP_ERR_NOT_SUPPORTED;
+    }
+    cJSON_AddItemToObject(response, "content", response_content);
+    return ESP_OK;
+}
+
 esp_err_t validate_login_handler(httpd_req_t *req) {
     char content[100];
     esp_err_t err = get_POST_data(req, content, sizeof(content));
@@ -65,10 +242,13 @@ esp_err_t validate_login_handler(httpd_req_t *req) {
     url_decode(username, username_encoded);
     url_decode(password, password_encoded);
 
-    if (strcmp(username, WS_USERNAME) == 0 && strcmp(password, WS_PASSWORD) == 0) {
+    if (DEV || (strcmp(username, WS_USERNAME) == 0 && strcmp(password, WS_PASSWORD) == 0)) {
         // credentials correct
+        admin_verified = true;
         httpd_resp_set_status(req, "302 Found");
-        httpd_resp_set_hdr(req, "Location", "/display"); // redirect to /display
+        char redirect_url[25];
+        snprintf(redirect_url, sizeof(redirect_url), "/esp32?esp_id=%s", ESP_ID);
+        httpd_resp_set_hdr(req, "Location", redirect_url);
         httpd_resp_send(req, NULL, 0); // no response body
     } else {
         // credentials incorrect
@@ -79,6 +259,7 @@ esp_err_t validate_login_handler(httpd_req_t *req) {
 }
 
 esp_err_t websocket_handler(httpd_req_t *req) {
+    // register new clients...
     if (req->method == HTTP_GET) {
         int fd = httpd_req_to_sockfd(req);
         ESP_LOGI(TAG, "WebSocket handshake complete for client %d", fd);
@@ -86,370 +267,106 @@ esp_err_t websocket_handler(httpd_req_t *req) {
         return ESP_OK;  // WebSocket handshake happens here
     }
 
-    return ESP_FAIL;
-}
-
-esp_err_t validate_change_handler(httpd_req_t *req) {
-    char content[500];
-    esp_err_t err;
-
-    if (req->user_ctx != NULL) {
-        // request came from a WebSocket
-        strncpy(content, (const char *)req->user_ctx, sizeof(content) - 1);
-        content[sizeof(content) - 1] = '\0';
-    } else{
-        // request is a real HTTP POST
-        err = get_POST_data(req, content, sizeof(content));
-        if (err != ESP_OK) {
-            ESP_LOGE(TAG, "Problem with connect POST request");
-            return err;
+    // ...otherwise listen for messages
+    httpd_ws_frame_t ws_pkt;
+    memset(&ws_pkt, 0, sizeof(httpd_ws_frame_t));
+    // first call with ws_pkt.len = 0 to determine required length
+    esp_err_t ret = httpd_ws_recv_frame(req, &ws_pkt, 0);
+    if (ret != ESP_OK) {
+        ESP_LOGE(TAG, "Failed to fetch WebSocket frame length: %s", esp_err_to_name(ret));
+        return ret;
+    }
+    if (ws_pkt.len > 0) {
+        // allocate buffer
+        ws_pkt.payload = malloc(ws_pkt.len + 1);
+        if (!ws_pkt.payload) {
+            ESP_LOGE(TAG, "Failed to allocate memory for WebSocket payload");
+            return ESP_ERR_NO_MEM;
         }
+        // receive payload
+        ret = httpd_ws_recv_frame(req, &ws_pkt, ws_pkt.len);
+        if (ret != ESP_OK) {
+            ESP_LOGE(TAG, "Failed to receive WebSocket frame: %s", esp_err_to_name(ret));
+            free(ws_pkt.payload);
+            return ret;
+        }
+        ws_pkt.payload[ws_pkt.len] = '\0';
     }
 
-    // Check if each parameter exists and parse it
-    char *name_start = strstr(content, "device_name=");
-    char *BL_start = strstr(content, "BL_voltage_threshold=");
-    char *BH_start = strstr(content, "BH_voltage_threshold=");
-    char *CCT_start = strstr(content, "charge_current_threshold=");
-    char *DCT_start = strstr(content, "discharge_current_threshold=");
-    char *CITL_start = strstr(content, "chg_inhibit_temp_low=");
-    char *CITH_start = strstr(content, "chg_inhibit_temp_high=");
+    if (ws_pkt.type == HTTPD_WS_TYPE_TEXT) {
+        if (VERBOSE) ESP_LOGI(TAG, "Received WebSocket message: %s", (char *)ws_pkt.payload);
 
-    static bool led_on = false;
-    led_on = !led_on;
-    gpio_set_level(I2C_LED_GPIO_PIN, led_on ? 1 : 0);
-
-    if (name_start) {
-        char device_name[11] = {0};
-        sscanf(name_start, "device_name=%10[^&]", device_name);
-        device_name[sizeof(device_name)] = '\0';
-        if (device_name[0] != '\0') {
-            ESP_LOGI(TAG, "Changing device name...");
-            write_bytes(I2C_DATA_SUBCLASS_ID, I2C_NAME_OFFSET, (uint8_t *)device_name, sizeof(device_name));
-            ESP_LOGI(TAG, "Device name successfully set to %s", device_name);
-        }
-    }
-
-    int16_t value;
-    uint8_t two_bytes[2];
-
-    if (BL_start) {
-        char BL_voltage_threshold[50] = {0};
-        sscanf(BL_start, "BL_voltage_threshold=%49[^&]", BL_voltage_threshold);
-        if (BL_voltage_threshold[0] != '\0') {
-            ESP_LOGI(TAG, "Changing BL voltage...");
-            value = atoi(BL_voltage_threshold);
-            two_bytes[0] = (value >> 8) & 0xFF; // higher byte
-            two_bytes[1] =  value       & 0xFF; // lower byte
-            write_bytes(I2C_DISCHARGE_SUBCLASS_ID, I2C_BL_OFFSET, two_bytes, sizeof(two_bytes));
-            ESP_LOGI(TAG, "BL successfully set to %d", value);
-        }
-    }
-
-    if (BH_start) {
-        char BH_voltage_threshold[50] = {0};
-        sscanf(BH_start, "BH_voltage_threshold=%49[^&]", BH_voltage_threshold);
-        if (BH_voltage_threshold[0] != '\0') {
-            ESP_LOGI(TAG, "Changing BH voltage...");
-            value = atoi(BH_voltage_threshold);
-            two_bytes[0] = (value >> 8) & 0xFF; // higher byte
-            two_bytes[1] =  value       & 0xFF; // lower byte
-            write_bytes(I2C_DISCHARGE_SUBCLASS_ID, I2C_BH_OFFSET, two_bytes, sizeof(two_bytes));
-            ESP_LOGI(TAG, "BH successfully set to %d", value);
-        }
-    }
-
-    if (CCT_start) {
-        char charge_current_threshold[50] = {0};
-        sscanf(CCT_start, "charge_current_threshold=%49[^&]", charge_current_threshold);
-        if (charge_current_threshold[0] != '\0') {
-            ESP_LOGI(TAG, "Changing charge current threshold...");
-            value = atoi(charge_current_threshold);
-            two_bytes[0] = (value >> 8) & 0xFF; // higher byte
-            two_bytes[1] =  value       & 0xFF; // lower byte
-            write_bytes(I2C_CURRENT_THRESHOLDS_SUBCLASS_ID, I2C_CHG_CURRENT_THRESHOLD_OFFSET, two_bytes, sizeof(two_bytes));
-            ESP_LOGI(TAG, "CCT successfully set to %d", value);
-        }
-    }
-
-    if (DCT_start) {
-        char discharge_current_threshold[50] = {0};
-        sscanf(DCT_start, "discharge_current_threshold=%49[^&]", discharge_current_threshold);
-        if (discharge_current_threshold[0] != '\0') {
-            ESP_LOGI(TAG, "Changing discharge current threshold...");
-            value = atoi(discharge_current_threshold);
-            two_bytes[0] = (value >> 8) & 0xFF; // higher byte
-            two_bytes[1] =  value       & 0xFF; // lower byte
-            write_bytes(I2C_CURRENT_THRESHOLDS_SUBCLASS_ID, I2C_DSG_CURRENT_THRESHOLD_OFFSET, two_bytes, sizeof(two_bytes));
-            ESP_LOGI(TAG, "DCT successfully set to %d", value);
-        }
-    }
-
-    if (CITL_start) {
-        char chg_inhibit_temp_low[50] = {0};
-        sscanf(CITL_start, "chg_inhibit_temp_low=%49[^&]", chg_inhibit_temp_low);
-        if (chg_inhibit_temp_low[0] != '\0') {
-            ESP_LOGI(TAG, "Changing charge inhibit low temperature threshold...");
-            value = atoi(chg_inhibit_temp_low);
-            two_bytes[0] = (value >> 8) & 0xFF; // higher byte
-            two_bytes[1] =  value       & 0xFF; // lower byte
-            write_bytes(I2C_CHARGE_INHIBIT_CFG_SUBCLASS_ID, I2C_CHG_INHIBIT_TEMP_LOW_OFFSET, two_bytes, sizeof(two_bytes));
-            ESP_LOGI(TAG, "CITL successfully set to %d", value);
-        }
-    }
-
-    if (CITH_start) {
-        char chg_inhibit_temp_high[50] = {0};
-        sscanf(CITH_start, "chg_inhibit_temp_high=%49s", chg_inhibit_temp_high);
-        if (chg_inhibit_temp_high[0] != '\0') {
-            ESP_LOGI(TAG, "Changing charge inhibit high temperature threshold...");
-            value = atoi(chg_inhibit_temp_high);
-            two_bytes[0] = (value >> 8) & 0xFF; // higher byte
-            two_bytes[1] =  value       & 0xFF; // lower byte
-            write_bytes(I2C_CHARGE_INHIBIT_CFG_SUBCLASS_ID, I2C_CHG_INHIBIT_TEMP_HIGH_OFFSET, two_bytes, sizeof(two_bytes));
-            ESP_LOGI(TAG, "CITH successfully set to %d", value);
-        }
-    }
-
-    vTaskDelay(pdMS_TO_TICKS(500));
-    gpio_set_level(I2C_LED_GPIO_PIN, led_on ? 0 : 1);
-
-    req->user_ctx = "success";
-
-    return ESP_OK;
-}
-
-esp_err_t reset_handler(httpd_req_t *req) {
-    write_data(I2C_CONTROL_REG, I2C_CONTROL_RESET_SUBCMD, 2);
-
-    // delay to allow reset to complete
-    vTaskDelay(pdMS_TO_TICKS(1000));
-    ESP_LOGI(TAG, "Reset command sent successfully.");
-
-    req->user_ctx = "success";
-
-    return ESP_OK;
-}
-
-esp_err_t validate_connect_handler(httpd_req_t *req) {
-    char content[100];
-    esp_err_t err;
-
-    if (req->user_ctx != NULL) {
-        // request came from a WebSocket
-        strncpy(content, (const char *)req->user_ctx, sizeof(content) - 1);
-        content[sizeof(content) - 1] = '\0';
-    } else{
-        // request is a real HTTP POST
-        err = get_POST_data(req, content, sizeof(content));
-        if (err != ESP_OK) {
-            ESP_LOGE(TAG, "Problem with connect POST request");
-            return err;
-        }
-    }
-
-    char ssid_encoded[50] = {0};
-    char ssid[50] = {0};
-    char password_encoded[50] = {0};
-    char password[50] = {0};
-    sscanf(content, "ssid=%49[^&]&password=%49s", ssid_encoded, password_encoded);
-    url_decode(ssid, ssid_encoded);
-    url_decode(password, password_encoded);
-
-    int tries = 0;
-    int max_tries = 10;
-
-    if (!connected_to_WiFi || reconnect) {
-        if (reconnect) {
-            connected_to_WiFi = false;
+        // read messaage data
+        cJSON *message = cJSON_Parse((char *)ws_pkt.payload);
+        if (!message) {
+            ESP_LOGE(TAG, "Failed to parse JSON");
+            free(ws_pkt.payload);
+            return ESP_FAIL;
         }
 
-        wifi_config_t *wifi_sta_config = malloc(sizeof(wifi_config_t));
-        memset(wifi_sta_config, 0, sizeof(wifi_config_t));
+        cJSON *response = cJSON_CreateObject();
+        perform_request(message, response);
 
-        if (strcmp(req->uri, "/validate_connect?eduroam=true") == 0) {
-            strncpy((char *)wifi_sta_config->sta.ssid, "eduroam", 8);
-
-            esp_wifi_sta_enterprise_enable();
-            esp_eap_client_set_username((uint8_t *)ssid, strlen(ssid));
-            esp_eap_client_set_password((uint8_t *)password, strlen(password));
-        } else {
-            strncpy((char *)wifi_sta_config->sta.ssid, ssid, sizeof(wifi_sta_config->sta.ssid) - 1);
-            strncpy((char *)wifi_sta_config->sta.password, password, sizeof(wifi_sta_config->sta.password) - 1);
-        }
-
-        ESP_ERROR_CHECK(esp_wifi_set_config(ESP_IF_WIFI_STA, wifi_sta_config));
-        // TODO: if reconnecting, it doesn't actually seem to drop the old connection in favour of the new one
-
-        ESP_LOGI(TAG, "Connecting to AP... SSID: %s", wifi_sta_config->sta.ssid);
-
-        // give some time to connect
-        vTaskDelay(pdMS_TO_TICKS(5000));
-        while (true) {
-            if (tries > max_tries) break;
-            wifi_ap_record_t ap_info;
-            if (esp_wifi_sta_get_ap_info(&ap_info) == ESP_OK) {
-
-                esp_netif_t *sta_netif = esp_netif_get_handle_from_ifkey("WIFI_STA_DEF");
-                if (sta_netif != NULL) {
-                    esp_netif_ip_info_t ip_info;
-                    esp_netif_get_ip_info(sta_netif, &ip_info);
-
-                    if (ip_info.ip.addr != IPADDR_ANY) {
-                        connected_to_WiFi = true;
-
-                        ESP_LOGI(TAG, "Connected to router. Signal strength: %d dBm", ap_info.rssi);
-                        req->user_ctx = "success";
-
-                        break;
-                    }
-                }
-            } else {
-                if (VERBOSE) ESP_LOGI(TAG, "Not connected. Retrying... %d", tries);
-                esp_wifi_connect();
-            }
-            tries++;
-
-            vTaskDelay(pdMS_TO_TICKS(3000));
-        }
+        cJSON_Delete(message);
     } else {
-        ESP_LOGW(TAG, "Already connected to Wi-Fi. Redirecting...");
-        req->user_ctx = "already connected";
+        ESP_LOGW(TAG, "Received unsupported WebSocket frame type: %d", ws_pkt.type);
     }
 
-    return ESP_OK;
-}
-
-esp_err_t toggle_handler(httpd_req_t *req) {
-    static bool led_on = false;
-    led_on = !led_on;
-    gpio_set_level(I2C_LED_GPIO_PIN, led_on ? 1 : 0);
-    ESP_LOGI(TAG, "LED is now %s", led_on ? "ON" : "OFF");
-
-    req->user_ctx = "success";
+    free(ws_pkt.payload);
 
     return ESP_OK;
 }
 
 esp_err_t file_serve_handler(httpd_req_t *req) {
-    const char *file_path = (const char *)req->user_ctx; // Get file path from user_ctx
-    if (VERBOSE) ESP_LOGI(TAG, "Serving file: %s", file_path);
+    const char *file_path = (const char *)req->user_ctx;
 
-    bool already_rendered = false;
-    for (int i=0; i<n_rendered_html_pages; i++) {
-        if (strcmp(file_path, rendered_html_pages[i].name) == 0) {
-            already_rendered = true;
-
-            httpd_resp_set_type(req, "text/html");
-            httpd_resp_send(req, rendered_html_pages[i].content, HTTPD_RESP_USE_STRLEN);
-
-            return ESP_OK;
-        }
+    // before anything, make sure nobody tries to bypass the login page
+    if (strcmp(file_path, "/static/esp32.html") == 0 && !admin_verified) {
+        httpd_resp_set_status(req, "302 Found");
+        httpd_resp_set_hdr(req, "Location", "/");
+        httpd_resp_send(req, NULL, 0); // no response body
     }
+
+    if (VERBOSE) ESP_LOGI(TAG, "Serving file: %s", file_path);
 
     const char *ext = strrchr(file_path, '.');
     bool is_html = (ext && strcmp(ext, ".html") == 0);
-
-    // for HTML files, remove jinja lines
-    // and do merging with base.html by hand
+    // only render html pages once to save memory
     if (is_html) {
-        char *base_html = read_file("/templates/base.html");
+        for (int i=0; i<n_rendered_html_pages; i++) {
+            if (strcmp(file_path, rendered_html_pages[i].name) == 0) {
+                httpd_resp_set_type(req, "text/html");
+                httpd_resp_send(req, rendered_html_pages[i].content, HTTPD_RESP_USE_STRLEN);
+
+                return ESP_OK;
+            }
+        }
+
         char *content_html = read_file(file_path);
-        if (!base_html || !content_html) {
-            ESP_LOGE(TAG, "Failed to read base or content HTML file");
+        if (!content_html) {
+            ESP_LOGE(TAG, "Failed to serve HTML file");
             httpd_resp_send_err(req, HTTPD_404_NOT_FOUND, "File not found");
             return ESP_FAIL;
         }
 
-        if (strlen(base_html) + strlen(content_html) + 1 >= WS_MAX_HTML_SIZE) {
-            ESP_LOGE(TAG, "Response buffer overflow risk!");
-            httpd_resp_send_err(req, HTTPD_500_INTERNAL_SERVER_ERROR, "Buffer overflow");
+        struct rendered_page* new_page = malloc(sizeof(struct rendered_page));
+        if (!new_page) {
+            ESP_LOGE(TAG, "Couldn't allocate memory in heap!");
             return ESP_FAIL;
         }
 
+        strncpy(new_page->name, file_path, WS_MAX_HTML_PAGE_NAME_LENGTH - 1);
+        new_page->name[WS_MAX_HTML_PAGE_NAME_LENGTH - 1] = '\0';
 
-        char *page = malloc(WS_MAX_HTML_SIZE);
-        if (!page) {
-            ESP_LOGE(TAG, "Failed to allocate memory for page");
-            httpd_resp_send_err(req, HTTPD_500_INTERNAL_SERVER_ERROR, "Memory allocation failed");
-            return ESP_FAIL;
-        }
+        strncpy(new_page->content, content_html, WS_MAX_HTML_SIZE - 1);
+        new_page->content[WS_MAX_HTML_SIZE - 1] = '\0';
 
-
-        const char* base_jinja_string;
-        char* base_insert_pos;
-        const char* content_jinja_string_1;
-        const char* content_jinja_string_2;
-
-        // remove jinja from base and add to page
-        base_jinja_string = "    {% block content %}{% endblock %}";
-        base_insert_pos = strstr(base_html, base_jinja_string);
-        if (!base_insert_pos) {
-            ESP_LOGE(TAG, "Template placeholder not found in base.html");
-            httpd_resp_send_err(req, HTTPD_500_INTERNAL_SERVER_ERROR, "Template error");
-            return ESP_FAIL;
-        }
-
-        // add start section of base to rendered page
-        size_t base_start_len = base_insert_pos - base_html;
-        strncpy(page, base_html, base_start_len);
-        page[base_start_len-1] = '\0';
-
-        // remove jinja from content first and add to page
-        content_jinja_string_1 = "{% extends \"portal/base.html\" %}\n\n\n{% block content %}";
-        content_jinja_string_2 = "{% endblock %}";
-        strncat(page, content_html + strlen(content_jinja_string_1), strlen(content_html) - strlen(content_jinja_string_1) - strlen(content_jinja_string_2) - 1);
-
-        // add end section of base to rendered page
-        // strncat(page, base_insert_pos + strlen(base_jinja_string), sizeof(page) - strlen(page) - 1);
-        strcat(page, "</body>\n</html>\n\n");
-
-        // remove other jinja bits too
-        char ESP_ID_string[sizeof(ESP_ID) + 2];
-        snprintf(ESP_ID_string, sizeof(ESP_ID_string), "\"%s\"", ESP_ID);
-
-        const char* placeholders[] = {
-            "wss://",
-            "{{ prefix }}",
-            "\"{{ esp_id }}\"",
-            "?esp_id={{ esp_id }}",
-            "&" // fixes eduroam.html
-        };
-        const char* substitutes[] = {
-            "ws://",
-            "",
-            ESP_ID_string,
-            "",
-            "?"
-        };
-        char *modified_page = replace_placeholder(page, placeholders, substitutes, 5);
-
-        if (!modified_page) {
-            ESP_LOGE(TAG, "Could not replace {{ prefix }} in %s", file_path);
-            httpd_resp_send_err(req, HTTPD_500_INTERNAL_SERVER_ERROR, "Template error");
-            return ESP_FAIL;
-        }
-
-        if (!already_rendered) {
-            struct rendered_page* new_page = malloc(sizeof(struct rendered_page));
-
-            strncpy(new_page->name, file_path, WS_MAX_HTML_PAGE_NAME_LENGTH - 1);
-            new_page->name[WS_MAX_HTML_PAGE_NAME_LENGTH - 1] = '\0';
-
-            strncpy(new_page->content, modified_page, WS_MAX_HTML_SIZE - 1);
-            new_page->content[WS_MAX_HTML_SIZE - 1] = '\0';
-
-            rendered_html_pages[n_rendered_html_pages++] = *new_page;
-            free(new_page);
-        }
+        rendered_html_pages[n_rendered_html_pages++] = *new_page;
+        free(new_page);
 
         httpd_resp_set_type(req, "text/html");
-        httpd_resp_send(req, modified_page, HTTPD_RESP_USE_STRLEN);
+        httpd_resp_send(req, content_html, HTTPD_RESP_USE_STRLEN);
 
-        free(modified_page);
-        free(page);
-
-        free(base_html);
         free(content_html);
 
         return ESP_OK;
@@ -523,6 +440,7 @@ httpd_handle_t start_webserver(void) {
     httpd_config_t config = HTTPD_DEFAULT_CONFIG();
     config.uri_match_fn = httpd_uri_match_wildcard;
     config.max_uri_handlers = 32; // Increase this number as needed
+    config.max_open_sockets = CONFIG_LWIP_MAX_SOCKETS - 3;
 
     // Start the httpd server
     ESP_LOGI(TAG, "Starting server on port: '%d'", config.server_port);
@@ -534,7 +452,7 @@ httpd_handle_t start_webserver(void) {
             .uri       = "/",
             .method    = HTTP_GET,
             .handler   = file_serve_handler,
-            .user_ctx  = DEV ? "/templates/display.html" : "/templates/login.html"
+            .user_ctx  = "/static/esp_login.html"
         };
         httpd_register_uri_handler(server, &login_uri);
         
@@ -562,14 +480,6 @@ httpd_handle_t start_webserver(void) {
         };
         httpd_register_uri_handler(server, &validate_login_uri);
 
-        httpd_uri_t display_uri = {
-            .uri       = "/display",
-            .method    = HTTP_GET,
-            .handler   = file_serve_handler,
-            .user_ctx  = "/templates/display.html"
-        };
-        httpd_register_uri_handler(server, &display_uri);
-
         httpd_uri_t ws_uri = {
             .uri = "/browser_ws",
             .method = HTTP_GET,
@@ -577,129 +487,55 @@ httpd_handle_t start_webserver(void) {
             .is_websocket = true
         };
         httpd_register_uri_handler(server, &ws_uri);
-        
-        httpd_uri_t change_uri = {
-            .uri       = "/change",
+
+        httpd_uri_t esp32_uri = {
+            .uri       = "/esp32",
             .method    = HTTP_GET,
             .handler   = file_serve_handler,
-            .user_ctx  = "/templates/change.html"
+            .user_ctx  = "/static/esp32.html"
         };
-        httpd_register_uri_handler(server, &change_uri);
+        httpd_register_uri_handler(server, &esp32_uri);
 
-        httpd_uri_t validate_change_uri = {
-            .uri       = "/validate_change",
-            .method    = HTTP_POST,
-            .handler   = validate_change_handler,
-            .user_ctx  = NULL
-        };
-        httpd_register_uri_handler(server, &validate_change_uri);
-
-        httpd_uri_t reset_uri = {
-            .uri       = "/reset",
-            .method    = HTTP_POST,
-            .handler   = reset_handler,
-            .user_ctx  = NULL
-        };
-        httpd_register_uri_handler(server, &reset_uri);
-
-        httpd_uri_t connect_uri = {
-            .uri       = "/connect",
+        httpd_uri_t favicon_uri = {
+            .uri       = "/favicon.png",
             .method    = HTTP_GET,
             .handler   = file_serve_handler,
-            .user_ctx  = "/templates/connect.html"
+            .user_ctx  = "/static/favicon.png"
         };
-        httpd_register_uri_handler(server, &connect_uri);
+        httpd_register_uri_handler(server, &favicon_uri);
 
-        httpd_uri_t eduroam_uri = {
-            .uri       = "/eduroam",
-            .method    = HTTP_GET,
-            .handler   = file_serve_handler,
-            .user_ctx  = "/templates/eduroam.html"
-        };
-        httpd_register_uri_handler(server, &eduroam_uri);
-
-        httpd_uri_t validate_connect_uri = {
-            .uri       = "/validate_connect",
-            .method    = HTTP_POST,
-            .handler   = validate_connect_handler,
-            .user_ctx  = NULL
-        };
-        httpd_register_uri_handler(server, &validate_connect_uri);
-
-        httpd_uri_t nearby_uri = {
-            .uri       = "/nearby",
-            .method    = HTTP_GET,
-            .handler   = file_serve_handler,
-            .user_ctx  = "/templates/nearby.html"
-        };
-        httpd_register_uri_handler(server, &nearby_uri);
-
-        httpd_uri_t about_uri = {
-            .uri       = "/about",
-            .method    = HTTP_GET,
-            .handler   = file_serve_handler,
-            .user_ctx  = "/templates/about.html"
-        };
-        httpd_register_uri_handler(server, &about_uri);
-
-        httpd_uri_t device_uri = {
-            .uri       = "/device",
-            .method    = HTTP_GET,
-            .handler   = file_serve_handler,
-            .user_ctx  = "/templates/device.html"
-        };
-        httpd_register_uri_handler(server, &device_uri);
-
-        httpd_uri_t toggle_uri = {
-            .uri = "/toggle",
-            .method = HTTP_POST,
-            .handler = toggle_handler,
-            .user_ctx = NULL
-        };
-        httpd_register_uri_handler(server, &toggle_uri);
-
-        httpd_uri_t css_uri = {
-            .uri      = "/static/portal/style.css",
+        httpd_uri_t js_uri = {
+            .uri      = "/assets/esp.js",
             .method   = HTTP_GET,
             .handler  = file_serve_handler,
-            .user_ctx = "/static/style.css",
+            .user_ctx = "/static/assets/esp.js",
+        };
+        httpd_register_uri_handler(server, &js_uri);
+
+        js_uri.uri = "/assets/zap.js";
+        js_uri.user_ctx = "/static/assets/zap.js";
+        httpd_register_uri_handler(server, &js_uri);
+
+        js_uri.uri = "/assets/mock-socket.js";
+        js_uri.user_ctx = "/static/assets/mock-socket.js";
+        httpd_register_uri_handler(server, &js_uri);
+
+        httpd_uri_t css_uri = {
+            .uri      = "/assets/zap.css",
+            .method   = HTTP_GET,
+            .handler  = file_serve_handler,
+            .user_ctx = "/static/assets/zap.css",
         };
         httpd_register_uri_handler(server, &css_uri);
 
-        httpd_uri_t image_uri = {
-            .uri       = "/static/portal/images/aceon.png",
-            .method    = HTTP_GET,
-            .handler   = file_serve_handler,
-            .user_ctx  = "/static/images/aceon.png"
-        };
-        httpd_register_uri_handler(server, &image_uri);
-
-        httpd_uri_t image_uri_2 = {
-            .uri       = "/static/portal/images/aceon2.png",
-            .method    = HTTP_GET,
-            .handler   = file_serve_handler,
-            .user_ctx  = "/static/images/aceon2.png"
-        };
-        httpd_register_uri_handler(server, &image_uri_2);
+        css_uri.uri = "/assets/mock-socket.css";
+        css_uri.user_ctx = "/static/assets/mock-socket.css";
+        httpd_register_uri_handler(server, &css_uri);
 
     } else {
         ESP_LOGE(TAG, "Error starting server!");
     }
     return server;
-}
-
-void check_wifi_task(void* pvParameters) {
-    while(true) {
-        wifi_ap_record_t ap_info;
-        if (esp_wifi_sta_get_ap_info(&ap_info) != ESP_OK) {
-            connected_to_WiFi = false;
-            if (DEV) send_fake_post_request();
-        }
-
-        check_bytes((TaskParams *)pvParameters);
-
-        vTaskDelay(60000 / portTICK_PERIOD_MS);
-    }
 }
 
 void send_ws_message(const char *message) {
@@ -753,157 +589,15 @@ void websocket_event_handler(void *arg, esp_event_base_t event_base, int32_t eve
                 break;
             }
 
-            cJSON *typeItem = cJSON_GetObjectItem(message, "type");
-            if (!typeItem) {
-                ESP_LOGE(TAG, "ilformatted json: %.*s", ws_event_data->data_len, (char *)ws_event_data->data_ptr);
-                break;
-            }
-            const char *type = typeItem->valuestring;
+            cJSON *response = cJSON_CreateObject();
+            esp_err_t err = perform_request(message, response);
 
-            if (VERBOSE) ESP_LOGI(TAG, "WebSocket data received: %.*s", ws_event_data->data_len, (char *)ws_event_data->data_ptr);
-
-            if (strcmp(type, "query") == 0) {
-                const char *content = cJSON_GetObjectItem(message, "content")->valuestring;
-                if (strcmp(content, "are you still there?") == 0) {
-
-                    cJSON *response_content = cJSON_CreateObject();
-                    cJSON_AddStringToObject(response_content, "response", "yes");
-
-                    cJSON *response = cJSON_CreateObject();
-                    cJSON_AddStringToObject(response, "type", "response");
-                    cJSON_AddStringToObject(response, "esp_id", ESP_ID);
-                    cJSON_AddItemToObject(response, "content", response_content);
-
-                    char *response_str = cJSON_PrintUnformatted(response);
-                    cJSON_Delete(response);
-
-                    xQueueReset(ws_queue);
-                    send_ws_message(response_str);
-
-                    free(response_str);
-                }
-            }
-
-            else if (strcmp(type, "request") == 0) {
-                cJSON *content = cJSON_GetObjectItem(message, "content");
-                if (!content) {
-                    ESP_LOGE(TAG, "invalid request content");
-                    cJSON_Delete(message);
-                    break;
-                }
-
-                const char *endpoint = cJSON_GetObjectItem(content, "endpoint")->valuestring;
-                const char *method = cJSON_GetObjectItem(content, "method")->valuestring;
-                cJSON *data = cJSON_GetObjectItem(content, "data");
-
-                httpd_req_t req = {
-                    .uri = {*endpoint}
-                };
-                size_t req_len;
-                char *req_content;
-                esp_err_t err = ESP_OK;
-
-                if ((strcmp(endpoint, "/validate_connect") == 0 || strcmp(endpoint, "/validate_connect?eduroam=true") == 0) && strcmp(method, "POST") == 0) {
-                    reconnect = true;
-
-                    // TODO: support eduroam
-
-                    // create a mock HTTP request
-                    cJSON *ssid = cJSON_GetObjectItem(data, "ssid");
-                    cJSON *password = cJSON_GetObjectItem(data, "password");
-
-                    req_len = snprintf(NULL, 0, "ssid=%s&password=%s", ssid->valuestring, password->valuestring);
-                    req_content = malloc(req_len + 1);
-                    snprintf(req_content, req_len + 1, "ssid=%s&password=%s", ssid->valuestring, password->valuestring);
-
-                    req.content_len = req_len;
-                    req.user_ctx = req_content;
-
-                    // call validate_connect_handler
-                    err = validate_connect_handler(&req);
-                    if (err != ESP_OK) {
-                        ESP_LOGE(TAG, "Error in validate_connect_handler: %d", err);
-                    }
-                    free(req_content);
-                }
-
-                else if (strcmp(endpoint, "/validate_change") == 0 && strcmp(method, "POST") == 0) {
-                    // create a mock HTTP request
-                    cJSON *device_name = cJSON_GetObjectItem(data, "device_name");
-                    cJSON *BL_voltage_threshold = cJSON_GetObjectItem(data, "BL_voltage_threshold");
-                    cJSON *BH_voltage_threshold = cJSON_GetObjectItem(data, "BH_voltage_threshold");
-                    cJSON *charge_current_threshold = cJSON_GetObjectItem(data, "charge_current_threshold");
-                    cJSON *discharge_current_threshold = cJSON_GetObjectItem(data, "discharge_current_threshold");
-                    cJSON *chg_inhibit_temp_low = cJSON_GetObjectItem(data, "chg_inhibit_temp_low");
-                    cJSON *chg_inhibit_temp_high = cJSON_GetObjectItem(data, "chg_inhibit_temp_high");
-
-                    req_len = snprintf(NULL, 0,
-                        "device_name=%s&BL_voltage_threshold=%s&BH_voltage_threshold=%s&charge_current_threshold=%s&discharge_current_threshold=%s&chg_inhibit_temp_low=%s&chg_inhibit_temp_high=%s",
-                        device_name->valuestring,
-                        BL_voltage_threshold->valuestring,
-                        BH_voltage_threshold->valuestring,
-                        charge_current_threshold->valuestring,
-                        discharge_current_threshold->valuestring,
-                        chg_inhibit_temp_low->valuestring,
-                        chg_inhibit_temp_high->valuestring);
-                    req_content = malloc(req_len + 1);
-                    snprintf(req_content, req_len + 1,
-                        "device_name=%s&BL_voltage_threshold=%s&BH_voltage_threshold=%s&charge_current_threshold=%s&discharge_current_threshold=%s&chg_inhibit_temp_low=%s&chg_inhibit_temp_high=%s",
-                        device_name->valuestring,
-                        BL_voltage_threshold->valuestring,
-                        BH_voltage_threshold->valuestring,
-                        charge_current_threshold->valuestring,
-                        discharge_current_threshold->valuestring,
-                        chg_inhibit_temp_low->valuestring,
-                        chg_inhibit_temp_high->valuestring);
-
-                    req.content_len = req_len;
-                    req.user_ctx = req_content;
-
-                    // call validate_change_handler
-                    err = validate_change_handler(&req);
-                    if (err != ESP_OK) {
-                        ESP_LOGE(TAG, "Error in validate_change_handler: %d", err);
-                    }
-                    free(req_content);
-                }
-
-                else if (strcmp(endpoint, "/reset") == 0 && strcmp(method, "POST") == 0) {
-                    // call reset_handler
-                    err = reset_handler(&req);
-                    if (err != ESP_OK) {
-                        ESP_LOGE(TAG, "Error in reset_handler: %d", err);
-                    }
-                }
-
-                else if (strcmp(endpoint, "/toggle") == 0 && strcmp(method, "POST") == 0) {
-                    // call toggle_handler
-                    err = toggle_handler(&req);
-                    if (err != ESP_OK) {
-                        ESP_LOGE(TAG, "Error in toggle_handler: %d", err);
-                    }
-                }
-
-                cJSON *response_content = cJSON_CreateObject();
-                cJSON_AddStringToObject(response_content, "endpoint", endpoint);
-                cJSON_AddStringToObject(response_content, "status", err == ESP_OK ? "success" : "error");
-                cJSON_AddNumberToObject(response_content, "error_code", err);
-                cJSON_AddStringToObject(response_content, "response", req.user_ctx);
-
-                cJSON *response = cJSON_CreateObject();
-                cJSON_AddStringToObject(response, "type", "response");
-                cJSON_AddStringToObject(response, "esp_id", ESP_ID);
-                cJSON_AddItemToObject(response, "content", response_content);
-
-                char *response_str = cJSON_PrintUnformatted(response);
-                cJSON_Delete(response);
-
-                send_ws_message(response_str);
-
-                free(response_str);
-            }
-
+            char *response_str = cJSON_PrintUnformatted(response);
+            cJSON_Delete(response);
+            if (err == ESP_OK) send_ws_message(response_str);
+            free(response_str);
             cJSON_Delete(message);
+
             break;
 
         case WEBSOCKET_EVENT_ERROR:
@@ -1046,6 +740,13 @@ void websocket_task(void *pvParameters) {
             // clean up
             free(data_string);
             free(json_string);
+        }
+
+        // check wifi connection still exists
+        wifi_ap_record_t ap_info;
+        if (esp_wifi_sta_get_ap_info(&ap_info) != ESP_OK) {
+            connected_to_WiFi = false;
+            if (DEV) send_fake_request();
         }
 
         check_bytes((TaskParams *)pvParameters);

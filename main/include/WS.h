@@ -3,6 +3,8 @@
 
 #include "include/config.h"
 
+#include <cJSON.h>
+
 #include <esp_err.h>
 #include <esp_http_server.h>
 
@@ -15,23 +17,15 @@ void add_client(int fd);
 
 void remove_client(int fd);
 
+esp_err_t perform_request(cJSON *message, cJSON *response);
+
 esp_err_t validate_login_handler(httpd_req_t *req);
 
 esp_err_t websocket_handler(httpd_req_t *req);
 
-esp_err_t validate_change_handler(httpd_req_t *req);
-
-esp_err_t reset_handler(httpd_req_t *req);
-
-esp_err_t validate_connect_handler(httpd_req_t *req);
-
-esp_err_t toggle_handler(httpd_req_t *req);
-
 esp_err_t file_serve_handler(httpd_req_t *req);
 
 httpd_handle_t start_webserver(void);
-
-void check_wifi_task(void* pvParameters);
 
 void send_ws_message(const char *message);
 
