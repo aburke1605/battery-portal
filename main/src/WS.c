@@ -74,7 +74,12 @@ esp_err_t perform_request(cJSON *message, cJSON *response) {
 
             gpio_set_level(I2C_LED_GPIO_PIN, 1);
 
-            const char* esp_id = cJSON_GetObjectItem(data, "new_esp_id")->valuestring;
+            cJSON *esp_id = cJSON_GetObjectItem(data, "new_esp_id");
+            if (esp_id && esp_id->valuestring != ESP_ID) {
+                ESP_LOGI(TAG, "Changing device name...");
+                write_bytes(I2C_DATA_SUBCLASS_ID, I2C_NAME_OFFSET, (uint8_t *)esp_id, 11);
+            }
+
             int BL = cJSON_GetObjectItem(data, "BL")->valueint;
             int BH = cJSON_GetObjectItem(data, "BH")->valueint;
             int CITL = cJSON_GetObjectItem(data, "CITL")->valueint;
@@ -85,11 +90,6 @@ esp_err_t perform_request(cJSON *message, cJSON *response) {
             // TODO: change the `websocket_event_handler` to do the same
             //       rather than using the `/validate_change` endpoint
             //       and sending mock htto requests to it
-
-            if (esp_id != ESP_ID) {
-                ESP_LOGI(TAG, "Changing device name...");
-                write_bytes(I2C_DATA_SUBCLASS_ID, I2C_NAME_OFFSET, (uint8_t *)esp_id, 11);
-            }
 
             uint8_t two_bytes[2];
             read_bytes(I2C_DISCHARGE_SUBCLASS_ID, I2C_BL_OFFSET, two_bytes, sizeof(two_bytes));

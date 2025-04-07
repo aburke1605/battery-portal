@@ -105,7 +105,7 @@ export default function BatteryPage({ isFromEsp32 = false }: BatteriesPageProps)
             });
             ws.current.send(message);
             console.log("Sent update:", message);
-            if (updatedValues.new_esp_id != esp_id) {
+            if (updatedValues.new_esp_id && updatedValues.new_esp_id != esp_id) {
                 console.log("ESP ID changed, redirecting in 5s...");
                 await sleep(5000);
                 navigate(`/batteries`);
