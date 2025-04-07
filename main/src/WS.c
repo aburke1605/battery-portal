@@ -507,6 +507,25 @@ void send_ws_message(const char *message) {
     }
 }
 
+void message_queue_task(void *pvParameters) {
+    char message[WS_MESSAGE_MAX_LEN];
+
+    while (true) {
+        if (xQueueReceive(ws_queue, message, portMAX_DELAY) == pdPASS) {
+            if (esp_websocket_client_is_connected(ws_client)) {
+                if (VERBOSE) ESP_LOGI("WS", "Sending: %s", message);
+                esp_websocket_client_send_text(ws_client, message, strlen(message), portMAX_DELAY);
+            } else {
+                ESP_LOGW("WS", "WebSocket not connected, dropping message: %s", message);
+            }
+        }
+
+        check_bytes((TaskParams *)pvParameters);
+
+        vTaskDelay(pdMS_TO_TICKS(1000));
+    }
+}
+
 void websocket_event_handler(void *arg, esp_event_base_t event_base, int32_t event_id, void *event_data) {
     esp_websocket_event_data_t *ws_event_data = (esp_websocket_event_data_t *)event_data;
 
@@ -555,7 +574,6 @@ void websocket_event_handler(void *arg, esp_event_base_t event_base, int32_t eve
 }
 
 void websocket_task(void *pvParameters) {
-    char message[WS_MESSAGE_MAX_LEN];
     while (true) {
         if (DEV) send_fake_request();
 
@@ -689,16 +707,6 @@ void websocket_task(void *pvParameters) {
         wifi_ap_record_t ap_info;
         if (esp_wifi_sta_get_ap_info(&ap_info) != ESP_OK) {
             connected_to_WiFi = false;
-        }
-
-        // send the next message in queue
-        if (xQueueReceive(ws_queue, message, portMAX_DELAY) == pdPASS) {
-            if (esp_websocket_client_is_connected(ws_client)) {
-                if (VERBOSE) ESP_LOGI("WS", "Sending: %s", message);
-                esp_websocket_client_send_text(ws_client, message, strlen(message), portMAX_DELAY);
-            } else {
-                ESP_LOGW("WS", "WebSocket not connected, dropping message: %s", message);
-            }
         }
 
         check_bytes((TaskParams *)pvParameters);
