@@ -11,9 +11,7 @@ import {
   UserCircleIcon,
 } from "../icons";
 import { useSidebar } from "../context/SidebarContext";
-import logo from '/images/logo/logo.svg';
-import logoDark from '/images/logo/logo-dark.svg';
-import logoIcon from '/images/logo/logo-icon.svg';
+import logo from '/images/logo/image.png';
 
 type NavItem = {
   name: string;
@@ -42,7 +40,7 @@ const navItems: NavItem[] = [
   {
     name: "Settings",
     icon: <ListIcon />,
-    path: "/form-elements",
+    path: "/settings",
   }
 ];
 
@@ -257,6 +255,7 @@ const AppSidebar: React.FC = () => {
       onMouseLeave={() => setIsHovered(false)}
     >
       <div
+        style={{'padding': '20px 20px 10px 20px'}}
         className={`py-8 flex ${
           !isExpanded && !isHovered ? "lg:justify-center" : "justify-start"
         }`}
@@ -265,27 +264,12 @@ const AppSidebar: React.FC = () => {
           {isExpanded || isHovered || isMobileOpen ? (
             <>
               <img
-                className="dark:hidden"
                 src={logo}
                 alt="Logo"
-                width={150}
-                height={40}
-              />
-              <img
-                className="hidden dark:block"
-                src={logoDark}
-                alt="Logo"
-                width={150}
-                height={40}
               />
             </>
           ) : (
-            <img
-              src={logoIcon}
-              alt="Logo"
-              width={32}
-              height={32}
-            />
+           <span></span>
           )}
         </Link>
       </div>
