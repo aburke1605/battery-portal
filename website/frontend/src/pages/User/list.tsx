@@ -12,6 +12,13 @@ const UserList = () => {
   const [currentPage, setCurrentPage] = useState<number>(1);
   const [pages, setPages] = useState<number>(1);
   const [loading, setLoading] = useState<boolean>(false);
+  const [formData, setFormData] = useState({
+    first_name: '',
+    last_name: '',
+    email: '',
+    password: '',
+    roles: '',
+  });
 
   const fetchUsers = async (page = 1) => {
     setLoading(true);
@@ -50,12 +57,38 @@ const UserList = () => {
   // };
 
   const { isOpen, openModal, closeModal } = useModal();
-  const handleSave = () => {
-      // Handle save logic here
-      console.log("Saving changes...");
-      closeModal();
+
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const { name, value } = e.target;
+    console.log(name);
+    setFormData(prev => ({ ...prev, [name]: value }));
   };
 
+  const handleAddUserSubmit = async () => {
+    //e.preventDefault();
+    const payload = {
+      ...formData,
+      roles: formData.roles.split(',').map(r => r.trim())
+    };
+
+    try {
+      const res = await fetch('/api/users/add', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      });
+
+      if (res.ok) {
+        closeModal();
+        setFormData({ first_name: '', last_name: '', email: '', password: '', roles: '' });
+        fetchUsers(currentPage);
+      } else {
+        console.error('Failed to add user');
+      }
+    } catch (err) {
+      console.error('Error adding user:', err);
+    }
+  };
 
   return (
     <>  
@@ -138,76 +171,62 @@ const UserList = () => {
         <div className="no-scrollbar relative w-full max-w-[700px] overflow-y-auto rounded-3xl bg-white p-4 dark:bg-gray-900 lg:p-11">
           <div className="px-2 pr-14">
             <h4 className="mb-2 text-2xl font-semibold text-gray-800 dark:text-white/90">
-              Edit Personal Information
+              Add Personal Information
             </h4>
-            <p className="mb-6 text-sm text-gray-500 dark:text-gray-400 lg:mb-7">
+            {/* <p className="mb-6 text-sm text-gray-500 dark:text-gray-400 lg:mb-7">
               Update your details to keep your profile up-to-date.
-            </p>
+            </p> */}
           </div>
-          <form className="flex flex-col">
+          <form  className="flex flex-col">
             <div className="custom-scrollbar h-[450px] overflow-y-auto px-2 pb-3">
               <div>
                 <h5 className="mb-5 text-lg font-medium text-gray-800 dark:text-white/90 lg:mb-6">
-                  Social Links
+                
                 </h5>
 
                 <div className="grid grid-cols-1 gap-x-6 gap-y-5 lg:grid-cols-2">
-                  <div>
-                    <Label>Facebook</Label>
-                    <Input
-                      type="text"
-                      value="https://www.facebook.com/PimjoHQ"
-                    />
-                  </div>
-
-                  <div>
-                    <Label>X.com</Label>
-                    <Input type="text" value="https://x.com/PimjoHQ" />
-                  </div>
-
-                  <div>
-                    <Label>Linkedin</Label>
-                    <Input
-                      type="text"
-                      value="https://www.linkedin.com/company/pimjo"
-                    />
-                  </div>
-
-                  <div>
-                    <Label>Instagram</Label>
-                    <Input type="text" value="https://instagram.com/PimjoHQ" />
-                  </div>
-                </div>
-              </div>
-              <div className="mt-7">
-                <h5 className="mb-5 text-lg font-medium text-gray-800 dark:text-white/90 lg:mb-6">
-                  Personal Information
-                </h5>
-
-                <div className="grid grid-cols-1 gap-x-6 gap-y-5 lg:grid-cols-2">
-                  <div className="col-span-2 lg:col-span-1">
+                  <div className="col-span-2">
                     <Label>First Name</Label>
-                    <Input type="text" value="Musharof" />
-                  </div>
-
-                  <div className="col-span-2 lg:col-span-1">
-                    <Label>Last Name</Label>
-                    <Input type="text" value="Chowdhury" />
-                  </div>
-
-                  <div className="col-span-2 lg:col-span-1">
-                    <Label>Email Address</Label>
-                    <Input type="text" value="randomuser@pimjo.com" />
-                  </div>
-
-                  <div className="col-span-2 lg:col-span-1">
-                    <Label>Phone</Label>
-                    <Input type="text" value="+09 363 398 46" />
+                    <Input
+                      name="first_name"
+                      type="text"
+                      value={formData.first_name}
+                      onChange={handleInputChange}
+                      placeholder="First Name"
+                    />
                   </div>
 
                   <div className="col-span-2">
-                    <Label>Bio</Label>
-                    <Input type="text" value="Team Manager" />
+                    <Label>Last Name</Label>
+                    <Input 
+                    name="last_name"
+                    type="text" 
+                    value={formData.last_name}
+                    onChange={handleInputChange}
+                    placeholder="Last Name"
+                    />
+                  </div>
+
+                  <div className="col-span-2">
+                    <Label>Email</Label>
+                    <Input
+                      name="email"
+                      type="text"
+                      value={formData.email}
+                      onChange={handleInputChange}
+                      placeholder="Email"
+                    />
+                  </div>
+
+                  <div className="col-span-2">
+                    <Label>Password</Label>
+                    <Input 
+                    name="password"
+                    type="password"
+                    value={formData.password}
+                    onChange={handleInputChange}
+                    placeholder="Password"
+                    />
                   </div>
                 </div>
               </div>
@@ -216,7 +235,7 @@ const UserList = () => {
               <Button size="sm" variant="outline" onClick={closeModal}>
                 Close
               </Button>
-              <Button size="sm" onClick={handleSave}>
+              <Button size="sm" onClick={handleAddUserSubmit}>
                 Save Changes
               </Button>
             </div>
