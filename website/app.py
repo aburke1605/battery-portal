@@ -26,20 +26,10 @@ DB.init_app(app)
 security = Security(app, user_datastore)
 # Create flask-admin
 admin = flask_admin.Admin(app)
-
+# Basic route for the home page and React app, static files
 @app.route('/')
 def index():
-    return render_template('index.html')
-
-@app.route('/admin/dashboard')
-@login_required
-def admin_index():
-    return render_template('admin/dashboard.html')
-
-@app.route('/admin/battery')
-@login_required
-def subpage():
-    return render_template('admin/battery.html')
+    return send_from_directory('./frontend/dist/', 'home.html')
 
 @app.route('/admin')
 @login_required
@@ -49,7 +39,6 @@ def new_admin():
 @app.route("/<path:path>")
 def serve_react_static(path):
     return send_from_directory("frontend/dist", path)
-
 
 # Init the table, only in dev env TODO
 app_dir = os.path.realpath(os.path.dirname(__file__))

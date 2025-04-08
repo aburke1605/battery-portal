@@ -10,6 +10,7 @@ import { ScrollToTop } from "./components/common/ScrollToTop";
 import Home from "./pages/Dashboard/Home";
 import ListPage from "./pages/Battery/ListPage";
 import BatteryPage from "./pages/Battery/BatteryPage";
+import UserList from "./pages/User/list";
 
 export default function App() {
 
@@ -24,6 +25,7 @@ export default function App() {
 
             {/* Others Page */}
             <Route path="/profile" element={<UserProfiles />} />
+            <Route path="/userlist" element={<UserList />} />
             <Route path="/blank" element={<Blank />} />
 
             {/* Forms */}

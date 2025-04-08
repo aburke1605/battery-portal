@@ -12,7 +12,7 @@ from wtforms import PasswordField
 from db import DB
 
 # Blueprint setup
-user_bp = Blueprint('user_bp', __name__, url_prefix='/users')
+user_bp = Blueprint('user_bp', __name__, url_prefix='/api/users')
 
 # Models and Security Setup
 roles_users = DB.Table(
@@ -48,7 +48,14 @@ user_datastore = SQLAlchemyUserDatastore(DB, User, Role)
 @user_bp.route('/list')
 @login_required
 def list_users():
-    users = User.query.all()
+    # Get pagination parameters from query string
+    page = request.args.get('page', default=1, type=int)
+    per_page = request.args.get('per_page', default=10, type=int)
+
+    # Paginate query
+    pagination = User.query.paginate(page=page, per_page=per_page, error_out=False)
+    users = pagination.items
+
     user_list = [
         {
             "id": user.id,
@@ -59,7 +66,16 @@ def list_users():
         }
         for user in users
     ]
-    return jsonify(user_list)
+
+    return jsonify({
+        "users": user_list,
+        "total": pagination.total,
+        "pages": pagination.pages,
+        "current_page": pagination.page,
+        "per_page": pagination.per_page,
+        "has_next": pagination.has_next,
+        "has_prev": pagination.has_prev
+    })
 
 @user_bp.route('/add', methods=['POST'])
 @login_required
