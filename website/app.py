@@ -16,7 +16,6 @@ from flask_admin import helpers as admin_helpers
 
 from wtforms import PasswordField
 
-from portal import portal
 from ws import sock
 from db import db
 
@@ -26,7 +25,6 @@ app.config.from_pyfile('config.py')
 app.config['SQLALCHEMY_ECHO'] = False
 DB = SQLAlchemy(app)
 
-app.register_blueprint(portal)
 app.register_blueprint(db)
 sock.init_app(app)
 
@@ -112,17 +110,6 @@ class UserView(MyModelView):
 @app.route('/')
 def index():
     return render_template('index.html')
-
-@app.route('/admin/dashboard')
-@login_required
-def admin_index():
-    return render_template('admin/dashboard.html')
-
-@app.route('/admin/battery')
-@login_required
-def subpage():
-    return render_template('admin/battery.html')
-
 
 @app.route('/admin')
 @login_required
