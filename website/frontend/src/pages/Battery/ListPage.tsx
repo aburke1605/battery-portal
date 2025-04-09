@@ -35,6 +35,7 @@ export default function ListPage() {
             voltage: battery?.voltage.toFixed(1) || 0,
             current: battery?.current.toFixed(1) || 0,
             temperature: battery?.temperature.toFixed(1) || 0,
+            internal_temperature: battery?.internal_temperature.toFixed(1) || 0,
             BL: battery?.BL || 0,
             BH: battery?.BH || 0,
             CITL: battery?.CITL || 0,

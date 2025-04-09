@@ -879,8 +879,14 @@ const BatteryDetail: React.FC<BatteryDetailProps> = ({
               <ThermometerSun size={16} className="mr-1" /> Temperature
             </h3>
             <div className="flex items-end space-x-2">
-              <span className="text-3xl font-bold text-orange-700">{battery.temperature}°C</span>
+              <span className="text-3xl font-bold text-orange-700">Ambient: {battery.temperature}°C</span>
               {battery.temperature > 35 && (
+                <span className="text-red-500 text-sm">Above normal</span>
+              )}
+            </div>
+            <div className="flex items-end space-x-2">
+              <span className="text-3xl font-bold text-orange-700">Internal: {battery.internal_temperature}°C</span>
+              {battery.internal_temperature > 35 && (
                 <span className="text-red-500 text-sm">Above normal</span>
               )}
             </div>
