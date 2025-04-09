@@ -88,6 +88,30 @@ config I2C_DELAY
     help
       Set the time delay betwen successive I2C commands.
 
+config I2C_CONTROL_REG
+    hex "BMS 'Control()' command code"
+    default 0x00
+    help
+      Set the Control() command code (initial byte) for the BMS.
+
+config I2C_CONTROL_RESET_SUBCMD
+    hex "BMS RESET command code"
+    default 0x0041
+    help
+      Set the RESET command code for the BMS.
+
+config I2C_CONTROL_UNSEAL_SUBCMD_1
+    hex "BMS UNSEAL command code (first half)"
+    default 0x3672
+    help
+      Set the first half of the UNSEAL command code for the BMS.
+
+config I2C_CONTROL_UNSEAL_SUBCMD_2
+    hex "BMS UNSEAL command code (second half)"
+    default 0x0414
+    help
+      Set the second half of the UNSEAL command code for the BMS.
+
 config STATE_OF_CHARGE_REG
     hex "BMS SOC Address"
     default 0x2C
