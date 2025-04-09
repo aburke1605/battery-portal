@@ -1,6 +1,7 @@
 #include "include/WS.h"
 
 #include "include/I2C.h"
+#include "include/BMS.h"
 #include "include/global.h"
 #include "include/utils.h"
 
@@ -207,8 +208,7 @@ esp_err_t perform_request(cJSON *message, cJSON *response) {
                 }
             }
         } else if (summary && strcmp(summary->valuestring, "reset-bms") == 0) {
-            write_data(I2C_CONTROL_REG, I2C_CONTROL_RESET_SUBCMD, 2);
-            ESP_LOGI(TAG, "Reset command sent successfully.");
+            reset();
             cJSON_AddStringToObject(response_content, "status", "success");
         }
     } else {

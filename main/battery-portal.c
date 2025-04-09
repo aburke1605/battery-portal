@@ -3,6 +3,7 @@
 #include "include/AP.h"
 #include "include/DNS.h"
 #include "include/I2C.h"
+#include "include/BMS.h"
 #include "include/WS.h"
 
 #include <esp_log.h>
