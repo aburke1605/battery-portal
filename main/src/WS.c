@@ -218,7 +218,7 @@ esp_err_t perform_request(cJSON *message, cJSON *response) {
     return ESP_OK;
 }
 
-void send_ws_message(const char *message) {
+void send_message(const char *message) {
     if (xQueueSend(ws_queue, message, portMAX_DELAY) != pdPASS) {
         ESP_LOGE(TAG, "WebSocket queue full! Dropping message: %s", message);
     }
@@ -243,7 +243,7 @@ void message_queue_task(void *pvParameters) {
     }
 }
 
-void websocket_event_handler(void *arg, esp_event_base_t event_base, int32_t event_id, void *event_data) {
+void event_handler(void *arg, esp_event_base_t event_base, int32_t event_id, void *event_data) {
     esp_websocket_event_data_t *ws_event_data = (esp_websocket_event_data_t *)event_data;
 
     switch (event_id) {
@@ -251,7 +251,7 @@ void websocket_event_handler(void *arg, esp_event_base_t event_base, int32_t eve
             if (VERBOSE) ESP_LOGI(TAG, "WebSocket connected");
             char websocket_connect_message[128];
             snprintf(websocket_connect_message, sizeof(websocket_connect_message), "{\"type\": \"register\", \"esp_id\": \"%s\"}", ESP_ID);
-            send_ws_message(websocket_connect_message);
+            send_message(websocket_connect_message);
             break;
 
         case WEBSOCKET_EVENT_DISCONNECTED:
@@ -274,7 +274,7 @@ void websocket_event_handler(void *arg, esp_event_base_t event_base, int32_t eve
 
             char *response_str = cJSON_PrintUnformatted(response);
             cJSON_Delete(response);
-            if (err == ESP_OK) send_ws_message(response_str);
+            if (err == ESP_OK) send_message(response_str);
             free(response_str);
             cJSON_Delete(message);
 
@@ -394,7 +394,7 @@ void websocket_task(void *pvParameters) {
                         vTaskDelay(pdMS_TO_TICKS(1000));
                         continue;
                     }
-                    esp_websocket_register_events(ws_client, WEBSOCKET_EVENT_ANY, websocket_event_handler, NULL);
+                    esp_websocket_register_events(ws_client, WEBSOCKET_EVENT_ANY, event_handler, NULL);
                     if (esp_websocket_client_start(ws_client) != ESP_OK) {
                         ESP_LOGE(TAG, "Failed to start WebSocket client");
                         esp_websocket_client_destroy(ws_client);
@@ -413,7 +413,7 @@ void websocket_task(void *pvParameters) {
                 } else {
                     char message[1024];
                     snprintf(message, sizeof(message), "{\"type\": \"data\", \"esp_id\": \"%s\", \"content\": %s}", ESP_ID, data_string);
-                    send_ws_message(message);
+                    send_message(message);
                 }
             }
 
