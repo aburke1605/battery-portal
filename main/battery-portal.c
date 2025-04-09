@@ -14,6 +14,7 @@ char ESP_ID[UTILS_KEY_LENGTH + 1];
 httpd_handle_t server = NULL;
 bool connected_to_WiFi = false;
 char ESP_subnet_IP[15];
+int client_sockets[WS_CONFIG_MAX_CLIENTS];
 QueueHandle_t ws_queue;
 
 void app_main(void) {
