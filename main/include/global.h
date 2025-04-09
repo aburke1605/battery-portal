@@ -12,4 +12,6 @@ extern char ESP_subnet_IP[15];
 extern int client_sockets[WS_CONFIG_MAX_CLIENTS];
 extern QueueHandle_t ws_queue;
 
+extern TaskHandle_t websocket_task_handle;
+
 #endif // GLOBAL_H
