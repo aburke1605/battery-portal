@@ -73,8 +73,6 @@ esp_err_t read_data(uint8_t reg, uint8_t* data, size_t n_bytes) {
     // Receive the data
     ret = i2c_master_receive(i2c_device, data, n_bytes, I2C_MASTER_TIMEOUT_MS);
 
-    vTaskDelay(pdMS_TO_TICKS(I2C_DELAY));
-
     return ret;
 }
 
@@ -96,8 +94,6 @@ esp_err_t write_data(uint8_t reg, uint32_t data, size_t n_btyes) {
     if (ret != ESP_OK) {
         ESP_LOGE(TAG, "Failed to write byte to I2C device: %s", esp_err_to_name(ret));
     }
-
-    vTaskDelay(pdMS_TO_TICKS(I2C_DELAY));
 
     return ret;
 }
