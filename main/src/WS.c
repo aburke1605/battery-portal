@@ -222,7 +222,7 @@ esp_err_t perform_request(cJSON *message, cJSON *response) {
     return ESP_OK;
 }
 
-esp_err_t validate_login_handler(httpd_req_t *req) {
+esp_err_t login_handler(httpd_req_t *req) {
     char content[100];
     esp_err_t err = get_POST_data(req, content, sizeof(content));
     if (err != ESP_OK) {
@@ -476,7 +476,7 @@ httpd_handle_t start_webserver(void) {
         httpd_uri_t validate_login_uri = {
             .uri       = "/validate_login",
             .method    = HTTP_POST,
-            .handler   = validate_login_handler,
+            .handler   = login_handler,
             .user_ctx  = NULL
         };
         httpd_register_uri_handler(server, &validate_login_uri);
