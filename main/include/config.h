@@ -2,6 +2,8 @@
 #define CONFIG_H
 
 
+#include "sdkconfig.h"
+
 #ifdef CONFIG_VERBOSE
     #define VERBOSE true
 #else
@@ -30,10 +32,16 @@
 #define DNS_PORT 53
 
 
+#ifdef CONFIG_SCAN_I2C
+    #define SCAN_I2C true
+#else
+    #define SCAN_I2C false
+#endif
 #define I2C_ADDR           CONFIG_I2C_ADDR           // 7-bit I2C address of the battery
 #define I2C_MASTER_SDA_IO  CONFIG_I2C_MASTER_SDA_PIN // GPIO number for I2C master data
 #define I2C_MASTER_SCL_IO  CONFIG_I2C_MASTER_SCL_PIN // GPIO number for I2C master clock
 #define I2C_MASTER_FREQ_HZ CONFIG_I2C_FREQ_HZ        // I2C master clock frequency
+#define I2C_DELAY          CONFIG_I2C_DELAY          // I2C read / write delay
 #define I2C_MASTER_NUM     I2C_NUM_0                 // I2C port number for master dev
 
 #define I2C_STATE_OF_CHARGE_REG CONFIG_STATE_OF_CHARGE_REG // Register address for StateOfCharge
@@ -62,7 +70,7 @@
 #define I2C_CHG_INHIBIT_TEMP_HIGH_OFFSET     2
 
 #define I2C_DATA_SUBCLASS_ID 48
-#define I2C_NAME_OFFSET        45
+#define I2C_NAME_OFFSET        46 // this is 45 in the manual but for unknown reason it's 46 that works
 
 #define I2C_DISCHARGE_SUBCLASS_ID 49
 #define I2C_BL_OFFSET                9
@@ -94,7 +102,7 @@
 #define WS_QUEUE_SIZE 10
 #define WS_MESSAGE_MAX_LEN 1024
 
-#define WS_MAX_HTML_SIZE 7200
+#define WS_MAX_HTML_SIZE 7500
 #define WS_MAX_N_HTML_PAGES 16
 #define WS_MAX_HTML_PAGE_NAME_LENGTH 32
 #define WS_CONFIG_MAX_CLIENTS 3
