@@ -42,6 +42,9 @@ void app_main(void) {
     ESP_LOGI("main", "I2C initialized successfully");
     if (SCAN_I2C) device_scan();
 
+    // do a BMS reset on boot
+    reset();
+
     // Initialize the GPIO pin as an output for LED toggling
     gpio_config_t io_conf = {
         .pin_bit_mask = (1ULL << I2C_LED_GPIO_PIN),
