@@ -77,7 +77,7 @@ esp_err_t perform_request(cJSON *message, cJSON *response) {
             cJSON *esp_id = cJSON_GetObjectItem(data, "new_esp_id");
             if (esp_id && strcmp(esp_id->valuestring, "") != 0 && esp_id->valuestring != ESP_ID) {
                 ESP_LOGI(TAG, "Changing device name...");
-                write_bytes(I2C_DATA_SUBCLASS_ID, I2C_NAME_OFFSET, (uint8_t *)esp_id, 11);
+                write_bytes(I2C_DATA_SUBCLASS_ID, I2C_NAME_OFFSET, (uint8_t *)esp_id->valuestring, 11);
             }
 
             int BL = cJSON_GetObjectItem(data, "BL")->valueint;
