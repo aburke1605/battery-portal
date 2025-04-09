@@ -29,28 +29,21 @@ extern esp_websocket_client_handle_t ws_client;
 extern QueueHandle_t ws_queue;
 extern struct rendered_page rendered_html_pages[WS_MAX_N_HTML_PAGES];
 extern uint8_t n_rendered_html_pages;
+extern bool admin_verified;
 
 void add_client(int fd);
 
 void remove_client(int fd);
 
+esp_err_t perform_request(cJSON *message, cJSON *response);
+
 esp_err_t validate_login_handler(httpd_req_t *req);
 
 esp_err_t websocket_handler(httpd_req_t *req);
 
-esp_err_t validate_change_handler(httpd_req_t *req);
-
-esp_err_t reset_handler(httpd_req_t *req);
-
-esp_err_t validate_connect_handler(httpd_req_t *req);
-
-esp_err_t toggle_handler(httpd_req_t *req);
-
 esp_err_t file_serve_handler(httpd_req_t *req);
 
 httpd_handle_t start_webserver(void);
-
-void check_wifi_task(void* pvParameters);
 
 void send_ws_message(const char *message);
 

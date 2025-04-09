@@ -3,7 +3,7 @@ from flask import Blueprint, render_template, request, jsonify
 from flask_login import login_required
 
 import mysql.connector
-import time
+import datetime
 
 import matplotlib.pyplot as plt
 import io
@@ -52,7 +52,7 @@ def update_db(esp_id, data):
         if abs(data["current"]) >= 0.1: # and n_rows < 10000:
             cursor.execute(f"""
                                     INSERT INTO {esp_id} (timestamp, soc, temperature, voltage, current)
-                                    VALUES (FROM_UNIXTIME({time.time()}), {data['charge']}, {data['temperature']}, {data['voltage']}, {data['current']})
+                                    VALUES ('{datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')}', {data['charge']}, {data['temperature']}, {data['voltage']}, {data['current']})
             """)
             DB.commit()
 
@@ -161,3 +161,49 @@ def display():
     # img.seek(0) # rewind the buffer (needed?)
 
     return render_template("db/display.html", table=table, plot_url=base64.b64encode(img.getvalue()).decode())
+
+@db.route('/data')
+def data():
+    esp_id = request.args.get("esp_id")
+    column = request.args.get("column")
+
+    data = []
+    try:
+        DB = mysql.connector.connect(**DB_CONFIG)
+        cursor = DB.cursor()
+
+        cursor.execute(f"""
+                                    SELECT * FROM (
+                                        SELECT timestamp, {column}
+                                        FROM {esp_id}
+                                        ORDER BY timestamp DESC
+                                        LIMIT 250
+                                    ) sub
+                                    ORDER BY timestamp ASC;
+        """)
+        rows = cursor.fetchall()
+
+        previous = None
+        for row in rows[::-1]: # work from end
+
+            # take only data from most recent date
+            if row[0].date() != rows[-1][0].date():
+                continue
+
+            if previous is not None:
+                if previous - row[0] > datetime.timedelta(minutes = 5):
+                    break
+            previous = row[0]
+
+            data.append({"timestamp": row[0], column: row[1]})
+
+        cursor.close()
+        DB.close()
+
+        # reverse it back
+        data = data[::-1]
+
+    except mysql.connector.Error as err:
+        print(f"Error: {err}")
+
+    return jsonify(data)

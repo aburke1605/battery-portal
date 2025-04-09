@@ -100,13 +100,12 @@
   <script>
     document.addEventListener('DOMContentLoaded', function() {
       let protocol = (window.location.protocol === 'https:') ? 'wss://' : 'ws://';
-      let monitoring_socket = new WebSocket(protocol + window.location.host + "/monitor");
-      monitoring_socket.onopen = function() {
-        console.log('Monitoring WebSocket connection established');
+      let socket = new WebSocket(protocol + window.location.host + "/browser_ws");
+      socket.onopen = function() {
+        console.log('WebSocket connection established');
       };
-      monitoring_socket.onmessage = function(event) {
-        let data = JSON.parse(event.data);
-        let esps = JSON.parse(data.esps);
+      socket.onmessage = function(event) {
+        let esps = JSON.parse(event.data);
 
         let list_element = document.getElementById("connected_esp_list");
         list_element.innerHTML = ""; // clear
@@ -133,11 +132,11 @@
           list_element.appendChild(list_item);
         });
       };
-      monitoring_socket.onerror = function(error) {
-        console.error('Monitoring WebSocket error:', error);
+      socket.onerror = function(error) {
+        console.error('WebSocket error:', error);
       };
-      monitoring_socket.onclose = function() {
-        console.log('Monitoring WebSocket connection closed');
+      socket.onclose = function() {
+        console.log('WebSocket connection closed');
       };
     })
   </script>
