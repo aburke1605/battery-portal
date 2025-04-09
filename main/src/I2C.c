@@ -136,16 +136,12 @@ esp_err_t write_bytes(uint8_t subclass, uint8_t offset, uint8_t* data, size_t n_
     }
 
     for (int i=0; i<n_bytes; i++) {
-        block_data[offset%32+i] = data[i];
-    }
-
-    // Write updated block data back
-    for (int i = 0; i < sizeof(block_data); i++) {
-        ret = write_data(I2C_BLOCK_DATA_START + i, block_data[i], 1);
+        ret = write_data(I2C_BLOCK_DATA_START + offset%32 + i, data[i], 1);
         if (ret != ESP_OK) {
-            ESP_LOGE(TAG, "Failed to write Block Data at index %d.", i);
+            ESP_LOGE(TAG, "Failed to write data byte %d", i);
             return ret;
         }
+        block_data[offset%32 + i] = data[i]; // to calculate checksum
     }
 
     // Calculate new checksum
