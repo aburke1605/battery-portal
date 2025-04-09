@@ -116,14 +116,14 @@ esp_err_t perform_request(cJSON *message, cJSON *response) {
                 two_bytes[1] =  CITH       & 0xFF;
                 write_bytes(I2C_CHARGE_INHIBIT_CFG_SUBCLASS_ID, I2C_CHG_INHIBIT_TEMP_HIGH_OFFSET, two_bytes, sizeof(two_bytes));
             }
-            read_bytes(I2C_CHARGE_INHIBIT_CFG_SUBCLASS_ID, I2C_CHG_INHIBIT_TEMP_LOW_OFFSET, two_bytes, sizeof(two_bytes));
+            read_bytes(I2C_CURRENT_THRESHOLDS_SUBCLASS_ID, I2C_CHG_CURRENT_THRESHOLD_OFFSET, two_bytes, sizeof(two_bytes));
             if (CCT != (two_bytes[0] << 8 | two_bytes[1])) {
                 ESP_LOGI(TAG, "Changing charge current threshold...");
                 two_bytes[0] = (CCT >> 8) & 0xFF;
                 two_bytes[1] =  CCT       & 0xFF;
                 write_bytes(I2C_CURRENT_THRESHOLDS_SUBCLASS_ID, I2C_CHG_CURRENT_THRESHOLD_OFFSET, two_bytes, sizeof(two_bytes));
             }
-            read_bytes(I2C_CHARGE_INHIBIT_CFG_SUBCLASS_ID, I2C_CHG_INHIBIT_TEMP_HIGH_OFFSET, two_bytes, sizeof(two_bytes));
+            read_bytes(I2C_CURRENT_THRESHOLDS_SUBCLASS_ID, I2C_DSG_CURRENT_THRESHOLD_OFFSET, two_bytes, sizeof(two_bytes));
             if (DCT != (two_bytes[0] << 8 | two_bytes[1])) {
                 ESP_LOGI(TAG, "Changing discharge current threshold...");
                 two_bytes[0] = (DCT >> 8) & 0xFF;
