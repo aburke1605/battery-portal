@@ -329,7 +329,7 @@ httpd_handle_t start_webserver(void) {
             .user_ctx  = "/static/esp_login.html"
         };
         httpd_register_uri_handler(server, &login_uri);
-        
+
         // do some more to catch all device types
         login_uri.uri = "/hotspot-detect.html";
         httpd_register_uri_handler(server, &login_uri);
