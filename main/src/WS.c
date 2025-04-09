@@ -210,6 +210,9 @@ esp_err_t perform_request(cJSON *message, cJSON *response) {
         } else if (summary && strcmp(summary->valuestring, "reset-bms") == 0) {
             reset();
             cJSON_AddStringToObject(response_content, "status", "success");
+        } else if (summary && strcmp(summary->valuestring, "unseal-bms") == 0) {
+            unseal();
+            cJSON_AddStringToObject(response_content, "status", "success");
         }
     } else {
         return ESP_ERR_NOT_SUPPORTED;

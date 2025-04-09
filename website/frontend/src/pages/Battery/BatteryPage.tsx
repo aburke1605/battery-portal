@@ -136,6 +136,23 @@ export default function BatteryPage({ isFromEsp32 = false }: BatteriesPageProps)
             console.warn("WebSocket not connected, cannot send update.");
         }
     };
+    const sendUnseal = () => {
+        if (ws.current && ws.current.readyState === WebSocket.OPEN) {
+            const message = JSON.stringify({
+                type: "request",
+                content : {
+                    summary: "unseal-bms",
+                    data : {
+                        esp_id,
+                    },
+                },
+            });
+            ws.current.send(message);
+            console.log("Sent update:", message);
+        } else {
+            console.warn("WebSocket not connected, cannot send update.");
+        }
+    };
     const sendReset = () => {
         if (ws.current && ws.current.readyState === WebSocket.OPEN) {
             const message = JSON.stringify({
@@ -184,6 +201,7 @@ export default function BatteryPage({ isFromEsp32 = false }: BatteriesPageProps)
                         voltageThreshold={voltageThreshold}
                         sendBatteryUpdate={sendBatteryUpdate} // pass function to BatteryDetail
                         sendWiFiConnect={sendWiFiConnect}
+                        sendUnseal={sendUnseal}
                         sendReset={sendReset}
                     />
                 ) : (
