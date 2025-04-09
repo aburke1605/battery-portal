@@ -1,11 +1,13 @@
-#include <esp_log.h>
-#include <esp_wifi.h>
-#include <lwip/netdb.h>
-#include <lwip/dns.h>
+#include "include/DNS.h"
 
 #include "include/config.h"
 #include "include/utils.h"
-#include "include/DNS.h"
+
+#include <esp_log.h>
+#include <esp_wifi.h>
+#include <lwip/netdb.h>
+
+static const char* TAG = "DNS";
 
 // DNS handler (redirect all requests to our AP IP)
 void dns_server_task(void *pvParameters) {
@@ -22,22 +24,22 @@ void dns_server_task(void *pvParameters) {
     // Create UDP socket
     int sock = socket(addr_family, SOCK_DGRAM, ip_protocol);
     if (sock < 0) {
-        ESP_LOGE("DNS", "Unable to create socket: errno %d", errno);
+        ESP_LOGE(TAG, "Unable to create socket: errno %d", errno);
         vTaskDelete(NULL);
     }
     if (bind(sock, (struct sockaddr *)&dest_addr, sizeof(dest_addr)) < 0) {
-        ESP_LOGE("DNS", "Socket unable to bind: errno %d", errno);
+        ESP_LOGE(TAG, "Socket unable to bind: errno %d", errno);
         close(sock);
         vTaskDelete(NULL);
     }
 
-    ESP_LOGI("DNS", "DNS server started on port %d", DNS_PORT);
+    ESP_LOGI(TAG, "DNS server started on port %d", DNS_PORT);
 
     // Get AP IP address
     esp_netif_ip_info_t ip_info;
     esp_netif_t *netif = esp_netif_get_handle_from_ifkey("WIFI_AP_DEF");
     if (netif == NULL || esp_netif_get_ip_info(netif, &ip_info) != ESP_OK) {
-        ESP_LOGE("DNS", "Failed to get AP IP address");
+        ESP_LOGE(TAG, "Failed to get AP IP address");
         vTaskDelete(NULL);
     }
 
@@ -46,7 +48,7 @@ void dns_server_task(void *pvParameters) {
         int len = recvfrom(sock, buffer, sizeof(buffer), 0, (struct sockaddr *)&source_addr, &socklen);
 
         if (len > 0) {
-            if (VERBOSE) ESP_LOGI("DNS", "DNS request received, responding with AP IP: " IPSTR, IP2STR(&ip_info.ip));
+            if (VERBOSE) ESP_LOGI(TAG, "DNS request received, responding with AP IP: " IPSTR, IP2STR(&ip_info.ip));
 
             // Set the DNS response flags
             buffer[2] = 0x81; // Response flag and authoritative answer
@@ -91,7 +93,7 @@ void dns_server_task(void *pvParameters) {
             // Send DNS response
             sendto(sock, buffer, response_offset, 0, (struct sockaddr *)&source_addr, socklen);
         } else {
-            ESP_LOGE("DNS", "recvfrom failed: errno %d", errno);
+            ESP_LOGE(TAG, "recvfrom failed: errno %d", errno);
         }
 
         check_bytes((TaskParams *)pvParameters);

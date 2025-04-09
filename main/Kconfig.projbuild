@@ -52,6 +52,12 @@ endmenu
 
 menu "[CUSTOM] I2C Configuration"
 
+config SCAN_I2C
+    bool "Scan I2C devices"
+    default n
+    help
+      Set to true to scan addresses for connected I2C devices.
+
 config I2C_ADDR
     hex "I2C Device Address"
     default 0x55
@@ -75,6 +81,12 @@ config I2C_FREQ_HZ
     default 50000
     help
       Set the clock frequency for the I2C device.
+
+config I2C_DELAY
+    int "I2C delay (ms)"
+    default 300
+    help
+      Set the time delay betwen successive I2C commands.
 
 config STATE_OF_CHARGE_REG
     hex "BMS SOC Address"

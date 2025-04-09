@@ -1,13 +1,10 @@
-#include <esp_log.h>
-#include <esp_wifi.h>
+#ifndef UTILS_H
+#define UTILS_H
+
+#include "include/config.h"
+
+#include <esp_err.h>
 #include <esp_http_server.h>
-#include <esp_http_client.h>
-
-extern char ESP_ID[UTILS_KEY_LENGTH + 1];
-extern bool connected_to_WiFi;
-extern char ESP_subnet_IP[15];
-
-void random_key(char *key);
 
 void send_fake_request();
 
@@ -24,3 +21,5 @@ char* replace_placeholder(const char *html, const char *const placeholders[], co
 uint8_t get_block(uint8_t offset);
 
 void check_bytes(TaskParams *params);
+
+#endif // UTILS_H

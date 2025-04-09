@@ -1,26 +1,13 @@
 #include <cJSON.h>
-#include <string.h>
-#include <math.h>
 
-#include "include/config.h"
 #include "include/utils.h"
 #include "include/WS.h"
 
-#include <esp_random.h>
+#include "include/global.h"
 
-void random_key(char *key) {
-    //
-    // not used currently
-    //
-
-    const char charset[] = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
-    size_t charset_size = sizeof(charset) - 1;
-
-    for (size_t i = 0; i < UTILS_KEY_LENGTH; i++) {
-        key[i] = charset[esp_random() % charset_size];
-    }
-    key[UTILS_KEY_LENGTH] = '\0';
-}
+#include <math.h>
+#include <esp_log.h>
+#include <esp_http_client.h>
 
 void send_fake_request() {
     if (!connected_to_WiFi) {
