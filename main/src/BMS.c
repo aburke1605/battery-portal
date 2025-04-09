@@ -32,7 +32,9 @@ esp_err_t reset() {
     unseal();
 
     ESP_LOGI(TAG, "Reset command sent successfully.");
-    
+
+    vTaskDelay(pdMS_TO_TICKS(I2C_DELAY));
+
     // resume
     if (suspending) vTaskResume(websocket_task_handle);
 
