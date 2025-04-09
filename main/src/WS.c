@@ -40,6 +40,65 @@ void remove_client(int fd) {
     }
 }
 
+esp_err_t client_handler(httpd_req_t *req) {
+    // register new clients...
+    if (req->method == HTTP_GET) {
+        int fd = httpd_req_to_sockfd(req);
+        ESP_LOGI(TAG, "WebSocket handshake complete for client %d", fd);
+        add_client(fd);
+        return ESP_OK;  // WebSocket handshake happens here
+    }
+
+    // ...otherwise listen for messages
+    httpd_ws_frame_t ws_pkt;
+    memset(&ws_pkt, 0, sizeof(httpd_ws_frame_t));
+    // first call with ws_pkt.len = 0 to determine required length
+    esp_err_t ret = httpd_ws_recv_frame(req, &ws_pkt, 0);
+    if (ret != ESP_OK) {
+        ESP_LOGE(TAG, "Failed to fetch WebSocket frame length: %s", esp_err_to_name(ret));
+        return ret;
+    }
+    if (ws_pkt.len > 0) {
+        // allocate buffer
+        ws_pkt.payload = malloc(ws_pkt.len + 1);
+        if (!ws_pkt.payload) {
+            ESP_LOGE(TAG, "Failed to allocate memory for WebSocket payload");
+            return ESP_ERR_NO_MEM;
+        }
+        // receive payload
+        ret = httpd_ws_recv_frame(req, &ws_pkt, ws_pkt.len);
+        if (ret != ESP_OK) {
+            ESP_LOGE(TAG, "Failed to receive WebSocket frame: %s", esp_err_to_name(ret));
+            free(ws_pkt.payload);
+            return ret;
+        }
+        ws_pkt.payload[ws_pkt.len] = '\0';
+    }
+
+    if (ws_pkt.type == HTTPD_WS_TYPE_TEXT) {
+        if (VERBOSE) ESP_LOGI(TAG, "Received WebSocket message: %s", (char *)ws_pkt.payload);
+
+        // read messaage data
+        cJSON *message = cJSON_Parse((char *)ws_pkt.payload);
+        if (!message) {
+            ESP_LOGE(TAG, "Failed to parse JSON");
+            free(ws_pkt.payload);
+            return ESP_FAIL;
+        }
+
+        cJSON *response = cJSON_CreateObject();
+        perform_request(message, response);
+
+        cJSON_Delete(message);
+    } else {
+        ESP_LOGW(TAG, "Received unsupported WebSocket frame type: %d", ws_pkt.type);
+    }
+
+    free(ws_pkt.payload);
+
+    return ESP_OK;
+}
+
 esp_err_t perform_request(cJSON *message, cJSON *response) {
     // construct response message
     cJSON_AddStringToObject(response, "type", "response");
