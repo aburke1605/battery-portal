@@ -1,5 +1,22 @@
 #!venv/bin/python
 import os
+import sys
+
+import logging
+logging.basicConfig(
+    level=logging.DEBUG,
+    format="%(asctime)s [%(levelname)s] %(name)s: %(message)s",
+    handlers=[
+        logging.StreamHandler(sys.stdout)
+    ]
+)
+
+annoying_logs = ["werkzeug", "passlib"]
+for log in annoying_logs:
+    logging.getLogger(log).setLevel(logging.WARNING)
+
+logger = logging.getLogger(__name__)
+
 import string
 import random
 
@@ -193,7 +210,7 @@ def build_sample_db():
 app_dir = os.path.realpath(os.path.dirname(__file__))
 database_path = os.path.join(app_dir, app.config['DATABASE_FILE'])
 if not os.path.exists(database_path):
-    print("Database file not found. Creating tables and populating with sample data.")
+    logger.info("Database file not found. Creating tables and populating with sample data.")
     build_sample_db()
 
 

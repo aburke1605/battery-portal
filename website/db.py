@@ -1,4 +1,8 @@
 import os
+
+import logging
+logger = logging.getLogger(__name__)
+
 from flask import Blueprint, render_template, request, jsonify
 from flask_login import login_required
 
@@ -43,7 +47,7 @@ def update_db(esp_id, data):
                                     )
             """)
             DB.commit()
-            print("table created")
+            logger.info("table created")
 
         else:
             cursor.execute(f"       SELECT COUNT(*) FROM {esp_id}")
@@ -58,7 +62,7 @@ def update_db(esp_id, data):
 
 
     except mysql.connector.Error as err:
-        print(f"Error: {err}")
+        logger.error(err)
 
 
 def execute_query(query):
@@ -204,6 +208,6 @@ def data():
         data = data[::-1]
 
     except mysql.connector.Error as err:
-        print(f"Error: {err}")
+        logger.error(err)
 
     return jsonify(data)

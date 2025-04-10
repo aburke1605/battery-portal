@@ -1,3 +1,6 @@
+import logging
+logger = logging.getLogger(__name__)
+
 from flask_sock import Sock
 from threading import Lock, Thread
 import time
@@ -59,15 +62,15 @@ def forward_to_esp32(esp_id, message):
                 return {"esp_id": esp_id, "message": "request sent to esp32"}
 
             except Exception as e:
-                print(f"Error communicating with {esp_id}: {e}")
+                logger.error(f"Error communicating with {esp_id}: {e}")
                 return {"esp_id": esp_id, "error": str(e)}
 
 @sock.route('/browser_ws')
 def browser_ws(ws):
     with lock:
         browser_clients.add(ws)
-    print(f"Browser connected: {ws}")
-    print(f"Total browsers: {len(browser_clients)}")
+    logger.info(f"Browser connected: {ws}")
+    logger.info(f"Total browsers: {len(browser_clients)}")
 
     try:
         while True:
@@ -80,15 +83,15 @@ def browser_ws(ws):
                 forward_to_esp32(esp_id, message)
 
             except json.JSONDecodeError:
-                print("/browser_ws: invalid JSON")
+                logger.error("/browser_ws: invalid JSON")
 
     except Exception as e:
-        print(f"Browser WebSocket error: {e}")
+        logger.error(f"Browser WebSocket error: {e}")
 
     finally:
         with lock:
             browser_clients.discard(ws) # remove browser on disconnect
-        print(f"Browser disconnected: {ws}")
+        logger.info(f"Browser disconnected: {ws}")
 
 
 @sock.route('/esp_ws')
@@ -113,8 +116,8 @@ def esp_ws(ws):
                     with lock:
                         esp_clients.add(frozenset(meta_data.items()))
                         update_time()
-                    print(f"ESP connected: {ws}")
-                    print(f"Total ESPs: {len(esp_clients)}")
+                    logger.info(f"ESP connected: {ws}")
+                    logger.info(f"Total ESPs: {len(esp_clients)}")
                 elif data["type"] == "response":
                     # should go to forward_request_to_esp32() or ping_esps() instead
                     with response_lock:
@@ -139,14 +142,14 @@ def esp_ws(ws):
 
 
     except Exception as e:
-        print(f"ESP WebSocket error: {e}")
+        logger.error(f"ESP WebSocket error: {e}")
 
 
     finally:
         with lock:
             esp_clients.discard(frozenset(meta_data.items())) # remove esp on disconnect
             update_time()
-        print(f"ESP disconnected: {ws}")
+        logger.info(f"ESP disconnected: {ws}")
 
 def ping_esps(delay=5):
     while True:
@@ -183,7 +186,7 @@ def ping_esps(delay=5):
                         update_time()
 
                 except Exception as e:
-                    print(f"Error communicating with {esp_id}: {e}")
+                    logger.error(f"Error communicating with {esp_id}: {e}")
 
         time.sleep(20)
 
