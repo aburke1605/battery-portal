@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import axios from "axios";
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Label } from "recharts";
+import apiConfig from "../../apiConfig";
 
 interface DataChartProps {
   esp_id: string;
@@ -28,7 +29,8 @@ const DataChart: React.FC<DataChartProps> = ({ esp_id, column }) => {
 
   useEffect(() => {
     const fetchData = () => {
-      axios.get(`https://localhost:5000/db/data?esp_id=${esp_id}&column=${column}`)
+      console.log('\n\n', apiConfig.DB_END_POINT, '\n\n');
+      axios.get(`${apiConfig.DB_END_POINT}?esp_id=${esp_id}&column=${column}`)
         .then(response => setData(response.data))
         .catch(error => console.error("Error fetching data:", error));
     };
