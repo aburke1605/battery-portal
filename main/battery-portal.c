@@ -1,35 +1,24 @@
-#include <esp_spiffs.h>
-
 #include "include/config.h"
+#include "include/global.h"
 #include "include/AP.h"
 #include "include/DNS.h"
 #include "include/I2C.h"
-#include "include/ARP.h"
+#include "include/BMS.h"
 #include "include/WS.h"
-#include "include/utils.h"
+
+#include <esp_log.h>
+#include <esp_spiffs.h>
+#include <driver/gpio.h>
 
 // global variables
 char ESP_ID[UTILS_KEY_LENGTH + 1];
 httpd_handle_t server = NULL;
-int client_sockets[WS_CONFIG_MAX_CLIENTS];
-char received_data[1024];
-SemaphoreHandle_t data_mutex;
 bool connected_to_WiFi = false;
-bool reconnect = false;
-int other_AP_SSIDs[256];
-char successful_ips[256][16];
-char old_successful_ips[256][16];
-uint8_t successful_ip_count = 0;
-uint8_t old_successful_ip_count = 0;
-char ESP_IP[16] = "xxx.xxx.xxx.xxx\0";
 char ESP_subnet_IP[15];
-esp_websocket_client_handle_t ws_client = NULL;
+int client_sockets[WS_CONFIG_MAX_CLIENTS];
 QueueHandle_t ws_queue;
-struct rendered_page rendered_html_pages[WS_MAX_N_HTML_PAGES];
-uint8_t n_rendered_html_pages = 0;
-bool admin_verified = false;
-i2c_master_bus_handle_t i2c_bus = NULL;
-i2c_master_dev_handle_t i2c_device = NULL;
+
+TaskHandle_t websocket_task_handle = NULL;
 
 void app_main(void) {
 
@@ -51,6 +40,10 @@ void app_main(void) {
 
     ESP_ERROR_CHECK(i2c_master_init());
     ESP_LOGI("main", "I2C initialized successfully");
+    if (SCAN_I2C) device_scan();
+
+    // do a BMS reset on boot
+    reset();
 
     // Initialize the GPIO pin as an output for LED toggling
     gpio_config_t io_conf = {
@@ -62,14 +55,9 @@ void app_main(void) {
     };
     gpio_config(&io_conf);
 
-    read_name(I2C_DATA_SUBCLASS_ID, I2C_NAME_OFFSET, ESP_ID);
-
-    // initialise mutex
-    data_mutex = xSemaphoreCreateMutex();
-    if (data_mutex == NULL) {
-        ESP_LOGE("main", "Failed to create data mutex");
-        return;
-    }
+    uint8_t eleven_bytes[11];
+    read_bytes(I2C_DATA_SUBCLASS_ID, I2C_NAME_OFFSET, eleven_bytes, sizeof(eleven_bytes));
+    strncpy(ESP_ID, (char *)eleven_bytes, 10);
 
     // Start the Access Point and Connection
     wifi_init();
@@ -87,7 +75,7 @@ void app_main(void) {
     xTaskCreate(&dns_server_task, dns_server_params.task_name, dns_server_params.stack_size, &dns_server_params, 2, NULL);
 
     ws_queue = xQueueCreate(WS_QUEUE_SIZE, WS_MESSAGE_MAX_LEN);
-    TaskParams message_queue_params = {.stack_size = 3000, .task_name = "message_queue_task"};
+    TaskParams message_queue_params = {.stack_size = 3200, .task_name = "message_queue_task"};
     xTaskCreate(message_queue_task, message_queue_params.task_name, message_queue_params.stack_size, &message_queue_params, 5, NULL);
 
     esp_log_level_set("wifi", ESP_LOG_ERROR);
@@ -95,7 +83,7 @@ void app_main(void) {
     esp_log_level_set("transport_ws", ESP_LOG_WARN);
     esp_log_level_set("transport_base", ESP_LOG_WARN);
     TaskParams websocket_params = {.stack_size = 4600, .task_name = "websocket_task"};
-    xTaskCreate(&websocket_task, websocket_params.task_name, websocket_params.stack_size, &websocket_params, 1, NULL);
+    xTaskCreate(&websocket_task, websocket_params.task_name, websocket_params.stack_size, &websocket_params, 1, &websocket_task_handle);
 
     while (true) {
         if (VERBOSE) ESP_LOGI("main", "%ld bytes available in heap", esp_get_free_heap_size());

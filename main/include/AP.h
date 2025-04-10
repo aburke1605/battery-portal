@@ -1,8 +1,21 @@
-extern int other_AP_SSIDs[256];
-extern char ESP_subnet_IP[15];
+#ifndef AP_H
+#define AP_H
 
-void wifi_scan(void);
+#include "include/config.h"
 
-int find_unique_SSID(void);
+#include <esp_http_server.h>
+
+struct rendered_page {
+    char name[WS_MAX_HTML_PAGE_NAME_LENGTH];
+    char content[WS_MAX_HTML_SIZE];
+};
 
 void wifi_init(void);
+
+esp_err_t redirect_handler(httpd_req_t *req);
+
+esp_err_t file_serve_handler(httpd_req_t *req);
+
+httpd_handle_t start_webserver(void);
+
+#endif // AP_H

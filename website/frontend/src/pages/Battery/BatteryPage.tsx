@@ -49,9 +49,11 @@ export default function BatteryPage({ isFromEsp32 = false }: BatteriesPageProps)
                     esp_id: esp_id,
                     new_esp_id: "",
                     charge: battery?.charge  || 0,
+                    health: battery?.health || 0,
                     voltage: battery?.voltage.toFixed(1) || 0,
                     current: battery?.current.toFixed(1) || 0,
                     temperature: battery?.temperature.toFixed(1) || 0,
+                    internal_temperature: battery?.internal_temperature.toFixed(1) || 0,
                     BL: battery?.BL || 0,
                     BH: battery?.BH || 0,
                     CITL: battery?.CITL || 0,
@@ -61,7 +63,6 @@ export default function BatteryPage({ isFromEsp32 = false }: BatteriesPageProps)
                     IP: battery?.IP || "xxx.xxx.xxx.xxx",
                     isConnected: battery?.connected_to_WiFi || false,
                     // location: "Unknown",
-                    health: 100,
                     // isCharging: false,
                     status: "good",
                     // lastMaintenance: "2025-03-15",
@@ -105,10 +106,11 @@ export default function BatteryPage({ isFromEsp32 = false }: BatteriesPageProps)
             });
             ws.current.send(message);
             console.log("Sent update:", message);
-            if (updatedValues.new_esp_id != esp_id) {
+            if (updatedValues.new_esp_id && updatedValues.new_esp_id != esp_id) {
                 console.log("ESP ID changed, redirecting in 5s...");
                 await sleep(5000);
-                navigate(`/batteries`);
+                const prefix = window.location.protocol == 'https:' ? 'battery-detail' : 'esp32';
+                navigate(`/${prefix}?esp_id=${updatedValues.new_esp_id}`);
             }
         } else {
             console.warn("WebSocket not connected, cannot send update.");
@@ -125,6 +127,23 @@ export default function BatteryPage({ isFromEsp32 = false }: BatteriesPageProps)
                         username,
                         password,
                         eduroam,
+                    },
+                },
+            });
+            ws.current.send(message);
+            console.log("Sent update:", message);
+        } else {
+            console.warn("WebSocket not connected, cannot send update.");
+        }
+    };
+    const sendUnseal = () => {
+        if (ws.current && ws.current.readyState === WebSocket.OPEN) {
+            const message = JSON.stringify({
+                type: "request",
+                content : {
+                    summary: "unseal-bms",
+                    data : {
+                        esp_id,
                     },
                 },
             });
@@ -182,6 +201,7 @@ export default function BatteryPage({ isFromEsp32 = false }: BatteriesPageProps)
                         voltageThreshold={voltageThreshold}
                         sendBatteryUpdate={sendBatteryUpdate} // pass function to BatteryDetail
                         sendWiFiConnect={sendWiFiConnect}
+                        sendUnseal={sendUnseal}
                         sendReset={sendReset}
                     />
                 ) : (
