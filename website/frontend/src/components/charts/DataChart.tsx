@@ -29,7 +29,6 @@ const DataChart: React.FC<DataChartProps> = ({ esp_id, column }) => {
 
   useEffect(() => {
     const fetchData = () => {
-      console.log('\n\n', apiConfig.DB_END_POINT, '\n\n');
       axios.get(`${apiConfig.DB_END_POINT}?esp_id=${esp_id}&column=${column}`)
         .then(response => setData(response.data))
         .catch(error => console.error("Error fetching data:", error));
