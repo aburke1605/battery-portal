@@ -10,6 +10,7 @@ import BatteryPage from "./pages/Battery/BatteryPage.tsx";
 import { BrowserRouter as Router } from "react-router";
 import { ScrollToTop } from "./components/common/ScrollToTop";
 import { setupMockWebSocket } from './mock/ws';
+import apiConfig from "./apiConfig.tsx";
 
 function LoginForm({ onLogin }: { onLogin: (u: string, p: string) => Promise<boolean> }) {
   const [username, setUsername] = useState("");
@@ -50,7 +51,7 @@ function App() {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
 
   const handleLogin = async (username: string, password: string) => {
-    const success = username === "admin" && password === "BaTT3ryP0rta!";
+    const success = username === apiConfig.ADMIN_USERNAME && password === apiConfig.ADMIN_PASSWORD;
 
     if (success) setIsLoggedIn(true);
 
