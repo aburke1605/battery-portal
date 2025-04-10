@@ -1,6 +1,7 @@
 #include "include/WS.h"
 
 #include "include/I2C.h"
+#include "include/BMS.h"
 #include "include/global.h"
 #include "include/utils.h"
 
@@ -207,8 +208,10 @@ esp_err_t perform_request(cJSON *message, cJSON *response) {
                 }
             }
         } else if (summary && strcmp(summary->valuestring, "reset-bms") == 0) {
-            write_data(I2C_CONTROL_REG, I2C_CONTROL_RESET_SUBCMD, 2);
-            ESP_LOGI(TAG, "Reset command sent successfully.");
+            reset();
+            cJSON_AddStringToObject(response_content, "status", "success");
+        } else if (summary && strcmp(summary->valuestring, "unseal-bms") == 0) {
+            unseal();
             cJSON_AddStringToObject(response_content, "status", "success");
         }
     } else {
@@ -300,19 +303,23 @@ void websocket_task(void *pvParameters) {
         uint8_t two_bytes[2];
 
         read_bytes(I2C_DATA_SUBCLASS_ID, I2C_NAME_OFFSET, eleven_bytes, sizeof(eleven_bytes));
-        strncpy(ESP_ID, (char *)eleven_bytes, 10);
+        if (strcmp((char *)eleven_bytes, "") != 0) strncpy(ESP_ID, (char *)eleven_bytes, 10);
         cJSON_AddStringToObject(data, "name", ESP_ID);
 
         // read sensor data
         // these values are big-endian
         read_bytes(0, I2C_STATE_OF_CHARGE_REG, two_bytes, sizeof(two_bytes));
         cJSON_AddNumberToObject(data, "charge", two_bytes[1] << 8 | two_bytes[0]);
+        read_bytes(0, I2C_STATE_OF_HEALTH_REG, two_bytes, sizeof(two_bytes));
+        cJSON_AddNumberToObject(data, "health", two_bytes[1] << 8 | two_bytes[0]);
         read_bytes(0, I2C_VOLTAGE_REG, two_bytes, sizeof(two_bytes));
         cJSON_AddNumberToObject(data, "voltage", (float)(two_bytes[1] << 8 | two_bytes[0]) / 1000.0);
         read_bytes(0, I2C_CURRENT_REG, two_bytes, sizeof(two_bytes));
         cJSON_AddNumberToObject(data, "current", (float)((int16_t)(two_bytes[1] << 8 | two_bytes[0])) / 1000.0);
         read_bytes(0, I2C_TEMPERATURE_REG, two_bytes, sizeof(two_bytes));
         cJSON_AddNumberToObject(data, "temperature", (float)(two_bytes[1] << 8 | two_bytes[0]) / 10.0 - 273.15);
+        read_bytes(0, I2C_INT_TEMPERATURE_REG, two_bytes, sizeof(two_bytes));
+        cJSON_AddNumberToObject(data, "internal_temperature", (float)(two_bytes[1] << 8 | two_bytes[0]) / 10.0 - 273.15);
 
         // configurable data too
         // these values are little-endian

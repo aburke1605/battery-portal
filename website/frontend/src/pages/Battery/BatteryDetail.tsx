@@ -11,6 +11,7 @@ import {
   ThermometerSun, 
   Info, 
   RefreshCw, 
+  LockKeyholeOpen,
   Wifi, 
   // Power, 
   Calendar, 
@@ -35,6 +36,7 @@ interface BatteryDetailProps {
   voltageThreshold: number;
   sendBatteryUpdate: (updatedValues: Partial<BatteryData>) => void;
   sendWiFiConnect: (username: string, password: string, eduroam: boolean) => void;
+  sendUnseal: () => void;
   sendReset: () => void;
 }
 
@@ -44,6 +46,7 @@ const BatteryDetail: React.FC<BatteryDetailProps> = ({
   voltageThreshold,
   sendBatteryUpdate, // receive function from BatteryPage
   sendWiFiConnect,
+  sendUnseal,
   sendReset,
 }) => {
   
@@ -745,6 +748,12 @@ const BatteryDetail: React.FC<BatteryDetailProps> = ({
                     Schedule Maintenance
                   </button>
                   <button
+                    onClick={() => sendUnseal()}
+                    className="w-full flex items-center justify-center px-4 py-2 border border-orange-300 shadow-sm text-sm font-medium rounded-md text-orange-700 bg-orange-50 hover:bg-orange-100 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-orange-500">
+                    <LockKeyholeOpen size={16} className="mr-2" />
+                    Unseal BMS
+                  </button>
+                  <button
                     onClick={() => sendReset()}
                     className="w-full flex items-center justify-center px-4 py-2 border border-red-300 shadow-sm text-sm font-medium rounded-md text-red-700 bg-red-50 hover:bg-red-100 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500">
                     <RefreshCw size={16} className="mr-2" />
@@ -879,8 +888,14 @@ const BatteryDetail: React.FC<BatteryDetailProps> = ({
               <ThermometerSun size={16} className="mr-1" /> Temperature
             </h3>
             <div className="flex items-end space-x-2">
-              <span className="text-3xl font-bold text-orange-700">{battery.temperature}°C</span>
+              <span className="text-3xl font-bold text-orange-700">Ambient: {battery.temperature}°C</span>
               {battery.temperature > 35 && (
+                <span className="text-red-500 text-sm">Above normal</span>
+              )}
+            </div>
+            <div className="flex items-end space-x-2">
+              <span className="text-3xl font-bold text-orange-700">Internal: {battery.internal_temperature}°C</span>
+              {battery.internal_temperature > 35 && (
                 <span className="text-red-500 text-sm">Above normal</span>
               )}
             </div>

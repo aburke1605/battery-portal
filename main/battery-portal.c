@@ -3,6 +3,7 @@
 #include "include/AP.h"
 #include "include/DNS.h"
 #include "include/I2C.h"
+#include "include/BMS.h"
 #include "include/WS.h"
 
 #include <esp_log.h>
@@ -16,6 +17,8 @@ bool connected_to_WiFi = false;
 char ESP_subnet_IP[15];
 int client_sockets[WS_CONFIG_MAX_CLIENTS];
 QueueHandle_t ws_queue;
+
+TaskHandle_t websocket_task_handle = NULL;
 
 void app_main(void) {
 
@@ -38,6 +41,9 @@ void app_main(void) {
     ESP_ERROR_CHECK(i2c_master_init());
     ESP_LOGI("main", "I2C initialized successfully");
     if (SCAN_I2C) device_scan();
+
+    // do a BMS reset on boot
+    reset();
 
     // Initialize the GPIO pin as an output for LED toggling
     gpio_config_t io_conf = {
@@ -77,7 +83,7 @@ void app_main(void) {
     esp_log_level_set("transport_ws", ESP_LOG_WARN);
     esp_log_level_set("transport_base", ESP_LOG_WARN);
     TaskParams websocket_params = {.stack_size = 4600, .task_name = "websocket_task"};
-    xTaskCreate(&websocket_task, websocket_params.task_name, websocket_params.stack_size, &websocket_params, 1, NULL);
+    xTaskCreate(&websocket_task, websocket_params.task_name, websocket_params.stack_size, &websocket_params, 1, &websocket_task_handle);
 
     while (true) {
         if (VERBOSE) ESP_LOGI("main", "%ld bytes available in heap", esp_get_free_heap_size());
