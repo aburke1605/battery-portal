@@ -13,7 +13,6 @@
 
 static struct rendered_page rendered_html_pages[WS_MAX_N_HTML_PAGES];
 static uint8_t n_rendered_html_pages = 0;
-static bool admin_verified = false;
 
 static const char* TAG = "AP";
 
@@ -96,53 +95,20 @@ void wifi_init(void) {
     ESP_ERROR_CHECK(esp_wifi_start());
 }
 
-esp_err_t login_handler(httpd_req_t *req) {
-    char content[100];
-    esp_err_t err = get_POST_data(req, content, sizeof(content));
-    if (err != ESP_OK) {
-        ESP_LOGE(TAG, "Problem with login POST request");
-        return err;
-    }
+esp_err_t redirect_handler(httpd_req_t *req) {
+    // just need to redirect to the uri where ws data is sent
+    char redirect_url[25];
+    snprintf(redirect_url, sizeof(redirect_url), "/esp32?esp_id=%s", ESP_ID);
 
-    char username_encoded[50] = {0};
-    char password_encoded[50] = {0};
-    // a correct login gets POSTed as:
-    //    username=admin&password=1234
-    sscanf(content, "username=%49[^&]&password=%49s", username_encoded, password_encoded);
-    // %49:   read up to 49 characters (including the null terminator) to prevent buffer overflow
-    // [^&]:  a scan set that matches any character except &
-    // s:     reads a sequence of non-whitespace characters until a space, newline, or null terminator is encountered
-    char username[50] = {0};
-    char password[50] = {0};
-    url_decode(username, username_encoded);
-    url_decode(password, password_encoded);
+    httpd_resp_set_status(req, "302 Found");
+    httpd_resp_set_hdr(req, "Location", redirect_url);
+    httpd_resp_send(req, NULL, 0); // no response body
 
-    if (DEV || (strcmp(username, WS_USERNAME) == 0 && strcmp(password, WS_PASSWORD) == 0)) {
-        // credentials correct
-        admin_verified = true;
-        httpd_resp_set_status(req, "302 Found");
-        char redirect_url[25];
-        snprintf(redirect_url, sizeof(redirect_url), "/esp32?esp_id=%s", ESP_ID);
-        httpd_resp_set_hdr(req, "Location", redirect_url);
-        httpd_resp_send(req, NULL, 0); // no response body
-    } else {
-        // credentials incorrect
-        const char *error_msg = "Invalid username or password.";
-        httpd_resp_send(req, error_msg, strlen(error_msg));
-    }
     return ESP_OK;
 }
 
 esp_err_t file_serve_handler(httpd_req_t *req) {
     const char *file_path = (const char *)req->user_ctx;
-
-    // before anything, make sure nobody tries to bypass the login page
-    if (strcmp(file_path, "/static/esp32.html") == 0 && !admin_verified) {
-        httpd_resp_set_status(req, "302 Found");
-        httpd_resp_set_hdr(req, "Location", "/");
-        httpd_resp_send(req, NULL, 0); // no response body
-    }
-
     if (VERBOSE) ESP_LOGI(TAG, "Serving file: %s", file_path);
 
     const char *ext = strrchr(file_path, '.');
@@ -263,45 +229,28 @@ httpd_handle_t start_webserver(void) {
     if (httpd_start(&server, &config) == ESP_OK) {
         ESP_LOGI(TAG, "Registering URI handlers");
 
-        httpd_uri_t login_uri = {
+        httpd_uri_t redirect_uri = {
             .uri       = "/",
             .method    = HTTP_GET,
-            .handler   = file_serve_handler,
-            .user_ctx  = "/static/esp_login.html"
+            .handler   = redirect_handler,
         };
-        httpd_register_uri_handler(server, &login_uri);
+        httpd_register_uri_handler(server, &redirect_uri);
 
         // do some more to catch all device types
-        login_uri.uri = "/hotspot-detect.html";
-        httpd_register_uri_handler(server, &login_uri);
-        login_uri.uri = "/generate_204";
-        httpd_register_uri_handler(server, &login_uri);
-        login_uri.uri = "/connecttest.txt";
-        httpd_register_uri_handler(server, &login_uri);
-        login_uri.uri = "/favicon.ico";
-        httpd_register_uri_handler(server, &login_uri);
-        login_uri.uri = "/redirect";
-        httpd_register_uri_handler(server, &login_uri);
-        login_uri.uri = "/wpad.dat";
-        httpd_register_uri_handler(server, &login_uri);
-        login_uri.uri = "/gen_204";
-        httpd_register_uri_handler(server, &login_uri);
-
-        httpd_uri_t validate_login_uri = {
-            .uri       = "/validate_login",
-            .method    = HTTP_POST,
-            .handler   = login_handler,
-            .user_ctx  = NULL
-        };
-        httpd_register_uri_handler(server, &validate_login_uri);
-
-        httpd_uri_t ws_uri = {
-            .uri = "/browser_ws",
-            .method = HTTP_GET,
-            .handler = client_handler,
-            .is_websocket = true
-        };
-        httpd_register_uri_handler(server, &ws_uri);
+        redirect_uri.uri = "/hotspot-detect.html";
+        httpd_register_uri_handler(server, &redirect_uri);
+        redirect_uri.uri = "/generate_204";
+        httpd_register_uri_handler(server, &redirect_uri);
+        redirect_uri.uri = "/connecttest.txt";
+        httpd_register_uri_handler(server, &redirect_uri);
+        redirect_uri.uri = "/favicon.ico";
+        httpd_register_uri_handler(server, &redirect_uri);
+        redirect_uri.uri = "/redirect";
+        httpd_register_uri_handler(server, &redirect_uri);
+        redirect_uri.uri = "/wpad.dat";
+        httpd_register_uri_handler(server, &redirect_uri);
+        redirect_uri.uri = "/gen_204";
+        httpd_register_uri_handler(server, &redirect_uri);
 
         httpd_uri_t esp32_uri = {
             .uri       = "/esp32",
@@ -310,6 +259,14 @@ httpd_handle_t start_webserver(void) {
             .user_ctx  = "/static/esp32.html"
         };
         httpd_register_uri_handler(server, &esp32_uri);
+
+        httpd_uri_t ws_uri = {
+            .uri = "/browser_ws",
+            .method = HTTP_GET,
+            .handler = client_handler,
+            .is_websocket = true
+        };
+        httpd_register_uri_handler(server, &ws_uri);
 
         httpd_uri_t favicon_uri = {
             .uri       = "/favicon.png",

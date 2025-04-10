@@ -12,7 +12,7 @@ struct rendered_page {
 
 void wifi_init(void);
 
-esp_err_t login_handler(httpd_req_t *req);
+esp_err_t redirect_handler(httpd_req_t *req);
 
 esp_err_t file_serve_handler(httpd_req_t *req);
 
