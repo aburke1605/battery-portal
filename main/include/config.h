@@ -45,12 +45,17 @@
 #define I2C_MASTER_NUM     I2C_NUM_0                 // I2C port number for master dev
 
 #define I2C_STATE_OF_CHARGE_REG CONFIG_STATE_OF_CHARGE_REG // Register address for StateOfCharge
+#define I2C_STATE_OF_HEALTH_REG CONFIG_STATE_OF_HEALTH_REG // Register address for StateOfHealth
 #define I2C_VOLTAGE_REG CONFIG_VOLTAGE_REG                 // Register address for Voltage
 #define I2C_CURRENT_REG CONFIG_CURRENT_REG                 // Register address for AverageCurrent
 #define I2C_TEMPERATURE_REG CONFIG_TEMPERATURE_REG         // Register address for Temperature
+#define I2C_INT_TEMPERATURE_REG CONFIG_INT_TEMPERATURE_REG // Register address for InternalTemperature
 
-#define I2C_CONTROL_REG             0x00  // Control register address
-#define I2C_CONTROL_RESET_SUBCMD    0x0041 // Reset subcommand
+#define I2C_CONTROL_REG             CONFIG_I2C_CONTROL_REG             // Control register address
+#define I2C_CONTROL_RESET_SUBCMD    CONFIG_I2C_CONTROL_RESET_SUBCMD    // Reset subcommand
+#define I2C_CONTROL_UNSEAL_SUBCMD_1 CONFIG_I2C_CONTROL_UNSEAL_SUBCMD_1 // UNSEAL subcommand part 1
+#define I2C_CONTROL_UNSEAL_SUBCMD_2 CONFIG_I2C_CONTROL_UNSEAL_SUBCMD_2 // UNSEAL subcommand part 2
+
 #define I2C_I2C_MASTER_PORT         0      // I2C port number (adjust as needed)
 
 #define I2C_DATA_FLASH_CLASS       0x3E

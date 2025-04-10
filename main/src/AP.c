@@ -53,10 +53,6 @@ void wifi_init(void) {
     };
 
     // set the SSID as well
-    uint8_t name[11];
-    read_bytes(I2C_DATA_SUBCLASS_ID, I2C_NAME_OFFSET, name, sizeof(name));
-    strncpy(ESP_ID, (char *)name, 10);
-
     uint8_t charge[2] = {};
     read_bytes(0, I2C_STATE_OF_CHARGE_REG, charge, sizeof(charge));
 
