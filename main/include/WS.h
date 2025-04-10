@@ -12,6 +12,8 @@ void add_client(int fd);
 
 void remove_client(int fd);
 
+esp_err_t client_handler(httpd_req_t *req);
+
 esp_err_t perform_request(cJSON *message, cJSON *response);
 
 void send_message(const char *message);
