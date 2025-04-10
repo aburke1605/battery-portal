@@ -113,7 +113,7 @@ def index():
 
 @app.route('/admin')
 @login_required
-def new_admin():
+def admin():
     return send_from_directory("frontend/dist", "index.html")
 
 @app.route("/<path:path>")
