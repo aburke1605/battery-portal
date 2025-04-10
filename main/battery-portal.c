@@ -45,6 +45,8 @@ void app_main(void) {
     // do a BMS reset on boot
     reset();
 
+    vTaskDelay(pdMS_TO_TICKS(1000));
+
     // Initialize the GPIO pin as an output for LED toggling
     gpio_config_t io_conf = {
         .pin_bit_mask = (1ULL << I2C_LED_GPIO_PIN),
