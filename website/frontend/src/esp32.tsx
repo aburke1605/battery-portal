@@ -12,7 +12,7 @@ import { ScrollToTop } from "./components/common/ScrollToTop";
 import { setupMockWebSocket } from './mock/ws';
 import apiConfig from "./apiConfig.tsx";
 
-function LoginForm({ onLogin }: { onLogin: (u: string, p: string) => Promise<boolean> }) {
+export default function LoginForm({ onLogin }: { onLogin: (u: string, p: string) => Promise<boolean> }) {
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
