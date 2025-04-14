@@ -11,7 +11,7 @@ logging.basicConfig(
     ]
 )
 
-annoying_logs = ["werkzeug", "passlib"]
+annoying_logs = ["werkzeug", "passlib", "watchdog", "matplotlib"]
 for log in annoying_logs:
     logging.getLogger(log).setLevel(logging.WARNING)
 
@@ -48,9 +48,12 @@ def index():
     return send_from_directory('frontend/dist/', 'home.html')
 
 @app.route('/admin')
-@login_required
 def admin():
     return send_from_directory("frontend/dist", "index.html")
+
+@app.route('/esp32')
+def esp():
+    return send_from_directory("frontend/dist", "esp32.html")
 
 @app.route("/<path:path>")
 def serve_react_static(path):
