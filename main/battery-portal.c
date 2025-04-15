@@ -11,7 +11,7 @@
 #include <driver/gpio.h>
 
 // global variables
-char ESP_ID[UTILS_KEY_LENGTH + 1];
+char ESP_ID[UTILS_ID_LENGTH + 1];
 httpd_handle_t server = NULL;
 bool connected_to_WiFi = false;
 char ESP_subnet_IP[15];
