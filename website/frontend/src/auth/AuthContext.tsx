@@ -13,6 +13,7 @@ interface AuthContextType {
   loading: boolean;
   logout: () => Promise<void>;
   login: (email: string, password: string) => Promise<boolean>;
+  getAuthToken: () => string | null;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -87,6 +88,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       if (res.ok) {
         const data = await res.json();
         setUser(data);
+        setAuthToken(data.auth_token);
         navigate('/');
         return true;
       } else {
@@ -98,12 +100,25 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     }
   };
 
+  const setAuthToken = (token: string) => {
+    if (token) {
+      localStorage.setItem('auth_token', token);
+    } else {
+      localStorage.removeItem('auth_token');
+    }
+  }
+
+  const getAuthToken = () => {
+    return localStorage.getItem('auth_token');
+  }
+
   const contextValue: AuthContextType = {
     user,
     isAuthenticated: !!user,
     loading,
     logout,
     login,
+    getAuthToken
   };
 
   return <AuthContext.Provider value={contextValue}>{!loading && children}</AuthContext.Provider>;
