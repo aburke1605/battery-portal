@@ -51,7 +51,6 @@ def api_login():
     data = request.get_json()
     email = data.get('email')
     password = data.get('password')
-    print(email, password)
 
     user = user_datastore.find_user(email=email)
     if user and user.verify_and_update_password(password):

@@ -51,10 +51,6 @@ def index():
 def admin():
     return send_from_directory("frontend/dist", "index.html")
 
-@app.route('/esp32')
-def esp():
-    return send_from_directory("frontend/dist", "esp32.html")
-
 @app.route("/<path:path>")
 def serve_react_static(path):
     return send_from_directory("frontend/dist", path)
