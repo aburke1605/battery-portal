@@ -11,10 +11,13 @@ interface BatteriesPageProps {
 }
 
 export default function BatteryPage({ isFromEsp32 = false }: BatteriesPageProps) {
-      let queryString = window.location.search;
-      if (!isFromEsp32) {
-          const hash = window.location.hash;  // e.g., "#/battery-detail?esp_id=BMS_02"
-          queryString = hash.split('?')[1];  // Extract "esp_id=BMS_02"
+    let queryString = window.location.search;
+    let ws_url = apiConfig.WEBSOCKET_BROWSER;
+    if (!isFromEsp32) {
+        const hash = window.location.hash;  // e.g., "#/battery-detail?esp_id=BMS_02"
+        queryString = hash.split('?')[1];  // Extract "esp_id=BMS_02"
+    } else {
+        ws_url += "?auth_token=TEST";
     }
     const urlParams = new URLSearchParams(queryString);
     const esp_id = urlParams.get('esp_id');
@@ -30,7 +33,7 @@ export default function BatteryPage({ isFromEsp32 = false }: BatteriesPageProps)
     const ws = useRef<WebSocket | null>(null);
     useEffect(() => {
        
-        ws.current = new WebSocket(apiConfig.WEBSOCKET_BROWSER);
+        ws.current = new WebSocket(ws_url);
 
         ws.current.onopen = () => {
           console.log('WebSocket connected');
