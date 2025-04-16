@@ -20,10 +20,14 @@ static esp_websocket_client_handle_t ws_client = NULL;
 
 static const char* TAG = "WS";
 
-void add_client(int fd) {
+void add_client(int fd, const char* tkn) {
     for (int i = 0; i < WS_CONFIG_MAX_CLIENTS; i++) {
-        if (client_sockets[i] == -1) {
-            client_sockets[i] = fd;
+        if (client_sockets[i].descriptor == fd) {
+            return;
+        } else if (client_sockets[i].descriptor < 0) {
+            client_sockets[i].descriptor = fd;
+            strncpy(client_sockets[i].auth_token, tkn, UTILS_AUTH_TOKEN_LENGTH);
+            client_sockets[i].auth_token[UTILS_AUTH_TOKEN_LENGTH - 1] = '\0';
             ESP_LOGI(TAG, "Client %d added", fd);
             return;
         }
@@ -33,8 +37,9 @@ void add_client(int fd) {
 
 void remove_client(int fd) {
     for (int i = 0; i < WS_CONFIG_MAX_CLIENTS; i++) {
-        if (client_sockets[i] == fd) {
-            client_sockets[i] = -1;
+        if (client_sockets[i].descriptor == fd) {
+            client_sockets[i].descriptor = -1;
+            client_sockets[i].auth_token[0] = '\0';
             ESP_LOGI(TAG, "Client %d removed", fd);
             return;
         }
@@ -44,10 +49,20 @@ void remove_client(int fd) {
 esp_err_t client_handler(httpd_req_t *req) {
     // register new clients...
     if (req->method == HTTP_GET) {
-        int fd = httpd_req_to_sockfd(req);
-        ESP_LOGI(TAG, "WebSocket handshake complete for client %d", fd);
-        add_client(fd);
-        return ESP_OK;  // WebSocket handshake happens here
+        char *check_new_session = strstr(req->uri, "/browser_ws?auth_token=");
+        if (check_new_session) {
+            char auth_token[UTILS_AUTH_TOKEN_LENGTH] = {0};
+            sscanf(check_new_session,"/browser_ws?auth_token=%50s",auth_token);
+            auth_token[UTILS_AUTH_TOKEN_LENGTH - 1] = '\0';
+            if (auth_token[0] != '\0' && strcmp(auth_token, current_auth_token) == 0) {
+                int fd = httpd_req_to_sockfd(req);
+                add_client(fd, auth_token);
+                current_auth_token[0] = '\0';
+                ESP_LOGI(TAG, "WebSocket handshake complete for client %d", fd);
+                return ESP_OK; // WebSocket handshake happens here
+            }
+        }
+        return ESP_FAIL;
     }
 
     // ...otherwise listen for messages
@@ -408,17 +423,26 @@ void websocket_task(void *pvParameters) {
         if (json_string != NULL && data_string != NULL) {
             // first send to all connected WebSocket clients
             for (int i = 0; i < WS_CONFIG_MAX_CLIENTS; i++) {
-                if (client_sockets[i] != -1) {
+                if (client_sockets[i].descriptor >= 0) {
                     httpd_ws_frame_t ws_pkt = {
                         .payload = (uint8_t *)json_string,
                         .len = strlen(json_string),
                         .type = HTTPD_WS_TYPE_TEXT,
                     };
 
-                    esp_err_t err = httpd_ws_send_frame_async(server, client_sockets[i], &ws_pkt);
+                    int tries = 0;
+                    int max_tries = 5;
+                    esp_err_t err;
+                    while (tries < max_tries) {
+                        err = httpd_ws_send_frame_async(server, client_sockets[i].descriptor, &ws_pkt);
+                        if (err == ESP_OK) break;
+                        vTaskDelay(pdMS_TO_TICKS(1000));
+                        tries++;
+                    }
+
                     if (err != ESP_OK) {
-                        ESP_LOGE(TAG, "Failed to send frame to client %d: %s", client_sockets[i], esp_err_to_name(err));
-                        remove_client(client_sockets[i]);  // Clean up disconnected clients
+                        ESP_LOGE(TAG, "Failed to send frame to client %d: %s", client_sockets[i].descriptor, esp_err_to_name(err));
+                        remove_client(client_sockets[i].descriptor);  // Clean up disconnected clients
                     }
                 }
             }
