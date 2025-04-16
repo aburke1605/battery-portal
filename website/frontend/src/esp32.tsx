@@ -19,7 +19,7 @@ createRoot(document.getElementById("root")!).render(
     <ThemeProvider>
       <AppWrapper>
         <Router>
-        <AuthProvider>
+        <AuthProvider isFromEsp32={true} >
         <ScrollToTop />
         <Routes>
           <Route index path="/" element={

@@ -28,9 +28,10 @@ export const useAuth = (): AuthContextType => {
 
 interface AuthProviderProps {
   children: ReactNode;
+  isFromEsp32?: boolean;
 }
 
-export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
+export const AuthProvider: React.FC<AuthProviderProps> = ({ children, isFromEsp32 = false }) => {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
   const navigate = useNavigate();
@@ -38,7 +39,12 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   useEffect(() => {
     const checkAuthStatus = async () => {
       try {
-        const response = await fetch('/api/users/check-auth', {
+        let url = '/api/users/check-auth';
+        if (isFromEsp32) {
+          const token = getAuthToken();
+          url += '?auth_token=' + token;
+        }
+        const response = await fetch(url, {
           method: 'GET',
           credentials: 'include',
         });
