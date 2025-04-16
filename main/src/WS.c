@@ -428,7 +428,16 @@ void websocket_task(void *pvParameters) {
                         .type = HTTPD_WS_TYPE_TEXT,
                     };
 
-                    esp_err_t err = httpd_ws_send_frame_async(server, client_sockets[i], &ws_pkt);
+                    int tries = 0;
+                    int max_tries = 5;
+                    esp_err_t err;
+                    while (tries < max_tries) {
+                        err = httpd_ws_send_frame_async(server, client_sockets[i].descriptor, &ws_pkt);
+                        if (err == ESP_OK) break;
+                        vTaskDelay(pdMS_TO_TICKS(1000));
+                        tries++;
+                    }
+
                     if (err != ESP_OK) {
                         ESP_LOGE(TAG, "Failed to send frame to client %d: %s", client_sockets[i].descriptor, esp_err_to_name(err));
                         remove_client(client_sockets[i].descriptor);  // Clean up disconnected clients
