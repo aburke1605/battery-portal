@@ -47,10 +47,20 @@ void remove_client(int fd) {
 esp_err_t client_handler(httpd_req_t *req) {
     // register new clients...
     if (req->method == HTTP_GET) {
-        int fd = httpd_req_to_sockfd(req);
-        ESP_LOGI(TAG, "WebSocket handshake complete for client %d", fd);
-        add_client(fd);
-        return ESP_OK;  // WebSocket handshake happens here
+        char *check_new_session = strstr(req->uri, "/browser_ws?auth_token=");
+        if (check_new_session) {
+            char auth_token[UTILS_AUTH_TOKEN_LENGTH] = {0};
+            sscanf(check_new_session,"/browser_ws?auth_token=%50s",auth_token);
+            auth_token[UTILS_AUTH_TOKEN_LENGTH - 1] = '\0';
+            if (auth_token[0] != '\0' && strcmp(auth_token, current_auth_token) == 0) {
+                int fd = httpd_req_to_sockfd(req);
+                add_client(fd, auth_token);
+                current_auth_token[0] = '\0';
+                ESP_LOGI(TAG, "WebSocket handshake complete for client %d", fd);
+                return ESP_OK; // WebSocket handshake happens here
+            }
+        }
+        return ESP_FAIL;
     }
 
     // ...otherwise listen for messages

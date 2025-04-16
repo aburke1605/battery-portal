@@ -238,9 +238,9 @@ esp_err_t login_handler(httpd_req_t *req) {
     httpd_resp_set_type(req, "application/json");
     if (DEV || (strcmp(email_decoded, WS_USERNAME) == 0 && strcmp(password_decoded, WS_PASSWORD) == 0)) {
         httpd_resp_set_status(req, HTTPD_200);
-        char auth_token[UTILS_AUTH_TOKEN_LENGTH];
-        random_token(auth_token);
-        snprintf(response, sizeof(response), "{\"success\": true, \"auth_token\": \"%s\"}", auth_token);
+        random_token(current_auth_token);
+        current_auth_token[UTILS_AUTH_TOKEN_LENGTH - 1] = '\0';
+        snprintf(response, sizeof(response), "{\"success\": true, \"auth_token\": \"%s\"}", current_auth_token);
     } else {
         httpd_resp_set_status(req, "401 Unauthorized");
         strcpy(response, "{\"success\": false}");
