@@ -1,6 +1,5 @@
 import { HashRouter as Router, Routes, Route } from "react-router";
 import SignIn from "./pages/AuthPages/SignIn";
-import SignUp from "./pages/AuthPages/SignUp";
 import NotFound from "./pages/OtherPage/NotFound";
 import UserProfiles from "./pages/UserProfiles";
 import SystemSettings from "./pages/Settings/SystemSettings";
@@ -11,17 +10,25 @@ import Home from "./pages/Dashboard/Home";
 import ListPage from "./pages/Battery/ListPage";
 import BatteryPage from "./pages/Battery/BatteryPage";
 import UserList from "./pages/User/list";
+import AuthRequire from "./auth/AuthRequire.tsx";
+import {AuthProvider} from "./auth/AuthContext.tsx";
+
 
 export default function App() {
 
   return (
     <>
       <Router>
+        <AuthProvider>
         <ScrollToTop />
         <Routes>
           {/* Dashboard Layout */}
           <Route element={<AppLayout />}>
-            <Route index path="/" element={<Home />} />
+            <Route index path="/" element={
+              <AuthRequire>
+                <Home />
+              </AuthRequire>
+              } />
 
             {/* Others Page */}
             <Route path="/profile" element={<UserProfiles />} />
@@ -36,12 +43,13 @@ export default function App() {
           </Route>
 
           {/* Auth Layout */}
-          <Route path="/signin" element={<SignIn />} />
-          <Route path="/signup" element={<SignUp />} />
+          <Route path="/login" element={<SignIn />} />
 
           {/* Fallback Route */}
           <Route path="*" element={<NotFound />} />
+
         </Routes>
+        </AuthProvider>
       </Router>
     </>
   );

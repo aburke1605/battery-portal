@@ -86,7 +86,8 @@
 #define I2C_LED_GPIO_PIN 2
 
 
-#define UTILS_KEY_LENGTH 10
+#define UTILS_ID_LENGTH 10
+#define UTILS_AUTH_TOKEN_LENGTH CONFIG_AUTH_TOKEN_LENGTH
 
 #define UTILS_ROUTER_SSID CONFIG_ROUTER_SSID
 #define UTILS_ROUTER_PASSWORD CONFIG_ROUTER_PASSWORD
@@ -110,6 +111,10 @@
 #define WS_MAX_HTML_PAGE_NAME_LENGTH 32
 #define WS_CONFIG_MAX_CLIENTS 3
 
+typedef struct {
+    int descriptor;
+    char auth_token[UTILS_AUTH_TOKEN_LENGTH];
+} client_socket;
 
 typedef struct {
     int stack_size;

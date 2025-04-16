@@ -5,9 +5,10 @@ import random
 from uuid import uuid4
 
 from flask import Blueprint, request, jsonify
-from flask_security import SQLAlchemyUserDatastore, UserMixin, RoleMixin, login_required
+from flask_security import SQLAlchemyUserDatastore, UserMixin, RoleMixin, login_user, login_required, logout_user
 from flask_security.utils import hash_password
 from wtforms import PasswordField
+from flask_login import current_user
 
 from db import DB
 
@@ -44,6 +45,33 @@ class User(DB.Model, UserMixin):
         return self.email
 
 user_datastore = SQLAlchemyUserDatastore(DB, User, Role)
+
+@user_bp.route('/login', methods=['POST'])
+def api_login():
+    data = request.get_json()
+    email = data.get('email')
+    password = data.get('password')
+
+    user = user_datastore.find_user(email=email)
+    if user and user.verify_and_update_password(password):
+        login_user(user)
+        return jsonify({'success': True}), 200
+    return jsonify({'success': False}), 401
+
+@user_bp.route('/check-auth', methods=['GET'])
+@login_required
+def auth_status():
+    return jsonify({
+        'loggedIn': True,
+        'email': current_user.email,
+        'roles': [role.name for role in current_user.roles]  # if using roles
+    })
+
+@user_bp.route('/logout', methods=['POST'])
+@login_required
+def logout():
+    logout_user()
+    return jsonify({'message': 'Logged out'}), 200
 
 @user_bp.route('/list')
 @login_required
