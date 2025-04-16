@@ -22,7 +22,9 @@ static const char* TAG = "WS";
 
 void add_client(int fd, const char* tkn) {
     for (int i = 0; i < WS_CONFIG_MAX_CLIENTS; i++) {
-        if (client_sockets[i].descriptor < 0) {
+        if (client_sockets[i].descriptor == fd) {
+            return;
+        } else if (client_sockets[i].descriptor < 0) {
             client_sockets[i].descriptor = fd;
             strncpy(client_sockets[i].auth_token, tkn, UTILS_AUTH_TOKEN_LENGTH);
             client_sockets[i].auth_token[UTILS_AUTH_TOKEN_LENGTH - 1] = '\0';
