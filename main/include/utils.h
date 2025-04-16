@@ -22,6 +22,4 @@ char* replace_placeholder(const char *html, const char *const placeholders[], co
 
 uint8_t get_block(uint8_t offset);
 
-void check_bytes(TaskParams *params);
-
 #endif // UTILS_H

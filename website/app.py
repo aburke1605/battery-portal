@@ -11,7 +11,7 @@ logging.basicConfig(
     ]
 )
 
-annoying_logs = ["werkzeug", "passlib", "watchdog", "matplotlib"]
+annoying_logs = ["werkzeug", "passlib"]
 for log in annoying_logs:
     logging.getLogger(log).setLevel(logging.WARNING)
 

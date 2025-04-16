@@ -11,6 +11,7 @@ interface DataChartProps {
 interface DataPoint {
   timestamp: string;
   value: number;
+  timeMs: number;
 }
 
 const formatTimestamp = (timestamp: string) => {
@@ -29,9 +30,14 @@ const DataChart: React.FC<DataChartProps> = ({ esp_id, column }) => {
 
   useEffect(() => {
     const fetchData = () => {
-      console.log('\n\n', apiConfig.DB_END_POINT, '\n\n');
       axios.get(`${apiConfig.DB_END_POINT}?esp_id=${esp_id}&column=${column}`)
-        .then(response => setData(response.data))
+        .then(response => {
+          const processedData = response.data.map((point: DataPoint) => ({
+            ...point,
+            timeMs: new Date(point.timestamp).getTime()
+          }));
+          setData(processedData);
+        })
         .catch(error => console.error("Error fetching data:", error));
     };
 
@@ -45,7 +51,13 @@ const DataChart: React.FC<DataChartProps> = ({ esp_id, column }) => {
       <ResponsiveContainer width="100%" height={200}>
         <LineChart data={data} margin={{ top: 10, right: 10, bottom: 15, left: 10 }}>
           <CartesianGrid strokeDasharray="3 3" />
-          <XAxis dataKey="timestamp" tickFormatter={formatTimestamp} >
+          <XAxis
+            dataKey="timeMs"
+            domain={["auto", "auto"]}
+            type="number"
+            scale="time"
+            tickFormatter={(timeMs) => formatTimestamp(new Date(timeMs).toISOString())}
+          >
             <Label value="Time" offset={-10} position="insideBottom" />
           </XAxis>
           <YAxis>

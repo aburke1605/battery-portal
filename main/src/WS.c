@@ -314,8 +314,6 @@ void message_queue_task(void *pvParameters) {
             }
         }
 
-        check_bytes((TaskParams *)pvParameters);
-
         vTaskDelay(pdMS_TO_TICKS(1000));
     }
 }
@@ -518,8 +516,6 @@ void websocket_task(void *pvParameters) {
             connected_to_WiFi = false;
             if (DEV) send_fake_request();
         }
-
-        check_bytes((TaskParams *)pvParameters);
 
         vTaskDelay(pdMS_TO_TICKS(1000));
     }
