@@ -95,8 +95,6 @@ void dns_server_task(void *pvParameters) {
         } else {
             ESP_LOGE(TAG, "recvfrom failed: errno %d", errno);
         }
-
-        check_bytes((TaskParams *)pvParameters);
     }
 
     // Cleanup if the loop exits

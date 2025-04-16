@@ -187,12 +187,3 @@ uint8_t get_block(uint8_t offset) {
     
     return block;
 }
-
-void check_bytes(TaskParams *params) {
-    int remaining_task_stack = (int)uxTaskGetStackHighWaterMark(NULL);
-    if (remaining_task_stack < (int)(0.3 * params->stack_size)) {
-        ESP_LOGW(params->task_name, "Less than 30%% of assigned memory (%d bytes) being used - consider assigning less!\n", params->stack_size);
-    } else if (remaining_task_stack > (int)(0.9 * params->stack_size)) {
-        ESP_LOGW(params->task_name, "More than 90%% of assigned memory (%d bytes) being used - consider assigning more!\n", params->stack_size);
-    }
-}
