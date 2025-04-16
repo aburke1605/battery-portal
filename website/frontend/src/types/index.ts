@@ -47,3 +47,11 @@ export interface UserData {
   avatar: string;
   lastActive: string;
 }
+
+export interface User {
+  id: number;
+  first_name: string;
+  last_name: string;
+  email: string;
+  roles: string[];
+}

@@ -208,10 +208,75 @@ esp_err_t file_serve_handler(httpd_req_t *req) {
     return ESP_OK;
 }
 
+esp_err_t login_handler(httpd_req_t *req) {
+    char response[39 + UTILS_AUTH_TOKEN_LENGTH];
+    httpd_resp_set_type(req, "application/json");
+
+    char *check_session = strstr(req->uri, "/api/users/check-auth?auth_token=");
+    if (check_session) {
+        char auth_token[UTILS_AUTH_TOKEN_LENGTH] = {0};
+        sscanf(check_session,"/api/users/check-auth?auth_token=%50s", auth_token);
+
+        for (int i=0; i < WS_CONFIG_MAX_CLIENTS; i++) {
+            if (strcmp(client_sockets[i].auth_token, auth_token) == 0) {
+                httpd_resp_set_status(req, HTTPD_200);
+                strncpy(current_auth_token, auth_token, UTILS_AUTH_TOKEN_LENGTH);
+                current_auth_token[UTILS_AUTH_TOKEN_LENGTH - 1] = '\0';
+                snprintf(response, sizeof(response), "{\"loggedIn\": true, \"email\": \"%s\"}", WS_USERNAME);
+                httpd_resp_send(req, response, HTTPD_RESP_USE_STRLEN);
+                return ESP_OK;
+            }
+        }
+        httpd_resp_set_status(req, "401 Unauthorized");
+        strcpy(response, "{\"loggedIn\": false}");
+        httpd_resp_send(req, response, HTTPD_RESP_USE_STRLEN);
+        return ESP_OK;
+    }
+
+    // else its the standard login request
+    char content[100];
+    esp_err_t err = get_POST_data(req, content, sizeof(content));
+    if (err != ESP_OK) {
+        ESP_LOGE("WS", "Problem with login POST request");
+        return err;
+    }
+
+    cJSON *credentials = cJSON_Parse(content);
+    if (!credentials) {
+        ESP_LOGE(TAG, "Failed to parse JSON");
+        return ESP_FAIL;
+    }
+
+    cJSON *email = cJSON_GetObjectItem(credentials, "email");
+    cJSON *password = cJSON_GetObjectItem(credentials, "password");
+    if (!email || !password) {
+        ESP_LOGE(TAG, "Error in POST content");
+        return ESP_FAIL;
+    }
+
+    char email_decoded[50] = {0};
+    char password_decoded[50] = {0};
+    url_decode(email_decoded, email->valuestring);
+    url_decode(password_decoded, password->valuestring);
+
+    if (DEV || (strcmp(email_decoded, WS_USERNAME) == 0 && strcmp(password_decoded, WS_PASSWORD) == 0)) {
+        httpd_resp_set_status(req, HTTPD_200);
+        random_token(current_auth_token);
+        current_auth_token[UTILS_AUTH_TOKEN_LENGTH - 1] = '\0';
+        snprintf(response, sizeof(response), "{\"success\": true, \"auth_token\": \"%s\"}", current_auth_token);
+    } else {
+        httpd_resp_set_status(req, "401 Unauthorized");
+        strcpy(response, "{\"success\": false}");
+    }
+    httpd_resp_send(req, response, HTTPD_RESP_USE_STRLEN);
+    return ESP_OK;
+}
+
 httpd_handle_t start_webserver(void) {
     // create sockets for clients
     for (int i = 0; i < WS_CONFIG_MAX_CLIENTS; i++) {
-        client_sockets[i] = -1;
+        client_sockets[i].descriptor = -1;
+        client_sockets[i].auth_token[0] = '\0';
     }
 
     httpd_config_t config = HTTPD_DEFAULT_CONFIG();
@@ -255,6 +320,22 @@ httpd_handle_t start_webserver(void) {
             .user_ctx  = "/static/esp32.html"
         };
         httpd_register_uri_handler(server, &esp32_uri);
+
+        httpd_uri_t login_uri = {
+            .uri       = "/api/users/login",
+            .method    = HTTP_POST,
+            .handler   = login_handler,
+            .user_ctx  = NULL
+        };
+        httpd_register_uri_handler(server, &login_uri);
+
+        httpd_uri_t refresh_uri = {
+            .uri       = "/api/users/check-auth",
+            .method    = HTTP_GET,
+            .handler   = login_handler,
+            .user_ctx  = NULL
+        };
+        httpd_register_uri_handler(server, &refresh_uri);
 
         httpd_uri_t ws_uri = {
             .uri = "/browser_ws",

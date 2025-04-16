@@ -8,6 +8,7 @@
 #include <math.h>
 #include <esp_log.h>
 #include <esp_http_client.h>
+#include <esp_random.h>
 
 void send_fake_request() {
     if (!connected_to_WiFi) {
@@ -96,6 +97,16 @@ void url_encode(char *dest, const char *src, size_t dest_size) {
         }
     }
     dest[j] = '\0';  // Null-terminate
+}
+
+void random_token(char *key) {
+    const char charset[] = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
+    size_t charset_size = sizeof(charset) - 1;
+
+    for (size_t i = 0; i < UTILS_AUTH_TOKEN_LENGTH; i++) {
+        key[i] = charset[esp_random() % charset_size];
+    }
+    key[UTILS_AUTH_TOKEN_LENGTH - 1] = '\0';
 }
 
 char* read_file(const char* path) {

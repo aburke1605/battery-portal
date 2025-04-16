@@ -5,12 +5,15 @@ logger = logging.getLogger(__name__)
 
 from flask import Blueprint, render_template, request, jsonify
 from flask_login import login_required
+from flask_sqlalchemy import SQLAlchemy
 
 import mysql.connector
 import datetime
 
-db = Blueprint('db', __name__, url_prefix='/db')
+db_bp = Blueprint('db_bp', __name__, url_prefix='/db')
 
+# Create DB instance
+DB = SQLAlchemy()
 
 DB_CONFIG = {
     "host": os.getenv("AZURE_MYSQL_HOST", "localhost"),
@@ -77,12 +80,12 @@ def execute_query(query):
     except Exception as e:
         return {"error": str(e)}
 
-@db.route("/query")
+@db_bp.route("/query")
 @login_required
 def query():
     return render_template("db/query.html")
 
-@db.route("/execute_sql", methods=["POST"])
+@db_bp.route("/execute_sql", methods=["POST"])
 @login_required
 def execute_sql():
     data = request.get_json()
@@ -102,7 +105,7 @@ def execute_sql():
     result = execute_query(query)
     return jsonify(result)
 
-@db.route('/data')
+@db_bp.route('/data')
 def data():
     esp_id = request.args.get("esp_id")
     column = request.args.get("column")

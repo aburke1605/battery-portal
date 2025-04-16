@@ -5,16 +5,24 @@ import PageMeta from "../../components/common/PageMeta";
 import { BatteryData } from '../../types';
 import BatteryDetail from './BatteryDetail';
 import apiConfig from '../../apiConfig';
+import { useAuth } from '../../auth/AuthContext';
 
 interface BatteriesPageProps {
     isFromEsp32?: boolean;
 }
 
 export default function BatteryPage({ isFromEsp32 = false }: BatteriesPageProps) {
-      let queryString = window.location.search;
-      if (!isFromEsp32) {
-          const hash = window.location.hash;  // e.g., "#/battery-detail?esp_id=BMS_02"
-          queryString = hash.split('?')[1];  // Extract "esp_id=BMS_02"
+
+    // Handle auth_token
+    const { getAuthToken } = useAuth();
+
+    let ws_url = apiConfig.WEBSOCKET_BROWSER;
+    let queryString = window.location.search;
+    if (!isFromEsp32) {
+        const hash = window.location.hash;  // e.g., "#/battery-detail?esp_id=BMS_02"
+        queryString = hash.split('?')[1];  // Extract "esp_id=BMS_02"
+    } else {
+        ws_url += "?auth_token=" + getAuthToken();
     }
     const urlParams = new URLSearchParams(queryString);
     const esp_id = urlParams.get('esp_id');
@@ -30,7 +38,7 @@ export default function BatteryPage({ isFromEsp32 = false }: BatteriesPageProps)
     const ws = useRef<WebSocket | null>(null);
     useEffect(() => {
        
-        ws.current = new WebSocket(apiConfig.WEBSOCKET_BROWSER);
+        ws.current = new WebSocket(ws_url);
 
         ws.current.onopen = () => {
           console.log('WebSocket connected');

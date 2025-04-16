@@ -404,6 +404,14 @@ CONFIG_PARTITION_TABLE_MD5=y
 # end of Partition Table
 
 #
+# [CUSTOM] Log-in Configuration
+#
+CONFIG_USERNAME="admin"
+CONFIG_PASSWORD="BaTT3ryP0rta!"
+CONFIG_AUTH_TOKEN_LENGTH=32
+# end of [CUSTOM] Log-in Configuration
+
+#
 # [CUSTOM] Developer options
 #
 # CONFIG_VERBOSE is not set
