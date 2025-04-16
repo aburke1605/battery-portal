@@ -106,7 +106,7 @@ void random_token(char *key) {
     for (size_t i = 0; i < UTILS_AUTH_TOKEN_LENGTH; i++) {
         key[i] = charset[esp_random() % charset_size];
     }
-    key[UTILS_AUTH_TOKEN_LENGTH] = '\0';
+    key[UTILS_AUTH_TOKEN_LENGTH - 1] = '\0';
 }
 
 char* read_file(const char* path) {
