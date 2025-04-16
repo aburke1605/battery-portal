@@ -14,7 +14,7 @@ config PASSWORD
 
 config AUTH_TOKEN_LENGTH
     int "Authentication token length"
-    default 12
+    default 32
     help
       WebSocket client authentication token length.
 
