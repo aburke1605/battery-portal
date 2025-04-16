@@ -111,6 +111,10 @@
 #define WS_MAX_HTML_PAGE_NAME_LENGTH 32
 #define WS_CONFIG_MAX_CLIENTS 3
 
+typedef struct {
+    int descriptor;
+    char auth_token[UTILS_AUTH_TOKEN_LENGTH];
+} client_socket;
 
 typedef struct {
     int stack_size;

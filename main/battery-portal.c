@@ -15,7 +15,8 @@ char ESP_ID[UTILS_ID_LENGTH + 1];
 httpd_handle_t server = NULL;
 bool connected_to_WiFi = false;
 char ESP_subnet_IP[15];
-int client_sockets[WS_CONFIG_MAX_CLIENTS];
+client_socket client_sockets[WS_CONFIG_MAX_CLIENTS];
+char current_auth_token[UTILS_AUTH_TOKEN_LENGTH] = "";
 QueueHandle_t ws_queue;
 
 TaskHandle_t websocket_task_handle = NULL;

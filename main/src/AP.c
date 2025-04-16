@@ -252,7 +252,8 @@ esp_err_t login_handler(httpd_req_t *req) {
 httpd_handle_t start_webserver(void) {
     // create sockets for clients
     for (int i = 0; i < WS_CONFIG_MAX_CLIENTS; i++) {
-        client_sockets[i] = -1;
+        client_sockets[i].descriptor = -1;
+        client_sockets[i].auth_token[0] = '\0';
     }
 
     httpd_config_t config = HTTPD_DEFAULT_CONFIG();

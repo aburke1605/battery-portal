@@ -20,10 +20,12 @@ static esp_websocket_client_handle_t ws_client = NULL;
 
 static const char* TAG = "WS";
 
-void add_client(int fd) {
+void add_client(int fd, const char* tkn) {
     for (int i = 0; i < WS_CONFIG_MAX_CLIENTS; i++) {
-        if (client_sockets[i] == -1) {
-            client_sockets[i] = fd;
+        if (client_sockets[i].descriptor == -1) {
+            client_sockets[i].descriptor = fd;
+            strncpy(client_sockets[i].auth_token, tkn, UTILS_AUTH_TOKEN_LENGTH);
+            client_sockets[i].auth_token[UTILS_AUTH_TOKEN_LENGTH - 1] = '\0';
             ESP_LOGI(TAG, "Client %d added", fd);
             return;
         }
@@ -33,8 +35,9 @@ void add_client(int fd) {
 
 void remove_client(int fd) {
     for (int i = 0; i < WS_CONFIG_MAX_CLIENTS; i++) {
-        if (client_sockets[i] == fd) {
-            client_sockets[i] = -1;
+        if (client_sockets[i].descriptor == fd) {
+            client_sockets[i].descriptor = -1;
+            client_sockets[i].auth_token[0] = '\0';
             ESP_LOGI(TAG, "Client %d removed", fd);
             return;
         }
@@ -408,7 +411,7 @@ void websocket_task(void *pvParameters) {
         if (json_string != NULL && data_string != NULL) {
             // first send to all connected WebSocket clients
             for (int i = 0; i < WS_CONFIG_MAX_CLIENTS; i++) {
-                if (client_sockets[i] != -1) {
+                if (client_sockets[i].descriptor != -1) {
                     httpd_ws_frame_t ws_pkt = {
                         .payload = (uint8_t *)json_string,
                         .len = strlen(json_string),
@@ -417,8 +420,8 @@ void websocket_task(void *pvParameters) {
 
                     esp_err_t err = httpd_ws_send_frame_async(server, client_sockets[i], &ws_pkt);
                     if (err != ESP_OK) {
-                        ESP_LOGE(TAG, "Failed to send frame to client %d: %s", client_sockets[i], esp_err_to_name(err));
-                        remove_client(client_sockets[i]);  // Clean up disconnected clients
+                        ESP_LOGE(TAG, "Failed to send frame to client %d: %s", client_sockets[i].descriptor, esp_err_to_name(err));
+                        remove_client(client_sockets[i].descriptor);  // Clean up disconnected clients
                     }
                 }
             }
