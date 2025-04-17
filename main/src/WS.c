@@ -246,7 +246,6 @@ esp_err_t perform_request(cJSON *message, cJSON *response) {
                 } else {
                     strncpy((char *)wifi_sta_config->sta.ssid, username, sizeof(wifi_sta_config->sta.ssid) - 1);
                     if (strlen(password) == 0) {
-                        printf("here\n");
                         wifi_sta_config->ap.authmode = WIFI_AUTH_OPEN;
                     } else {
                         strncpy((char *)wifi_sta_config->sta.password, password, sizeof(wifi_sta_config->sta.password) - 1);
