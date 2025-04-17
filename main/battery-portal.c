@@ -11,7 +11,7 @@
 #include <driver/gpio.h>
 
 // global variables
-char ESP_ID[UTILS_ID_LENGTH + 1];
+char ESP_ID[UTILS_ID_LENGTH + 1] = "unknown";
 httpd_handle_t server = NULL;
 bool connected_to_WiFi = false;
 char ESP_subnet_IP[15];
@@ -60,7 +60,7 @@ void app_main(void) {
 
     uint8_t eleven_bytes[11];
     read_bytes(I2C_DATA_SUBCLASS_ID, I2C_NAME_OFFSET, eleven_bytes, sizeof(eleven_bytes));
-    strncpy(ESP_ID, (char *)eleven_bytes, 10);
+    if (strcmp((char *)eleven_bytes, "") != 0) strncpy(ESP_ID, (char *)eleven_bytes, 10);
 
     // Start the Access Point and Connection
     wifi_init();
