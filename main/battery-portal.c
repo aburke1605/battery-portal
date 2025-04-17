@@ -79,7 +79,7 @@ void app_main(void) {
 
     ws_queue = xQueueCreate(WS_QUEUE_SIZE, WS_MESSAGE_MAX_LEN);
     TaskParams message_queue_params = {.stack_size = 3200, .task_name = "message_queue_task"};
-    xTaskCreate(message_queue_task, message_queue_params.task_name, message_queue_params.stack_size, &message_queue_params, 5, NULL);
+    xTaskCreate(&message_queue_task, message_queue_params.task_name, message_queue_params.stack_size, &message_queue_params, 5, NULL);
 
     esp_log_level_set("wifi", ESP_LOG_ERROR);
     esp_log_level_set("websocket_client", ESP_LOG_WARN);
