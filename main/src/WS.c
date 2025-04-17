@@ -508,6 +508,14 @@ void websocket_task(void *pvParameters) {
                     snprintf(message, sizeof(message), "{\"type\": \"data\", \"esp_id\": \"%s\", \"content\": %s}", ESP_ID, data_string);
                     send_message(message);
                 }
+
+                if (esp_get_minimum_free_heap_size() < 2000) {
+                    esp_websocket_client_stop(ws_client);
+                    esp_websocket_client_destroy(ws_client);
+                    ws_client = NULL;
+                    vTaskDelay(pdMS_TO_TICKS(5000));
+                    esp_restart();
+                }
             }
 
             // clean up
