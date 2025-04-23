@@ -69,8 +69,6 @@ def forward_to_esp32(esp_id, message):
 def browser_ws(ws):
     with lock:
         browser_clients.add(ws)
-    logger.info(f"Browser connected: {ws}")
-    logger.info(f"Total browsers: {len(browser_clients)}")
 
     try:
         while True:
@@ -91,7 +89,6 @@ def browser_ws(ws):
     finally:
         with lock:
             browser_clients.discard(ws) # remove browser on disconnect
-        logger.info(f"Browser disconnected: {ws}")
 
 
 @sock.route('/esp_ws')
@@ -116,8 +113,7 @@ def esp_ws(ws):
                     with lock:
                         esp_clients.add(frozenset(meta_data.items()))
                         update_time()
-                    logger.info(f"ESP connected: {ws}")
-                    logger.info(f"Total ESPs: {len(esp_clients)}")
+                    logger.info(f"ESP connected. Total ESPs: {len(esp_clients)}")
                 elif data["type"] == "response":
                     # should go to forward_request_to_esp32() or ping_esps() instead
                     with response_lock:
@@ -149,7 +145,7 @@ def esp_ws(ws):
         with lock:
             esp_clients.discard(frozenset(meta_data.items())) # remove esp on disconnect
             update_time()
-        logger.info(f"ESP disconnected: {ws}")
+        logger.info(f"ESP disconnected. Total ESPs: {len(esp_clients)}")
 
 def ping_esps(delay=5):
     while True:
