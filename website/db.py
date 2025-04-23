@@ -52,10 +52,10 @@ def update_db(esp_id, data):
             cursor.execute(f"       SELECT COUNT(*) FROM {esp_id}")
             n_rows = cursor.fetchone()[0]
 
-        if abs(data["current"]) >= 0.1: # and n_rows < 10000:
+        if abs(data["I"]) >= 0.1: # and n_rows < 10000:
             cursor.execute(f"""
                                     INSERT INTO {esp_id} (timestamp, soc, temperature, voltage, current)
-                                    VALUES ('{datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')}', {data['charge']}, {data['temperature']/10}, {data['voltage']/10}, {data['current']/10})
+                                    VALUES ('{datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')}', {data['Q']}, {data['aT']/10}, {data['V']/10}, {data['I']/10})
             """)
             DB.commit()
 
