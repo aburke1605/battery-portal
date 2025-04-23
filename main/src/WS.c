@@ -380,7 +380,7 @@ void websocket_task(void *pvParameters) {
 
         read_bytes(I2C_DATA_SUBCLASS_ID, I2C_NAME_OFFSET, eleven_bytes, sizeof(eleven_bytes));
         if (strcmp((char *)eleven_bytes, "") != 0) strncpy(ESP_ID, (char *)eleven_bytes, 10);
-        cJSON_AddStringToObject(data, "name", ESP_ID);
+        // cJSON_AddStringToObject(data, "name", ESP_ID);
 
         // read sensor data
         // these values are big-endian
