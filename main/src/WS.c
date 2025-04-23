@@ -389,13 +389,13 @@ void websocket_task(void *pvParameters) {
         read_bytes(0, I2C_STATE_OF_HEALTH_REG, two_bytes, sizeof(two_bytes));
         cJSON_AddNumberToObject(data, "health", two_bytes[1] << 8 | two_bytes[0]);
         read_bytes(0, I2C_VOLTAGE_REG, two_bytes, sizeof(two_bytes));
-        cJSON_AddNumberToObject(data, "voltage", (float)(two_bytes[1] << 8 | two_bytes[0]) / 1000.0);
+        cJSON_AddNumberToObject(data, "voltage", round_to_dp((float)(two_bytes[1] << 8 | two_bytes[0]) / 1000.0, 1));
         read_bytes(0, I2C_CURRENT_REG, two_bytes, sizeof(two_bytes));
-        cJSON_AddNumberToObject(data, "current", (float)((int16_t)(two_bytes[1] << 8 | two_bytes[0])) / 1000.0);
+        cJSON_AddNumberToObject(data, "current", round_to_dp((float)((int16_t)(two_bytes[1] << 8 | two_bytes[0])) / 1000.0, 1));
         read_bytes(0, I2C_TEMPERATURE_REG, two_bytes, sizeof(two_bytes));
-        cJSON_AddNumberToObject(data, "temperature", (float)(two_bytes[1] << 8 | two_bytes[0]) / 10.0 - 273.15);
+        cJSON_AddNumberToObject(data, "temperature", round_to_dp((float)(two_bytes[1] << 8 | two_bytes[0]) / 10.0 - 273.15, 1));
         read_bytes(0, I2C_INT_TEMPERATURE_REG, two_bytes, sizeof(two_bytes));
-        cJSON_AddNumberToObject(data, "internal_temperature", (float)(two_bytes[1] << 8 | two_bytes[0]) / 10.0 - 273.15);
+        cJSON_AddNumberToObject(data, "internal_temperature", round_to_dp((float)(two_bytes[1] << 8 | two_bytes[0]) / 10.0 - 273.15, 1));
 
         // configurable data too
         // these values are little-endian
