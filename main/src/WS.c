@@ -504,7 +504,7 @@ void websocket_task(void *pvParameters) {
                     ws_client = NULL;
                 } else {
                     char message[1024];
-                    snprintf(message, sizeof(message), "{\"type\": \"data\", \"esp_id\": \"%s\", \"content\": %s}", ESP_ID, data_string);
+                    snprintf(message, sizeof(message), "{\"type\":\"data\",\"esp_id\":\"%s\",\"content\":%s}", ESP_ID, data_string);
                     send_message(message);
                 }
 
