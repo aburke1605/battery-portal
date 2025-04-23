@@ -19,7 +19,6 @@ export const Batteries = {
     // capacity: 100,
     // cycleCount: 124,
     // isCharging: false,
-    IP: '127.0.0.1'
   },
   'B-002':{
     id: 'B-002',
@@ -37,7 +36,6 @@ export const Batteries = {
     // capacity: 75,
     // cycleCount: 87,
     // isCharging: true,
-    IP: '127.0.0.1'
   },
   'B-003': {
     id: 'B-003',
@@ -55,7 +53,6 @@ export const Batteries = {
     // capacity: 50,
     // cycleCount: 203,
     // isCharging: false,
-    IP: '127.0.0.1'
   },
   'B-004': {
     id: 'B-004',
@@ -73,7 +70,6 @@ export const Batteries = {
     // capacity: 120,
     // cycleCount: 156,
     // isCharging: false,
-    IP: '127.0.0.1'
   },
   'B-005': {
     id: 'B-005',
@@ -91,7 +87,6 @@ export const Batteries = {
     // capacity: 150,
     // cycleCount: 189,
     // isCharging: true,
-    IP: '127.0.0.1'
   },
  'B-006': {
     id: 'B-006',
@@ -109,7 +104,6 @@ export const Batteries = {
     // capacity: 80,
     // cycleCount: 112,
     // isCharging: false,
-    IP: '127.0.0.1'
   },
   'B-007': {
     id: 'B-007',
@@ -127,7 +121,6 @@ export const Batteries = {
     // capacity: 90,
     // cycleCount: 201,
     // isCharging: false,
-    IP: '127.0.0.1'
   },
   'B-008': {
     id: 'B-008',
@@ -145,7 +138,6 @@ export const Batteries = {
     // capacity: 110,
     // cycleCount: 76,
     // isCharging: true,
-    IP: '127.0.0.1'
   },
   'B-009': {
     id: 'B-009',
@@ -163,7 +155,6 @@ export const Batteries = {
     // capacity: 100,
     // cycleCount: 134,
     // isCharging: false,
-    IP: '127.0.0.1'
   }
 };
 
@@ -190,7 +181,6 @@ export const initialBatteries: BatteryData[] = [
     // capacity: 100,
     // cycleCount: 124,
     // isCharging: false,
-    IP: '127.0.0.1',
     timestamp: Date.now(),
     isConnected: true,
   },
@@ -216,7 +206,6 @@ export const initialBatteries: BatteryData[] = [
     // capacity: 75,
     // cycleCount: 87,
     // isCharging: true,
-    IP: '127.0.0.1',
     timestamp: Date.now(),
     isConnected: true,
   },
@@ -242,7 +231,6 @@ export const initialBatteries: BatteryData[] = [
     // capacity: 50,
     // cycleCount: 203,
     // isCharging: false,
-    IP: '127.0.0.1',
     timestamp: Date.now(),
     isConnected: true,
   },
@@ -268,7 +256,6 @@ export const initialBatteries: BatteryData[] = [
     // capacity: 120,
     // cycleCount: 156,
     // isCharging: false,
-    IP: '127.0.0.1',
     timestamp: Date.now(),
     isConnected: true,
   },
@@ -294,7 +281,6 @@ export const initialBatteries: BatteryData[] = [
     // capacity: 150,
     // cycleCount: 189,
     // isCharging: true,
-    IP: '127.0.0.1',
     timestamp: Date.now(),
     isConnected: true,
   },
@@ -320,7 +306,6 @@ export const initialBatteries: BatteryData[] = [
     // capacity: 80,
     // cycleCount: 112,
     // isCharging: false,
-    IP: '127.0.0.1',
     timestamp: Date.now(),
     isConnected: true,
   },
@@ -346,7 +331,6 @@ export const initialBatteries: BatteryData[] = [
     // capacity: 90,
     // cycleCount: 201,
     // isCharging: false,
-    IP: '127.0.0.1',
     timestamp: Date.now(),
     isConnected: true,
   },
@@ -372,7 +356,6 @@ export const initialBatteries: BatteryData[] = [
     // capacity: 110,
     // cycleCount: 76,
     // isCharging: true,
-    IP: '127.0.0.1',
     timestamp: Date.now(),
     isConnected: true,
   },
@@ -398,7 +381,6 @@ export const initialBatteries: BatteryData[] = [
     // capacity: 100,
     // cycleCount: 134,
     // isCharging: false,
-    IP: '127.0.0.1',
     timestamp: Date.now(),
     isConnected: true,
   }
