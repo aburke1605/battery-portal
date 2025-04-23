@@ -55,7 +55,7 @@ def update_db(esp_id, data):
         if abs(data["current"]) >= 0.1: # and n_rows < 10000:
             cursor.execute(f"""
                                     INSERT INTO {esp_id} (timestamp, soc, temperature, voltage, current)
-                                    VALUES ('{datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')}', {data['charge']}, {data['temperature']}, {data['voltage']}, {data['current']})
+                                    VALUES ('{datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')}', {data['charge']}, {data['temperature']/10}, {data['voltage']/10}, {data['current']/10})
             """)
             DB.commit()
 
