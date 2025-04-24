@@ -1,8 +1,19 @@
 #!venv/bin/python
-import os
 import sys
-
 import logging
+from flask import Flask, send_from_directory
+from flask_security import Security
+from ws import sock
+from db import db_bp
+from user import user_bp, user_datastore
+from db import DB
+import flask_admin
+from dotenv import load_dotenv
+
+# Load environment variables from .env file will not overwrite system env vars
+load_dotenv()
+
+# Set up logging
 logging.basicConfig(
     level=logging.DEBUG,
     format="%(asctime)s [%(levelname)s] %(name)s: %(message)s",
@@ -10,27 +21,14 @@ logging.basicConfig(
         logging.StreamHandler(sys.stdout)
     ]
 )
-
 annoying_logs = ["werkzeug", "passlib"]
 for log in annoying_logs:
     logging.getLogger(log).setLevel(logging.WARNING)
-
 logger = logging.getLogger(__name__)
-
-from flask import Flask, send_from_directory
-from flask_security import login_required, Security
-
-from ws import sock
-from db import db_bp
-from user import user_bp, user_datastore
-from db import DB
-from user import build_sample_db
-import flask_admin
 
 # Create Flask application
 app = Flask(__name__)
 app.config.from_pyfile('config.py')
-app.config['SQLALCHEMY_ECHO'] = False
 # Register blueprints
 app.register_blueprint(db_bp)
 app.register_blueprint(user_bp)
@@ -55,14 +53,5 @@ def admin():
 def serve_react_static(path):
     return send_from_directory("frontend/dist", path)
 
-# Init the table, only in dev env TODO
-app_dir = os.path.realpath(os.path.dirname(__file__))
-database_path = os.path.join(app_dir, app.config['DATABASE_FILE'])
-if not os.path.exists(database_path):
-    logger.info("Database file not found. Creating tables and populating with sample data.")
-    build_sample_db(app)
-
-
-
 if __name__ == '__main__':
-    app.run(debug=True, ssl_context=("local_cert.pem", "local_key.pem"), host="0.0.0.0")
+    app.run(debug=True, ssl_context=("local_cert.pem", "local_key.pem"), host="0.0.0.0", port=5001)

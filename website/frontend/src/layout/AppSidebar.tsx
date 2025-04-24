@@ -41,6 +41,11 @@ const navItems: NavItem[] = [
     name: "Settings",
     icon: <ListIcon />,
     path: "/settings",
+  },
+  {
+    name: "db",
+    icon: <ListIcon />,
+    path: "/db",
   }
 ];
 

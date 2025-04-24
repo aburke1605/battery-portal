@@ -12,6 +12,7 @@ import BatteryPage from "./pages/Battery/BatteryPage";
 import UserList from "./pages/User/list";
 import AuthRequire from "./auth/AuthRequire.tsx";
 import {AuthProvider} from "./auth/AuthContext.tsx";
+import Db from "./pages/Db";
 
 
 export default function App() {
@@ -40,10 +41,13 @@ export default function App() {
             <Route path="/batteries" element={<ListPage />} />
             <Route path="/battery-detail" element={<BatteryPage />} />
 
+            <Route path="/db" element={<Db />} />
           </Route>
 
           {/* Auth Layout */}
           <Route path="/login" element={<SignIn />} />
+
+          
 
           {/* Fallback Route */}
           <Route path="*" element={<NotFound />} />

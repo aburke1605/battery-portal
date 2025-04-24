@@ -1,10 +1,19 @@
+import os
+
 # Create dummy secrey key so we can use sessions
 SECRET_KEY = '123456790'
 
-# Create in-memory database
-DATABASE_FILE = '/tmp/sample_db.sqlite'
-SQLALCHEMY_DATABASE_URI = 'sqlite:///' + DATABASE_FILE
-SQLALCHEMY_ECHO = True
+# Mysql database
+MYSQL_HOST = os.getenv("AZURE_MYSQL_HOST")
+MYSQL_PORT = os.getenv("AZURE_MYSQL_PORT")
+MYSQL_USER = os.getenv("AZURE_MYSQL_USER")
+MYSQL_PASSWORD = os.getenv("AZURE_MYSQL_PASSWORD")
+MYSQL_DATABASE = os.getenv("AZURE_MYSQL_DATABASE")
+
+MYSQL_SSL_CART = os.getenv("AZURE_MYSQL_SSL_CART")
+MYSQL_SSL_DISABLED = os.getenv("AZURE_MYSQL_SSL_DISABLED")
+SQLALCHEMY_DATABASE_URI = f"mysql+mysqlconnector://{MYSQL_USER}:{MYSQL_PASSWORD}@{MYSQL_HOST}:{MYSQL_PORT}/{MYSQL_DATABASE}"
+SQLALCHEMY_ECHO = os.getenv("SQLALCHEMY_ECHO")
 
 # Flask-Security config
 SECURITY_URL_PREFIX = "/admin"

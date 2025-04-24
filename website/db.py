@@ -1,152 +1,79 @@
-import os
-
-import logging
-logger = logging.getLogger(__name__)
-
-from flask import Blueprint, render_template, request, jsonify
+from flask import current_app, Blueprint, request, jsonify
+from sqlalchemy import create_engine, text
 from flask_login import login_required
+import datetime
+import logging
 from flask_sqlalchemy import SQLAlchemy
 
-import mysql.connector
-import datetime
+logger = logging.getLogger(__name__)
 
-db_bp = Blueprint('db_bp', __name__, url_prefix='/db')
+db_bp = Blueprint('db_bp', __name__, url_prefix='/api/db')
 
-# Create DB instance
+_engine = None
+
+# TODO REMOVE THIS
 DB = SQLAlchemy()
 
-DB_CONFIG = {
-    "host": os.getenv("AZURE_MYSQL_HOST", "localhost"),
-    "user": os.getenv("AZURE_MYSQL_USER", "root"),
-    "password": os.getenv("AZURE_MYSQL_PASSWORD", "password"),
-    "database": os.getenv("AZURE_MYSQL_NAME", "battery_data"),
-    "port": int(os.getenv("AZURE_MYSQL_PORT", 3306)),
-    "ssl_ca": os.getenv("AZURE_MYSQL_SSL_CA", None),
-    "ssl_disabled": os.getenv("AZURE_MYSQL_SSL_DISABLED", "False") == "True",
-}
+def get_engine():
+    global _engine
+    if _engine is None:
+        _engine = create_engine(current_app.config['SQLALCHEMY_DATABASE_URI'])
+    return _engine
 
-def update_db(esp_id, data):
+@db_bp.route('/query', methods=['POST'])
+@login_required
+def run_query():
+    sql_query = request.get_json().get('query', '').strip()
+    if not sql_query.lower().startswith('select'):
+        return jsonify({'error': 'Only SELECT statements are allowed.'}), 400
     try:
-        DB = mysql.connector.connect(**DB_CONFIG)
-        cursor = DB.cursor()
+        with get_engine().connect() as conn:
+            result = conn.execute(text(sql_query))
+            rows = [dict(row) for row in result.mappings()]  # <- real dicts now
+            return jsonify({'result': rows})
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
 
-        n_rows = 0
-
-        cursor.execute(f"""
-                                    SHOW TABLES LIKE '{esp_id}'
-        """)
-        if not cursor.fetchone():
-            cursor.execute(f"""
-                                    CREATE TABLE {esp_id} (
-                                        timestamp TIMESTAMP PRIMARY KEY,
-                                        soc INT,
-                                        temperature FLOAT,
-                                        voltage FLOAT,
-                                        current FLOAT
-                                    )
-            """)
-            DB.commit()
-            logger.info("table created")
-
-        else:
-            cursor.execute(f"       SELECT COUNT(*) FROM {esp_id}")
-            n_rows = cursor.fetchone()[0]
-
-        if abs(data["current"]) >= 0.1: # and n_rows < 10000:
-            cursor.execute(f"""
-                                    INSERT INTO {esp_id} (timestamp, soc, temperature, voltage, current)
-                                    VALUES ('{datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')}', {data['charge']}, {data['temperature']}, {data['voltage']}, {data['current']})
-            """)
-            DB.commit()
-
-
-    except mysql.connector.Error as err:
-        logger.error(err)
-
-
-def execute_query(query):
+# TODO REMOVE THIS, and using ORM instead 
+def update_db(esp_id: str, data: dict):
     try:
-        DB = mysql.connector.connect(**DB_CONFIG)
-        cursor = DB.cursor(dictionary=True)
+        with get_engine().connect() as conn:
+            # Check if table exists
+            result = conn.execute(text("""
+                SHOW TABLES LIKE :table_name
+            """), {'table_name': esp_id})
 
-        cursor.execute(query)
-        result = cursor.fetchall()
-
-        cursor.close()
-        DB.close()
-
-        return result
+            if not result.fetchone():
+                # Create the table if it doesn't exist
+                conn.execute(text(f"""
+                    CREATE TABLE `{esp_id}` (
+                        timestamp TIMESTAMP PRIMARY KEY,
+                        soc INT,
+                        temperature FLOAT,
+                        voltage FLOAT,
+                        current FLOAT
+                    )
+                """))
+                logger.info(f"Table `{esp_id}` created.")
+            else:
+                # Count rows
+                count_result = conn.execute(text(f"""
+                    SELECT COUNT(*) FROM `{esp_id}`
+                """))
+                n_rows = count_result.scalar()
+            # Optional logic to prevent unnecessary inserts
+            if abs(data["current"]) >= 0.1:
+                now = datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+                conn.execute(text(f"""
+                    INSERT INTO `{esp_id}` (timestamp, soc, temperature, voltage, current)
+                    VALUES (:ts, :soc, :temp, :volt, :curr)
+                """), {
+                    'ts': now,
+                    'soc': data['charge'],
+                    'temp': data['temperature'],
+                    'volt': data['voltage'],
+                    'curr': data['current']
+                })
 
     except Exception as e:
-        return {"error": str(e)}
-
-@db_bp.route("/query")
-@login_required
-def query():
-    return render_template("db/query.html")
-
-@db_bp.route("/execute_sql", methods=["POST"])
-@login_required
-def execute_sql():
-    data = request.get_json()
-    query = data.get("query")
-
-    if not query:
-        return jsonify({"error": "No query provided"}), 400
-
-    verified = True if query[:6] == "ADMIN " else False
-    dangerous_statements = ["drop", "delete", "update", "alter", "truncate"]
-    if any(word in query.lower() for word in dangerous_statements):
-        if not verified:
-            return jsonify({"confirm": "Please re-enter the query to confirm execution."}), 403
-        else:
-            query = query[5:]
-
-    result = execute_query(query)
-    return jsonify(result)
-
-@db_bp.route('/data')
-def data():
-    esp_id = request.args.get("esp_id")
-    column = request.args.get("column")
-
-    data = []
-    try:
-        DB = mysql.connector.connect(**DB_CONFIG)
-        cursor = DB.cursor()
-
-        cursor.execute(f"""
-                                    SELECT * FROM (
-                                        SELECT timestamp, {column}
-                                        FROM {esp_id}
-                                        ORDER BY timestamp DESC
-                                        LIMIT 250
-                                    ) sub
-                                    ORDER BY timestamp ASC;
-        """)
-        rows = cursor.fetchall()
-
-        previous = None
-        for row in rows[::-1]: # work from end
-
-            # take only data from most recent date
-            if row[0].date() != rows[-1][0].date():
-                continue
-
-            if previous is not None:
-                if previous - row[0] > datetime.timedelta(minutes = 5):
-                    break
-            previous = row[0]
-
-            data.append({"timestamp": row[0], column: row[1]})
-
-        cursor.close()
-        DB.close()
-
-        # reverse it back
-        data = data[::-1]
-
-    except mysql.connector.Error as err:
-        logger.error(err)
-
-    return jsonify(data)
+        logger.error(f"Database update failed: {e}")
