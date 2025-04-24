@@ -413,11 +413,14 @@ void websocket_task(void *pvParameters) {
         cJSON_AddNumberToObject(data, "CITH", two_bytes[0] << 8 | two_bytes[1]);
 
         // cJSON_AddStringToObject(data, "IP", ESP_IP);
+        char *data_string = cJSON_PrintUnformatted(data); // goes to website
+
+        // add this after forming data_string because if a message is received
+        // by the website then obviously the ESP32 is connected to WiFi
         cJSON_AddBoolToObject(data, "connected_to_WiFi", connected_to_WiFi);
-        char *data_string = cJSON_PrintUnformatted(data);
 
         cJSON_AddItemToObject(json, ESP_ID, data);
-        char *json_string = cJSON_PrintUnformatted(json);
+        char *json_string = cJSON_PrintUnformatted(json); // goes to local clients
 
         // cJSON_Delete(data);
         cJSON_Delete(json);
