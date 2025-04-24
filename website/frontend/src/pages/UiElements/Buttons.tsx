@@ -2,7 +2,7 @@ import ComponentCard from "../../components/common/ComponentCard";
 import PageBreadcrumb from "../../components/common/PageBreadCrumb";
 import PageMeta from "../../components/common/PageMeta";
 import Button from "../../components/ui/button/Button";
-import { BoxIcon } from "../../icons";
+import { Box } from "lucide-react";
 
 export default function Buttons() {
   return (
@@ -30,14 +30,14 @@ export default function Buttons() {
             <Button
               size="sm"
               variant="primary"
-              startIcon={<BoxIcon className="size-5" />}
+              startIcon={<Box size={16} className="mr-1" />}
             >
               Button Text
             </Button>
             <Button
               size="md"
               variant="primary"
-              startIcon={<BoxIcon className="size-5" />}
+              startIcon={<Box size={16} className="mr-1" />}
             >
               Button Text
             </Button>
@@ -49,14 +49,14 @@ export default function Buttons() {
             <Button
               size="sm"
               variant="primary"
-              endIcon={<BoxIcon className="size-5" />}
+              endIcon={<Box size={16} className="mr-1" />}
             >
               Button Text
             </Button>
             <Button
               size="md"
               variant="primary"
-              endIcon={<BoxIcon className="size-5" />}
+              endIcon={<Box size={16} className="mr-1" />}
             >
               Button Text
             </Button>
@@ -80,14 +80,14 @@ export default function Buttons() {
             <Button
               size="sm"
               variant="outline"
-              startIcon={<BoxIcon className="size-5" />}
+              startIcon={<Box size={16} className="mr-1" />}
             >
               Button Text
             </Button>
             <Button
               size="md"
               variant="outline"
-              startIcon={<BoxIcon className="size-5" />}
+              startIcon={<Box size={16} className="mr-1" />}
             >
               Button Text
             </Button>
@@ -99,14 +99,14 @@ export default function Buttons() {
             <Button
               size="sm"
               variant="outline"
-              endIcon={<BoxIcon className="size-5" />}
+              endIcon={<Box size={16} className="mr-1" />}
             >
               Button Text
             </Button>
             <Button
               size="md"
               variant="outline"
-              endIcon={<BoxIcon className="size-5" />}
+              endIcon={<Box size={16} className="mr-1" />}
             >
               Button Text
             </Button>
