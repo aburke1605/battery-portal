@@ -109,6 +109,7 @@ def esp_ws(ws):
 
             try:
                 data = json.loads(message)
+                esp_id = data["id"]
                 if data["type"] == "register":
                     with lock:
                         esp_clients.add(frozenset(meta_data.items()))
@@ -117,16 +118,16 @@ def esp_ws(ws):
                 elif data["type"] == "response":
                     # should go to forward_request_to_esp32() or ping_esps() instead
                     with response_lock:
-                        pending_responses[data["esp_id"]] = data["content"]
+                        pending_responses[esp_id] = data["content"]
                     continue
                 else:
                     esp_clients.discard(frozenset(meta_data.items())) # remove old entry
-                    meta_data["content"] = json.dumps({"esp_id": data["esp_id"], **data["content"]}) # update content
+                    meta_data["content"] = json.dumps({"esp_id": esp_id, **data["content"]}) # update content
                     esp_clients.add(frozenset(meta_data.items())) # re-add updated data
 
                     broadcast() # send data to browsers
 
-                    update_db(data["esp_id"], data["content"]) # update server db
+                    update_db(esp_id, data["content"]) # update server db
 
                 response["type"] = "echo"
                 response["content"] = message

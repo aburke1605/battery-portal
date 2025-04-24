@@ -118,7 +118,7 @@ esp_err_t client_handler(httpd_req_t *req) {
 esp_err_t perform_request(cJSON *message, cJSON *response) {
     // construct response message
     cJSON_AddStringToObject(response, "type", "response");
-    cJSON_AddStringToObject(response, "esp_id", ESP_ID);
+    cJSON_AddStringToObject(response, "id", ESP_ID);
     cJSON *response_content = cJSON_CreateObject();
 
     cJSON *type = cJSON_GetObjectItem(message, "type");
@@ -329,7 +329,7 @@ void event_handler(void *arg, esp_event_base_t event_base, int32_t event_id, voi
         case WEBSOCKET_EVENT_CONNECTED:
             if (VERBOSE) ESP_LOGI(TAG, "WebSocket connected");
             char websocket_connect_message[128];
-            snprintf(websocket_connect_message, sizeof(websocket_connect_message), "{\"type\": \"register\", \"esp_id\": \"%s\"}", ESP_ID);
+            snprintf(websocket_connect_message, sizeof(websocket_connect_message), "{\"type\":\"register\",\"id\":\"%s\"}", ESP_ID);
             send_message(websocket_connect_message);
             break;
 
@@ -507,7 +507,7 @@ void websocket_task(void *pvParameters) {
                     ws_client = NULL;
                 } else {
                     char message[1024];
-                    snprintf(message, sizeof(message), "{\"type\":\"data\",\"esp_id\":\"%s\",\"content\":%s}", ESP_ID, data_string);
+                    snprintf(message, sizeof(message), "{\"type\":\"data\",\"id\":\"%s\",\"content\":%s}", ESP_ID, data_string);
                     send_message(message);
                 }
 
