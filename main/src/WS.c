@@ -375,6 +375,12 @@ void websocket_task(void *pvParameters) {
         cJSON *json = cJSON_CreateObject();
         cJSON *data = cJSON_CreateObject();
 
+        char esp_id_number[3];
+        strcpy(esp_id_number, &ESP_ID[4]);
+        ws_payload message = {
+            .esp_id = atoi(esp_id_number),
+        };
+
         uint8_t eleven_bytes[11];
         uint8_t two_bytes[2];
 
