@@ -43,7 +43,7 @@ export default function ListPage() {
             CITH: battery?.CITH || 0,
             CCT: battery?.CCT || 0,
             DCT: battery?.DCT || 0,
-            isConnected: battery?.connected_to_WiFi || false,
+            isConnected: battery ? true : false,
             // location: "Unknown",
             // isCharging: false,
             status: "good",

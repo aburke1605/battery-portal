@@ -68,7 +68,7 @@ export default function BatteryPage({ isFromEsp32 = false }: BatteriesPageProps)
                     CITH: battery?.CITH || 0,
                     CCT: battery?.CCT || 0,
                     DCT: battery?.DCT || 0,
-                    isConnected: battery?.connected_to_WiFi || false,
+                    isConnected: isFromEsp32 ? (battery?.connected_to_WiFi || false) : (battery?true:false),
                     // location: "Unknown",
                     // isCharging: false,
                     status: "good",
