@@ -97,8 +97,26 @@ void app_main(void)
     wifi_mode_t mode;
     esp_wifi_get_mode(&mode);
     if (mode == WIFI_MODE_STA) {
-        printf("STA\n");
-    } else {
-        printf("APSTA\n");
+        wifi_config_t *wifi_sta_config = malloc(sizeof(wifi_config_t));
+        memset(wifi_sta_config, 0, sizeof(wifi_config_t));
+
+        strncpy((char *)wifi_sta_config->sta.ssid, SSID, sizeof(wifi_sta_config->sta.ssid) - 1);
+        wifi_sta_config->ap.authmode = WIFI_AUTH_OPEN;
+        ESP_ERROR_CHECK(esp_wifi_set_config(ESP_IF_WIFI_STA, wifi_sta_config));
+        ESP_LOGI(TAG, "Connecting to AP... SSID: %s", wifi_sta_config->sta.ssid);
+
+        uint8_t tries = 0;
+        uint8_t max_tries = 10;
+        while (tries < max_tries) {
+            esp_err_t err = esp_wifi_connect();
+            if (err == ESP_OK) {
+                ESP_LOGI(TAG, "Success, waiting for connection...");
+                vTaskDelay(pdMS_TO_TICKS(1000));
+                break;
+            } else {
+                ESP_LOGW(TAG, "Failed to connect: %s. Retrying...", esp_err_to_name(err));
+                tries++;
+            }
+        }
     }
 }
