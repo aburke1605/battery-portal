@@ -16,6 +16,8 @@ void url_encode(char *dest, const char *src, size_t dest_size);
 
 void random_token(char *key);
 
+int round_to_dp(float var, int ndp);
+
 char* read_file(const char* path);
 
 char* replace_placeholder(const char *html, const char *const placeholders[], const char*const substitutes[], size_t num_replacements);

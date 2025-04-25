@@ -118,7 +118,7 @@ esp_err_t client_handler(httpd_req_t *req) {
 esp_err_t perform_request(cJSON *message, cJSON *response) {
     // construct response message
     cJSON_AddStringToObject(response, "type", "response");
-    cJSON_AddStringToObject(response, "esp_id", ESP_ID);
+    cJSON_AddStringToObject(response, "id", ESP_ID);
     cJSON *response_content = cJSON_CreateObject();
 
     cJSON *type = cJSON_GetObjectItem(message, "type");
@@ -245,7 +245,11 @@ esp_err_t perform_request(cJSON *message, cJSON *response) {
                     ESP_LOGI(TAG, "Connecting to AP... SSID: eduroam");
                 } else {
                     strncpy((char *)wifi_sta_config->sta.ssid, username, sizeof(wifi_sta_config->sta.ssid) - 1);
-                    strncpy((char *)wifi_sta_config->sta.password, password, sizeof(wifi_sta_config->sta.password) - 1);
+                    if (strlen(password) == 0) {
+                        wifi_sta_config->ap.authmode = WIFI_AUTH_OPEN;
+                    } else {
+                        strncpy((char *)wifi_sta_config->sta.password, password, sizeof(wifi_sta_config->sta.password) - 1);
+                    }
                     ESP_LOGI(TAG, "Connecting to AP... SSID: %s", wifi_sta_config->sta.ssid);
                 }
 
@@ -325,7 +329,7 @@ void event_handler(void *arg, esp_event_base_t event_base, int32_t event_id, voi
         case WEBSOCKET_EVENT_CONNECTED:
             if (VERBOSE) ESP_LOGI(TAG, "WebSocket connected");
             char websocket_connect_message[128];
-            snprintf(websocket_connect_message, sizeof(websocket_connect_message), "{\"type\": \"register\", \"esp_id\": \"%s\"}", ESP_ID);
+            snprintf(websocket_connect_message, sizeof(websocket_connect_message), "{\"type\":\"register\",\"id\":\"%s\"}", ESP_ID);
             send_message(websocket_connect_message);
             break;
 
@@ -371,27 +375,33 @@ void websocket_task(void *pvParameters) {
         cJSON *json = cJSON_CreateObject();
         cJSON *data = cJSON_CreateObject();
 
+        char esp_id_number[3];
+        strcpy(esp_id_number, &ESP_ID[4]);
+        ws_payload message = {
+            .esp_id = atoi(esp_id_number),
+        };
+
         uint8_t eleven_bytes[11];
         uint8_t two_bytes[2];
 
         read_bytes(I2C_DATA_SUBCLASS_ID, I2C_NAME_OFFSET, eleven_bytes, sizeof(eleven_bytes));
         if (strcmp((char *)eleven_bytes, "") != 0) strncpy(ESP_ID, (char *)eleven_bytes, 10);
-        cJSON_AddStringToObject(data, "name", ESP_ID);
+        // cJSON_AddStringToObject(data, "name", ESP_ID);
 
         // read sensor data
         // these values are big-endian
         read_bytes(0, I2C_STATE_OF_CHARGE_REG, two_bytes, sizeof(two_bytes));
-        cJSON_AddNumberToObject(data, "charge", two_bytes[1] << 8 | two_bytes[0]);
+        cJSON_AddNumberToObject(data, "Q", two_bytes[1] << 8 | two_bytes[0]);
         read_bytes(0, I2C_STATE_OF_HEALTH_REG, two_bytes, sizeof(two_bytes));
-        cJSON_AddNumberToObject(data, "health", two_bytes[1] << 8 | two_bytes[0]);
+        cJSON_AddNumberToObject(data, "H", two_bytes[1] << 8 | two_bytes[0]);
         read_bytes(0, I2C_VOLTAGE_REG, two_bytes, sizeof(two_bytes));
-        cJSON_AddNumberToObject(data, "voltage", (float)(two_bytes[1] << 8 | two_bytes[0]) / 1000.0);
+        cJSON_AddNumberToObject(data, "V", round_to_dp((float)(two_bytes[1] << 8 | two_bytes[0]) / 1000.0, 1));
         read_bytes(0, I2C_CURRENT_REG, two_bytes, sizeof(two_bytes));
-        cJSON_AddNumberToObject(data, "current", (float)((int16_t)(two_bytes[1] << 8 | two_bytes[0])) / 1000.0);
+        cJSON_AddNumberToObject(data, "I", round_to_dp((float)((int16_t)(two_bytes[1] << 8 | two_bytes[0])) / 1000.0, 1));
         read_bytes(0, I2C_TEMPERATURE_REG, two_bytes, sizeof(two_bytes));
-        cJSON_AddNumberToObject(data, "temperature", (float)(two_bytes[1] << 8 | two_bytes[0]) / 10.0 - 273.15);
+        cJSON_AddNumberToObject(data, "aT", round_to_dp((float)(two_bytes[1] << 8 | two_bytes[0]) / 10.0 - 273.15, 1));
         read_bytes(0, I2C_INT_TEMPERATURE_REG, two_bytes, sizeof(two_bytes));
-        cJSON_AddNumberToObject(data, "internal_temperature", (float)(two_bytes[1] << 8 | two_bytes[0]) / 10.0 - 273.15);
+        cJSON_AddNumberToObject(data, "iT", round_to_dp((float)(two_bytes[1] << 8 | two_bytes[0]) / 10.0 - 273.15, 1));
 
         // configurable data too
         // these values are little-endian
@@ -408,12 +418,15 @@ void websocket_task(void *pvParameters) {
         read_bytes(I2C_CHARGE_INHIBIT_CFG_SUBCLASS_ID, I2C_CHG_INHIBIT_TEMP_HIGH_OFFSET, two_bytes, sizeof(two_bytes));
         cJSON_AddNumberToObject(data, "CITH", two_bytes[0] << 8 | two_bytes[1]);
 
-        cJSON_AddStringToObject(data, "IP", ESP_IP);
+        // cJSON_AddStringToObject(data, "IP", ESP_IP);
+        char *data_string = cJSON_PrintUnformatted(data); // goes to website
+
+        // add this after forming data_string because if a message is received
+        // by the website then obviously the ESP32 is connected to WiFi
         cJSON_AddBoolToObject(data, "connected_to_WiFi", connected_to_WiFi);
-        char *data_string = cJSON_PrintUnformatted(data);
 
         cJSON_AddItemToObject(json, ESP_ID, data);
-        char *json_string = cJSON_PrintUnformatted(json);
+        char *json_string = cJSON_PrintUnformatted(json); // goes to local clients
 
         // cJSON_Delete(data);
         cJSON_Delete(json);
@@ -500,8 +513,16 @@ void websocket_task(void *pvParameters) {
                     ws_client = NULL;
                 } else {
                     char message[1024];
-                    snprintf(message, sizeof(message), "{\"type\": \"data\", \"esp_id\": \"%s\", \"content\": %s}", ESP_ID, data_string);
+                    snprintf(message, sizeof(message), "{\"type\":\"data\",\"id\":\"%s\",\"content\":%s}", ESP_ID, data_string);
                     send_message(message);
+                }
+
+                if (esp_get_minimum_free_heap_size() < 2000) {
+                    esp_websocket_client_stop(ws_client);
+                    esp_websocket_client_destroy(ws_client);
+                    ws_client = NULL;
+                    vTaskDelay(pdMS_TO_TICKS(5000));
+                    esp_restart();
                 }
             }
 

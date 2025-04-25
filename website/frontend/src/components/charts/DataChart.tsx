@@ -25,6 +25,16 @@ const formatTimestamp = (timestamp: string) => {
   });
 };
 
+const formatDate = (data: DataPoint[]) => {
+  return data.length > 0 ?
+    new Date(data[0].timestamp).toLocaleDateString("en-GB", {
+      day: "2-digit",
+      month: "short",
+      year: "numeric"
+    })
+    : "Date";
+};
+
 const DataChart: React.FC<DataChartProps> = ({ esp_id, column }) => {
   const [data, setData] = useState<DataPoint[]>([]);
 
@@ -58,7 +68,7 @@ const DataChart: React.FC<DataChartProps> = ({ esp_id, column }) => {
             scale="time"
             tickFormatter={(timeMs) => formatTimestamp(new Date(timeMs).toISOString())}
           >
-            <Label value="Time" offset={-10} position="insideBottom" />
+            <Label value={formatDate(data)} offset={-10} position="insideBottom" />
           </XAxis>
           <YAxis>
             <Label value={column} angle={-90} position="insideLeft" style={{ textAnchor: "middle" }} />

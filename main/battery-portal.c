@@ -11,7 +11,7 @@
 #include <driver/gpio.h>
 
 // global variables
-char ESP_ID[UTILS_ID_LENGTH + 1];
+char ESP_ID[UTILS_ID_LENGTH + 1] = "unknown";
 httpd_handle_t server = NULL;
 bool connected_to_WiFi = false;
 char ESP_subnet_IP[15];
@@ -60,7 +60,7 @@ void app_main(void) {
 
     uint8_t eleven_bytes[11];
     read_bytes(I2C_DATA_SUBCLASS_ID, I2C_NAME_OFFSET, eleven_bytes, sizeof(eleven_bytes));
-    strncpy(ESP_ID, (char *)eleven_bytes, 10);
+    if (strcmp((char *)eleven_bytes, "") != 0) strncpy(ESP_ID, (char *)eleven_bytes, 10);
 
     // Start the Access Point and Connection
     wifi_init();
@@ -79,7 +79,7 @@ void app_main(void) {
 
     ws_queue = xQueueCreate(WS_QUEUE_SIZE, WS_MESSAGE_MAX_LEN);
     TaskParams message_queue_params = {.stack_size = 3200, .task_name = "message_queue_task"};
-    xTaskCreate(message_queue_task, message_queue_params.task_name, message_queue_params.stack_size, &message_queue_params, 5, NULL);
+    xTaskCreate(&message_queue_task, message_queue_params.task_name, message_queue_params.stack_size, &message_queue_params, 5, NULL);
 
     esp_log_level_set("wifi", ESP_LOG_ERROR);
     esp_log_level_set("websocket_client", ESP_LOG_WARN);
