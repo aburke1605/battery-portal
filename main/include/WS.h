@@ -34,6 +34,7 @@ esp_err_t client_handler(httpd_req_t *req);
 esp_err_t perform_request(cJSON *message, cJSON *response);
 
 void send_message(const char *message);
+// void send_message(const ws_payload *message);
 
 void message_queue_task(void *pvParameters);
 
