@@ -11,6 +11,7 @@
 
 static const char* TAG = "MESH";
 static const char* ROOT_SSID = "ROOT_ESP_AP";
+static bool is_root = false;
 static const char* SSID = "ESP_AP";
 httpd_handle_t server = NULL;
 
@@ -26,7 +27,8 @@ bool wifi_scan(void) {
         .ssid = NULL,        // Scan all SSIDs
         .bssid = NULL,       // Scan all BSSIDs
         .channel = 0,        // Scan all channels
-        .show_hidden = false // Don't include hidden networks
+        .show_hidden = false,
+        .scan_type = WIFI_SCAN_TYPE_PASSIVE,
     };
 
     ESP_ERROR_CHECK(esp_wifi_scan_start(&scan_config, true)); // Blocking scan
@@ -34,7 +36,6 @@ bool wifi_scan(void) {
     // Get the number of APs found
     uint16_t ap_num = 0;
     ESP_ERROR_CHECK(esp_wifi_scan_get_ap_num(&ap_num));
-    ESP_LOGI("AP", "Number of access points found: %d", ap_num);
 
     // Allocate memory for AP info and retrieve the list
     wifi_ap_record_t *ap_info = malloc(sizeof(wifi_ap_record_t) * ap_num);
@@ -96,12 +97,11 @@ void wifi_init(void) {
         },
     };
 
+    ESP_ERROR_CHECK(esp_wifi_set_mode(WIFI_MODE_APSTA));
     if (!AP_exists) {
-        ESP_ERROR_CHECK(esp_wifi_set_mode(WIFI_MODE_AP));
+        is_root = true;
         strncpy((char *)wifi_ap_config.ap.ssid, ROOT_SSID, sizeof(wifi_ap_config.ap.ssid) - 1);
     } else {
-        ESP_ERROR_CHECK(esp_wifi_set_mode(WIFI_MODE_APSTA));
-
         // must change IP address from default so
         // can send messages to root at 192.168.4.1
         esp_netif_ip_info_t ip_info;
@@ -320,13 +320,20 @@ void websocket_message_task(void *pvParameters) {
     vTaskDelay(pdMS_TO_TICKS(1000));
 }
 
+void merge_task(void *pvParameters) {
+    while (true) {
+        bool AP_exists = wifi_scan();
+        if (AP_exists) printf("another root AP found!!\n");
+
+        vTaskDelay(pdMS_TO_TICKS(1000));
+    }
+}
+
 void app_main(void)
 {
     wifi_init();
 
-    wifi_mode_t mode;
-    esp_wifi_get_mode(&mode);
-    if (mode == WIFI_MODE_APSTA) {
+    if (!is_root) {
         wifi_config_t *wifi_sta_config = malloc(sizeof(wifi_config_t));
         memset(wifi_sta_config, 0, sizeof(wifi_config_t));
 
@@ -356,5 +363,7 @@ void app_main(void)
             ESP_LOGE(TAG, "Failed to start web server!");
             return;
         }
+
+        xTaskCreate(&merge_task, "merge_task", 4096, NULL, 5, NULL);
     }
 }
