@@ -10,6 +10,7 @@
 #include <esp_websocket_client.h>
 
 static const char* TAG = "MESH";
+static const char* ROOT_SSID = "ROOT_ESP_AP";
 static const char* SSID = "ESP_AP";
 httpd_handle_t server = NULL;
 
@@ -45,7 +46,7 @@ bool wifi_scan(void) {
 
     bool AP_exists = false;
     for (int i = 0; i < ap_num; i++) {
-        if (strcmp((const char*)ap_info[i].ssid, SSID) == 0) AP_exists = true;
+        if (strcmp((const char*)ap_info[i].ssid, ROOT_SSID) == 0) AP_exists = true;
     }
     
     free(ap_info);
@@ -97,7 +98,7 @@ void wifi_init(void) {
                 .authmode = WIFI_AUTH_OPEN,
             },
         };
-        strncpy((char *)wifi_ap_config.ap.ssid, SSID, sizeof(wifi_ap_config.ap.ssid) - 1);
+        strncpy((char *)wifi_ap_config.ap.ssid, ROOT_SSID, sizeof(wifi_ap_config.ap.ssid) - 1);
         wifi_ap_config.ap.ssid[sizeof(wifi_ap_config.ap.ssid) - 1] = '\0';
         ESP_ERROR_CHECK(esp_wifi_set_config(ESP_IF_WIFI_AP, &wifi_ap_config));
 
@@ -314,7 +315,7 @@ void app_main(void)
         wifi_config_t *wifi_sta_config = malloc(sizeof(wifi_config_t));
         memset(wifi_sta_config, 0, sizeof(wifi_config_t));
 
-        strncpy((char *)wifi_sta_config->sta.ssid, SSID, sizeof(wifi_sta_config->sta.ssid) - 1);
+        strncpy((char *)wifi_sta_config->sta.ssid, ROOT_SSID, sizeof(wifi_sta_config->sta.ssid) - 1);
         wifi_sta_config->ap.authmode = WIFI_AUTH_OPEN;
         ESP_ERROR_CHECK(esp_wifi_set_config(ESP_IF_WIFI_STA, wifi_sta_config));
         ESP_LOGI(TAG, "Connecting to AP... SSID: %s", wifi_sta_config->sta.ssid);
