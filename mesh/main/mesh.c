@@ -76,13 +76,20 @@ void wifi_init(void) {
     // scan for other WiFi APs
     bool AP_exists = wifi_scan();
     if (!AP_exists) {
-        // change Wi-Fi mode to both AP and STA
+        // stop WiFi before changing mode
         ESP_ERROR_CHECK(esp_wifi_stop());
+
+        // create the AP network interface
+        esp_netif_create_default_wifi_ap();
+
+        // set mode to AP + STA
         ESP_ERROR_CHECK(esp_wifi_set_mode(WIFI_MODE_APSTA));
 
         // configure the AP
         wifi_config_t wifi_ap_config = {
             .ap = {
+                .ssid = "",
+                .ssid_len = 0,
                 .channel = 1,
                 .max_connection = 10,
                 .authmode = WIFI_AUTH_OPEN,
@@ -92,6 +99,7 @@ void wifi_init(void) {
         wifi_ap_config.ap.ssid[sizeof(wifi_ap_config.ap.ssid) - 1] = '\0';
         ESP_ERROR_CHECK(esp_wifi_set_config(ESP_IF_WIFI_AP, &wifi_ap_config));
 
+        // restart WiFi
         ESP_LOGI(TAG, "Starting WiFi AP... SSID: %s", wifi_ap_config.ap.ssid);
         ESP_ERROR_CHECK(esp_wifi_start());
         vTaskDelay(pdMS_TO_TICKS(100));
