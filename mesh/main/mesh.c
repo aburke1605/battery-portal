@@ -8,14 +8,14 @@
 #include <esp_wifi.h>
 #include <esp_http_server.h>
 #include <esp_websocket_client.h>
-// #include <esp_mac.h>
+#include <esp_mac.h>
 
 static const char* TAG = "MESH";
 static const char* ROOT_SSID = "ROOT_ESP_AP";
 static bool is_root = false;
 static const char* SSID = "ESP_AP";
 httpd_handle_t server = NULL;
-// static int num_connected_clients = 0;
+static int num_connected_clients = 0;
 
 typedef struct {
     int descriptor;
@@ -55,6 +55,35 @@ bool wifi_scan(void) {
     free(ap_info);
 
     return AP_exists;
+}
+
+void wifi_event_handler(void *arg, esp_event_base_t event_base, int32_t event_id, void *event_data) {
+    if (event_base == WIFI_EVENT) {
+        switch (event_id) {
+            case WIFI_EVENT_STA_START:
+                ESP_LOGI(TAG, "Wi-Fi STA started");
+                break;
+
+            case WIFI_EVENT_AP_STACONNECTED: {
+                wifi_event_ap_staconnected_t *event = (wifi_event_ap_staconnected_t *) event_data;
+                num_connected_clients++;
+                ESP_LOGI(TAG, "Station "MACSTR" joined, AID=%d. Clients: %d",
+                         MAC2STR(event->mac), event->aid, num_connected_clients);
+                break;
+            }
+
+            case WIFI_EVENT_AP_STADISCONNECTED: {
+                wifi_event_ap_stadisconnected_t *event = (wifi_event_ap_stadisconnected_t *) event_data;
+                num_connected_clients--;
+                ESP_LOGI(TAG, "Station "MACSTR" left, AID=%d. Clients: %d",
+                         MAC2STR(event->mac), event->aid, num_connected_clients);
+                break;
+            }
+
+            default:
+                break;
+        }
+    }
 }
 
 void wifi_init(void) {
@@ -101,6 +130,7 @@ void wifi_init(void) {
 
     ESP_ERROR_CHECK(esp_wifi_set_mode(WIFI_MODE_APSTA));
     if (!AP_exists) {
+        ESP_ERROR_CHECK(esp_event_handler_register(WIFI_EVENT, ESP_EVENT_ANY_ID, &wifi_event_handler, NULL));
         is_root = true;
         strncpy((char *)wifi_ap_config.ap.ssid, ROOT_SSID, sizeof(wifi_ap_config.ap.ssid) - 1);
     } else {
@@ -217,32 +247,6 @@ httpd_handle_t start_websocket_server(void) {
 
 void event_handler(void *arg, esp_event_base_t event_base, int32_t event_id, void *event_data) {
     esp_websocket_event_data_t *ws_event_data = (esp_websocket_event_data_t *)event_data;
-    // if (event_base == WIFI_EVENT) {
-    //     switch (event_id) {
-    //         case WIFI_EVENT_STA_START:
-    //             ESP_LOGI(TAG, "Wi-Fi STA started");
-    //             break;
-
-    //         case WIFI_EVENT_AP_STACONNECTED: {
-    //             wifi_event_ap_staconnected_t *event = (wifi_event_ap_staconnected_t *) event_data;
-    //             num_connected_clients++;
-    //             ESP_LOGI(TAG, "Station "MACSTR" joined, AID=%d. Clients: %d",
-    //                      MAC2STR(event->mac), event->aid, num_connected_clients);
-    //             break;
-    //         }
-
-    //         case WIFI_EVENT_AP_STADISCONNECTED: {
-    //             wifi_event_ap_stadisconnected_t *event = (wifi_event_ap_stadisconnected_t *) event_data;
-    //             num_connected_clients--;
-    //             ESP_LOGI(TAG, "Station "MACSTR" left, AID=%d. Clients: %d",
-    //                      MAC2STR(event->mac), event->aid, num_connected_clients);
-    //             break;
-    //         }
-
-    //         default:
-    //             break;
-    //     }
-    // }
     switch (event_id) {
         case WEBSOCKET_EVENT_CONNECTED:
             ESP_LOGI(TAG, "WebSocket connected");
