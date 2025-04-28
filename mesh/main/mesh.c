@@ -8,12 +8,14 @@
 #include <esp_wifi.h>
 #include <esp_http_server.h>
 #include <esp_websocket_client.h>
+// #include <esp_mac.h>
 
 static const char* TAG = "MESH";
 static const char* ROOT_SSID = "ROOT_ESP_AP";
 static bool is_root = false;
 static const char* SSID = "ESP_AP";
 httpd_handle_t server = NULL;
+// static int num_connected_clients = 0;
 
 typedef struct {
     int descriptor;
@@ -215,7 +217,32 @@ httpd_handle_t start_websocket_server(void) {
 
 void event_handler(void *arg, esp_event_base_t event_base, int32_t event_id, void *event_data) {
     esp_websocket_event_data_t *ws_event_data = (esp_websocket_event_data_t *)event_data;
+    // if (event_base == WIFI_EVENT) {
+    //     switch (event_id) {
+    //         case WIFI_EVENT_STA_START:
+    //             ESP_LOGI(TAG, "Wi-Fi STA started");
+    //             break;
 
+    //         case WIFI_EVENT_AP_STACONNECTED: {
+    //             wifi_event_ap_staconnected_t *event = (wifi_event_ap_staconnected_t *) event_data;
+    //             num_connected_clients++;
+    //             ESP_LOGI(TAG, "Station "MACSTR" joined, AID=%d. Clients: %d",
+    //                      MAC2STR(event->mac), event->aid, num_connected_clients);
+    //             break;
+    //         }
+
+    //         case WIFI_EVENT_AP_STADISCONNECTED: {
+    //             wifi_event_ap_stadisconnected_t *event = (wifi_event_ap_stadisconnected_t *) event_data;
+    //             num_connected_clients--;
+    //             ESP_LOGI(TAG, "Station "MACSTR" left, AID=%d. Clients: %d",
+    //                      MAC2STR(event->mac), event->aid, num_connected_clients);
+    //             break;
+    //         }
+
+    //         default:
+    //             break;
+    //     }
+    // }
     switch (event_id) {
         case WEBSOCKET_EVENT_CONNECTED:
             ESP_LOGI(TAG, "WebSocket connected");
@@ -368,6 +395,8 @@ void app_main(void)
             ESP_LOGE(TAG, "Failed to start web server!");
             return;
         }
+
+        // xTaskCreate(&lora_task, "lora_task", 4096, NULL, 5, NULL);
 
         xTaskCreate(&merge_task, "merge_task", 4096, NULL, 5, NULL);
     }
