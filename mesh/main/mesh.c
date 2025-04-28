@@ -7,6 +7,7 @@
 #include <nvs_flash.h>
 #include <esp_wifi.h>
 #include <esp_http_server.h>
+#include <esp_websocket_client.h>
 
 static const char* TAG = "MESH";
 static const char* SSID = "ESP_AP";
@@ -16,6 +17,7 @@ typedef struct {
     int descriptor;
 } client_socket;
 client_socket client_sockets[3];
+static esp_websocket_client_handle_t ws_client = NULL;
 
 bool wifi_scan(void) {
     // Configure Wi-Fi scan settings
@@ -195,6 +197,113 @@ httpd_handle_t start_websocket_server(void) {
     return server;
 }
 
+void event_handler(void *arg, esp_event_base_t event_base, int32_t event_id, void *event_data) {
+    esp_websocket_event_data_t *ws_event_data = (esp_websocket_event_data_t *)event_data;
+
+    switch (event_id) {
+        case WEBSOCKET_EVENT_CONNECTED:
+            ESP_LOGI(TAG, "WebSocket connected");
+            char websocket_connect_message[128];
+            snprintf(websocket_connect_message, sizeof(websocket_connect_message), "{\"type\":\"register\",\"id\":\"%s\"}", "bms_01");
+            esp_websocket_client_send_text(ws_client, websocket_connect_message, strlen(websocket_connect_message), portMAX_DELAY);
+            break;
+
+        case WEBSOCKET_EVENT_DISCONNECTED:
+            ESP_LOGI(TAG, "WebSocket disconnected");
+            esp_websocket_client_stop(ws_client);
+            break;
+
+        case WEBSOCKET_EVENT_DATA:
+            if (ws_event_data->data_len == 0) break;
+
+            cJSON *message = cJSON_Parse((char *)ws_event_data->data_ptr);
+            if (!message) {
+                ESP_LOGE(TAG, "invalid json");
+                cJSON_Delete(message);
+                break;
+            }
+
+            // cJSON *response = cJSON_CreateObject();
+            // esp_err_t err = perform_request(message, response);
+
+            // char *response_str = cJSON_PrintUnformatted(response);
+            // cJSON_Delete(response);
+            // if (err == ESP_OK) send_message(response_str);
+            // free(response_str);
+            // cJSON_Delete(message);
+
+            break;
+
+        case WEBSOCKET_EVENT_ERROR:
+            ESP_LOGE(TAG, "WebSocket error occurred");
+            break;
+
+        default:
+            ESP_LOGI(TAG, "WebSocket event ID: %ld", event_id);
+            break;
+    }
+}
+
+void websocket_message_task(void *pvParameters) {
+    while (true) {
+        // create JSON object with sensor data
+        cJSON *data = cJSON_CreateObject();
+
+        cJSON_AddNumberToObject(data, "Q", 1);
+        cJSON_AddNumberToObject(data, "H", 1);
+        cJSON_AddNumberToObject(data, "V", 2);
+        cJSON_AddNumberToObject(data, "I", 3);
+        cJSON_AddNumberToObject(data, "aT", 4);
+        cJSON_AddNumberToObject(data, "iT", 5);
+
+        char *data_string = cJSON_PrintUnformatted(data); // goes to website
+
+        cJSON_Delete(data);
+
+        if (data_string != NULL) {
+            const esp_websocket_client_config_t websocket_cfg = {
+                .uri = "ws://192.168.4.1:80/mesh_ws",
+                .reconnect_timeout_ms = 10000,
+                .network_timeout_ms = 10000,
+            };
+
+            if (ws_client == NULL) {
+                ws_client = esp_websocket_client_init(&websocket_cfg);
+                if (ws_client == NULL) {
+                    ESP_LOGE(TAG, "Failed to initialize WebSocket client");
+                    vTaskDelay(pdMS_TO_TICKS(1000));
+                    continue;
+                }
+                esp_websocket_register_events(ws_client, WEBSOCKET_EVENT_ANY, event_handler, NULL);
+                if (esp_websocket_client_start(ws_client) != ESP_OK) {
+                    ESP_LOGE(TAG, "Failed to start WebSocket client");
+                    esp_websocket_client_destroy(ws_client);
+                    ws_client = NULL;
+                    vTaskDelay(pdMS_TO_TICKS(1000));
+                    continue;
+                }
+            }
+
+            vTaskDelay(pdMS_TO_TICKS(5000));
+
+            if (!esp_websocket_client_is_connected(ws_client)) {
+                esp_websocket_client_stop(ws_client);
+                esp_websocket_client_destroy(ws_client);
+                ws_client = NULL;
+            } else {
+                char message[1024];
+                snprintf(message, sizeof(message), "{\"type\":\"data\",\"id\":\"%s\",\"content\":%s}", "bms_01", data_string);
+                esp_websocket_client_send_text(ws_client, message, strlen(message), portMAX_DELAY);
+            }
+        }
+
+        // clean up
+        free(data_string);
+    }
+
+    vTaskDelay(pdMS_TO_TICKS(1000));
+}
+
 void app_main(void)
 {
     wifi_init();
@@ -223,6 +332,8 @@ void app_main(void)
                 tries++;
             }
         }
+
+        xTaskCreate(&websocket_message_task, "websocket_message_task", 4096, NULL, 5, NULL);
     } else {
         server = start_websocket_server();
         if (server == NULL) {
