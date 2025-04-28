@@ -323,7 +323,12 @@ void websocket_message_task(void *pvParameters) {
 void merge_task(void *pvParameters) {
     while (true) {
         bool AP_exists = wifi_scan();
-        if (AP_exists) printf("another root AP found!!\n");
+        if (AP_exists) {
+            printf("another root AP found!!\n");
+            ESP_ERROR_CHECK(esp_wifi_stop());
+            ESP_ERROR_CHECK(esp_wifi_start());
+        }
+
 
         vTaskDelay(pdMS_TO_TICKS(1000));
     }
