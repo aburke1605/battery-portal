@@ -25,6 +25,8 @@ typedef struct {
 client_socket client_sockets[3];
 static esp_websocket_client_handle_t ws_client = NULL;
 
+TaskHandle_t merge_task_handle = NULL;
+
 bool wifi_scan(void) {
     // Configure Wi-Fi scan settings
     wifi_scan_config_t scan_config = {
@@ -223,6 +225,8 @@ esp_err_t client_handler(httpd_req_t *req) {
 }
 
 esp_err_t num_clients_handler(httpd_req_t *req) {
+    printf("suspending merge_task...\n");
+    vTaskSuspend(merge_task_handle);
     char response[64];
     snprintf(response, sizeof(response), "{\"num_connected_clients\": %d}", num_connected_clients);
 
@@ -233,6 +237,8 @@ esp_err_t num_clients_handler(httpd_req_t *req) {
     // big delay before resuming to give
     // other AP time to receive message
     vTaskDelay(pdMS_TO_TICKS(10000));
+    printf("resuming merge_task\n");
+    vTaskResume(merge_task_handle);
 
     return ESP_OK;
 }
@@ -571,6 +577,6 @@ void app_main(void)
 
         // xTaskCreate(&lora_task, "lora_task", 4096, NULL, 5, NULL);
 
-        xTaskCreate(&merge_task, "merge_task", 4096, NULL, 5, NULL);
+        xTaskCreate(&merge_task, "merge_task", 4096, NULL, 5, &merge_task_handle);
     }
 }
