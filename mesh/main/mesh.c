@@ -577,7 +577,7 @@ void app_main(void)
 {
     wifi_init();
 
-    if (!is_root) {        
+    if (!is_root) {
         xTaskCreate(&connect_to_root_task, "connect_to_root_task", 4096, NULL, 5, NULL);
 
         xTaskCreate(&websocket_message_task, "websocket_message_task", 4096, NULL, 5, NULL);
