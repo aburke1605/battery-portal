@@ -230,6 +230,17 @@ esp_err_t num_clients_handler(httpd_req_t *req) {
     httpd_resp_send(req, response, HTTPD_RESP_USE_STRLEN);
     printf("sent: %s\n", response);
 
+    // big delay before resuming to give
+    // other AP time to receive message
+    vTaskDelay(pdMS_TO_TICKS(10000));
+
+    return ESP_OK;
+}
+
+esp_err_t restart_handler(httpd_req_t *req) {
+    printf("I am being told to restart\n");
+    esp_restart();
+
     return ESP_OK;
 }
 
@@ -253,8 +264,15 @@ httpd_handle_t start_websocket_server(void) {
         };
         httpd_register_uri_handler(server, &uri);
 
+        uri.is_websocket = false;
+
         uri.uri = "/api_num_clients";
         uri.handler = num_clients_handler;
+        httpd_register_uri_handler(server, &uri);
+
+        uri.uri = "/no_you_restart",
+        uri.method = HTTP_POST,
+        uri.handler = restart_handler,
         httpd_register_uri_handler(server, &uri);
     } else {
         ESP_LOGE(TAG, "Error starting server!");
@@ -406,6 +424,20 @@ esp_err_t _http_event_handler(esp_http_client_event_t *evt) {
                             // -1 to account for the connection of this ESP32 to the other root AP
                             printf("I will shut down!\n");
                             esp_restart();
+                        } else {
+                            esp_http_client_config_t config = {
+                                .url = "http://192.168.4.1/no_you_restart",
+                            };
+                            esp_http_client_handle_t client = esp_http_client_init(&config);
+                            esp_http_client_set_method(client, HTTP_METHOD_POST);
+                            esp_err_t err = esp_http_client_perform(client);
+                            if (err == ESP_OK) {
+                                ESP_LOGI("HTTP_CLIENT", "POST Status = %d",
+                                        esp_http_client_get_status_code(client));
+                            } else {
+                                ESP_LOGE("HTTP_CLIENT", "POST failed: %s", esp_err_to_name(err));
+                            }
+                            esp_http_client_cleanup(client);
                         }
                     }
                 }
@@ -462,10 +494,11 @@ void merge_task(void *pvParameters) {
                 esp_netif_dhcps_stop(ap_netif);
                 esp_netif_set_ip_info(ap_netif, &ip_info);
                 esp_netif_dhcps_start(ap_netif);
+                printf("changed IP to 192.168.10.1\n");
+                // delay to allow it to update
                 vTaskDelay(pdMS_TO_TICKS(5000));
 
 
-                // fetch_json_simple();
                 // fetch the number of clients connected to the other AP
                 esp_http_client_config_t config = {
                     .url = "http://192.168.4.1/api_num_clients",
@@ -490,6 +523,7 @@ void merge_task(void *pvParameters) {
                 esp_netif_dhcps_stop(ap_netif);
                 esp_netif_set_ip_info(ap_netif, &ip_info);
                 esp_netif_dhcps_start(ap_netif);
+                printf("changed IP back to 192.168.4.1\n");
 
                 esp_wifi_disconnect();
             }
