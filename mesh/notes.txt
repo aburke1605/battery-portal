@@ -6,14 +6,14 @@ SETUP
   - connect to it
 * else:
   - set up as AP
-  - keep track of time since initialisation / number of connected devices
+  - keep track of number of connected devices
 
 
 
 TASKS
 
 * continuously scan for other APs, if found:
-  - determine which is older / has more connected devices
+  - determine which has more connected devices
   - redirect all devices connected to other APs to that one
   - convert those APs to STA
 
