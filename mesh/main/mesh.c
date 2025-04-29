@@ -332,6 +332,39 @@ void event_handler(void *arg, esp_event_base_t event_base, int32_t event_id, voi
     }
 }
 
+void connect_to_root_task(void *pvParameters) {
+    while (true) {
+        wifi_ap_record_t ap_info;
+        if (esp_wifi_sta_get_ap_info(&ap_info) != ESP_OK) {
+            wifi_config_t *wifi_sta_config = malloc(sizeof(wifi_config_t));
+            memset(wifi_sta_config, 0, sizeof(wifi_config_t));
+
+            strncpy((char *)wifi_sta_config->sta.ssid, ROOT_SSID, sizeof(wifi_sta_config->sta.ssid) - 1);
+            wifi_sta_config->ap.authmode = WIFI_AUTH_OPEN;
+            ESP_ERROR_CHECK(esp_wifi_set_config(ESP_IF_WIFI_STA, wifi_sta_config));
+            ESP_LOGI(TAG, "Connecting to AP... SSID: %s", wifi_sta_config->sta.ssid);
+
+            uint8_t tries = 0;
+            uint8_t max_tries = 10;
+            while (tries < max_tries) {
+                esp_err_t err = esp_wifi_connect();
+                if (err == ESP_OK) {
+                    ESP_LOGI(TAG, "Success, waiting for connection...");
+                    vTaskDelay(pdMS_TO_TICKS(1000));
+                    break;
+                } else {
+                    ESP_LOGW(TAG, "Failed to connect: %s. Retrying...", esp_err_to_name(err));
+                    tries++;
+                }
+            }
+
+            free(wifi_sta_config);
+        }
+
+        vTaskDelay(pdMS_TO_TICKS(1000));
+    }
+}
+
 void websocket_message_task(void *pvParameters) {
     while (true) {
         // create JSON object with sensor data
@@ -544,30 +577,8 @@ void app_main(void)
 {
     wifi_init();
 
-    if (!is_root) {
-        wifi_config_t *wifi_sta_config = malloc(sizeof(wifi_config_t));
-        memset(wifi_sta_config, 0, sizeof(wifi_config_t));
-
-        strncpy((char *)wifi_sta_config->sta.ssid, ROOT_SSID, sizeof(wifi_sta_config->sta.ssid) - 1);
-        wifi_sta_config->ap.authmode = WIFI_AUTH_OPEN;
-        ESP_ERROR_CHECK(esp_wifi_set_config(ESP_IF_WIFI_STA, wifi_sta_config));
-        ESP_LOGI(TAG, "Connecting to AP... SSID: %s", wifi_sta_config->sta.ssid);
-
-        uint8_t tries = 0;
-        uint8_t max_tries = 10;
-        while (tries < max_tries) {
-            esp_err_t err = esp_wifi_connect();
-            if (err == ESP_OK) {
-                ESP_LOGI(TAG, "Success, waiting for connection...");
-                vTaskDelay(pdMS_TO_TICKS(1000));
-                break;
-            } else {
-                ESP_LOGW(TAG, "Failed to connect: %s. Retrying...", esp_err_to_name(err));
-                tries++;
-            }
-        }
-
-        free(wifi_sta_config);
+    if (!is_root) {        
+        xTaskCreate(&connect_to_root_task, "connect_to_root_task", 4096, NULL, 5, NULL);
 
         xTaskCreate(&websocket_message_task, "websocket_message_task", 4096, NULL, 5, NULL);
     } else {
