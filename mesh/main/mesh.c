@@ -567,6 +567,8 @@ void app_main(void)
             }
         }
 
+        free(wifi_sta_config);
+
         xTaskCreate(&websocket_message_task, "websocket_message_task", 4096, NULL, 5, NULL);
     } else {
         server = start_websocket_server();
