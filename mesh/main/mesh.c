@@ -27,7 +27,7 @@ static esp_websocket_client_handle_t ws_client = NULL;
 
 TaskHandle_t merge_task_handle = NULL;
 
-bool wifi_scan(void) {
+wifi_ap_record_t *wifi_scan(void) {
     // Configure Wi-Fi scan settings
     wifi_scan_config_t scan_config = {
         .ssid = NULL,        // Scan all SSIDs
@@ -51,14 +51,13 @@ bool wifi_scan(void) {
     }
     ESP_ERROR_CHECK(esp_wifi_scan_get_ap_records(&ap_num, ap_info));
 
-    bool AP_exists = false;
     for (int i = 0; i < ap_num; i++) {
-        if (strcmp((const char*)ap_info[i].ssid, ROOT_SSID) == 0) AP_exists = true;
+        if (strcmp((const char*)ap_info[i].ssid, ROOT_SSID) == 0) return &ap_info[i];
     }
     
     free(ap_info);
 
-    return AP_exists;
+    return NULL;
 }
 
 void wifi_event_handler(void *arg, esp_event_base_t event_base, int32_t event_id, void *event_data) {
@@ -113,7 +112,7 @@ void wifi_init(void) {
     vTaskDelay(pdMS_TO_TICKS(100));
 
     // scan for other WiFi APs
-    bool AP_exists = wifi_scan();
+    wifi_ap_record_t * AP_exists = wifi_scan();
 
     // stop WiFi before changing mode
     ESP_ERROR_CHECK(esp_wifi_stop());
@@ -492,11 +491,37 @@ esp_err_t _http_event_handler(esp_http_client_event_t *evt) {
     return ESP_OK;
 }
 
+int compare_mac(const uint8_t *mac1, const uint8_t *mac2) {
+    for (int i = 0; i < 6; i++) {
+        if (mac1[i] < mac2[i]) return -1;
+        if (mac1[i] > mac2[i]) return 1;
+    }
+    return 0;
+}
+
 void merge_task(void *pvParameters) {
     while (true) {
-        bool AP_exists = wifi_scan();
-        if (AP_exists) {
-            printf("another root AP found!!\n");
+        uint8_t my_mac[6];
+        esp_wifi_get_mac(WIFI_IF_AP, my_mac);
+        printf("My BSSID: %02x:%02x:%02x:%02x:%02x:%02x\n",
+            my_mac[0], my_mac[1], my_mac[2],
+            my_mac[3], my_mac[4], my_mac[5]);
+
+        wifi_ap_record_t * ap_info = wifi_scan();
+        if (ap_info) {
+            printf("another root AP found!!\n SSID: %s, BSSID: %02x:%02x:%02x:%02x:%02x:%02x\n",
+                ap_info->ssid,
+                ap_info->bssid[0], ap_info->bssid[1], ap_info->bssid[2],
+                ap_info->bssid[3], ap_info->bssid[4], ap_info->bssid[5]);
+
+            int my_int = compare_mac(my_mac, ap_info->bssid);
+            if (my_int < 0) {
+                printf("I will change IP\n");
+            } else if(my_int > 0) {
+                printf("I will NOT change IP\n");
+            } else {
+                printf("major error\n");
+            }
 
             wifi_config_t *wifi_sta_config = malloc(sizeof(wifi_config_t));
             memset(wifi_sta_config, 0, sizeof(wifi_config_t));
@@ -527,15 +552,17 @@ void merge_task(void *pvParameters) {
             if (connected) {
                 // change to another IP so we can communicate with other root AP on it's default IP
                 esp_netif_ip_info_t ip_info;
-                IP4_ADDR(&ip_info.ip, 192, 168, 10, 1);
-                IP4_ADDR(&ip_info.gw, 192, 168, 10, 1);
-                IP4_ADDR(&ip_info.netmask, 255, 255, 255, 0);
-                esp_netif_dhcps_stop(ap_netif);
-                esp_netif_set_ip_info(ap_netif, &ip_info);
-                esp_netif_dhcps_start(ap_netif);
-                printf("changed IP to 192.168.10.1\n");
-                // delay to allow it to update
-                vTaskDelay(pdMS_TO_TICKS(5000));
+                if (my_int < 0) {
+                    IP4_ADDR(&ip_info.ip, 192, 168, 10, 1);
+                    IP4_ADDR(&ip_info.gw, 192, 168, 10, 1);
+                    IP4_ADDR(&ip_info.netmask, 255, 255, 255, 0);
+                    esp_netif_dhcps_stop(ap_netif);
+                    esp_netif_set_ip_info(ap_netif, &ip_info);
+                    esp_netif_dhcps_start(ap_netif);
+                    printf("changed IP to 192.168.10.1\n");
+                    // delay to allow it to update
+                    vTaskDelay(pdMS_TO_TICKS(5000));
+                }
 
 
                 // fetch the number of clients connected to the other AP
@@ -555,14 +582,16 @@ void merge_task(void *pvParameters) {
                 esp_http_client_cleanup(client);
 
 
-                // change back to default
-                IP4_ADDR(&ip_info.ip, 192, 168, 4, 1);  // Change to a temporary IP
-                IP4_ADDR(&ip_info.gw, 192, 168, 4, 1);  // Gateway IP
-                IP4_ADDR(&ip_info.netmask, 255, 255, 255, 0);  // Subnet mask
-                esp_netif_dhcps_stop(ap_netif);
-                esp_netif_set_ip_info(ap_netif, &ip_info);
-                esp_netif_dhcps_start(ap_netif);
-                printf("changed IP back to 192.168.4.1\n");
+                if (my_int < 0) {
+                    // change back to default
+                    IP4_ADDR(&ip_info.ip, 192, 168, 4, 1);  // Change to a temporary IP
+                    IP4_ADDR(&ip_info.gw, 192, 168, 4, 1);  // Gateway IP
+                    IP4_ADDR(&ip_info.netmask, 255, 255, 255, 0);  // Subnet mask
+                    esp_netif_dhcps_stop(ap_netif);
+                    esp_netif_set_ip_info(ap_netif, &ip_info);
+                    esp_netif_dhcps_start(ap_netif);
+                    printf("changed IP back to 192.168.4.1\n");
+                }
 
                 esp_wifi_disconnect();
             }
