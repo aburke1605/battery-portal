@@ -25,6 +25,7 @@ typedef struct {
 client_socket client_sockets[3];
 static esp_websocket_client_handle_t ws_client = NULL;
 
+TaskHandle_t websocket_message_task_handle = NULL;
 TaskHandle_t merge_task_handle = NULL;
 
 wifi_ap_record_t *wifi_scan(void) {
@@ -334,7 +335,9 @@ void event_handler(void *arg, esp_event_base_t event_base, int32_t event_id, voi
 void connect_to_root_task(void *pvParameters) {
     while (true) {
         wifi_ap_record_t ap_info;
-        if (esp_wifi_sta_get_ap_info(&ap_info) != ESP_OK) {
+        if (esp_wifi_sta_get_ap_info(&ap_info) != ESP_OK) { // if no wifi connection
+
+            // try to connect to root AP
             wifi_config_t *wifi_sta_config = malloc(sizeof(wifi_config_t));
             memset(wifi_sta_config, 0, sizeof(wifi_config_t));
 
@@ -358,6 +361,42 @@ void connect_to_root_task(void *pvParameters) {
             }
 
             free(wifi_sta_config);
+            if (!(tries < max_tries)) {
+                vTaskSuspend(websocket_message_task_handle);
+
+                // scan to double check there really is no existing root AP
+                ESP_ERROR_CHECK(esp_wifi_stop());
+                ESP_ERROR_CHECK(esp_wifi_set_mode(WIFI_MODE_STA));
+                ESP_ERROR_CHECK(esp_wifi_start());
+                vTaskDelay(pdMS_TO_TICKS(100));
+                wifi_ap_record_t *ap_info = wifi_scan();
+
+                // if not, nominate a new one using MAC addresses
+                if (!ap_info) {
+                    uint8_t my_mac[6];
+                    esp_wifi_get_mac(WIFI_IF_AP, my_mac);
+                    uint32_t unique_number = ((uint32_t)my_mac[2] << 24) |
+                                             ((uint32_t)my_mac[3] << 16) |
+                                             ((uint32_t)my_mac[4] << 8)  |
+                                             ((uint32_t)my_mac[5]);
+                    int time_delay = unique_number % 100000 + 5000;
+                    printf("delaying for %d ms...\n", time_delay);
+                    vTaskDelay(pdMS_TO_TICKS(time_delay));
+                    printf("trying for last time... ");
+                    // try to connect to new root AP which has possibly restarted earlier than this
+                    ap_info = wifi_scan();
+                    if (!ap_info) {
+                        printf("fail, restarting\n");
+                        // hopefully become now the only root AP
+                        esp_restart();
+                    }
+                }
+
+                ESP_ERROR_CHECK(esp_wifi_stop());
+                ESP_ERROR_CHECK(esp_wifi_set_mode(WIFI_MODE_APSTA));
+                ESP_ERROR_CHECK(esp_wifi_start());
+                vTaskResume(websocket_message_task_handle);
+            }
         }
 
         vTaskDelay(pdMS_TO_TICKS(1000));
@@ -609,7 +648,7 @@ void app_main(void)
     if (!is_root) {
         xTaskCreate(&connect_to_root_task, "connect_to_root_task", 4096, NULL, 5, NULL);
 
-        xTaskCreate(&websocket_message_task, "websocket_message_task", 4096, NULL, 5, NULL);
+        xTaskCreate(&websocket_message_task, "websocket_message_task", 4096, NULL, 5, &websocket_message_task_handle);
     } else {
         server = start_websocket_server();
         if (server == NULL) {
