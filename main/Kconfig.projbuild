@@ -56,7 +56,7 @@ config FLASK_IP
 endmenu
 
 
-menu "[CUSTOM] I2C Configuration"
+menu "[CUSTOM] BMS Configuration"
 
 config SCAN_I2C
     bool "Scan I2C devices"
@@ -153,6 +153,47 @@ config INT_TEMPERATURE_REG
     default 0x28
     help
       Set the register address for the BMS to read the battery internal temperature.
+
+endmenu
+
+
+menu "[CUSTOM] LoRa Configuration"
+
+config SPI_SCK_PIN
+    int "SPI SCK GPIO"
+    default 18
+    help
+      Set the GPIO number for the SPI clock (SCK) line.
+
+config SPI_MOSI_PIN
+    int "SPI MOSI GPIO"
+    default 23
+    help
+      Set the GPIO number for the SPI master out, slave in (MOSI) line.
+
+config SPI_MISO_PIN
+    int "SPI MISO GPIO"
+    default 19
+    help
+      Set the GPIO number for the SPI master in, slave out (MISO) line.
+
+config SPI_NSS_CS_PIN
+    int "SPI NSS/CS GPIO"
+    default 5
+    help
+      Set the GPIO number for the SPI chip select line.
+
+config SPI_RESET_PIN
+    int "SPI RESET GPIO"
+    default 26
+    help
+      Set the GPIO number for the SPI manual reset line.
+
+config SPI_DIO0_PIN
+    int "SPI IRQ/DIO0 GPIO"
+    default 27
+    help
+      Set the GPIO number for the SPI LoRa interrupt line.
 
 endmenu
 

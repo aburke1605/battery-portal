@@ -4,6 +4,7 @@
 #include "include/DNS.h"
 #include "include/I2C.h"
 #include "include/BMS.h"
+#include "src/test.c"
 #include "include/WS.h"
 #include "include/utils.h"
 
@@ -23,6 +24,7 @@ QueueHandle_t ws_queue;
 TaskHandle_t websocket_task_handle = NULL;
 
 void app_main(void) {
+    /*
     uint8_t spreading_factor = 7;
     uint16_t bandwidth = 250; // kHz
     uint8_t n_preamble_symbols = 8; // default
@@ -50,6 +52,53 @@ void app_main(void) {
     transmission_delay = calculate_transmission_delay(spreading_factor, bandwidth, n_preamble_symbols, payload_length, 4, header, low_data_rate_optimisation);
     printf("transmission delay: %d\n\n\n", transmission_delay);
     vTaskDelay(pdMS_TO_TICKS(transmission_delay));
+    */
+
+    // Reset pin
+    printf("1\n");
+    gpio_set_direction(PIN_NUM_RST, GPIO_MODE_OUTPUT);
+    printf("2\n");
+    gpio_set_level(PIN_NUM_RST, 1);
+    printf("3\n");
+
+    // SPI bus config
+    spi_bus_config_t buscfg = {
+        .miso_io_num = PIN_NUM_MISO,
+        .mosi_io_num = PIN_NUM_MOSI,
+        .sclk_io_num = PIN_NUM_CLK,
+        .quadwp_io_num = -1,
+        .quadhd_io_num = -1
+    };
+    ESP_ERROR_CHECK(spi_bus_initialize(HSPI_HOST, &buscfg, SPI_DMA_DISABLED));
+    printf("4\n");
+
+    // SPI device config
+    spi_device_interface_config_t devcfg = {
+        .clock_speed_hz = 1 * 1000 * 1000, // 1 MHz
+        .mode = 0,
+        .spics_io_num = PIN_NUM_CS,
+        .queue_size = 1,
+    };
+    ESP_ERROR_CHECK(spi_bus_add_device(HSPI_HOST, &devcfg, &spi));
+    printf("5\n");
+
+    rfm95_reset();
+    printf("6\n");
+        // --- SPI Communication Test ---
+        uint8_t version = rfm95_read(0x42);  // REG_VERSION
+        if (version == 0x12) {
+            ESP_LOGI(TAG, "RFM95W detected (version 0x%02X)", version);
+        } else {
+            ESP_LOGE(TAG, "Failed to detect RFM95W! REG_VERSION = 0x%02X", version);
+            return; // Stop if no communication
+        }
+    rfm95_configure();
+    printf("7\n");
+
+    const char* msg = "Hello, LoRa!";
+    rfm95_send_packet((const uint8_t*)msg, strlen(msg));
+
+    printf("finished\n");
 
     return;
 
