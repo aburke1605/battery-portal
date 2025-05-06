@@ -19,7 +19,7 @@ void lora_reset() {
 
 uint8_t lora_read_register(uint8_t reg) {
     uint8_t rx_data[2];
-    uint8_t tx_data[2] = { reg & 0x7F, 0x00 }; // MSB=0 for read
+    uint8_t tx_data[2] = { reg & 0b01111111, 0x00 }; // MSB=0 for read
 
     spi_transaction_t t = {
         .length = 8 * 2,
@@ -31,7 +31,7 @@ uint8_t lora_read_register(uint8_t reg) {
 }
 
 void lora_write_register(uint8_t reg, uint8_t value) {
-    uint8_t tx_data[2] = { reg | 0x80, value }; // MSB=1 for write
+    uint8_t tx_data[2] = { reg | 0b10000000, value }; // MSB=1 for write
 
     spi_transaction_t t = {
         .length = 8 * 2,
@@ -90,20 +90,20 @@ void lora_configure_defaults() {
     lora_write_register(REG_FRF_LSB, (uint8_t)(frf >> 0));
 
     // Set LNA gain to maximum
-    lora_write_register(0x0C, 0b00100011);  // LNA_MAX_GAIN | LNA_BOOST
+    lora_write_register(REG_LNA, 0b00100011);  // LNA_MAX_GAIN | LNA_BOOST
 
     // Enable AGC (bit 2 of RegModemConfig3)
-    lora_write_register(0x26, 0b00000100);  // LowDataRateOptimize off, AGC on
+    lora_write_register(REG_MODEM_CONFIG_3, 0b00000100);  // LowDataRateOptimize off, AGC on
 
     // Configure modem parameters: BW = 125kHz, CR = 4/5, Explicit header
-    lora_write_register(0x1D, 0b01110010);  // BW=7(125kHz), CR=1(4/5), ImplicitHeader=0
+    lora_write_register(REG_MODEM_CONFIG_1, 0b01110010);  // BW=7(125kHz), CR=1(4/5), ImplicitHeader=0
 
     // Spreading factor = 7, CRC on
-    lora_write_register(0x1E, 0b01110100);  // SF7, TxContinuousMode=0, CRC on
+    lora_write_register(REG_MODEM_CONFIG_2, 0b01110100);  // SF7, TxContinuousMode=0, CRC on
 
     // Preamble length (8 bytes = 0x0008)
-    lora_write_register(0x20, 0x00);
-    lora_write_register(0x21, 0x08);
+    lora_write_register(REG_PREAMBLE_MSB, 0x00);
+    lora_write_register(REG_PREAMBLE_LSB, 0x08);
 
     // Set output power to 13 dBm using PA_BOOST
     lora_write_register(REG_PA_CONFIG, 0b10001111);  // PA_BOOST, OutputPower=13 dBm

@@ -22,11 +22,17 @@
 #define REG_FRF_MID             0x07
 #define REG_FRF_LSB             0x08
 #define REG_PA_CONFIG           0x09
+#define REG_LNA                 0x0C
 #define REG_FIFO_ADDR_PTR       0x0D
 #define REG_FIFO_TX_BASE_ADDR   0x0E
 #define REG_FIFO_RX_BASE_ADDR   0x0F
 #define REG_IRQ_FLAGS           0x12
+#define REG_MODEM_CONFIG_1      0x1D
+#define REG_MODEM_CONFIG_2      0x1E
+#define REG_PREAMBLE_MSB        0x20
+#define REG_PREAMBLE_LSB        0x21
 #define REG_PAYLOAD_LENGTH      0x22
+#define REG_MODEM_CONFIG_3      0x26
 #define REG_DIO_MAPPING_1       0x40
 #define REG_VERSION             0x42
 
