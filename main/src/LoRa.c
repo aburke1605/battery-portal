@@ -1,164 +1,194 @@
-#include "../include/LoRa.h"
+#include "include/LoRa.h"
 
-#include <string.h>
+#include <driver/spi_master.h>
+#include <driver/gpio.h>
+#include <esp_err.h>
+#include <esp_log.h>
 
-#define LORA_REG_FIFO 0x00
-#define LORA_REG_OP_MODE 0x01
-#define LORA_MODE_SLEEP 0x00
-#define LORA_MODE_STDBY 0x01
-#define LORA_MODE_TX 0x03
-#define LORA_MODE_RX_CONTINUOUS 0x05
+static spi_device_handle_t lora_spi;
 
-static esp_err_t lora_write_register_internal(lora_t *lora, uint8_t reg, uint8_t value);
-static esp_err_t lora_read_register_internal(lora_t *lora, uint8_t reg, uint8_t *value);
+static const char* TAG = "LoRa";
 
-esp_err_t lora_init(lora_t *lora, spi_host_device_t spi_host, gpio_num_t cs_pin, gpio_num_t reset_pin, gpio_num_t dio0_pin) {
+void lora_reset() {
+    gpio_set_direction(PIN_NUM_RESET, GPIO_MODE_OUTPUT);
+    gpio_set_level(PIN_NUM_RESET, 0);
+    vTaskDelay(pdMS_TO_TICKS(10));
+    gpio_set_level(PIN_NUM_RESET, 1);
+    vTaskDelay(pdMS_TO_TICKS(10));
+}
+
+uint8_t lora_read_register(uint8_t reg) {
+    uint8_t rx_data[2];
+    uint8_t tx_data[2] = { reg & 0x7F, 0x00 }; // MSB=0 for read
+
+    spi_transaction_t t = {
+        .length = 8 * 2,
+        .tx_buffer = tx_data,
+        .rx_buffer = rx_data,
+    };
+    spi_device_transmit(lora_spi, &t);
+    return rx_data[1];
+}
+
+void lora_write_register(uint8_t reg, uint8_t value) {
+    uint8_t tx_data[2] = { reg | 0x80, value }; // MSB=1 for write
+
+    spi_transaction_t t = {
+        .length = 8 * 2,
+        .tx_buffer = tx_data,
+    };
+    spi_device_transmit(lora_spi, &t);
+}
+
+esp_err_t lora_init() {
+    // SPI bus configuration
+    spi_bus_config_t buscfg = {
+        .mosi_io_num = PIN_NUM_MOSI,
+        .miso_io_num = PIN_NUM_MISO,
+        .sclk_io_num = PIN_NUM_CLK,
+        .quadwp_io_num = -1,
+        .quadhd_io_num = -1,
+    };
+    spi_bus_initialize(LORA_SPI_HOST, &buscfg, SPI_DMA_CH_AUTO);
+
+    // SPI device configuration
     spi_device_interface_config_t devcfg = {
-        .clock_speed_hz = 1 * 1000 * 1000, // 1 MHz
+        .clock_speed_hz = 8 * 1000 * 1000, // 8 MHz
         .mode = 0,
-        .spics_io_num = cs_pin,
+        .spics_io_num = PIN_NUM_CS,
         .queue_size = 1,
     };
+    spi_bus_add_device(LORA_SPI_HOST, &devcfg, &lora_spi);
 
-    gpio_set_direction(reset_pin, GPIO_MODE_OUTPUT);
-    gpio_set_direction(dio0_pin, GPIO_MODE_INPUT);
+    lora_reset();
 
-    esp_err_t ret = spi_bus_add_device(spi_host, &devcfg, &lora->spi);
-    if (ret != ESP_OK) {
-        return ret;
+    // Read version
+    uint8_t version = lora_read_register(REG_VERSION);
+    ESP_LOGI(TAG, "SX127x version: 0x%02X", version);
+    if (version != 0x12) {
+        ESP_LOGE(TAG, "SX127x not found");
+        return ESP_FAIL;
     }
 
-    lora->cs_pin = cs_pin;
-    lora->reset_pin = reset_pin;
-    lora->dio0_pin = dio0_pin;
-
-    return lora_reset(lora);
-}
-
-void lora_deinit(lora_t *lora) {
-    spi_bus_remove_device(lora->spi);
-}
-
-esp_err_t lora_begin(lora_t *lora, long frequency) {
-    esp_err_t ret = lora_write_register_internal(lora, LORA_REG_OP_MODE, LORA_MODE_SLEEP);
-    if (ret != ESP_OK) return ret;
-
-    // Set frequency (example for 868 MHz)
-    uint64_t frf = ((uint64_t)frequency << 19) / 32000000;
-    ret = lora_write_register_internal(lora, 0x06, (uint8_t)(frf >> 16));
-    if (ret != ESP_OK) return ret;
-    ret = lora_write_register_internal(lora, 0x07, (uint8_t)(frf >> 8));
-    if (ret != ESP_OK) return ret;
-    ret = lora_write_register_internal(lora, 0x08, (uint8_t)(frf));
-    if (ret != ESP_OK) return ret;
-
-    return lora_write_register_internal(lora, LORA_REG_OP_MODE, LORA_MODE_STDBY);
-}
-
-void lora_end(lora_t *lora) {
-    lora_write_register_internal(lora, LORA_REG_OP_MODE, LORA_MODE_SLEEP);
-}
-
-esp_err_t lora_send_packet(lora_t *lora, const uint8_t *data, size_t length) {
-    esp_err_t ret = lora_write_register_internal(lora, LORA_REG_OP_MODE, LORA_MODE_STDBY);
-    if (ret != ESP_OK) return ret;
-
-    // Write data to FIFO
-    for (size_t i = 0; i < length; i++) {
-        ret = lora_write_register_internal(lora, LORA_REG_FIFO, data[i]);
-        if (ret != ESP_OK) return ret;
-    }
-
-    // Set mode to TX
-    return lora_write_register_internal(lora, LORA_REG_OP_MODE, LORA_MODE_TX);
-}
-
-int lora_receive_packet(lora_t *lora, uint8_t *buffer, size_t length) {
-    uint8_t value;
-    esp_err_t ret = lora_read_register_internal(lora, LORA_REG_FIFO, &value);
-    if (ret != ESP_OK) return -1;
-
-    size_t i = 0;
-    while (i < length) {
-        buffer[i++] = value;
-        ret = lora_read_register_internal(lora, LORA_REG_FIFO, &value);
-        if (ret != ESP_OK) break;
-    }
-
-    return i;
-}
-
-void lora_set_tx_power(lora_t *lora, int level) {
-    lora_write_register_internal(lora, 0x09, level);
-}
-
-void lora_set_spreading_factor(lora_t *lora, int sf) {
-    lora_write_register_internal(lora, 0x1D, (sf << 4));
-}
-
-void lora_set_signal_bandwidth(lora_t *lora, long sbw) {
-    uint8_t bw;
-    if (sbw <= 7.8E3) bw = 0;
-    else if (sbw <= 10.4E3) bw = 1;
-    else if (sbw <= 15.6E3) bw = 2;
-    else if (sbw <= 20.8E3) bw = 3;
-    else if (sbw <= 31.25E3) bw = 4;
-    else if (sbw <= 41.7E3) bw = 5;
-    else if (sbw <= 62.5E3) bw = 6;
-    else if (sbw <= 125E3) bw = 7;
-    else if (sbw <= 250E3) bw = 8;
-    else bw = 9;
-
-    lora_write_register_internal(lora, 0x1D, (bw << 4));
-}
-
-void lora_set_coding_rate4(lora_t *lora, int denominator) {
-    lora_write_register_internal(lora, 0x1D, (denominator << 1));
-}
-
-esp_err_t lora_write_register(lora_t *lora, uint8_t reg, uint8_t value) {
-    return lora_write_register_internal(lora, reg, value);
-}
-
-esp_err_t lora_read_register(lora_t *lora, uint8_t reg, uint8_t *value) {
-    return lora_read_register_internal(lora, reg, value);
-}
-
-esp_err_t lora_reset(lora_t *lora) {
-    gpio_set_level(lora->reset_pin, 0);
+    // Enter LoRa + Sleep mode
+    lora_write_register(REG_OP_MODE, MODE_SLEEP | MODE_LORA);
     vTaskDelay(pdMS_TO_TICKS(10));
-    gpio_set_level(lora->reset_pin, 1);
+
+    // Enter standby
+    lora_write_register(REG_OP_MODE, MODE_STDBY | MODE_LORA);
     vTaskDelay(pdMS_TO_TICKS(10));
+
+    ESP_LOGI(TAG, "SX127x initialized");
     return ESP_OK;
 }
 
-esp_err_t lora_configure(lora_t *lora) {
-    // Example configuration
-    lora_set_tx_power(lora, 17);
-    lora_set_spreading_factor(lora, 7);
-    lora_set_signal_bandwidth(lora, 125E3);
-    lora_set_coding_rate4(lora, 5);
-    return ESP_OK;
+void lora_configure_defaults() {
+    // Set carrier frequency to 868.0 MHz
+    uint64_t frf = ((uint64_t)868000000 << 19) / 32000000;
+    lora_write_register(0x06, (uint8_t)(frf >> 16));
+    lora_write_register(0x07, (uint8_t)(frf >> 8));
+    lora_write_register(0x08, (uint8_t)(frf >> 0));
+
+    // Set LNA gain to maximum
+    lora_write_register(0x0C, 0b00100011);  // LNA_MAX_GAIN | LNA_BOOST
+
+    // Enable AGC (bit 2 of RegModemConfig3)
+    lora_write_register(0x26, 0b00000100);  // LowDataRateOptimize off, AGC on
+
+    // Configure modem parameters: BW = 125kHz, CR = 4/5, Explicit header
+    lora_write_register(0x1D, 0b01110010);  // BW=7(125kHz), CR=1(4/5), ImplicitHeader=0
+
+    // Spreading factor = 7, CRC on
+    lora_write_register(0x1E, 0b01110100);  // SF7, TxContinuousMode=0, CRC on
+
+    // Preamble length (8 bytes = 0x0008)
+    lora_write_register(0x20, 0x00);
+    lora_write_register(0x21, 0x08);
+
+    // Set output power to 13 dBm using PA_BOOST
+    lora_write_register(0x09, 0b10001111);  // PA_BOOST, OutputPower=13 dBm
+
+    ESP_LOGI(TAG, "SX127x configured to RadioHead defaults");
 }
 
-static esp_err_t lora_write_register_internal(lora_t *lora, uint8_t reg, uint8_t value) {
-    spi_transaction_t t = {
-        .length = 16,
-        .tx_data = {reg | 0x80, value},
-        .flags = SPI_TRANS_USE_TXDATA,
-    };
-    return spi_device_transmit(lora->spi, &t);
-}
+void lora_tx_task(void *pvParameters) {
+    const char *msg = "Hello!";
+    uint8_t len = strlen(msg);
 
-static esp_err_t lora_read_register_internal(lora_t *lora, uint8_t reg, uint8_t *value) {
-    spi_transaction_t t = {
-        .length = 16,
-        .tx_data = {reg & 0x7F, 0x00},
-        .flags = SPI_TRANS_USE_TXDATA | SPI_TRANS_USE_RXDATA,
-    };
-    esp_err_t ret = spi_device_transmit(lora->spi, &t);
-    if (ret == ESP_OK) {
-        *value = t.rx_data[1];
+    while (true) {
+        // Set to standby
+        lora_write_register(0x01, 0b10000001);  // LoRa + standby
+
+        // Set DIO0 = TxDone
+        lora_write_register(0x40, 0b01000000); // bits 7-6 for DIO0
+
+        // Set FIFO pointers
+        lora_write_register(0x0E, 0x00);  // FIFO TX base addr
+        lora_write_register(0x0D, 0x00);  // FIFO addr ptr
+
+        // Write payload to FIFO
+        for (int i = 0; i < len; i++) {
+            lora_write_register(0x00, msg[i]);
+        }
+
+        lora_write_register(0x22, len);  // Payload length
+
+        // Clear all IRQ flags
+        lora_write_register(0x12, 0b11111111);
+
+        // Start transmission
+        lora_write_register(0x01, 0b10000011);  // LoRa + TX mode
+
+        // Wait for TX done (DIO0 goes high)
+        while (gpio_get_level(PIN_NUM_DIO0) == 0) {
+            vTaskDelay(pdMS_TO_TICKS(1));
+        }
+
+        // Clear IRQ
+        lora_write_register(0x12, 0b00001000);  // Clear TxDone
+
+        ESP_LOGI("TX", "Packet sent: %s", msg);
+        vTaskDelay(pdMS_TO_TICKS(5000));  // Repeat every 5s
     }
-    return ret;
+}
+
+void lora_rx_task(void *pvParameters) {
+    uint8_t buffer[LORA_MAX_PACKET_LEN];
+
+    // Configure FIFO base addr for RX
+    lora_write_register(0x0F, 0x00);  // FIFO RX base addr
+    lora_write_register(0x0D, 0x00);  // FIFO addr ptr
+
+    // Clear IRQ flags
+    lora_write_register(0x12, 0b11111111);
+
+    // Enter continuous RX mode
+    lora_write_register(0x01, 0b10000101);  // LoRa + RX_CONT
+
+    while (true) {
+        // Wait for RX done (DIO0 goes high)
+        if (gpio_get_level(PIN_NUM_DIO0) == 1) {
+            uint8_t irq_flags = lora_read_register(0x12);
+            if (irq_flags & 0x40) {  // RX_DONE
+                uint8_t len = lora_read_register(0x13);  // RX bytes
+                uint8_t fifo_rx_current = lora_read_register(0x10);
+                lora_write_register(0x0D, fifo_rx_current);
+
+                for (int i = 0; i < len; i++) {
+                    buffer[i] = lora_read_register(0x00);
+                }
+                buffer[len] = '\0';  // Null-terminate
+
+                uint8_t rssi_raw = lora_read_register(0x1A);
+                int rssi_dbm = -157 + rssi_raw;
+
+                ESP_LOGI("RX", "Received: %s, RSSI: %d dBm", buffer, rssi_dbm);
+            }
+
+            // Clear IRQ flags
+            lora_write_register(0x12, 0b11111111);
+        }
+
+        vTaskDelay(pdMS_TO_TICKS(10));
+    }
 }

@@ -1,31 +1,41 @@
-#pragma once
+#ifndef LORA_H
+#define LORA_H
 
-#include <driver/spi_master.h>
-#include <driver/gpio.h>
+#include <string.h>
+
 #include <esp_err.h>
 
-typedef struct {
-    spi_device_handle_t spi;
-    gpio_num_t cs_pin;
-    gpio_num_t reset_pin;
-    gpio_num_t dio0_pin;
-} lora_t;
+#define LORA_SPI_HOST    SPI2_HOST   // or SPI3_HOST
+#define PIN_NUM_MISO     19
+#define PIN_NUM_MOSI     23
+#define PIN_NUM_CLK      18
+#define PIN_NUM_CS       5
+#define PIN_NUM_RESET    26
+#define PIN_NUM_DIO0     27
 
-esp_err_t lora_init(lora_t *lora, spi_host_device_t spi_host, gpio_num_t cs_pin, gpio_num_t reset_pin, gpio_num_t dio0_pin);
-void lora_deinit(lora_t *lora);
+#define LORA_MAX_PACKET_LEN 255
 
-esp_err_t lora_begin(lora_t *lora, long frequency);
-void lora_end(lora_t *lora);
+// SX127x registers
+#define REG_OP_MODE        0x01
+#define REG_VERSION        0x42
 
-esp_err_t lora_send_packet(lora_t *lora, const uint8_t *data, size_t length);
-int lora_receive_packet(lora_t *lora, uint8_t *buffer, size_t length);
+// Modes
+#define MODE_SLEEP         0b00000000
+#define MODE_STDBY         0b00000001
+#define MODE_LORA          0b10000000
 
-void lora_set_tx_power(lora_t *lora, int level);
-void lora_set_spreading_factor(lora_t *lora, int sf);
-void lora_set_signal_bandwidth(lora_t *lora, long sbw);
-void lora_set_coding_rate4(lora_t *lora, int denominator);
+void lora_reset();
 
-esp_err_t lora_write_register(lora_t *lora, uint8_t reg, uint8_t value);
-esp_err_t lora_read_register(lora_t *lora, uint8_t reg, uint8_t *value);
-esp_err_t lora_reset(lora_t *lora);
-esp_err_t lora_configure(lora_t *lora);
+uint8_t lora_read_register(uint8_t reg);
+
+void lora_write_register(uint8_t reg, uint8_t value);
+
+esp_err_t lora_init();
+
+void lora_configure_defaults();
+
+void lora_tx_task(void *pvParameters);
+
+void lora_rx_task(void *pvParameters);
+
+#endif // LORA_H

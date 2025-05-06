@@ -1,4 +1,4 @@
-idf_component_register(SRCS "battery-portal.c" "src/AP.c" "src/I2C.c" "src/BMS.c" "src/LoRa.c" "src/test.c" "src/DNS.c" "src/WS.c" "src/utils.c"
+idf_component_register(SRCS "battery-portal.c" "src/AP.c" "src/I2C.c" "src/BMS.c" "src/LoRa.c" "src/DNS.c" "src/WS.c" "src/utils.c"
                        INCLUDE_DIRS "."
                        REQUIRES esp_wifi esp_http_server esp_http_client nvs_flash driver spiffs json esp_driver_gpio wpa_supplicant)
 
