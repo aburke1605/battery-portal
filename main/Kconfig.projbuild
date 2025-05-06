@@ -183,7 +183,7 @@ config SPI_NSS_CS_PIN
     help
       Set the GPIO number for the SPI chip select line.
 
-config SPI_RESET_PIN
+config SPI_RST_PIN
     int "SPI RESET GPIO"
     default 26
     help
