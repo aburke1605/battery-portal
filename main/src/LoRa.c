@@ -1,4 +1,5 @@
 #include "include/LoRa.h"
+#include "include/utils.h"
 
 #include <driver/spi_master.h>
 #include <driver/gpio.h>
@@ -161,8 +162,10 @@ void lora_tx_task(void *pvParameters) {
         // Clear IRQ
         lora_write_register(REG_IRQ_FLAGS, 0b00001000);  // Clear TxDone
 
-        ESP_LOGI("TX", "Packet sent: %s", msg);
-        vTaskDelay(pdMS_TO_TICKS(5000));  // Repeat every 5s
+        int transmission_delay = calculate_transmission_delay(LORA_SF, LORA_BW, 8, strlen(msg), LORA_CR, LORA_HEADER, LORA_LDRO);
+        ESP_LOGI("TX", "Packet sent: \"%s\". Delaying for %d ms", msg, transmission_delay);
+
+        vTaskDelay(pdMS_TO_TICKS(transmission_delay));
     }
 }
 

@@ -24,36 +24,6 @@ QueueHandle_t ws_queue;
 TaskHandle_t websocket_task_handle = NULL;
 
 void app_main(void) {
-    /*
-    uint8_t spreading_factor = 7;
-    uint16_t bandwidth = 250; // kHz
-    uint8_t n_preamble_symbols = 8; // default
-    uint16_t payload_length = 175; // e.g.
-    bool header = true;
-    bool low_data_rate_optimisation = false;
-
-    int transmission_delay;
-    printf("calculate_transmission_delay(%d, %d, %d, %d, %d, %s, %s):\n", spreading_factor, bandwidth, n_preamble_symbols, payload_length, 1, header?"true":"false", low_data_rate_optimisation?"true":"false");
-    transmission_delay = calculate_transmission_delay(spreading_factor, bandwidth, n_preamble_symbols, payload_length, 1, header, low_data_rate_optimisation);
-    printf("transmission delay: %d\n\n\n", transmission_delay);
-    vTaskDelay(pdMS_TO_TICKS(transmission_delay));
-
-    printf("calculate_transmission_delay(%d, %d, %d, %d, %d, %s, %s):\n", spreading_factor, bandwidth, n_preamble_symbols, payload_length, 2, header?"true":"false", low_data_rate_optimisation?"true":"false");
-    transmission_delay = calculate_transmission_delay(spreading_factor, bandwidth, n_preamble_symbols, payload_length, 2, header, low_data_rate_optimisation);
-    printf("transmission delay: %d\n\n\n", transmission_delay);
-    vTaskDelay(pdMS_TO_TICKS(transmission_delay));
-
-    printf("calculate_transmission_delay(%d, %d, %d, %d, %d, %s, %s):\n", spreading_factor, bandwidth, n_preamble_symbols, payload_length, 3, header?"true":"false", low_data_rate_optimisation?"true":"false");
-    transmission_delay = calculate_transmission_delay(spreading_factor, bandwidth, n_preamble_symbols, payload_length, 3, header, low_data_rate_optimisation);
-    printf("transmission delay: %d\n\n\n", transmission_delay);
-    vTaskDelay(pdMS_TO_TICKS(transmission_delay));
-
-    printf("calculate_transmission_delay(%d, %d, %d, %d, %d, %s, %s):\n", spreading_factor, bandwidth, n_preamble_symbols, payload_length, 4, header?"true":"false", low_data_rate_optimisation?"true":"false");
-    transmission_delay = calculate_transmission_delay(spreading_factor, bandwidth, n_preamble_symbols, payload_length, 4, header, low_data_rate_optimisation);
-    printf("transmission delay: %d\n\n\n", transmission_delay);
-    vTaskDelay(pdMS_TO_TICKS(transmission_delay));
-    */
-
     esp_err_t ret = lora_init();
     if (ret != ESP_OK) {
         ESP_LOGE("MAIN", "LoRa init failed");
