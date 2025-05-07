@@ -12,6 +12,7 @@
 #include <esp_http_client.h>
 #include <esp_websocket_client.h>
 #include <esp_mac.h>
+#include <driver/gpio.h>
 
 static const char* TAG = "MESH";
 static esp_netif_t *ap_netif;
