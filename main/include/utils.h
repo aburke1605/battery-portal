@@ -16,8 +16,6 @@ void url_encode(char *dest, const char *src, size_t dest_size);
 
 void random_token(char *key);
 
-int calculate_transmission_delay(uint8_t spreading_factor, uint8_t bandwidth, uint8_t n_preamble_symbols, uint16_t payload_length, uint8_t coding_rate, bool header, bool low_data_rate_optimisation);
-
 int round_to_dp(float var, int ndp);
 
 char* read_file(const char* path);
