@@ -1,12 +1,14 @@
 #include "include/LoRa.h"
 #include "include/utils.h"
 
+#include <cJSON.h>
 #include <driver/spi_master.h>
 #include <driver/gpio.h>
 #include <esp_err.h>
 #include <esp_log.h>
 
 static spi_device_handle_t lora_spi;
+extern QueueHandle_t lora_queue;
 
 static const char* TAG = "LoRa";
 
@@ -127,10 +129,51 @@ void lora_configure_defaults() {
 }
 
 void lora_tx_task(void *pvParameters) {
-    const char *msg = "Hello!";
-    uint8_t len = strlen(msg);
+    char individual_message[128];
+
+    LoRa_message all_messages[5] = {0};
+    // initiate
+    for (int i=0; i<5; i++) strcpy(all_messages[i].id, "");
+
+    char combined_message[(sizeof(individual_message) + 2)*5]; // +2 for ", " between each message instance
 
     while (true) {
+        if (xQueueReceive(lora_queue, individual_message, portMAX_DELAY) == pdPASS) {
+            ESP_LOGI(TAG, "Received \"%s\" from queue", individual_message);
+            cJSON *message_json = cJSON_Parse(individual_message);
+            cJSON *id_obj = cJSON_GetObjectItem(message_json, "id");
+            if (id_obj) {
+                char *id = id_obj->valuestring;
+                bool found = false;
+                for (int i=0; i<5; i++) {
+                    if (strcmp(all_messages[i].id, id) == 0) {
+                        found = true;
+                        strcpy(all_messages[i].message, individual_message);
+                        break;
+                    } else if (strcmp(all_messages[i].id, "") == 0) {
+                        found = true;
+                        strcpy(all_messages[i].id, id);
+                        strcpy(all_messages[i].message, individual_message);
+                        break;
+                    }
+                }
+
+                if (!found) printf("error: no space!\n");
+            }
+
+            cJSON_Delete(message_json);
+        }
+
+        // now form the LoRa message out of non-empty messages and transmit
+        combined_message[0] = '\0';
+        for (int i=0; i<5; i++) {
+            if (strcmp(all_messages[i].id, "") != 0) {
+                if (combined_message[0] != '\0') strcat(combined_message, ", ");
+                strcat(combined_message, all_messages[i].message);
+            }
+        }
+        uint8_t len = strlen(combined_message);
+
         // Set to standby
         lora_write_register(REG_OP_MODE, 0b10000001);  // LoRa + standby
 
@@ -143,7 +186,7 @@ void lora_tx_task(void *pvParameters) {
 
         // Write payload to FIFO
         for (int i = 0; i < len; i++) {
-            lora_write_register(REG_FIFO, msg[i]);
+            lora_write_register(REG_FIFO, combined_message[i]);
         }
 
         lora_write_register(REG_PAYLOAD_LENGTH, len);  // Payload length
@@ -162,8 +205,8 @@ void lora_tx_task(void *pvParameters) {
         // Clear IRQ
         lora_write_register(REG_IRQ_FLAGS, 0b00001000);  // Clear TxDone
 
-        int transmission_delay = calculate_transmission_delay(LORA_SF, LORA_BW, 8, strlen(msg), LORA_CR, LORA_HEADER, LORA_LDRO);
-        ESP_LOGI("TX", "Packet sent: \"%s\". Delaying for %d ms", msg, transmission_delay);
+        int transmission_delay = calculate_transmission_delay(LORA_SF, LORA_BW, 8, len, LORA_CR, LORA_HEADER, LORA_LDRO);
+        ESP_LOGI("TX", "Packet sent: \"%s\". Delaying for %d ms", combined_message, transmission_delay);
 
         vTaskDelay(pdMS_TO_TICKS(transmission_delay));
     }

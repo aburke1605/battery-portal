@@ -649,59 +649,6 @@ void merge_task(void *pvParameters) {
     }
 }
 
-typedef struct {
-    char id[10];
-    char message[1024];
-} LoRa_message;
-
-void lora_task(void *pvParameters) {
-    char message[1024];
-
-    LoRa_message all_messages[5] = {0};
-    // initiate
-    for (int i=0; i<5; i++) {
-        strcpy(all_messages[i].id, "");
-    }
-
-    while (true) {
-        if (xQueueReceive(lora_queue, message, portMAX_DELAY) == pdPASS) {
-            ESP_LOGI(TAG, "Received \"%s\" from queue", message);
-            cJSON *message_json = cJSON_Parse(message);
-            cJSON *id_obj = cJSON_GetObjectItem(message_json, "id");
-            if (id_obj) {
-                char *id = id_obj->valuestring;
-                bool found = false;
-                for (int i=0; i<5; i++) {
-                    if (strcmp(all_messages[i].id, id) == 0) {
-                        found = true;
-                        strcpy(all_messages[i].message, message);
-                        break;
-                    } else if (strcmp(all_messages[i].id, "") == 0) {
-                        found = true;
-                        strcpy(all_messages[i].id, id);
-                        strcpy(all_messages[i].message, message);
-                        break;
-                    }
-                }
-
-                if (!found) printf("error: no space!\n");
-            }
-
-            cJSON_Delete(message_json);
-        }
-
-        // now form the LoRa message out of non-empty messages and transmit
-        for (int i=0; i<5; i++) {
-            if (strcmp(all_messages[i].id, "") != 0) {
-                printf("%s ", all_messages[i].message);
-            }
-        }
-        printf("\n");
-
-        vTaskDelay(pdMS_TO_TICKS(1000));
-    }
-}
-
 void app_main(void) {
     bool receiver = true;
     if (receiver) {
@@ -731,9 +678,6 @@ void app_main(void) {
                 return;
             }
 
-            lora_queue = xQueueCreate(10, 1024);
-            xTaskCreate(&lora_task, "lora_task", 8192, NULL, 5, NULL);
-
             xTaskCreate(&merge_task, "merge_task", 4096, NULL, 5, &merge_task_handle);
 
             esp_err_t ret = lora_init();
@@ -745,7 +689,8 @@ void app_main(void) {
             lora_configure_defaults();
             gpio_set_direction(PIN_NUM_DIO0, GPIO_MODE_INPUT);
 
-            xTaskCreate(lora_tx_task, "lora_tx_task", 4096, NULL, 5, NULL);
+            lora_queue = xQueueCreate(10, 128);
+            xTaskCreate(lora_tx_task, "lora_tx_task", 8192, NULL, 5, NULL);
         }
     }
 }

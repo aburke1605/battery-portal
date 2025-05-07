@@ -69,6 +69,13 @@
 #define MODE_STDBY         0b00000001
 #define MODE_LORA          0b10000000
 
+
+typedef struct {
+    char id[10];
+    char message[128];
+} LoRa_message;
+
+
 void lora_reset();
 
 uint8_t lora_read_register(uint8_t reg);
