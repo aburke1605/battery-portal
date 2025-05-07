@@ -9,6 +9,7 @@
 
 static spi_device_handle_t lora_spi;
 extern QueueHandle_t lora_queue;
+extern char* get_BMS_data();
 
 static const char* TAG = "LoRa";
 
@@ -135,7 +136,7 @@ void lora_tx_task(void *pvParameters) {
     // initiate
     for (int i=0; i<5; i++) strcpy(all_messages[i].id, "");
 
-    char combined_message[(sizeof(individual_message) + 2)*5]; // +2 for ", " between each message instance
+    char combined_message[(sizeof(individual_message) + 2) * (5 + 1)]; // +2 for ", " between each message instance, +1 for this ESP32s own BMS data
 
     while (true) {
         if (xQueueReceive(lora_queue, individual_message, portMAX_DELAY) == pdPASS) {
@@ -172,6 +173,11 @@ void lora_tx_task(void *pvParameters) {
                 strcat(combined_message, all_messages[i].message);
             }
         }
+        char *data_string = get_BMS_data();
+        snprintf(individual_message, sizeof(individual_message), "{\"type\":\"data\",\"id\":\"%s\",\"content\":%s}", "bms_02", data_string);
+        strcat(combined_message, ", ");
+        strcat(combined_message, individual_message);
+
         uint8_t len = strlen(combined_message);
 
         // Set to standby
