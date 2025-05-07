@@ -199,7 +199,7 @@ void lora_rx_task(void *pvParameters) {
                 uint8_t rssi_raw = lora_read_register(0x1A);
                 int rssi_dbm = -157 + rssi_raw;
 
-                ESP_LOGI("RX", "Received: %s, RSSI: %d dBm", buffer, rssi_dbm);
+                ESP_LOGI("RX", "Received: \"%s\", RSSI: %d dBm", buffer, rssi_dbm);
             }
 
             // Clear IRQ flags
