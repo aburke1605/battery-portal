@@ -15,6 +15,32 @@
 #define PIN_NUM_RST  CONFIG_SPI_RST_PIN
 #define PIN_NUM_DIO0 CONFIG_SPI_DIO0_PIN
 
+// default config
+#define LORA_FREQ        CONFIG_FREQ
+#define LORA_SF          CONFIG_SF
+#define LORA_BW          CONFIG_BW
+#define LORA_CR          CONFIG_CR
+#ifdef CONFIG_HEADER
+    #define LORA_HEADER true
+#else
+    #define LORA_HEADER false
+#endif
+#ifdef CONFIG_LDRO
+    #define LORA_LDRO true
+#else
+    #define LORA_LDRO false
+#endif
+#ifdef CONFIG_Tx_CONT
+    #define LORA_Tx_CONT true
+#else
+    #define LORA_Tx_CONT false
+#endif
+#ifdef CONFIG_Rx_PAYL_CRC
+    #define LORA_Rx_PAYL_CRC true
+#else
+    #define LORA_Rx_PAYL_CRC false
+#endif
+
 // register addresses
 #define REG_FIFO                0x00
 #define REG_OP_MODE             0x01

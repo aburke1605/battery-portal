@@ -83,8 +83,8 @@ esp_err_t lora_init() {
 }
 
 void lora_configure_defaults() {
-    // Set carrier frequency to 868.0 MHz
-    uint64_t frf = ((uint64_t)868000000 << 19) / 32000000;
+    // Set carrier frequency
+    uint64_t frf = ((uint64_t)(LORA_FREQ * 1E6) << 19) / 32000000;
     lora_write_register(REG_FRF_MSB, (uint8_t)(frf >> 16));
     lora_write_register(REG_FRF_MID, (uint8_t)(frf >> 8));
     lora_write_register(REG_FRF_LSB, (uint8_t)(frf >> 0));
@@ -93,13 +93,27 @@ void lora_configure_defaults() {
     lora_write_register(REG_LNA, 0b00100011);  // LNA_MAX_GAIN | LNA_BOOST
 
     // Enable AGC (bit 2 of RegModemConfig3)
-    lora_write_register(REG_MODEM_CONFIG_3, 0b00000100);  // LowDataRateOptimize off, AGC on
+    lora_write_register(REG_MODEM_CONFIG_3,  // bits:
+        (0b00001111 & 0)         << 4 |      //  7-4
+        (0b00000001 & LORA_LDRO) << 3 |      //  3
+        (0b00000001 & 1)         << 2 |      //  2    AGC on
+        (0b00000011 & 0)                     //  1-0
+    );  // LowDataRateOptimize off, AGC on
 
-    // Configure modem parameters: BW = 125kHz, CR = 4/5, Explicit header
-    lora_write_register(REG_MODEM_CONFIG_1, 0b01110010);  // BW=7(125kHz), CR=1(4/5), ImplicitHeader=0
-
-    // Spreading factor = 7, CRC on
-    lora_write_register(REG_MODEM_CONFIG_2, 0b01110100);  // SF7, TxContinuousMode=0, CRC on
+    // Configure modem parameters:
+    //  bandwidth, coding rate, header
+    lora_write_register(REG_MODEM_CONFIG_1,  // bits:
+        (0b00001111 & LORA_BW)     << 4 |    //  7-4
+        (0b00000111 & LORA_CR)     << 1 |    //  3-1
+        (0b00000001 & LORA_HEADER)           //  0
+    );
+    //  spreading factor, cyclic redundancy check
+    lora_write_register(REG_MODEM_CONFIG_2,     // bits:
+        (0b00001111 & LORA_SF)          << 4 |  //  7-4
+        (0b00000001 & LORA_Tx_CONT)     << 3 |  //  3
+        (0b00000001 & LORA_Rx_PAYL_CRC) << 2 |  //  2
+        (0b00000011 & 0)                        //  1-0
+    );  // SF7, TxContinuousMode=0, CRC on
 
     // Preamble length (8 bytes = 0x0008)
     lora_write_register(REG_PREAMBLE_MSB, 0x00);
