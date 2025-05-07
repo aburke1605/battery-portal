@@ -1,3 +1,5 @@
+#include "include/LoRa.h"
+
 #include <string.h>
 #include <ctype.h>
 
@@ -700,22 +702,49 @@ void lora_task(void *pvParameters) {
 }
 
 void app_main(void) {
-    wifi_init();
-
-    if (!is_root) {
-        xTaskCreate(&connect_to_root_task, "connect_to_root_task", 4096, NULL, 5, NULL);
-
-        xTaskCreate(&websocket_message_task, "websocket_message_task", 4096, NULL, 5, &websocket_message_task_handle);
-    } else {
-        server = start_websocket_server();
-        if (server == NULL) {
-            ESP_LOGE(TAG, "Failed to start web server!");
+    bool receiver = true;
+    if (receiver) {
+        esp_err_t ret = lora_init();
+        if (ret != ESP_OK) {
+            ESP_LOGE("MAIN", "LoRa init failed");
             return;
         }
 
-        lora_queue = xQueueCreate(10, 1024);
-        xTaskCreate(&lora_task, "lora_task", 8192, NULL, 5, NULL);
+        lora_configure_defaults();
+        gpio_set_direction(PIN_NUM_DIO0, GPIO_MODE_INPUT);
 
-        xTaskCreate(&merge_task, "merge_task", 4096, NULL, 5, &merge_task_handle);
+        xTaskCreate(lora_rx_task, "lora_rx_task", 4096, NULL, 5, NULL);
+    }
+
+    else {
+        wifi_init();
+
+        if (!is_root) {
+            xTaskCreate(&connect_to_root_task, "connect_to_root_task", 4096, NULL, 5, NULL);
+
+            xTaskCreate(&websocket_message_task, "websocket_message_task", 4096, NULL, 5, &websocket_message_task_handle);
+        } else {
+            server = start_websocket_server();
+            if (server == NULL) {
+                ESP_LOGE(TAG, "Failed to start web server!");
+                return;
+            }
+
+            lora_queue = xQueueCreate(10, 1024);
+            xTaskCreate(&lora_task, "lora_task", 8192, NULL, 5, NULL);
+
+            xTaskCreate(&merge_task, "merge_task", 4096, NULL, 5, &merge_task_handle);
+
+            esp_err_t ret = lora_init();
+            if (ret != ESP_OK) {
+                ESP_LOGE("MAIN", "LoRa init failed");
+                return;
+            }
+
+            lora_configure_defaults();
+            gpio_set_direction(PIN_NUM_DIO0, GPIO_MODE_INPUT);
+
+            xTaskCreate(lora_tx_task, "lora_tx_task", 4096, NULL, 5, NULL);
+        }
     }
 }

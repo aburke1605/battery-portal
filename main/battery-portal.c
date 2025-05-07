@@ -4,9 +4,7 @@
 #include "include/DNS.h"
 #include "include/I2C.h"
 #include "include/BMS.h"
-#include "include/LoRa.h"
 #include "include/WS.h"
-#include "include/utils.h"
 
 #include <esp_log.h>
 #include <esp_spiffs.h>
@@ -24,19 +22,6 @@ QueueHandle_t ws_queue;
 TaskHandle_t websocket_task_handle = NULL;
 
 void app_main(void) {
-    esp_err_t ret = lora_init();
-    if (ret != ESP_OK) {
-        ESP_LOGE("MAIN", "LoRa init failed");
-    } else {
-        lora_configure_defaults();
-        gpio_set_direction(PIN_NUM_DIO0, GPIO_MODE_INPUT);
-
-        bool transmitter = false;
-        if (transmitter) xTaskCreate(lora_tx_task, "lora_tx_task", 4096, NULL, 5, NULL);
-        else             xTaskCreate(lora_rx_task, "lora_rx_task", 4096, NULL, 5, NULL);
-    }
-
-    return;
 
     // initialise SPIFFS
     esp_err_t result;
