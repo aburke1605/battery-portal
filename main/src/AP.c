@@ -17,27 +17,40 @@ static uint8_t n_rendered_html_pages = 0;
 static const char* TAG = "AP";
 
 void wifi_init(void) {
-    // Initialize NVS
+    // initialize NVS
     esp_err_t ret = nvs_flash_init();
     if (ret == ESP_ERR_NVS_NO_FREE_PAGES || ret == ESP_ERR_NVS_NEW_VERSION_FOUND) {
         ESP_ERROR_CHECK(nvs_flash_erase());
         ESP_ERROR_CHECK(nvs_flash_init());
     }
 
-    // Initialize the Wi-Fi stack
+    // initialize the Wi-Fi stack
     ESP_ERROR_CHECK(esp_netif_init());
     ESP_ERROR_CHECK(esp_event_loop_create_default());
     
     esp_netif_create_default_wifi_sta();
-    esp_netif_t *ap_netif = esp_netif_create_default_wifi_ap();
 
     wifi_init_config_t cfg = WIFI_INIT_CONFIG_DEFAULT();
     ESP_ERROR_CHECK(esp_wifi_init(&cfg));
 
-    // Set Wi-Fi mode to both AP and STA
+    // use only STA at first to scan for APs
+    ESP_ERROR_CHECK(esp_wifi_set_mode(WIFI_MODE_STA));
+    ESP_ERROR_CHECK(esp_wifi_start());
+    vTaskDelay(pdMS_TO_TICKS(100));
+
+    // scan for other WiFi APs
+    wifi_ap_record_t * AP_exists = wifi_scan();
+
+    // stop WiFi before changing mode
+    ESP_ERROR_CHECK(esp_wifi_stop());
+
+    // create the AP network interface
+    ap_netif = esp_netif_create_default_wifi_ap();
+
+    // set Wi-Fi mode to both AP and STA
     ESP_ERROR_CHECK(esp_wifi_set_mode(WIFI_MODE_APSTA));
 
-    // Configure the Access Point
+    // configure the Access Point
     wifi_config_t wifi_ap_config = {
         .ap = {
             .channel = 1,
@@ -50,39 +63,36 @@ void wifi_init(void) {
     uint8_t charge[2] = {};
     read_bytes(0, I2C_STATE_OF_CHARGE_REG, charge, sizeof(charge));
 
-    char buffer[strlen(ESP_ID) + 2 + 5 + 1 + 1]; // "BMS_01" + ": " + uint16_t, + "%" + "\0"
-    snprintf(buffer, sizeof(buffer), "%s: %d%%", ESP_ID, charge[1] << 8 | charge[0]);
+    char buffer[5 + strlen(ESP_ID) + 2 + 5 + 1 + 1]; // "ROOT " + "BMS_01" + ": " + uint16_t, + "%" + "\0"
+    snprintf(buffer, sizeof(buffer), "%s%s: %d%%", !AP_exists?"ROOT ":"", ESP_ID, charge[1] << 8 | charge[0]);
 
     strncpy((char *)wifi_ap_config.ap.ssid, buffer, sizeof(wifi_ap_config.ap.ssid) - 1);
-    wifi_ap_config.ap.ssid[sizeof(wifi_ap_config.ap.ssid) - 1] = '\0'; // Ensure null-termination
-    wifi_ap_config.ap.ssid_len = strlen((char *)wifi_ap_config.ap.ssid); // Set SSID length
+    wifi_ap_config.ap.ssid[sizeof(wifi_ap_config.ap.ssid) - 1] = '\0'; // ensure null-termination
+    wifi_ap_config.ap.ssid_len = strlen((char *)wifi_ap_config.ap.ssid); // set SSID length
+
+    // specific configurations or ROOT or non-ROOT APs
+    if (!AP_exists) {
+        // keep count of number of connected clients
+        ESP_ERROR_CHECK(esp_event_handler_register(WIFI_EVENT, ESP_EVENT_ANY_ID, &ap_n_clients_handler, NULL));
+        is_root = true;
+    } else {
+        // must change IP address from default so
+        // can send messages to ROOT at 192.168.4.1
+        esp_netif_ip_info_t ip_info;
+        IP4_ADDR(&ip_info.ip, 192,168,5,1);
+        IP4_ADDR(&ip_info.gw, 192,168,5,1);
+        IP4_ADDR(&ip_info.netmask, 255,255,255,0);
+        esp_netif_dhcps_stop(ap_netif);
+        esp_netif_set_ip_info(ap_netif, &ip_info);
+        esp_netif_dhcps_start(ap_netif);
+    }
 
     ESP_ERROR_CHECK(esp_wifi_set_config(ESP_IF_WIFI_AP, &wifi_ap_config));
 
-
-    // manually set the netmask and gateway as something different from first ESP
-    ESP_ERROR_CHECK(esp_netif_dhcps_stop(ap_netif));
-    snprintf(ESP_subnet_IP, sizeof(ESP_subnet_IP), "192.168.4.1");
-    esp_ip4_addr_t ip_info = {
-        .addr = esp_ip4addr_aton(ESP_subnet_IP),
-    };
-    esp_ip4_addr_t netmask = {
-        .addr = esp_ip4addr_aton("255.255.255.0"),
-    };
-
-    esp_ip4_addr_t gateway = {
-        .addr = esp_ip4addr_aton(ESP_subnet_IP),
-    };
-    esp_netif_ip_info_t ip_info_struct;
-    ip_info_struct.ip = ip_info;
-    ip_info_struct.netmask = netmask;
-    ip_info_struct.gw = gateway;
-    ESP_ERROR_CHECK(esp_netif_set_ip_info(ap_netif, &ip_info_struct));
-    ESP_ERROR_CHECK(esp_netif_dhcps_start(ap_netif));
-    ESP_LOGI(TAG, "AP initialized with IP: %s", ESP_subnet_IP);
-
+    // restart WiFi
     ESP_LOGI(TAG, "Starting WiFi AP... SSID: %s", wifi_ap_config.ap.ssid);
     ESP_ERROR_CHECK(esp_wifi_start());
+    vTaskDelay(pdMS_TO_TICKS(100));
 }
 
 esp_err_t redirect_handler(httpd_req_t *req) {

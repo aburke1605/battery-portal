@@ -11,10 +11,11 @@
 #include <driver/gpio.h>
 
 // global variables
+esp_netif_t *ap_netif;
+bool is_root = false;
 char ESP_ID[UTILS_ID_LENGTH + 1] = "unknown";
 httpd_handle_t server = NULL;
 bool connected_to_WiFi = false;
-char ESP_subnet_IP[15];
 client_socket client_sockets[WS_CONFIG_MAX_CLIENTS];
 char current_auth_token[UTILS_AUTH_TOKEN_LENGTH] = "";
 QueueHandle_t ws_queue;
