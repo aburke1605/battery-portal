@@ -38,7 +38,7 @@ void send_message(const char *message);
 
 void message_queue_task(void *pvParameters);
 
-void event_handler(void *arg, esp_event_base_t event_base, int32_t event_id, void *event_data);
+void websocket_event_handler(void *arg, esp_event_base_t event_base, int32_t event_id, void *event_data);
 
 void websocket_task(void *pvParameters);
 

@@ -347,7 +347,7 @@ void message_queue_task(void *pvParameters) {
     }
 }
 
-void event_handler(void *arg, esp_event_base_t event_base, int32_t event_id, void *event_data) {
+void websocket_event_handler(void *arg, esp_event_base_t event_base, int32_t event_id, void *event_data) {
     esp_websocket_event_data_t *ws_event_data = (esp_websocket_event_data_t *)event_data;
 
     switch (event_id) {
@@ -372,6 +372,11 @@ void event_handler(void *arg, esp_event_base_t event_base, int32_t event_id, voi
                 cJSON_Delete(message);
                 break;
             }
+
+            // this case should never be triggered by the mesh ws
+            // event handling, so just continue with the code below
+            // for browser ws events and use this handler universally
+            // for both mesh and browser ws clients
 
             cJSON *response = cJSON_CreateObject();
             esp_err_t err = perform_request(message, response);
@@ -543,7 +548,7 @@ void websocket_task(void *pvParameters) {
                         vTaskDelay(pdMS_TO_TICKS(1000));
                         continue;
                     }
-                    esp_websocket_register_events(ws_client, WEBSOCKET_EVENT_ANY, event_handler, NULL);
+                    esp_websocket_register_events(ws_client, WEBSOCKET_EVENT_ANY, websocket_event_handler, NULL);
                     if (esp_websocket_client_start(ws_client) != ESP_OK) {
                         ESP_LOGE(TAG, "Failed to start WebSocket client");
                         esp_websocket_client_destroy(ws_client);
