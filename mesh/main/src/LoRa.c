@@ -212,7 +212,7 @@ void lora_tx_task(void *pvParameters) {
         lora_write_register(REG_IRQ_FLAGS, 0b00001000);  // Clear TxDone
 
         int transmission_delay = calculate_transmission_delay(LORA_SF, LORA_BW, 8, len, LORA_CR, LORA_HEADER, LORA_LDRO);
-        ESP_LOGI("TX", "Packet sent: \"%s\". Delaying for %d ms", combined_message, transmission_delay);
+        ESP_LOGI(TAG, "Packet sent: \"%s\". Delaying for %d ms", combined_message, transmission_delay);
 
         vTaskDelay(pdMS_TO_TICKS(transmission_delay));
     }
@@ -248,7 +248,7 @@ void lora_rx_task(void *pvParameters) {
                 uint8_t rssi_raw = lora_read_register(0x1A);
                 int rssi_dbm = -157 + rssi_raw;
 
-                ESP_LOGI("RX", "Received: \"%s\", RSSI: %d dBm", buffer, rssi_dbm);
+                ESP_LOGI(TAG, "Received: \"%s\", RSSI: %d dBm", buffer, rssi_dbm);
             }
 
             // Clear IRQ flags
