@@ -109,7 +109,6 @@ void random_token(char *key) {
     key[UTILS_AUTH_TOKEN_LENGTH - 1] = '\0';
 }
 
-
 int round_to_dp(float var, int ndp) {
     char str[40];
     // format to 0 d.p. after multiplying by 10^{ndp}

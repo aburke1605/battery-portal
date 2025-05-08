@@ -1,0 +1,702 @@
+#include "include/LoRa.h"
+
+#include <string.h>
+#include <ctype.h>
+
+#include <cJSON.h>
+#include <esp_log.h>
+#include <esp_err.h>
+#include <nvs_flash.h>
+#include <esp_wifi.h>
+#include <esp_http_server.h>
+#include <esp_http_client.h>
+#include <esp_websocket_client.h>
+#include <esp_mac.h>
+#include <driver/gpio.h>
+
+static const char* TAG = "MESH";
+static esp_netif_t *ap_netif;
+static const char* ROOT_SSID = "ROOT_ESP_AP";
+static bool is_root = false;
+static const char* SSID = "ESP_AP";
+httpd_handle_t server = NULL;
+static int num_connected_clients = 0;
+
+typedef struct {
+    int descriptor;
+} client_socket;
+client_socket client_sockets[3];
+static esp_websocket_client_handle_t ws_client = NULL;
+
+QueueHandle_t lora_queue;
+
+TaskHandle_t websocket_message_task_handle = NULL;
+TaskHandle_t merge_task_handle = NULL;
+
+wifi_ap_record_t *wifi_scan(void) {
+    // Configure Wi-Fi scan settings
+    wifi_scan_config_t scan_config = {
+        .ssid = NULL,        // Scan all SSIDs
+        .bssid = NULL,       // Scan all BSSIDs
+        .channel = 0,        // Scan all channels
+        .show_hidden = false,
+        .scan_type = WIFI_SCAN_TYPE_PASSIVE,
+    };
+
+    ESP_ERROR_CHECK(esp_wifi_scan_start(&scan_config, true)); // Blocking scan
+
+    // Get the number of APs found
+    uint16_t ap_num = 0;
+    ESP_ERROR_CHECK(esp_wifi_scan_get_ap_num(&ap_num));
+
+    // Allocate memory for AP info and retrieve the list
+    wifi_ap_record_t *ap_info = malloc(sizeof(wifi_ap_record_t) * ap_num);
+    if (ap_info == NULL) {
+        ESP_LOGE("AP", "Failed to allocate memory for AP list");
+        return false;
+    }
+    ESP_ERROR_CHECK(esp_wifi_scan_get_ap_records(&ap_num, ap_info));
+
+    for (int i = 0; i < ap_num; i++) {
+        if (strcmp((const char*)ap_info[i].ssid, ROOT_SSID) == 0) return &ap_info[i];
+    }
+    
+    free(ap_info);
+
+    return NULL;
+}
+
+void wifi_event_handler(void *arg, esp_event_base_t event_base, int32_t event_id, void *event_data) {
+    if (event_base == WIFI_EVENT) {
+        switch (event_id) {
+            case WIFI_EVENT_STA_START:
+                ESP_LOGI(TAG, "Wi-Fi STA started");
+                break;
+
+            case WIFI_EVENT_AP_STACONNECTED: {
+                wifi_event_ap_staconnected_t *event = (wifi_event_ap_staconnected_t *) event_data;
+                num_connected_clients++;
+                ESP_LOGI(TAG, "Station "MACSTR" joined, AID=%d. Clients: %d",
+                         MAC2STR(event->mac), event->aid, num_connected_clients);
+                break;
+            }
+
+            case WIFI_EVENT_AP_STADISCONNECTED: {
+                wifi_event_ap_stadisconnected_t *event = (wifi_event_ap_stadisconnected_t *) event_data;
+                num_connected_clients--;
+                ESP_LOGI(TAG, "Station "MACSTR" left, AID=%d. Clients: %d",
+                         MAC2STR(event->mac), event->aid, num_connected_clients);
+                break;
+            }
+
+            default:
+                break;
+        }
+    }
+}
+
+void wifi_init(void) {
+    // initialise NVS
+    esp_err_t ret = nvs_flash_init();
+    if (ret == ESP_ERR_NVS_NO_FREE_PAGES || ret == ESP_ERR_NVS_NEW_VERSION_FOUND) {
+        ESP_ERROR_CHECK(nvs_flash_erase());
+        ESP_ERROR_CHECK(nvs_flash_init());
+    }
+
+    // initialise the Wi-Fi stack
+    ESP_ERROR_CHECK(esp_netif_init());
+    ESP_ERROR_CHECK(esp_event_loop_create_default());
+    
+    esp_netif_create_default_wifi_sta();
+
+    wifi_init_config_t cfg = WIFI_INIT_CONFIG_DEFAULT();
+    ESP_ERROR_CHECK(esp_wifi_init(&cfg));
+
+    // use only STA at first to scan for APs
+    ESP_ERROR_CHECK(esp_wifi_set_mode(WIFI_MODE_STA));
+    ESP_ERROR_CHECK(esp_wifi_start());
+    vTaskDelay(pdMS_TO_TICKS(100));
+
+    // scan for other WiFi APs
+    wifi_ap_record_t * AP_exists = wifi_scan();
+
+    // stop WiFi before changing mode
+    ESP_ERROR_CHECK(esp_wifi_stop());
+
+    // create the AP network interface
+    ap_netif = esp_netif_create_default_wifi_ap();
+
+    // configure the AP
+    wifi_config_t wifi_ap_config = {
+        .ap = {
+            .ssid = "",
+            .ssid_len = 0,
+            .channel = 1,
+            .max_connection = 10,
+            .authmode = WIFI_AUTH_OPEN,
+        },
+    };
+
+    ESP_ERROR_CHECK(esp_wifi_set_mode(WIFI_MODE_APSTA));
+    if (!AP_exists) {
+        ESP_ERROR_CHECK(esp_event_handler_register(WIFI_EVENT, ESP_EVENT_ANY_ID, &wifi_event_handler, NULL));
+        is_root = true;
+        strncpy((char *)wifi_ap_config.ap.ssid, ROOT_SSID, sizeof(wifi_ap_config.ap.ssid) - 1);
+    } else {
+        // must change IP address from default so
+        // can send messages to root at 192.168.4.1
+        esp_netif_ip_info_t ip_info;
+        IP4_ADDR(&ip_info.ip, 192,168,5,1);
+        IP4_ADDR(&ip_info.gw, 192,168,5,1);
+        IP4_ADDR(&ip_info.netmask, 255,255,255,0);
+        esp_netif_dhcps_stop(ap_netif);
+        esp_netif_set_ip_info(ap_netif, &ip_info);
+        esp_netif_dhcps_start(ap_netif);
+
+        strncpy((char *)wifi_ap_config.ap.ssid, SSID, sizeof(wifi_ap_config.ap.ssid) - 1);
+    }
+
+    wifi_ap_config.ap.ssid[sizeof(wifi_ap_config.ap.ssid) - 1] = '\0';
+    ESP_ERROR_CHECK(esp_wifi_set_config(ESP_IF_WIFI_AP, &wifi_ap_config));
+
+    // restart WiFi
+    ESP_LOGI(TAG, "Starting WiFi AP... SSID: %s", wifi_ap_config.ap.ssid);
+    ESP_ERROR_CHECK(esp_wifi_start());
+    vTaskDelay(pdMS_TO_TICKS(100));
+}
+
+esp_err_t client_handler(httpd_req_t *req) {
+    // register new clients...
+    if (req->method == HTTP_GET) {
+        if (strcmp(req->uri, "/mesh_ws") == 0) {
+            int fd = httpd_req_to_sockfd(req);
+            for (int i = 0; i < 3; i++) {
+                if (client_sockets[i].descriptor < 0) {
+                    client_sockets[i].descriptor = fd;
+                    ESP_LOGI(TAG, "Client %d added", fd);
+                    ESP_LOGI(TAG, "Completing WebSocket handshake...");
+                    return ESP_OK; // WebSocket handshake happens here
+                }
+            }
+        }
+        return ESP_FAIL;
+    }
+
+    // ...otherwise listen for messages
+    httpd_ws_frame_t ws_pkt;
+    memset(&ws_pkt, 0, sizeof(httpd_ws_frame_t));
+    // first call with ws_pkt.len = 0 to determine required length
+    esp_err_t ret = httpd_ws_recv_frame(req, &ws_pkt, 0);
+    if (ret != ESP_OK) {
+        ESP_LOGE(TAG, "Failed to fetch WebSocket frame length: %s", esp_err_to_name(ret));
+        return ret;
+    }
+    if (ws_pkt.len > 0) {
+        // allocate buffer
+        ws_pkt.payload = malloc(ws_pkt.len + 1);
+        if (!ws_pkt.payload) {
+            ESP_LOGE(TAG, "Failed to allocate memory for WebSocket payload");
+            return ESP_ERR_NO_MEM;
+        }
+        // receive payload
+        ret = httpd_ws_recv_frame(req, &ws_pkt, ws_pkt.len);
+        if (ret != ESP_OK) {
+            ESP_LOGE(TAG, "Failed to receive WebSocket frame: %s", esp_err_to_name(ret));
+            free(ws_pkt.payload);
+            return ret;
+        }
+        ws_pkt.payload[ws_pkt.len] = '\0';
+    }
+
+    if (ws_pkt.type == HTTPD_WS_TYPE_TEXT) {
+        // read messaage data
+        cJSON *message = cJSON_Parse((char *)ws_pkt.payload);
+        if (!message) {
+            ESP_LOGE(TAG, "Failed to parse JSON");
+            free(ws_pkt.payload);
+            return ESP_FAIL;
+        }
+
+        // queue message to send via LoRa
+        if (xQueueSend(lora_queue, cJSON_PrintUnformatted(message), portMAX_DELAY) != pdPASS) {
+            ESP_LOGE(TAG, "LoRa queue full! Dropping message: %s", cJSON_PrintUnformatted(message));
+        }
+
+        cJSON_Delete(message);
+    } else {
+        ESP_LOGW(TAG, "Received unsupported WebSocket frame type: %d", ws_pkt.type);
+    }
+
+    free(ws_pkt.payload);
+
+    return ESP_OK;
+}
+
+esp_err_t num_clients_handler(httpd_req_t *req) {
+    printf("suspending merge_task...\n");
+    vTaskSuspend(merge_task_handle);
+    char response[64];
+    snprintf(response, sizeof(response), "{\"num_connected_clients\": %d}", num_connected_clients);
+
+    httpd_resp_set_type(req, "application/json");
+    httpd_resp_send(req, response, HTTPD_RESP_USE_STRLEN);
+    printf("sent: %s\n", response);
+
+    // big delay before resuming to give
+    // other AP time to receive message
+    vTaskDelay(pdMS_TO_TICKS(10000));
+    printf("resuming merge_task\n");
+    vTaskResume(merge_task_handle);
+
+    return ESP_OK;
+}
+
+esp_err_t restart_handler(httpd_req_t *req) {
+    printf("I am being told to restart\n");
+    esp_restart();
+
+    return ESP_OK;
+}
+
+httpd_handle_t start_websocket_server(void) {
+    // create sockets for clients
+    for (int i = 0; i < 3; i++) {
+        client_sockets[i].descriptor = -1;
+    }
+
+    httpd_config_t config = HTTPD_DEFAULT_CONFIG();
+    ESP_LOGI(TAG, "Starting server on port: '%d'", config.server_port);
+
+    if (httpd_start(&server, &config) == ESP_OK) {
+        ESP_LOGI(TAG, "Registering URI handlers");
+
+        httpd_uri_t uri = {
+            .uri = "/mesh_ws",
+            .method = HTTP_GET,
+            .handler = client_handler,
+            .is_websocket = true
+        };
+        httpd_register_uri_handler(server, &uri);
+
+        uri.is_websocket = false;
+
+        uri.uri = "/api_num_clients";
+        uri.handler = num_clients_handler;
+        httpd_register_uri_handler(server, &uri);
+
+        uri.uri = "/no_you_restart",
+        uri.method = HTTP_POST,
+        uri.handler = restart_handler,
+        httpd_register_uri_handler(server, &uri);
+    } else {
+        ESP_LOGE(TAG, "Error starting server!");
+    }
+    return server;
+}
+
+void event_handler(void *arg, esp_event_base_t event_base, int32_t event_id, void *event_data) {
+    esp_websocket_event_data_t *ws_event_data = (esp_websocket_event_data_t *)event_data;
+    switch (event_id) {
+        case WEBSOCKET_EVENT_CONNECTED:
+            ESP_LOGI(TAG, "WebSocket connected");
+            char websocket_connect_message[128];
+            snprintf(websocket_connect_message, sizeof(websocket_connect_message), "{\"type\":\"register\",\"id\":\"%s\"}", "bms_01");
+            esp_websocket_client_send_text(ws_client, websocket_connect_message, strlen(websocket_connect_message), portMAX_DELAY);
+            break;
+
+        case WEBSOCKET_EVENT_DISCONNECTED:
+            ESP_LOGI(TAG, "WebSocket disconnected");
+            esp_websocket_client_stop(ws_client);
+            break;
+
+        case WEBSOCKET_EVENT_DATA:
+            if (ws_event_data->data_len == 0) break;
+
+            cJSON *message = cJSON_Parse((char *)ws_event_data->data_ptr);
+            if (!message) {
+                ESP_LOGE(TAG, "invalid json");
+                cJSON_Delete(message);
+                break;
+            }
+
+            // cJSON *response = cJSON_CreateObject();
+            // esp_err_t err = perform_request(message, response);
+
+            // char *response_str = cJSON_PrintUnformatted(response);
+            // cJSON_Delete(response);
+            // if (err == ESP_OK) send_message(response_str);
+            // free(response_str);
+            // cJSON_Delete(message);
+
+            break;
+
+        case WEBSOCKET_EVENT_ERROR:
+            ESP_LOGE(TAG, "WebSocket error occurred");
+            break;
+
+        default:
+            ESP_LOGI(TAG, "WebSocket event ID: %ld", event_id);
+            break;
+    }
+}
+
+void connect_to_root_task(void *pvParameters) {
+    while (true) {
+        wifi_ap_record_t ap_info;
+        if (esp_wifi_sta_get_ap_info(&ap_info) != ESP_OK) { // if no wifi connection
+
+            // try to connect to root AP
+            wifi_config_t *wifi_sta_config = malloc(sizeof(wifi_config_t));
+            memset(wifi_sta_config, 0, sizeof(wifi_config_t));
+
+            strncpy((char *)wifi_sta_config->sta.ssid, ROOT_SSID, sizeof(wifi_sta_config->sta.ssid) - 1);
+            wifi_sta_config->ap.authmode = WIFI_AUTH_OPEN;
+            ESP_ERROR_CHECK(esp_wifi_set_config(ESP_IF_WIFI_STA, wifi_sta_config));
+            ESP_LOGI(TAG, "Connecting to AP... SSID: %s", wifi_sta_config->sta.ssid);
+
+            uint8_t tries = 0;
+            uint8_t max_tries = 10;
+            while (tries < max_tries) {
+                esp_err_t err = esp_wifi_connect();
+                if (err == ESP_OK) {
+                    ESP_LOGI(TAG, "Success, waiting for connection...");
+                    vTaskDelay(pdMS_TO_TICKS(1000));
+                    break;
+                } else {
+                    ESP_LOGW(TAG, "Failed to connect: %s. Retrying...", esp_err_to_name(err));
+                    tries++;
+                }
+            }
+
+            free(wifi_sta_config);
+            if (!(tries < max_tries)) {
+                vTaskSuspend(websocket_message_task_handle);
+
+                // scan to double check there really is no existing root AP
+                ESP_ERROR_CHECK(esp_wifi_stop());
+                ESP_ERROR_CHECK(esp_wifi_set_mode(WIFI_MODE_STA));
+                ESP_ERROR_CHECK(esp_wifi_start());
+                vTaskDelay(pdMS_TO_TICKS(100));
+                wifi_ap_record_t *ap_info = wifi_scan();
+
+                // if not, nominate a new one using MAC addresses
+                if (!ap_info) {
+                    uint8_t my_mac[6];
+                    esp_wifi_get_mac(WIFI_IF_AP, my_mac);
+                    uint32_t unique_number = ((uint32_t)my_mac[2] << 24) |
+                                             ((uint32_t)my_mac[3] << 16) |
+                                             ((uint32_t)my_mac[4] << 8)  |
+                                             ((uint32_t)my_mac[5]);
+                    int time_delay = unique_number % 100000 + 5000;
+                    printf("delaying for %d ms...\n", time_delay);
+                    vTaskDelay(pdMS_TO_TICKS(time_delay));
+                    printf("trying for last time... ");
+                    // try to connect to new root AP which has possibly restarted earlier than this
+                    ap_info = wifi_scan();
+                    if (!ap_info) {
+                        printf("fail, restarting\n");
+                        // hopefully become now the only root AP
+                        esp_restart();
+                    }
+                }
+
+                ESP_ERROR_CHECK(esp_wifi_stop());
+                ESP_ERROR_CHECK(esp_wifi_set_mode(WIFI_MODE_APSTA));
+                ESP_ERROR_CHECK(esp_wifi_start());
+                vTaskResume(websocket_message_task_handle);
+            }
+        }
+
+        vTaskDelay(pdMS_TO_TICKS(1000));
+    }
+}
+
+char* get_BMS_data() {
+    // create JSON object with sensor data
+    cJSON *data = cJSON_CreateObject();
+
+    cJSON_AddNumberToObject(data, "Q", 1);
+    cJSON_AddNumberToObject(data, "H", 1);
+    cJSON_AddNumberToObject(data, "V", 2);
+    cJSON_AddNumberToObject(data, "I", 3);
+    cJSON_AddNumberToObject(data, "aT", 4);
+    cJSON_AddNumberToObject(data, "iT", 5);
+
+    char *data_string = cJSON_PrintUnformatted(data); // goes to website
+
+    cJSON_Delete(data);
+
+    return data_string;
+}
+
+void websocket_message_task(void *pvParameters) {
+    while (true) {
+        char *data_string = get_BMS_data();
+
+        if (data_string != NULL) {
+            const esp_websocket_client_config_t websocket_cfg = {
+                .uri = "ws://192.168.4.1:80/mesh_ws",
+                .reconnect_timeout_ms = 10000,
+                .network_timeout_ms = 10000,
+            };
+
+            if (ws_client == NULL) {
+                ws_client = esp_websocket_client_init(&websocket_cfg);
+                if (ws_client == NULL) {
+                    ESP_LOGE(TAG, "Failed to initialize WebSocket client");
+                    vTaskDelay(pdMS_TO_TICKS(1000));
+                    continue;
+                }
+                esp_websocket_register_events(ws_client, WEBSOCKET_EVENT_ANY, event_handler, NULL);
+                if (esp_websocket_client_start(ws_client) != ESP_OK) {
+                    ESP_LOGE(TAG, "Failed to start WebSocket client");
+                    esp_websocket_client_destroy(ws_client);
+                    ws_client = NULL;
+                    vTaskDelay(pdMS_TO_TICKS(1000));
+                    continue;
+                }
+            }
+
+            vTaskDelay(pdMS_TO_TICKS(5000));
+
+            if (!esp_websocket_client_is_connected(ws_client)) {
+                esp_websocket_client_stop(ws_client);
+                esp_websocket_client_destroy(ws_client);
+                ws_client = NULL;
+            } else {
+                char message[128];
+                snprintf(message, sizeof(message), "{\"type\":\"data\",\"id\":\"%s\",\"content\":%s}", "bms_01", data_string);
+                esp_websocket_client_send_text(ws_client, message, strlen(message), portMAX_DELAY);
+            }
+        }
+
+        // clean up
+        free(data_string);
+    }
+
+    vTaskDelay(pdMS_TO_TICKS(1000));
+}
+
+#define MAX_HTTP_RECV_BUFFER 128
+esp_err_t _http_event_handler(esp_http_client_event_t *evt) {
+    static char *output_buffer;  // Buffer to store response
+    static int output_len;       // Length of valid content
+
+    switch (evt->event_id) {
+        case HTTP_EVENT_ON_DATA:
+            ESP_LOGI(TAG, "HTTP_EVENT_ON_DATA, len=%d", evt->data_len);
+            if (!esp_http_client_is_chunked_response(evt->client)) {
+                // Copy into output_buffer
+                if (output_buffer == NULL) {
+                    output_buffer = malloc(MAX_HTTP_RECV_BUFFER);
+                    output_len = 0;
+                }
+                int copy_len = evt->data_len;
+                if (output_len + copy_len < MAX_HTTP_RECV_BUFFER) {
+                    memcpy(output_buffer + output_len, evt->data, copy_len);
+                    output_len += copy_len;
+                }
+            }
+            break;
+
+        case HTTP_EVENT_ON_FINISH:
+            if (output_buffer != NULL) {
+                output_buffer[output_len] = '\0';
+                ESP_LOGI(TAG, "Full response: %s", output_buffer);
+                
+                cJSON *message = cJSON_Parse(output_buffer);
+                if (message) {
+                    printf("woohoo\n");
+                    cJSON *ext_num_object = cJSON_GetObjectItem(message, "num_connected_clients");
+                    if (ext_num_object) {
+                        int ext_num = ext_num_object->valueint;
+                        printf("the number is %d\n", ext_num);
+                        if (ext_num - 1 >= num_connected_clients) {
+                            // -1 to account for the connection of this ESP32 to the other root AP
+                            printf("I will shut down!\n");
+                            esp_restart();
+                        } else {
+                            esp_http_client_config_t config = {
+                                .url = "http://192.168.4.1/no_you_restart",
+                            };
+                            esp_http_client_handle_t client = esp_http_client_init(&config);
+                            esp_http_client_set_method(client, HTTP_METHOD_POST);
+                            esp_err_t err = esp_http_client_perform(client);
+                            if (err == ESP_OK) {
+                                ESP_LOGI("HTTP_CLIENT", "POST Status = %d",
+                                        esp_http_client_get_status_code(client));
+                            } else {
+                                ESP_LOGE("HTTP_CLIENT", "POST failed: %s", esp_err_to_name(err));
+                            }
+                            esp_http_client_cleanup(client);
+                        }
+                    }
+                }
+                free(output_buffer);
+                output_buffer = NULL;
+                output_len = 0;
+            }
+            break;
+
+        default:
+            break;
+    }
+    return ESP_OK;
+}
+
+int compare_mac(const uint8_t *mac1, const uint8_t *mac2) {
+    for (int i = 0; i < 6; i++) {
+        if (mac1[i] < mac2[i]) return -1;
+        if (mac1[i] > mac2[i]) return 1;
+    }
+    return 0;
+}
+
+void merge_task(void *pvParameters) {
+    while (true) {
+        uint8_t my_mac[6];
+        esp_wifi_get_mac(WIFI_IF_AP, my_mac);
+        printf("My BSSID: %02x:%02x:%02x:%02x:%02x:%02x\n",
+            my_mac[0], my_mac[1], my_mac[2],
+            my_mac[3], my_mac[4], my_mac[5]);
+
+        wifi_ap_record_t * ap_info = wifi_scan();
+        if (ap_info) {
+            printf("another root AP found!!\n SSID: %s, BSSID: %02x:%02x:%02x:%02x:%02x:%02x\n",
+                ap_info->ssid,
+                ap_info->bssid[0], ap_info->bssid[1], ap_info->bssid[2],
+                ap_info->bssid[3], ap_info->bssid[4], ap_info->bssid[5]);
+
+            int my_int = compare_mac(my_mac, ap_info->bssid);
+            if (my_int < 0) {
+                printf("I will change IP\n");
+            } else if(my_int > 0) {
+                printf("I will NOT change IP\n");
+            } else {
+                printf("major error\n");
+            }
+
+            wifi_config_t *wifi_sta_config = malloc(sizeof(wifi_config_t));
+            memset(wifi_sta_config, 0, sizeof(wifi_config_t));
+
+            strncpy((char *)wifi_sta_config->sta.ssid, ROOT_SSID, sizeof(wifi_sta_config->sta.ssid) - 1);
+            wifi_sta_config->ap.authmode = WIFI_AUTH_OPEN;
+            ESP_ERROR_CHECK(esp_wifi_set_config(ESP_IF_WIFI_STA, wifi_sta_config));
+            ESP_LOGI(TAG, "Connecting to AP... SSID: %s", wifi_sta_config->sta.ssid);
+
+            uint8_t tries = 0;
+            uint8_t max_tries = 10;
+            bool connected = false;
+            while (tries < max_tries) {
+                esp_err_t err = esp_wifi_connect();
+                if (err == ESP_OK) {
+                    ESP_LOGI(TAG, "Success, waiting for connection...");
+                    vTaskDelay(pdMS_TO_TICKS(1000));
+                    connected = true;
+                    break;
+                } else {
+                    ESP_LOGW(TAG, "Failed to connect: %s. Retrying...", esp_err_to_name(err));
+                    tries++;
+                }
+            }
+
+            free(wifi_sta_config);
+
+            if (connected) {
+                // change to another IP so we can communicate with other root AP on it's default IP
+                esp_netif_ip_info_t ip_info;
+                if (my_int < 0) {
+                    IP4_ADDR(&ip_info.ip, 192, 168, 10, 1);
+                    IP4_ADDR(&ip_info.gw, 192, 168, 10, 1);
+                    IP4_ADDR(&ip_info.netmask, 255, 255, 255, 0);
+                    esp_netif_dhcps_stop(ap_netif);
+                    esp_netif_set_ip_info(ap_netif, &ip_info);
+                    esp_netif_dhcps_start(ap_netif);
+                    printf("changed IP to 192.168.10.1\n");
+                    // delay to allow it to update
+                    vTaskDelay(pdMS_TO_TICKS(5000));
+                }
+
+
+                // fetch the number of clients connected to the other AP
+                esp_http_client_config_t config = {
+                    .url = "http://192.168.4.1/api_num_clients",
+                    .event_handler = _http_event_handler,
+                };
+                esp_http_client_handle_t client = esp_http_client_init(&config);
+                esp_err_t err = esp_http_client_perform(client);
+                if (err == ESP_OK) {
+                    ESP_LOGI(TAG, "HTTP GET Status = %d, content_length = %lld",
+                            esp_http_client_get_status_code(client),
+                            esp_http_client_get_content_length(client));
+                } else {
+                    ESP_LOGE(TAG, "HTTP GET request failed: %s", esp_err_to_name(err));
+                }
+                esp_http_client_cleanup(client);
+
+
+                if (my_int < 0) {
+                    // change back to default
+                    IP4_ADDR(&ip_info.ip, 192, 168, 4, 1);  // Change to a temporary IP
+                    IP4_ADDR(&ip_info.gw, 192, 168, 4, 1);  // Gateway IP
+                    IP4_ADDR(&ip_info.netmask, 255, 255, 255, 0);  // Subnet mask
+                    esp_netif_dhcps_stop(ap_netif);
+                    esp_netif_set_ip_info(ap_netif, &ip_info);
+                    esp_netif_dhcps_start(ap_netif);
+                    printf("changed IP back to 192.168.4.1\n");
+                }
+
+                esp_wifi_disconnect();
+            }
+        }
+
+
+        vTaskDelay(pdMS_TO_TICKS(60000));
+    }
+}
+
+void app_main(void) {
+    bool receiver = true;
+    if (receiver) {
+        esp_err_t ret = lora_init();
+        if (ret != ESP_OK) {
+            ESP_LOGE("MAIN", "LoRa init failed");
+            return;
+        }
+
+        lora_configure_defaults();
+        gpio_set_direction(PIN_NUM_DIO0, GPIO_MODE_INPUT);
+
+        xTaskCreate(lora_rx_task, "lora_rx_task", 4096, NULL, 5, NULL);
+    }
+
+    else {
+        wifi_init();
+
+        if (!is_root) {
+            xTaskCreate(&connect_to_root_task, "connect_to_root_task", 4096, NULL, 5, NULL);
+
+            xTaskCreate(&websocket_message_task, "websocket_message_task", 4096, NULL, 5, &websocket_message_task_handle);
+        } else {
+            server = start_websocket_server();
+            if (server == NULL) {
+                ESP_LOGE(TAG, "Failed to start web server!");
+                return;
+            }
+
+            xTaskCreate(&merge_task, "merge_task", 4096, NULL, 5, &merge_task_handle);
+
+            esp_err_t ret = lora_init();
+            if (ret != ESP_OK) {
+                ESP_LOGE("MAIN", "LoRa init failed");
+                return;
+            }
+
+            lora_configure_defaults();
+            gpio_set_direction(PIN_NUM_DIO0, GPIO_MODE_INPUT);
+
+            lora_queue = xQueueCreate(10, 128);
+            xTaskCreate(lora_tx_task, "lora_tx_task", 8192, NULL, 5, NULL);
+        }
+    }
+}

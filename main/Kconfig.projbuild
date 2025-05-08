@@ -56,7 +56,7 @@ config FLASK_IP
 endmenu
 
 
-menu "[CUSTOM] I2C Configuration"
+menu "[CUSTOM] BMS Configuration"
 
 config SCAN_I2C
     bool "Scan I2C devices"
