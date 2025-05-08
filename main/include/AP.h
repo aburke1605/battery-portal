@@ -13,6 +13,8 @@ struct rendered_page {
 
 wifi_ap_record_t *wifi_scan(void);
 
+void ap_n_clients_handler(void *arg, esp_event_base_t event_base, int32_t event_id, void *event_data);
+
 void wifi_init(void);
 
 esp_err_t redirect_handler(httpd_req_t *req);

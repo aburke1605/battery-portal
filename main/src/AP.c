@@ -9,6 +9,7 @@
 #include <esp_log.h>
 #include <nvs_flash.h>
 #include <esp_wifi.h>
+#include <esp_mac.h>
 #include <esp_websocket_client.h>
 
 static struct rendered_page rendered_html_pages[WS_MAX_N_HTML_PAGES];
@@ -47,6 +48,35 @@ wifi_ap_record_t *wifi_scan(void) {
     free(ap_info);
 
     return NULL;
+}
+
+void ap_n_clients_handler(void *arg, esp_event_base_t event_base, int32_t event_id, void *event_data) {
+    if (event_base == WIFI_EVENT) {
+        switch (event_id) {
+            case WIFI_EVENT_STA_START:
+                ESP_LOGI(TAG, "Wi-Fi STA started");
+                break;
+
+            case WIFI_EVENT_AP_STACONNECTED: {
+                wifi_event_ap_staconnected_t *event = (wifi_event_ap_staconnected_t *) event_data;
+                num_connected_clients++;
+                ESP_LOGI(TAG, "Station "MACSTR" joined, AID=%d. Clients: %d",
+                         MAC2STR(event->mac), event->aid, num_connected_clients);
+                break;
+            }
+
+            case WIFI_EVENT_AP_STADISCONNECTED: {
+                wifi_event_ap_stadisconnected_t *event = (wifi_event_ap_stadisconnected_t *) event_data;
+                num_connected_clients--;
+                ESP_LOGI(TAG, "Station "MACSTR" left, AID=%d. Clients: %d",
+                         MAC2STR(event->mac), event->aid, num_connected_clients);
+                break;
+            }
+
+            default:
+                break;
+        }
+    }
 }
 
 void wifi_init(void) {

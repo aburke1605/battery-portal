@@ -13,6 +13,7 @@
 // global variables
 esp_netif_t *ap_netif;
 bool is_root = false;
+int num_connected_clients = 0;
 char ESP_ID[UTILS_ID_LENGTH + 1] = "unknown";
 httpd_handle_t server = NULL;
 bool connected_to_WiFi = false;
