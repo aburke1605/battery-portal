@@ -16,6 +16,39 @@ static uint8_t n_rendered_html_pages = 0;
 
 static const char* TAG = "AP";
 
+wifi_ap_record_t *wifi_scan(void) {
+    // configure Wi-Fi scan settings
+    wifi_scan_config_t scan_config = {
+        .ssid = NULL,        // all SSIDs
+        .bssid = NULL,       // all BSSIDs
+        .channel = 0,        // all channels
+        .show_hidden = false,
+        .scan_type = WIFI_SCAN_TYPE_PASSIVE,
+    };
+
+    ESP_ERROR_CHECK(esp_wifi_scan_start(&scan_config, true)); // blocking scan
+
+    // get the number of APs found
+    uint16_t ap_num = 0;
+    ESP_ERROR_CHECK(esp_wifi_scan_get_ap_num(&ap_num));
+
+    // allocate memory for AP info and retrieve the list
+    wifi_ap_record_t *ap_info = malloc(sizeof(wifi_ap_record_t) * ap_num);
+    if (ap_info == NULL) {
+        ESP_LOGE("AP", "Failed to allocate memory for AP list");
+        return false;
+    }
+    ESP_ERROR_CHECK(esp_wifi_scan_get_ap_records(&ap_num, ap_info));
+
+    for (int i = 0; i < ap_num; i++) {
+        if (strncmp((const char*)ap_info[i].ssid, "ROOT ", 5) == 0) return &ap_info[i];
+    }
+
+    free(ap_info);
+
+    return NULL;
+}
+
 void wifi_init(void) {
     // initialize NVS
     esp_err_t ret = nvs_flash_init();

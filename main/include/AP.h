@@ -3,12 +3,15 @@
 
 #include "include/config.h"
 
+#include <esp_wifi.h>
 #include <esp_http_server.h>
 
 struct rendered_page {
     char name[WS_MAX_HTML_PAGE_NAME_LENGTH];
     char content[WS_MAX_HTML_SIZE];
 };
+
+wifi_ap_record_t *wifi_scan(void);
 
 void wifi_init(void);
 
