@@ -1,3 +1,5 @@
+#include "include/LoRa.h"
+
 #include <string.h>
 #include <ctype.h>
 
@@ -10,6 +12,7 @@
 #include <esp_http_client.h>
 #include <esp_websocket_client.h>
 #include <esp_mac.h>
+#include <driver/gpio.h>
 
 static const char* TAG = "MESH";
 static esp_netif_t *ap_netif;
@@ -408,21 +411,27 @@ void connect_to_root_task(void *pvParameters) {
     }
 }
 
+char* get_BMS_data() {
+    // create JSON object with sensor data
+    cJSON *data = cJSON_CreateObject();
+
+    cJSON_AddNumberToObject(data, "Q", 1);
+    cJSON_AddNumberToObject(data, "H", 1);
+    cJSON_AddNumberToObject(data, "V", 2);
+    cJSON_AddNumberToObject(data, "I", 3);
+    cJSON_AddNumberToObject(data, "aT", 4);
+    cJSON_AddNumberToObject(data, "iT", 5);
+
+    char *data_string = cJSON_PrintUnformatted(data); // goes to website
+
+    cJSON_Delete(data);
+
+    return data_string;
+}
+
 void websocket_message_task(void *pvParameters) {
     while (true) {
-        // create JSON object with sensor data
-        cJSON *data = cJSON_CreateObject();
-
-        cJSON_AddNumberToObject(data, "Q", 1);
-        cJSON_AddNumberToObject(data, "H", 1);
-        cJSON_AddNumberToObject(data, "V", 2);
-        cJSON_AddNumberToObject(data, "I", 3);
-        cJSON_AddNumberToObject(data, "aT", 4);
-        cJSON_AddNumberToObject(data, "iT", 5);
-
-        char *data_string = cJSON_PrintUnformatted(data); // goes to website
-
-        cJSON_Delete(data);
+        char *data_string = get_BMS_data();
 
         if (data_string != NULL) {
             const esp_websocket_client_config_t websocket_cfg = {
@@ -455,7 +464,7 @@ void websocket_message_task(void *pvParameters) {
                 esp_websocket_client_destroy(ws_client);
                 ws_client = NULL;
             } else {
-                char message[1024];
+                char message[128];
                 snprintf(message, sizeof(message), "{\"type\":\"data\",\"id\":\"%s\",\"content\":%s}", "bms_01", data_string);
                 esp_websocket_client_send_text(ws_client, message, strlen(message), portMAX_DELAY);
             }
@@ -646,76 +655,48 @@ void merge_task(void *pvParameters) {
     }
 }
 
-typedef struct {
-    char id[10];
-    char message[1024];
-} LoRa_message;
-
-void lora_task(void *pvParameters) {
-    char message[1024];
-
-    LoRa_message all_messages[5] = {0};
-    // initiate
-    for (int i=0; i<5; i++) {
-        strcpy(all_messages[i].id, "");
-    }
-
-    while (true) {
-        if (xQueueReceive(lora_queue, message, portMAX_DELAY) == pdPASS) {
-            ESP_LOGI(TAG, "Received \"%s\" from queue", message);
-            cJSON *message_json = cJSON_Parse(message);
-            cJSON *id_obj = cJSON_GetObjectItem(message_json, "id");
-            if (id_obj) {
-                char *id = id_obj->valuestring;
-                bool found = false;
-                for (int i=0; i<5; i++) {
-                    if (strcmp(all_messages[i].id, id) == 0) {
-                        found = true;
-                        strcpy(all_messages[i].message, message);
-                        break;
-                    } else if (strcmp(all_messages[i].id, "") == 0) {
-                        found = true;
-                        strcpy(all_messages[i].id, id);
-                        strcpy(all_messages[i].message, message);
-                        break;
-                    }
-                }
-
-                if (!found) printf("error: no space!\n");
-            }
-
-            cJSON_Delete(message_json);
-        }
-
-        // now form the LoRa message out of non-empty messages and transmit
-        for (int i=0; i<5; i++) {
-            if (strcmp(all_messages[i].id, "") != 0) {
-                printf("%s ", all_messages[i].message);
-            }
-        }
-        printf("\n");
-
-        vTaskDelay(pdMS_TO_TICKS(1000));
-    }
-}
-
 void app_main(void) {
-    wifi_init();
-
-    if (!is_root) {
-        xTaskCreate(&connect_to_root_task, "connect_to_root_task", 4096, NULL, 5, NULL);
-
-        xTaskCreate(&websocket_message_task, "websocket_message_task", 4096, NULL, 5, &websocket_message_task_handle);
-    } else {
-        server = start_websocket_server();
-        if (server == NULL) {
-            ESP_LOGE(TAG, "Failed to start web server!");
+    bool receiver = true;
+    if (receiver) {
+        esp_err_t ret = lora_init();
+        if (ret != ESP_OK) {
+            ESP_LOGE("MAIN", "LoRa init failed");
             return;
         }
 
-        lora_queue = xQueueCreate(10, 1024);
-        xTaskCreate(&lora_task, "lora_task", 8192, NULL, 5, NULL);
+        lora_configure_defaults();
+        gpio_set_direction(PIN_NUM_DIO0, GPIO_MODE_INPUT);
 
-        xTaskCreate(&merge_task, "merge_task", 4096, NULL, 5, &merge_task_handle);
+        xTaskCreate(lora_rx_task, "lora_rx_task", 4096, NULL, 5, NULL);
+    }
+
+    else {
+        wifi_init();
+
+        if (!is_root) {
+            xTaskCreate(&connect_to_root_task, "connect_to_root_task", 4096, NULL, 5, NULL);
+
+            xTaskCreate(&websocket_message_task, "websocket_message_task", 4096, NULL, 5, &websocket_message_task_handle);
+        } else {
+            server = start_websocket_server();
+            if (server == NULL) {
+                ESP_LOGE(TAG, "Failed to start web server!");
+                return;
+            }
+
+            xTaskCreate(&merge_task, "merge_task", 4096, NULL, 5, &merge_task_handle);
+
+            esp_err_t ret = lora_init();
+            if (ret != ESP_OK) {
+                ESP_LOGE("MAIN", "LoRa init failed");
+                return;
+            }
+
+            lora_configure_defaults();
+            gpio_set_direction(PIN_NUM_DIO0, GPIO_MODE_INPUT);
+
+            lora_queue = xQueueCreate(10, 128);
+            xTaskCreate(lora_tx_task, "lora_tx_task", 8192, NULL, 5, NULL);
+        }
     }
 }
