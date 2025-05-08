@@ -20,6 +20,7 @@ bool connected_to_WiFi = false;
 client_socket client_sockets[WS_CONFIG_MAX_CLIENTS];
 char current_auth_token[UTILS_AUTH_TOKEN_LENGTH] = "";
 QueueHandle_t ws_queue;
+QueueHandle_t lora_queue;
 
 TaskHandle_t websocket_task_handle = NULL;
 

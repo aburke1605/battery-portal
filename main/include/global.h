@@ -15,6 +15,7 @@ extern bool connected_to_WiFi;
 extern client_socket client_sockets[WS_CONFIG_MAX_CLIENTS];
 extern char current_auth_token[UTILS_AUTH_TOKEN_LENGTH];
 extern QueueHandle_t ws_queue;
+extern QueueHandle_t lora_queue;
 
 extern TaskHandle_t websocket_task_handle;
 

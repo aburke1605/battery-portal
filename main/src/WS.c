@@ -48,11 +48,18 @@ void remove_client(int fd) {
 
 esp_err_t client_handler(httpd_req_t *req) {
     // register new clients...
+    bool is_browser_not_mesh = true; // arbitrary assumption
     if (req->method == HTTP_GET) {
-        char *check_new_session = strstr(req->uri, "/browser_ws?auth_token=");
-        if (check_new_session) {
+        char *check_new_browser_session = strstr(req->uri, "/browser_ws?auth_token=");
+        char *check_new_mesh_session = strstr(req->uri, "/mesh_ws?auth_token=");
+        if (check_new_browser_session || check_new_mesh_session) {
+            if (!check_new_browser_session && check_new_mesh_session) is_browser_not_mesh = false;
             char auth_token[UTILS_AUTH_TOKEN_LENGTH] = {0};
-            sscanf(check_new_session,"/browser_ws?auth_token=%50s",auth_token);
+            if (is_browser_not_mesh) {
+                sscanf(check_new_browser_session, "/browser_ws?auth_token=%50s", auth_token);
+            } else {
+                sscanf(check_new_mesh_session, "/mesh_ws?auth_token=%50s", auth_token);
+            }
             auth_token[UTILS_AUTH_TOKEN_LENGTH - 1] = '\0';
             if (auth_token[0] != '\0' && strcmp(auth_token, current_auth_token) == 0) {
                 int fd = httpd_req_to_sockfd(req);
@@ -102,8 +109,16 @@ esp_err_t client_handler(httpd_req_t *req) {
             return ESP_FAIL;
         }
 
-        cJSON *response = cJSON_CreateObject();
-        perform_request(message, response);
+        if (is_browser_not_mesh) {
+            // perform the request made by the local websocket client
+            cJSON *response = cJSON_CreateObject();
+            perform_request(message, response);
+        } else {
+            // queue message from mesh client to forward via LoRa
+            if (xQueueSend(lora_queue, cJSON_PrintUnformatted(message), portMAX_DELAY) != pdPASS) {
+                ESP_LOGE(TAG, "LoRa queue full! Dropping message: %s", cJSON_PrintUnformatted(message));
+            }
+        }
 
         cJSON_Delete(message);
     } else {
