@@ -339,6 +339,32 @@ esp_err_t login_handler(httpd_req_t *req) {
     return ESP_OK;
 }
 
+esp_err_t num_clients_handler(httpd_req_t *req) {
+    printf("suspending merge_task...\n");
+    vTaskSuspend(merge_task_handle);
+    char response[64];
+    snprintf(response, sizeof(response), "{\"num_connected_clients\": %d}", num_connected_clients);
+
+    httpd_resp_set_type(req, "application/json");
+    httpd_resp_send(req, response, HTTPD_RESP_USE_STRLEN);
+    printf("sent: %s\n", response);
+
+    // big delay before resuming to give
+    // other AP time to receive message
+    vTaskDelay(pdMS_TO_TICKS(10000));
+    printf("resuming merge_task\n");
+    vTaskResume(merge_task_handle);
+
+    return ESP_OK;
+}
+
+esp_err_t restart_handler(httpd_req_t *req) {
+    printf("I am being told to restart\n");
+    esp_restart();
+
+    return ESP_OK;
+}
+
 httpd_handle_t start_webserver(void) {
     // create sockets for clients
     for (int i = 0; i < WS_CONFIG_MAX_CLIENTS; i++) {
@@ -411,6 +437,22 @@ httpd_handle_t start_webserver(void) {
             .is_websocket = true
         };
         httpd_register_uri_handler(server, &ws_uri);
+
+        ws_uri.uri = "/mesh_ws";
+        httpd_register_uri_handler(server, &ws_uri);
+
+        httpd_uri_t mesh_uri = {
+            .uri       = "/api_num_clients",
+            .method    = HTTP_GET,
+            .handler   = num_clients_handler,
+            .user_ctx  = NULL
+        };
+        httpd_register_uri_handler(server, &mesh_uri);
+
+        mesh_uri.uri = "/no_you_restart",
+        mesh_uri.method = HTTP_POST,
+        mesh_uri.handler = restart_handler,
+        httpd_register_uri_handler(server, &mesh_uri);
 
         httpd_uri_t favicon_uri = {
             .uri       = "/favicon.png",
