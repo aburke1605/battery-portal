@@ -3,13 +3,13 @@ import { Link, useLocation } from "react-router";
 
 // Assume these icons are imported from an icon library
 import {
-  CalenderIcon,
-  ChevronDownIcon,
-  GridIcon,
-  HorizontaLDots,
-  ListIcon,
-  UserCircleIcon,
-} from "../icons";
+  LayoutGrid,
+  Battery,
+  UserCircle,
+  Settings,
+  ChevronDown,
+  Ellipsis,
+} from "lucide-react";
 import { useSidebar } from "../context/SidebarContext";
 import logo from '/images/logo/image.png';
 
@@ -23,23 +23,23 @@ type NavItem = {
 const navItems: NavItem[] = [
   
   {
-    icon: <GridIcon />,
+    icon: <LayoutGrid size={16} className="mr-1" />,
     name: "Dashboard",
     path: "/",
   },
   {
-    icon: <CalenderIcon />,
+    icon: <Battery size={16} className="mr-1" />,
     name: "Batteries",
     path: "/batteries",
   },
   {
-    icon: <UserCircleIcon />,
+    icon: <UserCircle size={16} className="mr-1" />,
     name: "Users",
     path: "/userlist",
   },
   {
+    icon: <Settings size={16} className="mr-1" />,
     name: "Settings",
-    icon: <ListIcon />,
     path: "/settings",
   },
   {
@@ -151,7 +151,7 @@ const AppSidebar: React.FC = () => {
                 <span className="menu-item-text">{nav.name}</span>
               )}
               {(isExpanded || isHovered || isMobileOpen) && (
-                <ChevronDownIcon
+                <ChevronDown size={16}
                   className={`ml-auto w-5 h-5 transition-transform duration-200 ${
                     openSubmenu?.type === menuType &&
                     openSubmenu?.index === index
@@ -292,25 +292,12 @@ const AppSidebar: React.FC = () => {
                 {isExpanded || isHovered || isMobileOpen ? (
                   "Menu"
                 ) : (
-                  <HorizontaLDots className="size-6" />
+                  <Ellipsis size={16} className="mr-1" />
                 )}
               </h2>
               {renderMenuItems(navItems, "main")}
             </div>
             <div className="">
-              <h2
-                className={`mb-4 text-xs uppercase flex leading-[20px] text-gray-400 ${
-                  !isExpanded && !isHovered
-                    ? "lg:justify-center"
-                    : "justify-start"
-                }`}
-              >
-                {isExpanded || isHovered || isMobileOpen ? (
-                  "`"
-                ) : (
-                  <HorizontaLDots />
-                )}
-              </h2>
               {renderMenuItems(othersItems, "others")}
             </div>
           </div>

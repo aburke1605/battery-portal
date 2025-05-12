@@ -109,6 +109,16 @@ void random_token(char *key) {
     key[UTILS_AUTH_TOKEN_LENGTH - 1] = '\0';
 }
 
+int round_to_dp(float var, int ndp) {
+    char str[40];
+    // format to 0 d.p. after multiplying by 10^{ndp}
+    sprintf(str, "%.0f", var*pow(10,ndp));
+    // insert back into var
+    sscanf(str, "%f", &var);
+
+    return (int)var;
+}
+
 char* read_file(const char* path) {
     FILE* f = fopen(path, "r");
     if (!f) return NULL;
