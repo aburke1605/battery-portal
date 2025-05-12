@@ -41,11 +41,6 @@ const navItems: NavItem[] = [
     icon: <Settings size={16} className="mr-1" />,
     name: "Settings",
     path: "/settings",
-  },
-  {
-    name: "db",
-    icon: <ListIcon />,
-    path: "/db",
   }
 ];
 
