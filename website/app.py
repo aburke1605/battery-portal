@@ -54,4 +54,4 @@ def serve_react_static(path):
     return send_from_directory("frontend/dist", path)
 
 if __name__ == '__main__':
-    app.run(debug=True, ssl_context=("local_cert.pem", "local_key.pem"), host="0.0.0.0", port=5001)
+    app.run(debug=True, ssl_context=("local_cert.pem", "local_key.pem"), host="0.0.0.0")
