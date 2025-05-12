@@ -3,8 +3,10 @@
 #include "include/config.h"
 #include "include/global.h"
 #include "include/I2C.h"
+#include "include/utils.h"
 
 #include <esp_log.h>
+#include <cJSON.h>
 
 static const char* TAG = "BMS";
 
@@ -65,4 +67,58 @@ esp_err_t unseal() {
     if (suspending) vTaskResume(websocket_task_handle);
 
     return ESP_OK;
+}
+
+char* get_data() {
+    // create JSON object with sensor data
+    cJSON *data = cJSON_CreateObject();
+
+    uint8_t two_bytes[2];
+
+    // read sensor data
+    // these values are big-endian
+    read_bytes(0, I2C_STATE_OF_CHARGE_REG, two_bytes, sizeof(two_bytes));
+    cJSON_AddNumberToObject(data, "Q", two_bytes[1] << 8 | two_bytes[0]);
+
+    read_bytes(0, I2C_STATE_OF_HEALTH_REG, two_bytes, sizeof(two_bytes));
+    cJSON_AddNumberToObject(data, "H", two_bytes[1] << 8 | two_bytes[0]);
+
+    read_bytes(0, I2C_VOLTAGE_REG, two_bytes, sizeof(two_bytes));
+    cJSON_AddNumberToObject(data, "V", round_to_dp((float)(two_bytes[1] << 8 | two_bytes[0]) / 1000.0, 1));
+
+    read_bytes(0, I2C_CURRENT_REG, two_bytes, sizeof(two_bytes));
+    cJSON_AddNumberToObject(data, "I", round_to_dp((float)((int16_t)(two_bytes[1] << 8 | two_bytes[0])) / 1000.0, 1));
+
+    read_bytes(0, I2C_TEMPERATURE_REG, two_bytes, sizeof(two_bytes));
+    cJSON_AddNumberToObject(data, "aT", round_to_dp((float)(two_bytes[1] << 8 | two_bytes[0]) / 10.0 - 273.15, 1));
+
+    read_bytes(0, I2C_INT_TEMPERATURE_REG, two_bytes, sizeof(two_bytes));
+    cJSON_AddNumberToObject(data, "iT", round_to_dp((float)(two_bytes[1] << 8 | two_bytes[0]) / 10.0 - 273.15, 1));
+
+
+    // configurable data too
+    // these values are little-endian
+    read_bytes(I2C_DISCHARGE_SUBCLASS_ID, I2C_BL_OFFSET, two_bytes, sizeof(two_bytes));
+    cJSON_AddNumberToObject(data, "BL", two_bytes[0] << 8 | two_bytes[1]);
+
+    read_bytes(I2C_DISCHARGE_SUBCLASS_ID, I2C_BH_OFFSET, two_bytes, sizeof(two_bytes));
+    cJSON_AddNumberToObject(data, "BH", two_bytes[0] << 8 | two_bytes[1]);
+
+    read_bytes(I2C_CURRENT_THRESHOLDS_SUBCLASS_ID, I2C_CHG_CURRENT_THRESHOLD_OFFSET, two_bytes, sizeof(two_bytes));
+    cJSON_AddNumberToObject(data, "CCT", two_bytes[0] << 8 | two_bytes[1]);
+
+    read_bytes(I2C_CURRENT_THRESHOLDS_SUBCLASS_ID, I2C_DSG_CURRENT_THRESHOLD_OFFSET, two_bytes, sizeof(two_bytes));
+    cJSON_AddNumberToObject(data, "DCT", two_bytes[0] << 8 | two_bytes[1]);
+
+    read_bytes(I2C_CHARGE_INHIBIT_CFG_SUBCLASS_ID, I2C_CHG_INHIBIT_TEMP_LOW_OFFSET, two_bytes, sizeof(two_bytes));
+    cJSON_AddNumberToObject(data, "CITL", two_bytes[0] << 8 | two_bytes[1]);
+
+    read_bytes(I2C_CHARGE_INHIBIT_CFG_SUBCLASS_ID, I2C_CHG_INHIBIT_TEMP_HIGH_OFFSET, two_bytes, sizeof(two_bytes));
+    cJSON_AddNumberToObject(data, "CITH", two_bytes[0] << 8 | two_bytes[1]);
+
+    char *data_string = cJSON_PrintUnformatted(data); // goes to website
+
+    cJSON_Delete(data);
+
+    return data_string;
 }
