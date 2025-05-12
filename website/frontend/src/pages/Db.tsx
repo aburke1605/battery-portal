@@ -18,7 +18,7 @@ const SqlQueryPage: React.FC = () => {
     setResults([]);
 
     try {
-      const res = await fetch('/api/db/query', {
+      const res = await fetch('/db/execute_sql', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -32,7 +32,7 @@ const SqlQueryPage: React.FC = () => {
         throw new Error(data.error || 'Unknown error');
       }
 
-      setResults(data.result);
+      setResults(data);
     } catch (err: any) {
       setError(err.message);
     } finally {
@@ -48,9 +48,8 @@ const SqlQueryPage: React.FC = () => {
         title="Database Query Runner"
         description="Database Query Runner"
       />
-      <PageBreadcrumb pageTitle="Batteries" />
+      <PageBreadcrumb pageTitle="Database Query" />
     <div className="p-6">
-      <h1 className="text-2xl font-bold mb-4">SQL Query Runner</h1>
 
       <textarea
         className="w-full p-4 text-sm border rounded-lg resize-none mb-4 h-40"

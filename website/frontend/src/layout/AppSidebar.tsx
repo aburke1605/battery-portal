@@ -9,6 +9,7 @@ import {
   Settings,
   ChevronDown,
   Ellipsis,
+  Settings2
 } from "lucide-react";
 import { useSidebar } from "../context/SidebarContext";
 import logo from '/images/logo/image.png';
@@ -41,6 +42,11 @@ const navItems: NavItem[] = [
     icon: <Settings size={16} className="mr-1" />,
     name: "Settings",
     path: "/settings",
+  },
+  {
+    name: "Database",
+    icon: <Settings2 />,
+    path: "/db",
   }
 ];
 
