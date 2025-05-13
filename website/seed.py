@@ -3,10 +3,17 @@ from db import DB
 from user import User, Role, user_datastore
 import os
 from app import app
+from flask_migrate import upgrade
+
 
 # Build initial data for the database
 def seed_data():
     with app.app_context():
+        # Try create or update the tables first
+        # Run database migrations
+        print("Running database migrations...")
+        upgrade()
+        print("Database migrations completed.")
         # Get admin credentials from environment variables
         admin_name = os.getenv("ADMIN_NAME", "admin")
         admin_email = os.getenv("ADMIN_EMAIL", "user@admin.dev")
