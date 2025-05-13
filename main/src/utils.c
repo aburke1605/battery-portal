@@ -263,3 +263,11 @@ uint8_t get_block(uint8_t offset) {
     
     return block;
 }
+
+int compare_mac(const uint8_t *mac1, const uint8_t *mac2) {
+    for (int i = 0; i < 6; i++) {
+        if (mac1[i] < mac2[i]) return -1;
+        if (mac1[i] > mac2[i]) return 1;
+    }
+    return 0;
+}

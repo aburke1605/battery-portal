@@ -26,4 +26,6 @@ char* replace_placeholder(const char *html, const char *const placeholders[], co
 
 uint8_t get_block(uint8_t offset);
 
+int compare_mac(const uint8_t *mac1, const uint8_t *mac2);
+
 #endif // UTILS_H
