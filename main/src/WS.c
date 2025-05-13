@@ -20,7 +20,7 @@ static esp_websocket_client_handle_t ws_client = NULL;
 
 static const char* TAG = "WS";
 
-void add_client(int fd, const char* tkn) {
+void add_client(int fd, const char* tkn, bool browser) {
     for (int i = 0; i < WS_CONFIG_MAX_CLIENTS; i++) {
         if (client_sockets[i].descriptor == fd) {
             return;
@@ -28,6 +28,7 @@ void add_client(int fd, const char* tkn) {
             client_sockets[i].descriptor = fd;
             strncpy(client_sockets[i].auth_token, tkn, UTILS_AUTH_TOKEN_LENGTH);
             client_sockets[i].auth_token[UTILS_AUTH_TOKEN_LENGTH - 1] = '\0';
+            client_sockets[i].is_browser_not_mesh = browser;
             ESP_LOGI(TAG, "Client %d added", fd);
             return;
         }
@@ -40,6 +41,7 @@ void remove_client(int fd) {
         if (client_sockets[i].descriptor == fd) {
             client_sockets[i].descriptor = -1;
             client_sockets[i].auth_token[0] = '\0';
+            client_sockets[i].is_browser_not_mesh = true;
             ESP_LOGI(TAG, "Client %d removed", fd);
             return;
         }
@@ -47,6 +49,8 @@ void remove_client(int fd) {
 }
 
 esp_err_t client_handler(httpd_req_t *req) {
+    int fd = httpd_req_to_sockfd(req);
+
     // register new clients...
     bool is_browser_not_mesh = true; // arbitrary assumption
     if (req->method == HTTP_GET) {
@@ -62,8 +66,7 @@ esp_err_t client_handler(httpd_req_t *req) {
             }
             auth_token[UTILS_AUTH_TOKEN_LENGTH - 1] = '\0';
             if (auth_token[0] != '\0' && strcmp(auth_token, current_auth_token) == 0) {
-                int fd = httpd_req_to_sockfd(req);
-                add_client(fd, auth_token);
+                add_client(fd, auth_token, is_browser_not_mesh);
                 current_auth_token[0] = '\0';
                 ESP_LOGI(TAG, "WebSocket handshake complete for client %d", fd);
                 return ESP_OK; // WebSocket handshake happens here
@@ -109,6 +112,13 @@ esp_err_t client_handler(httpd_req_t *req) {
             return ESP_FAIL;
         }
 
+        // re-determine if browser or mesh client
+        for (int i = 0; i < WS_CONFIG_MAX_CLIENTS; i++) {
+            if (client_sockets[i].descriptor == fd) {
+                is_browser_not_mesh = client_sockets[i].is_browser_not_mesh;
+                break;
+            }
+        }
         if (is_browser_not_mesh) {
             // perform the request made by the local websocket client
             cJSON *response = cJSON_CreateObject();

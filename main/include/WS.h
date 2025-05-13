@@ -25,7 +25,7 @@ typedef struct __attribute__((packed)) {
     uint16_t CITH;
 } ws_payload;
 
-void add_client(int fd, const char* tkn);
+void add_client(int fd, const char* tkn, bool browser);
 
 void remove_client(int fd);
 

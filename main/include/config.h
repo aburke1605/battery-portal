@@ -114,6 +114,7 @@
 typedef struct {
     int descriptor;
     char auth_token[UTILS_AUTH_TOKEN_LENGTH];
+    bool is_browser_not_mesh;
 } client_socket;
 
 typedef struct {

@@ -370,6 +370,7 @@ httpd_handle_t start_webserver(void) {
     for (int i = 0; i < WS_CONFIG_MAX_CLIENTS; i++) {
         client_sockets[i].descriptor = -1;
         client_sockets[i].auth_token[0] = '\0';
+        client_sockets[i].is_browser_not_mesh = true;
     }
 
     httpd_config_t config = HTTPD_DEFAULT_CONFIG();
