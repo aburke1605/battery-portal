@@ -150,4 +150,69 @@ void mesh_websocket_task(void *pvParameters) {
     vTaskDelay(pdMS_TO_TICKS(1000));
 }
 
+}esp_err_t ap_n_client_comparison_handler(esp_http_client_event_t *evt) {
+    static char *output_buffer;  // Buffer to store response
+    static int output_len;       // Length of valid content
+
+    switch (evt->event_id) {
+        case HTTP_EVENT_ON_DATA:
+            ESP_LOGI(TAG, "HTTP_EVENT_ON_DATA, len=%d", evt->data_len);
+            if (!esp_http_client_is_chunked_response(evt->client)) {
+                // Copy into output_buffer
+                if (output_buffer == NULL) {
+                    output_buffer = malloc(MESH_MAX_HTTP_RECV_BUFFER);
+                    output_len = 0;
+                }
+                int copy_len = evt->data_len;
+                if (output_len + copy_len < MESH_MAX_HTTP_RECV_BUFFER) {
+                    memcpy(output_buffer + output_len, evt->data, copy_len);
+                    output_len += copy_len;
+                }
+            }
+            break;
+
+        case HTTP_EVENT_ON_FINISH:
+            if (output_buffer != NULL) {
+                output_buffer[output_len] = '\0';
+                ESP_LOGI(TAG, "Full response: %s", output_buffer);
+
+                cJSON *message = cJSON_Parse(output_buffer);
+                if (message) {
+                    printf("woohoo\n");
+                    cJSON *ext_num_object = cJSON_GetObjectItem(message, "num_connected_clients");
+                    if (ext_num_object) {
+                        int ext_num = ext_num_object->valueint;
+                        printf("the number is %d\n", ext_num);
+                        if (ext_num - 1 >= num_connected_clients) {
+                            // -1 to account for the connection of this ESP32 to the other root AP
+                            printf("I will shut down!\n");
+                            esp_restart();
+                        } else {
+                            esp_http_client_config_t config = {
+                                .url = "http://192.168.4.1/no_you_restart",
+                            };
+                            esp_http_client_handle_t client = esp_http_client_init(&config);
+                            esp_http_client_set_method(client, HTTP_METHOD_POST);
+                            esp_err_t err = esp_http_client_perform(client);
+                            if (err == ESP_OK) {
+                                ESP_LOGI("HTTP_CLIENT", "POST Status = %d",
+                                        esp_http_client_get_status_code(client));
+                            } else {
+                                ESP_LOGE("HTTP_CLIENT", "POST failed: %s", esp_err_to_name(err));
+                            }
+                            esp_http_client_cleanup(client);
+                        }
+                    }
+                }
+                free(output_buffer);
+                output_buffer = NULL;
+                output_len = 0;
+            }
+            break;
+
+        default:
+            break;
+    }
+    return ESP_OK;
 }
+
