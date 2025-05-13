@@ -9,6 +9,7 @@ from user import user_bp, user_datastore
 import flask_admin
 from dotenv import load_dotenv
 from flask_migrate import Migrate
+from seed import seed_data
 
 
 # Load environment variables from .env file will not overwrite system env vars
@@ -58,6 +59,10 @@ def serve_react_static(path):
 
 # Import user model for migrations
 from user import User, Role
+
+# Create the database and tables if they don't exist
+# Create seed data
+seed_data(app)
 
 if __name__ == '__main__':
     app.run(debug=True, ssl_context=("local_cert.pem", "local_key.pem"), host="0.0.0.0")

@@ -2,12 +2,11 @@ from flask_security.utils import hash_password
 from db import DB
 from user import User, Role, user_datastore
 import os
-from app import app
 from flask_migrate import upgrade
 
 
 # Build initial data for the database
-def seed_data():
+def seed_data(app):
     with app.app_context():
         # Try create or update the tables first
         # Run database migrations
@@ -50,6 +49,3 @@ def seed_data():
 
         DB.session.commit()
         print(f"Admin user '{admin_email}' created successfully.")
-
-if __name__ == "__main__":
-    seed_data()
