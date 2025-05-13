@@ -53,7 +53,7 @@ jobs:
       - name: Run database migrations
         working-directory: ./website
         env:
-          PYTHONPATH: "${{ github.workspace }}/website"
+          PYTHONPATH: "${{ github.workspace }}/website:${{ env.PYTHONPATH }}"
         run: flask db upgrade
       
       - name: Seed the database
