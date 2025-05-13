@@ -37,6 +37,72 @@ void send_fake_request() {
     }
 }
 
+typedef struct {
+    char *buffer;
+    int buffer_len;
+} http_response_t;
+esp_err_t fake_login_http_event_handler(esp_http_client_event_t *evt) {
+    http_response_t *user_data = (http_response_t *)evt->user_data;
+
+    switch (evt->event_id) {
+        case HTTP_EVENT_ON_DATA:
+            if (!esp_http_client_is_chunked_response(evt->client)) {
+                // int copy_len = MIN(evt->data_len, user_data->buffer_len - 1);
+                int copy_len = evt->data_len <= user_data->buffer_len - 1 ? evt->data_len : user_data->buffer_len - 1;
+                memcpy(user_data->buffer, evt->data, copy_len);
+                user_data->buffer[copy_len] = 0;  // Null-terminate
+            }
+            break;
+        default:
+            break;
+    }
+    return ESP_OK;
+}
+char *send_fake_login_post_request() {
+    char response_buffer[39 + UTILS_AUTH_TOKEN_LENGTH] = {0};
+    http_response_t response = {
+        .buffer = response_buffer,
+        .buffer_len = 39 + UTILS_AUTH_TOKEN_LENGTH,
+    };
+
+    esp_http_client_config_t config = {
+        .url = "http://192.168.4.1/api/users/login",
+        .event_handler = fake_login_http_event_handler,
+        // .method = HTTP_METHOD_POST,
+        .user_data = &response,
+    };
+
+    esp_http_client_handle_t client = esp_http_client_init(&config);
+
+    char post_data[128];
+    char encoded_email[32];
+    url_encode(encoded_email, WS_USERNAME, sizeof(encoded_email));
+    char encoded_password[32];
+    url_encode(encoded_password, WS_PASSWORD, sizeof(encoded_password));
+    snprintf(post_data, sizeof(post_data), "{\"email\":\"%s\",\"password\":\"%s\"}", encoded_email, encoded_password);
+    post_data[strlen(post_data)] = '\0';
+
+    esp_http_client_set_url(client, config.url);
+    esp_http_client_set_method(client, HTTP_METHOD_POST);
+    esp_http_client_set_header(client, "Content-Type", "application/json");
+    esp_http_client_set_post_field(client, post_data, strlen(post_data));
+
+    esp_err_t err = esp_http_client_perform(client);
+    esp_http_client_cleanup(client);
+    vTaskDelay(pdMS_TO_TICKS(5000));
+
+    if (err == ESP_OK) {
+        ESP_LOGI("HTTP_CLIENT", "HTTP POST Status = %d, Response = %s", esp_http_client_get_status_code(client), response.buffer);
+        cJSON *response_object = cJSON_Parse(response.buffer);
+        cJSON *auth_token = cJSON_GetObjectItem(response_object, "auth_token");
+
+        return auth_token->valuestring;
+    }
+
+    ESP_LOGE("login", "HTTP POST request failed: %s", esp_err_to_name(err));
+    return "NONE";
+}
+
 esp_err_t get_POST_data(httpd_req_t *req, char* content, size_t content_size) {
     int ret, content_len = req->content_len;
 
