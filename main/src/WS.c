@@ -575,7 +575,7 @@ void websocket_task(void *pvParameters) {
                     esp_websocket_client_destroy(ws_client);
                     ws_client = NULL;
                 } else {
-                    char message[1024];
+                    char message[WS_MESSAGE_MAX_LEN];
                     snprintf(message, sizeof(message), "{\"type\":\"data\",\"id\":\"%s\",\"content\":%s}", ESP_ID, data_string);
                     send_message(message);
                     // send_message(&message);

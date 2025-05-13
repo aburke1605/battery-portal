@@ -4,6 +4,8 @@
 
 #include "sdkconfig.h"
 
+#include <stdbool.h>
+
 #ifdef CONFIG_VERBOSE
     #define VERBOSE true
 #else
@@ -104,12 +106,14 @@
 #define WS_PASSWORD CONFIG_PASSWORD
 
 #define WS_QUEUE_SIZE 10
-#define WS_MESSAGE_MAX_LEN 1024
+#define WS_MESSAGE_MAX_LEN 256
 
 #define WS_MAX_HTML_SIZE 7500
 #define WS_MAX_N_HTML_PAGES 16
 #define WS_MAX_HTML_PAGE_NAME_LENGTH 32
 #define WS_CONFIG_MAX_CLIENTS 3
+
+#define MESH_MAX_HTTP_RECV_BUFFER 128
 
 typedef struct {
     int descriptor;

@@ -4,6 +4,8 @@
 #include "include/DNS.h"
 #include "include/I2C.h"
 #include "include/BMS.h"
+#include "include/MESH.h"
+#include "include/LoRa.h"
 #include "include/WS.h"
 
 #include <esp_log.h>

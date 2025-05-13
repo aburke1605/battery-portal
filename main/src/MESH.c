@@ -1,6 +1,10 @@
 #include "include/MESH.h"
 
 #include "include/AP.h"
+#include "include/BMS.h"
+#include "include/global.h"
+#include "include/WS.h"
+#include "include/utils.h"
 
 #include <string.h>
 #include <esp_log.h>
