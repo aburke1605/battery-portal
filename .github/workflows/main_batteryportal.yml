@@ -49,6 +49,14 @@ jobs:
       - name: Build frontend assets
         working-directory: ./website/frontend
         run: npm run build
+      
+      - name: Run database migrations
+        working-directory: ./website
+        run: flask db upgrade
+      
+      - name: Seed the database
+        working-directory: ./website
+        run: python seed.py
 
       # Optional: Add step to run tests here (PyTest, Django test suites, etc.)
 

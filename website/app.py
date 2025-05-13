@@ -4,11 +4,12 @@ import logging
 from flask import Flask, send_from_directory
 from flask_security import Security
 from ws import sock
-from db import db_bp
+from db import db_bp, DB
 from user import user_bp, user_datastore
-from db import DB
 import flask_admin
 from dotenv import load_dotenv
+from flask_migrate import Migrate
+
 
 # Load environment variables from .env file will not overwrite system env vars
 load_dotenv()
@@ -40,6 +41,8 @@ DB.init_app(app)
 security = Security(app, user_datastore)
 # Create flask-admin
 admin = flask_admin.Admin(app)
+# Setup flask-migrate
+migrate = Migrate(app, DB)
 # Basic route for the home page and React app, static files
 @app.route('/')
 def index():
@@ -52,6 +55,9 @@ def admin():
 @app.route("/<path:path>")
 def serve_react_static(path):
     return send_from_directory("frontend/dist", path)
+
+# Import user model for migrations
+from user import User, Role
 
 if __name__ == '__main__':
     app.run(debug=True, ssl_context=("local_cert.pem", "local_key.pem"), host="0.0.0.0")
