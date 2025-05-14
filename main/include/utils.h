@@ -6,6 +6,9 @@
 #include <esp_err.h>
 #include <esp_http_server.h>
 
+#define MIN(a, b) ((a) < (b) ? (a) : (b))
+#define MAX(a, b) ((a) > (b) ? (a) : (b))
+
 void send_fake_request();
 
 char *send_fake_login_post_request();
