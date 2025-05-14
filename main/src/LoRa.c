@@ -191,6 +191,7 @@ void lora_tx_task(void *pvParameters) {
             ESP_LOGW(TAG, "combined_message may have been truncated!");
         }
 
+        int len = strlen(combined_message);
 
         // Set to standby
         lora_write_register(REG_OP_MODE, 0b10000001);  // LoRa + standby
