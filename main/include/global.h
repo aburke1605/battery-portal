@@ -19,4 +19,7 @@ extern QueueHandle_t lora_queue;
 
 extern TaskHandle_t websocket_task_handle;
 
+extern TaskHandle_t mesh_websocket_task_handle;
+extern TaskHandle_t merge_root_task_handle;
+
 #endif // GLOBAL_H

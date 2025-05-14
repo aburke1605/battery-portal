@@ -26,6 +26,9 @@ QueueHandle_t lora_queue;
 
 TaskHandle_t websocket_task_handle = NULL;
 
+TaskHandle_t mesh_websocket_task_handle = NULL;
+TaskHandle_t merge_root_task_handle = NULL;
+
 void app_main(void) {
 
     // initialise SPIFFS

@@ -61,7 +61,7 @@ void connect_to_root_task(void *pvParameters) {
             }
 
             if (!reconnected) {
-                vTaskSuspend(websocket_message_task_handle);
+                vTaskSuspend(mesh_websocket_task_handle);
 
                 // scan to double check there really is no existing root AP
                 ESP_ERROR_CHECK(esp_wifi_stop());
@@ -94,7 +94,7 @@ void connect_to_root_task(void *pvParameters) {
                 ESP_ERROR_CHECK(esp_wifi_stop());
                 ESP_ERROR_CHECK(esp_wifi_set_mode(WIFI_MODE_APSTA));
                 ESP_ERROR_CHECK(esp_wifi_start());
-                vTaskResume(websocket_message_task_handle);
+                vTaskResume(mesh_websocket_task_handle);
             } else {
                 // make sure the mesh ws client is "authenticated"
                 vTaskDelay(pdMS_TO_TICKS(5000));

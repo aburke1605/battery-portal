@@ -341,7 +341,7 @@ esp_err_t login_handler(httpd_req_t *req) {
 
 esp_err_t num_clients_handler(httpd_req_t *req) {
     printf("suspending merge_task...\n");
-    vTaskSuspend(merge_task_handle);
+    vTaskSuspend(merge_root_task_handle);
     char response[64];
     snprintf(response, sizeof(response), "{\"num_connected_clients\": %d}", num_connected_clients);
 
@@ -353,7 +353,7 @@ esp_err_t num_clients_handler(httpd_req_t *req) {
     // other AP time to receive message
     vTaskDelay(pdMS_TO_TICKS(10000));
     printf("resuming merge_task\n");
-    vTaskResume(merge_task_handle);
+    vTaskResume(merge_root_task_handle);
 
     return ESP_OK;
 }
