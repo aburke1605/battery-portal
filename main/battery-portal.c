@@ -70,32 +70,70 @@ void app_main(void) {
     read_bytes(I2C_DATA_SUBCLASS_ID, I2C_NAME_OFFSET, eleven_bytes, sizeof(eleven_bytes));
     if (strcmp((char *)eleven_bytes, "") != 0) strncpy(ESP_ID, (char *)eleven_bytes, 10);
 
-    // Start the Access Point and Connection
-    wifi_init();
-    vTaskDelay(pdMS_TO_TICKS(3000));
 
-    // Start the ws server to serve the HTML page
-    // static httpd_handle_t server = NULL;
-    server = start_webserver();
-    if (server == NULL) {
-        ESP_LOGE("main", "Failed to start web server!");
-        return;
+
+    bool receiver = true;
+    if (receiver) {
+        esp_err_t ret = lora_init();
+        if (ret != ESP_OK) {
+            ESP_LOGE("main", "LoRa init failed");
+            esp_restart();
+            return;
+        }
+
+        lora_configure_defaults();
+        gpio_set_direction(PIN_NUM_DIO0, GPIO_MODE_INPUT);
+
+        xTaskCreate(lora_rx_task, "lora_rx_task", 4096, NULL, 5, NULL);
     }
 
-    TaskParams dns_server_params = {.stack_size = 2500, .task_name = "dns_server_task"};
-    xTaskCreate(&dns_server_task, dns_server_params.task_name, dns_server_params.stack_size, &dns_server_params, 2, NULL);
+    else {
+        wifi_init();
+        vTaskDelay(pdMS_TO_TICKS(3000));
 
-    ws_queue = xQueueCreate(WS_QUEUE_SIZE, WS_MESSAGE_MAX_LEN);
-    // ws_queue = xQueueCreate(WS_QUEUE_SIZE, sizeof(ws_payload));
-    TaskParams message_queue_params = {.stack_size = 3200, .task_name = "message_queue_task"};
-    xTaskCreate(&message_queue_task, message_queue_params.task_name, message_queue_params.stack_size, &message_queue_params, 5, NULL);
+        server = start_webserver();
+        if (server == NULL) {
+            ESP_LOGE("main", "Failed to start web server!");
+            return;
+        }
 
-    esp_log_level_set("wifi", ESP_LOG_ERROR);
-    esp_log_level_set("websocket_client", ESP_LOG_WARN);
-    esp_log_level_set("transport_ws", ESP_LOG_WARN);
-    esp_log_level_set("transport_base", ESP_LOG_WARN);
-    TaskParams websocket_params = {.stack_size = 4600, .task_name = "websocket_task"};
-    xTaskCreate(&websocket_task, websocket_params.task_name, websocket_params.stack_size, &websocket_params, 1, &websocket_task_handle);
+        TaskParams dns_server_params = {.stack_size = 2500, .task_name = "dns_server_task"};
+        xTaskCreate(&dns_server_task, dns_server_params.task_name, dns_server_params.stack_size, &dns_server_params, 2, NULL);
+
+        ws_queue = xQueueCreate(WS_QUEUE_SIZE, WS_MESSAGE_MAX_LEN);
+        /// ws_queue = xQueueCreate(WS_QUEUE_SIZE, sizeof(ws_payload));
+        TaskParams message_queue_params = {.stack_size = 3200, .task_name = "message_queue_task"};
+        xTaskCreate(&message_queue_task, message_queue_params.task_name, message_queue_params.stack_size, &message_queue_params, 5, NULL);
+
+        esp_log_level_set("wifi", ESP_LOG_ERROR);
+        esp_log_level_set("websocket_client", ESP_LOG_WARN);
+        esp_log_level_set("transport_ws", ESP_LOG_WARN);
+        esp_log_level_set("transport_base", ESP_LOG_WARN);
+        TaskParams websocket_params = {.stack_size = 4600, .task_name = "websocket_task"};
+        xTaskCreate(&websocket_task, websocket_params.task_name, websocket_params.stack_size, &websocket_params, 1, &websocket_task_handle);
+
+        if (!is_root) {
+            xTaskCreate(&connect_to_root_task, "connect_to_root_task", 4096, NULL, 5, NULL);
+
+            // ws_queue = xQueueCreate(WS_QUEUE_SIZE, WS_MESSAGE_MAX_LEN);
+            xTaskCreate(&mesh_websocket_task, "mesh_websocket_task", 4096, NULL, 5, &mesh_websocket_task_handle);
+        } else {
+            xTaskCreate(&merge_root_task, "merge_root_task", 4096, NULL, 5, &merge_root_task_handle);
+
+            esp_err_t ret = lora_init();
+            if (ret != ESP_OK) {
+                ESP_LOGE("main", "LoRa init failed");
+                esp_restart();
+                return;
+            }
+
+            lora_configure_defaults();
+            gpio_set_direction(PIN_NUM_DIO0, GPIO_MODE_INPUT);
+
+            lora_queue = xQueueCreate(10, WS_MESSAGE_MAX_LEN);
+            xTaskCreate(lora_tx_task, "lora_tx_task", 8192, NULL, 5, NULL);
+        }
+    }
 
     while (true) {
         if (VERBOSE) ESP_LOGI("main", "%ld bytes available in heap", esp_get_free_heap_size());
