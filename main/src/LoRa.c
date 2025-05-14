@@ -138,7 +138,7 @@ void lora_tx_task(void *pvParameters) {
     // initiate
     for (int i=0; i<5; i++) strcpy(all_messages[i].id, "");
 
-    char combined_message[(sizeof(individual_message) + 2) * (5 + 1)]; // +2 for ", " between each message instance, +1 for this ESP32s own BMS data
+    char combined_message[3 + (sizeof(individual_message) + 2) * (5 + 1) - 2 + 3]; // +3 for "_S_", +2 for ", " between each message instance, +1 for this ESP32s own BMS data, -2 for strenuous ", ", +3 for "_E_"
 
     while (true) {
         if (xQueueReceive(lora_queue, individual_message, portMAX_DELAY) == pdPASS) {
@@ -168,19 +168,29 @@ void lora_tx_task(void *pvParameters) {
         }
 
         // now form the LoRa message out of non-empty messages and transmit
+        size_t combined_capacity = sizeof(combined_message);
         combined_message[0] = '\0';
+        strncat(combined_message, "_S_", combined_capacity - strlen("_S_") - 1);
+
+        bool started = false;
         for (int i=0; i<5; i++) {
             if (strcmp(all_messages[i].id, "") != 0) {
-                if (combined_message[0] != '\0') strcat(combined_message, ", ");
-                strcat(combined_message, all_messages[i].message);
+                if (started) strncat(combined_message, ", ", combined_capacity - strlen(combined_message) - 1);
+                strncat(combined_message, all_messages[i].message, combined_capacity - strlen(combined_message) - 1);
+                started = true;
             }
         }
         char *data_string = get_data();
         snprintf(individual_message, sizeof(individual_message), "{\"type\":\"data\",\"id\":\"%s\",\"content\":%s}", ESP_ID, data_string);
-        strcat(combined_message, ", ");
-        strcat(combined_message, individual_message);
+        strncat(combined_message, ", ", combined_capacity - strlen(combined_message) - 1);
+        strncat(combined_message, individual_message, combined_capacity - strlen(combined_message) - 1);
 
-        uint8_t len = strlen(combined_message);
+        strncat(combined_message, "_E_", combined_capacity - strlen("_E_") - 1);
+
+        if (strlen(combined_message) >= sizeof(combined_message) - 1) {
+            ESP_LOGW(TAG, "combined_message may have been truncated!");
+        }
+
 
         // Set to standby
         lora_write_register(REG_OP_MODE, 0b10000001);  // LoRa + standby
@@ -192,12 +202,20 @@ void lora_tx_task(void *pvParameters) {
         lora_write_register(REG_FIFO_TX_BASE_ADDR, 0x00);  // FIFO TX base addr
         lora_write_register(REG_FIFO_ADDR_PTR, 0x00);  // FIFO addr ptr
 
+
+        uint16_t full_len = strlen(combined_message);
+        uint8_t chunk[256];  // room for payload + '\0'
+        for (int offset = 0; offset < full_len; offset += LORA_MAX_PACKET_LEN) {
+            int chunk_len = MIN(LORA_MAX_PACKET_LEN, full_len - offset);
+            memcpy(chunk, combined_message + offset, chunk_len);
+            chunk[chunk_len] = '\0';  // optional if treated as string
+
         // Write payload to FIFO
-        for (int i = 0; i < len; i++) {
-            lora_write_register(REG_FIFO, combined_message[i]);
+        for (int i = 0; i < chunk_len; i++) {
+            lora_write_register(REG_FIFO, chunk[i]);
         }
 
-        lora_write_register(REG_PAYLOAD_LENGTH, len);  // Payload length
+        lora_write_register(REG_PAYLOAD_LENGTH, chunk_len);  // Payload length
 
         // Clear all IRQ flags
         lora_write_register(REG_IRQ_FLAGS, 0b11111111);
@@ -213,6 +231,9 @@ void lora_tx_task(void *pvParameters) {
         // Clear IRQ
         lora_write_register(REG_IRQ_FLAGS, 0b00001000);  // Clear TxDone
 
+            vTaskDelay(pdMS_TO_TICKS(5000));  // brief delay between chunks
+        }
+
         int transmission_delay = calculate_transmission_delay(LORA_SF, LORA_BW, 8, len, LORA_CR, LORA_HEADER, LORA_LDRO);
         ESP_LOGI(TAG, "Packet sent: \"%s\". Delaying for %d ms", combined_message, transmission_delay);
 
@@ -221,7 +242,7 @@ void lora_tx_task(void *pvParameters) {
 }
 
 void lora_rx_task(void *pvParameters) {
-    uint8_t buffer[LORA_MAX_PACKET_LEN];
+    uint8_t buffer[LORA_MAX_PACKET_LEN + 1];
 
     // Configure FIFO base addr for RX
     lora_write_register(REG_FIFO_RX_BASE_ADDR, 0x00);  // FIFO RX base addr
