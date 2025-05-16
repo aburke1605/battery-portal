@@ -141,7 +141,7 @@ void lora_tx_task(void *pvParameters) {
     char combined_message[3 + (sizeof(individual_message) + 2) * (5 + 1) - 2 + 3]; // +3 for "_S_", +2 for ", " between each message instance, +1 for this ESP32s own BMS data, -2 for strenuous ", ", +3 for "_E_"
 
     while (true) {
-        if (xQueueReceive(lora_queue, individual_message, portMAX_DELAY) == pdPASS) {
+        if (xQueueReceive(lora_queue, individual_message, pdMS_TO_TICKS(1000)) == pdPASS) {
             ESP_LOGI(TAG, "Received \"%s\" from queue", individual_message);
             cJSON *message_json = cJSON_Parse(individual_message);
             cJSON *id_obj = cJSON_GetObjectItem(message_json, "id");
