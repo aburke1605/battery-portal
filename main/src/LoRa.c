@@ -172,18 +172,16 @@ void lora_tx_task(void *pvParameters) {
         combined_message[0] = '\0';
         strncat(combined_message, "_S_", combined_capacity - strlen("_S_") - 1);
 
-        bool started = false;
-        for (int i=0; i<5; i++) {
-            if (strcmp(all_messages[i].id, "") != 0) {
-                if (started) strncat(combined_message, ", ", combined_capacity - strlen(combined_message) - 1);
-                strncat(combined_message, all_messages[i].message, combined_capacity - strlen(combined_message) - 1);
-                started = true;
-            }
-        }
         char *data_string = get_data();
         snprintf(individual_message, sizeof(individual_message), "{\"type\":\"data\",\"id\":\"%s\",\"content\":%s}", ESP_ID, data_string);
-        strncat(combined_message, ", ", combined_capacity - strlen(combined_message) - 1);
         strncat(combined_message, individual_message, combined_capacity - strlen(combined_message) - 1);
+
+        for (int i=0; i<5; i++) {
+            if (strcmp(all_messages[i].id, "") != 0) {
+                strncat(combined_message, ", ", combined_capacity - strlen(combined_message) - 1);
+                strncat(combined_message, all_messages[i].message, combined_capacity - strlen(combined_message) - 1);
+            }
+        }
 
         strncat(combined_message, "_E_", combined_capacity - strlen("_E_") - 1);
 
