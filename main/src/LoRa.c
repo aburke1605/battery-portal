@@ -222,7 +222,6 @@ void lora_tx_task(void *pvParameters) {
             // Start transmission
             lora_write_register(REG_OP_MODE, 0b10000011);  // LoRa + TX mode
 
-        ESP_LOGI(TAG, "Packet sent: \"%s\". Delaying for %d ms", combined_message, transmission_delay);
             // Wait for TX done (DIO0 goes high)
             while (gpio_get_level(PIN_NUM_DIO0) == 0) {
                 vTaskDelay(pdMS_TO_TICKS(1));
@@ -234,6 +233,7 @@ void lora_tx_task(void *pvParameters) {
             vTaskDelay(pdMS_TO_TICKS(50));  // brief delay between chunks
         }
         int transmission_delay = calculate_transmission_delay(LORA_SF, LORA_BW, 8, full_len, LORA_CR, LORA_HEADER, LORA_LDRO);
+        ESP_LOGI(TAG, "Packet sent: \"%s\". Delaying for %d ms", combined_message, transmission_delay);
 
         vTaskDelay(pdMS_TO_TICKS(transmission_delay));
     }
