@@ -73,6 +73,7 @@ esp_err_t lora_init() {
     ESP_LOGI(TAG, "SX127x version: 0x%02X", version);
     if (version != 0x12) {
         ESP_LOGE(TAG, "SX127x not found");
+        esp_restart();
         return ESP_FAIL;
     }
 
@@ -85,6 +86,10 @@ esp_err_t lora_init() {
     vTaskDelay(pdMS_TO_TICKS(10));
 
     ESP_LOGI(TAG, "SX127x initialized");
+
+    lora_configure_defaults();
+    gpio_set_direction(PIN_NUM_DIO0, GPIO_MODE_INPUT);
+
     return ESP_OK;
 }
 

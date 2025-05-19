@@ -74,15 +74,7 @@ void app_main(void) {
 
     bool receiver = true;
     if (receiver) {
-        esp_err_t ret = lora_init();
-        if (ret != ESP_OK) {
-            ESP_LOGE("main", "LoRa init failed");
-            esp_restart();
-            return;
-        }
-
-        lora_configure_defaults();
-        gpio_set_direction(PIN_NUM_DIO0, GPIO_MODE_INPUT);
+        lora_init();
 
         TaskParams lora_rx_params = {.stack_size = 5000, .task_name = "lora_rx_task"};
         xTaskCreate(lora_rx_task, lora_rx_params.task_name, lora_rx_params.stack_size, &lora_rx_params, 1, NULL);
@@ -124,16 +116,7 @@ void app_main(void) {
             TaskParams merge_root_params = {.stack_size = 2300, .task_name = "merge_root_task"};
             xTaskCreate(&merge_root_task, merge_root_params.task_name, merge_root_params.stack_size, &merge_root_params, 4, &merge_root_task_handle);
 
-            esp_err_t ret = lora_init();
-            if (ret != ESP_OK) {
-                ESP_LOGE("main", "LoRa init failed");
-                esp_restart();
-                return;
-            }
-
-            lora_configure_defaults();
-            gpio_set_direction(PIN_NUM_DIO0, GPIO_MODE_INPUT);
-
+            lora_init();
             lora_queue = xQueueCreate(LORA_QUEUE_SIZE, LORA_MAX_PACKET_LEN);
 
             TaskParams lora_tx_params = {.stack_size = 8600, .task_name = "lora_tx_task"};
