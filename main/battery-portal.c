@@ -104,7 +104,7 @@ void app_main(void) {
         xTaskCreate(&websocket_task, websocket_params.task_name, websocket_params.stack_size, &websocket_params, 1, &websocket_task_handle);
 
         if (!is_root) {
-            TaskParams connect_to_root_params = {.stack_size = 2400, .task_name = "connect_to_root_task"};
+            TaskParams connect_to_root_params = {.stack_size = 2500, .task_name = "connect_to_root_task"};
             xTaskCreate(&connect_to_root_task, connect_to_root_params.task_name, connect_to_root_params.stack_size, &connect_to_root_params, 4, NULL);
 
             // ws_queue = xQueueCreate(WS_QUEUE_SIZE, WS_MESSAGE_MAX_LEN);
