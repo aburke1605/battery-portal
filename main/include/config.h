@@ -117,6 +117,12 @@
 
 
 // LoRa:
+#ifdef CONFIG_IS_RECEIVER
+    #define LORA_IS_RECEIVER true
+#else
+    #define LORA_IS_RECEIVER false
+#endif
+
 #define LORA_SPI_HOST    SPI2_HOST   // or SPI3_HOST
 
 // pin wirings

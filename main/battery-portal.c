@@ -71,9 +71,7 @@ void app_main(void) {
     if (strcmp((char *)eleven_bytes, "") != 0) strncpy(ESP_ID, (char *)eleven_bytes, 10);
 
 
-
-    bool receiver = true;
-    if (receiver) {
+    if (LORA_IS_RECEIVER) {
         lora_init();
 
         TaskParams lora_rx_params = {.stack_size = 5000, .task_name = "lora_rx_task"};

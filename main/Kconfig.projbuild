@@ -159,6 +159,12 @@ endmenu
 
 menu "[CUSTOM] LoRa Configuration"
 
+config IS_RECEIVER
+    bool "Receiver"
+    default n
+    help
+      Set to true to configure the ESP32 as receiver rather than transmitter (default).
+
 config SPI_SCK_PIN
     int "SPI SCK GPIO"
     default 18
