@@ -130,7 +130,7 @@ void app_main(void) {
             lora_configure_defaults();
             gpio_set_direction(PIN_NUM_DIO0, GPIO_MODE_INPUT);
 
-            lora_queue = xQueueCreate(10, WS_MESSAGE_MAX_LEN);
+            lora_queue = xQueueCreate(LORA_QUEUE_SIZE, LORA_MAX_PACKET_LEN);
             xTaskCreate(lora_tx_task, "lora_tx_task", 8192, NULL, 5, NULL);
         }
     }

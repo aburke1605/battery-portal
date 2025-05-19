@@ -64,6 +64,7 @@
 #define REG_DIO_MAPPING_1       0x40
 #define REG_VERSION             0x42
 
+#define LORA_QUEUE_SIZE 10
 #define LORA_MAX_PACKET_LEN 255
 
 // Modes

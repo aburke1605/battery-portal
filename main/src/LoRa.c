@@ -132,13 +132,13 @@ void lora_configure_defaults() {
 }
 
 void lora_tx_task(void *pvParameters) {
-    char individual_message[WS_MESSAGE_MAX_LEN];
+    char individual_message[LORA_MAX_PACKET_LEN];
 
-    LoRa_message all_messages[5] = {0};
+    LoRa_message all_messages[LORA_QUEUE_SIZE] = {0};
     // initiate
-    for (int i=0; i<5; i++) strcpy(all_messages[i].id, "");
+    for (int i=0; i<LORA_QUEUE_SIZE; i++) strcpy(all_messages[i].id, "");
 
-    char combined_message[3 + (sizeof(individual_message) + 2) * (5 + 1) - 2 + 3]; // +3 for "_S_", +2 for ", " between each message instance, +1 for this ESP32s own BMS data, -2 for strenuous ", ", +3 for "_E_"
+    char combined_message[3 + (LORA_MAX_PACKET_LEN + 2) * (LORA_QUEUE_SIZE + 1) - 2 + 3]; // +3 for "_S_", +2 for ", " between each message instance, +1 for this ESP32s own BMS data, -2 for strenuous ", ", +3 for "_E_"
 
     while (true) {
         if (xQueueReceive(lora_queue, individual_message, pdMS_TO_TICKS(1000)) == pdPASS) {
@@ -148,7 +148,7 @@ void lora_tx_task(void *pvParameters) {
             if (id_obj) {
                 char *id = id_obj->valuestring;
                 bool found = false;
-                for (int i=0; i<5; i++) {
+                for (int i=0; i<LORA_QUEUE_SIZE; i++) {
                     if (strcmp(all_messages[i].id, id) == 0) {
                         found = true;
                         strcpy(all_messages[i].message, individual_message);
@@ -176,7 +176,7 @@ void lora_tx_task(void *pvParameters) {
         snprintf(individual_message, sizeof(individual_message), "{\"type\":\"data\",\"id\":\"%s\",\"content\":%s}", ESP_ID, data_string);
         strncat(combined_message, individual_message, combined_capacity - strlen(combined_message) - 1);
 
-        for (int i=0; i<5; i++) {
+        for (int i=0; i<LORA_QUEUE_SIZE; i++) {
             if (strcmp(all_messages[i].id, "") != 0) {
                 strncat(combined_message, ", ", combined_capacity - strlen(combined_message) - 1);
                 strncat(combined_message, all_messages[i].message, combined_capacity - strlen(combined_message) - 1);
