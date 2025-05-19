@@ -84,7 +84,7 @@ void app_main(void) {
         lora_configure_defaults();
         gpio_set_direction(PIN_NUM_DIO0, GPIO_MODE_INPUT);
 
-        TaskParams lora_rx_params = {.stack_size = 4000, .task_name = "lora_rx_task"};
+        TaskParams lora_rx_params = {.stack_size = 5000, .task_name = "lora_rx_task"};
         xTaskCreate(lora_rx_task, lora_rx_params.task_name, lora_rx_params.stack_size, &lora_rx_params, 1, NULL);
     }
 
@@ -114,14 +114,14 @@ void app_main(void) {
         xTaskCreate(&websocket_task, websocket_params.task_name, websocket_params.stack_size, &websocket_params, 1, &websocket_task_handle);
 
         if (!is_root) {
-            TaskParams connect_to_root_params = {.stack_size = 2000, .task_name = "connect_to_root_task"};
+            TaskParams connect_to_root_params = {.stack_size = 2400, .task_name = "connect_to_root_task"};
             xTaskCreate(&connect_to_root_task, connect_to_root_params.task_name, connect_to_root_params.stack_size, &connect_to_root_params, 4, NULL);
 
             // ws_queue = xQueueCreate(WS_QUEUE_SIZE, WS_MESSAGE_MAX_LEN);
-            TaskParams mesh_websocket_params = {.stack_size = 2000, .task_name = "mesh_websocket_task"};
+            TaskParams mesh_websocket_params = {.stack_size = 3100, .task_name = "mesh_websocket_task"};
             xTaskCreate(&mesh_websocket_task, mesh_websocket_params.task_name, mesh_websocket_params.stack_size, &mesh_websocket_params, 3, &mesh_websocket_task_handle);
         } else {
-            TaskParams merge_root_params = {.stack_size = 2000, .task_name = "merge_root_task"};
+            TaskParams merge_root_params = {.stack_size = 2300, .task_name = "merge_root_task"};
             xTaskCreate(&merge_root_task, merge_root_params.task_name, merge_root_params.stack_size, &merge_root_params, 4, &merge_root_task_handle);
 
             esp_err_t ret = lora_init();
@@ -135,7 +135,8 @@ void app_main(void) {
             gpio_set_direction(PIN_NUM_DIO0, GPIO_MODE_INPUT);
 
             lora_queue = xQueueCreate(LORA_QUEUE_SIZE, LORA_MAX_PACKET_LEN);
-            TaskParams lora_tx_params = {.stack_size = 4000, .task_name = "lora_tx_task"};
+
+            TaskParams lora_tx_params = {.stack_size = 8600, .task_name = "lora_tx_task"};
             xTaskCreate(lora_tx_task, lora_tx_params.task_name, lora_tx_params.stack_size, &lora_tx_params, 3, NULL);
         }
     }
