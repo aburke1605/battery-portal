@@ -31,46 +31,6 @@ TaskHandle_t merge_root_task_handle = NULL;
 
 void app_main(void) {
 
-    // initialise SPIFFS
-    esp_err_t result;
-
-    esp_vfs_spiffs_conf_t config_static = {
-        .base_path = "/static",
-        .partition_label = "static",
-        .max_files = 5,
-        .format_if_mount_failed = true
-    };
-    result = esp_vfs_spiffs_register(&config_static);
-
-    if (result != ESP_OK) {
-        ESP_LOGE("main", "Failed to initialise SPIFFS (%s)", esp_err_to_name(result));
-        return;
-    }
-
-    ESP_ERROR_CHECK(i2c_master_init());
-    ESP_LOGI("main", "I2C initialized successfully");
-    if (SCAN_I2C) device_scan();
-
-    // do a BMS reset on boot
-    reset();
-
-    vTaskDelay(pdMS_TO_TICKS(1000));
-
-    // Initialize the GPIO pin as an output for LED toggling
-    gpio_config_t io_conf = {
-        .pin_bit_mask = (1ULL << I2C_LED_GPIO_PIN),
-        .mode = GPIO_MODE_OUTPUT,
-        .pull_up_en = GPIO_PULLUP_DISABLE,
-        .pull_down_en = GPIO_PULLDOWN_DISABLE,
-        .intr_type = GPIO_INTR_DISABLE
-    };
-    gpio_config(&io_conf);
-
-    uint8_t eleven_bytes[11];
-    read_bytes(I2C_DATA_SUBCLASS_ID, I2C_NAME_OFFSET, eleven_bytes, sizeof(eleven_bytes));
-    if (strcmp((char *)eleven_bytes, "") != 0) strncpy(ESP_ID, (char *)eleven_bytes, 10);
-
-
     if (LORA_IS_RECEIVER) {
         lora_init();
 
@@ -79,6 +39,45 @@ void app_main(void) {
     }
 
     else {
+        // initialise SPIFFS
+        esp_err_t result;
+
+        esp_vfs_spiffs_conf_t config_static = {
+            .base_path = "/static",
+            .partition_label = "static",
+            .max_files = 5,
+            .format_if_mount_failed = true
+        };
+        result = esp_vfs_spiffs_register(&config_static);
+
+        if (result != ESP_OK) {
+            ESP_LOGE("main", "Failed to initialise SPIFFS (%s)", esp_err_to_name(result));
+            return;
+        }
+
+        ESP_ERROR_CHECK(i2c_master_init());
+        ESP_LOGI("main", "I2C initialized successfully");
+        if (SCAN_I2C) device_scan();
+
+        // do a BMS reset on boot
+        reset();
+
+        vTaskDelay(pdMS_TO_TICKS(1000));
+
+        // Initialize the GPIO pin as an output for LED toggling
+        gpio_config_t io_conf = {
+            .pin_bit_mask = (1ULL << I2C_LED_GPIO_PIN),
+            .mode = GPIO_MODE_OUTPUT,
+            .pull_up_en = GPIO_PULLUP_DISABLE,
+            .pull_down_en = GPIO_PULLDOWN_DISABLE,
+            .intr_type = GPIO_INTR_DISABLE
+        };
+        gpio_config(&io_conf);
+
+        uint8_t eleven_bytes[11];
+        read_bytes(I2C_DATA_SUBCLASS_ID, I2C_NAME_OFFSET, eleven_bytes, sizeof(eleven_bytes));
+        if (strcmp((char *)eleven_bytes, "") != 0) strncpy(ESP_ID, (char *)eleven_bytes, 10);
+
         wifi_init();
         vTaskDelay(pdMS_TO_TICKS(3000));
 
