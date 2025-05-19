@@ -84,7 +84,7 @@ void app_main(void) {
         lora_configure_defaults();
         gpio_set_direction(PIN_NUM_DIO0, GPIO_MODE_INPUT);
 
-        xTaskCreate(lora_rx_task, "lora_rx_task", 4096, NULL, 5, NULL);
+        xTaskCreate(lora_rx_task, "lora_rx_task", 8192, NULL, 5, NULL);
     }
 
     else {
