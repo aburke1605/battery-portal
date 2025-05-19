@@ -241,6 +241,9 @@ void lora_tx_task(void *pvParameters) {
 
 void lora_rx_task(void *pvParameters) {
     uint8_t buffer[LORA_MAX_PACKET_LEN + 1];
+    char combined_message[(LORA_MAX_PACKET_LEN + 2) * (LORA_QUEUE_SIZE + 1) - 2]; // +2 for ", " between each message instance, +1 for this ESP32s own BMS data, -2 for strenuous "
+    size_t combined_capacity = sizeof(combined_message);
+    bool chunked = false;
 
     // Configure FIFO base addr for RX
     lora_write_register(REG_FIFO_RX_BASE_ADDR, 0x00);  // FIFO RX base addr
@@ -266,13 +269,30 @@ void lora_rx_task(void *pvParameters) {
                 }
                 buffer[len] = '\0';  // Null-terminate
 
-                uint8_t rssi_raw = lora_read_register(0x1A);
-                int rssi_dbm = -157 + rssi_raw;
+                int start_position = 0;
+                int read_length = len;
+                if (strncmp((char *)buffer, "_S_", 3) == 0) {
+                    combined_message[0] = '\0';
+                    start_position = 3;
+                    read_length -= 3;
+                    if (strncmp((char *)&buffer[len - 3], "_E_", 3) != 0) chunked = true;
+                    else read_length -= 3;
+                } else if (chunked && strncmp((char *)&buffer[len - 3], "_E_", 3) == 0) {
+                    read_length -= 3;
+                    chunked = false;
+                }
+                strncat(combined_message, (char *)&buffer[start_position], read_length);
 
-                ESP_LOGI(TAG, "Received: \"%s\", RSSI: %d dBm", buffer, rssi_dbm);
+                if (!chunked) {
+                    uint8_t rssi_raw = lora_read_register(0x1A);
+                    int rssi_dbm = -157 + rssi_raw;
+
+                    ESP_LOGI(TAG, "Received: \"%s\", RSSI: %d dBm", combined_message, rssi_dbm);
+                    vTaskDelay(pdMS_TO_TICKS(10));
+                }
             }
 
-            // Clear IRQ flags
+            // Clear IRQ flags again
             lora_write_register(REG_IRQ_FLAGS, 0b11111111);
         }
 
