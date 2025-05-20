@@ -459,6 +459,15 @@ void websocket_task(void *pvParameters) {
         cJSON_AddBoolToObject(data, "connected_to_WiFi", connected_to_WiFi);
 
         cJSON_AddItemToObject(json, ESP_ID, data);
+        /*
+        
+        
+        TODO:
+          remove data object
+          therefore change how json is formed
+        
+        
+        */
         char *json_string = cJSON_PrintUnformatted(json); // goes to local clients
 
         // cJSON_Delete(data);
