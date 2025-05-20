@@ -482,7 +482,7 @@ void websocket_task(void *pvParameters) {
         message.CITH = (uint16_t)(two_bytes[0] << 8 | two_bytes[1]);
 
         // cJSON_AddStringToObject(data, "IP", ESP_IP);
-        char* data_string = get_data(); // goes to website
+        char* data_string = LORA_IS_RECEIVER ? "" : get_data(); // goes to website
 
         // add this after forming data_string because if a message is received
         // by the website then obviously the ESP32 is connected to WiFi

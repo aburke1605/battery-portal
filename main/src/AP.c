@@ -123,11 +123,14 @@ void wifi_init(void) {
     };
 
     // set the SSID as well
-    uint8_t charge[2] = {};
-    read_bytes(0, I2C_STATE_OF_CHARGE_REG, charge, sizeof(charge));
-
     char buffer[5 + strlen(ESP_ID) + 2 + 5 + 1 + 1]; // "ROOT " + "BMS_01" + ": " + uint16_t, + "%" + "\0"
-    snprintf(buffer, sizeof(buffer), "%s%s: %d%%", !AP_exists?"ROOT ":"", ESP_ID, charge[1] << 8 | charge[0]);
+    if (LORA_IS_RECEIVER) {
+        snprintf(buffer, sizeof(buffer), "LoRa RECEIVER");
+    } else {
+        uint8_t charge[2] = {};
+        read_bytes(0, I2C_STATE_OF_CHARGE_REG, charge, sizeof(charge));
+        snprintf(buffer, sizeof(buffer), "%s%s: %d%%", !AP_exists?"ROOT ":"", ESP_ID, charge[1] << 8 | charge[0]);
+    }
 
     strncpy((char *)wifi_ap_config.ap.ssid, buffer, sizeof(wifi_ap_config.ap.ssid) - 1);
     wifi_ap_config.ap.ssid[sizeof(wifi_ap_config.ap.ssid) - 1] = '\0'; // ensure null-termination
