@@ -2,6 +2,7 @@
 
 #include "include/BMS.h"
 #include "include/global.h"
+#include "include/WS.h"
 #include "include/utils.h"
 
 #include <cJSON.h>
@@ -293,7 +294,28 @@ void lora_rx_task(void *pvParameters) {
                     int rssi_dbm = -157 + rssi_raw;
 
                     ESP_LOGI(TAG, "Received: \"%s\", RSSI: %d dBm", combined_message, rssi_dbm);
-                    vTaskDelay(pdMS_TO_TICKS(10));
+
+                    char full_message[strlen(combined_message)];
+                    strcpy(full_message, combined_message);
+                    char interesting_bit[strlen(combined_message)];
+                    while (strlen(full_message) > 0) {
+                        char *remaining_message = strstr(full_message, "}, {");
+                        if (remaining_message) {
+                            // extract first message
+                            strncpy(interesting_bit, full_message, strlen(full_message) - strlen(remaining_message) + 1);
+                            interesting_bit[strlen(full_message) - strlen(remaining_message) + 1] = '\0';
+                            send_message(interesting_bit);
+
+                            // forward the rest
+                            strncpy(full_message, &remaining_message[3], strlen(remaining_message) - 3);
+                            full_message[strlen(remaining_message) - 3] = '\0';
+                        } else {
+                            // send final message
+                            send_message(full_message);
+                            full_message[0] = '\0';
+                        }
+                        vTaskDelay(pdMS_TO_TICKS(10));
+                    }
                 }
             }
 
