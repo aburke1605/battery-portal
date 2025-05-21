@@ -20,7 +20,7 @@ static esp_websocket_client_handle_t ws_client = NULL;
 
 static const char* TAG = "WS";
 
-void add_client(int fd, const char* tkn) {
+void add_client(int fd, const char* tkn, bool browser) {
     for (int i = 0; i < WS_CONFIG_MAX_CLIENTS; i++) {
         if (client_sockets[i].descriptor == fd) {
             return;
@@ -28,6 +28,7 @@ void add_client(int fd, const char* tkn) {
             client_sockets[i].descriptor = fd;
             strncpy(client_sockets[i].auth_token, tkn, UTILS_AUTH_TOKEN_LENGTH);
             client_sockets[i].auth_token[UTILS_AUTH_TOKEN_LENGTH - 1] = '\0';
+            client_sockets[i].is_browser_not_mesh = browser;
             ESP_LOGI(TAG, "Client %d added", fd);
             return;
         }
@@ -40,6 +41,7 @@ void remove_client(int fd) {
         if (client_sockets[i].descriptor == fd) {
             client_sockets[i].descriptor = -1;
             client_sockets[i].auth_token[0] = '\0';
+            client_sockets[i].is_browser_not_mesh = true;
             ESP_LOGI(TAG, "Client %d removed", fd);
             return;
         }
@@ -47,16 +49,24 @@ void remove_client(int fd) {
 }
 
 esp_err_t client_handler(httpd_req_t *req) {
+    int fd = httpd_req_to_sockfd(req);
+
     // register new clients...
+    bool is_browser_not_mesh = true; // arbitrary assumption
     if (req->method == HTTP_GET) {
-        char *check_new_session = strstr(req->uri, "/browser_ws?auth_token=");
-        if (check_new_session) {
+        char *check_new_browser_session = strstr(req->uri, "/browser_ws?auth_token=");
+        char *check_new_mesh_session = strstr(req->uri, "/mesh_ws?auth_token=");
+        if (check_new_browser_session || check_new_mesh_session) {
+            if (!check_new_browser_session && check_new_mesh_session) is_browser_not_mesh = false;
             char auth_token[UTILS_AUTH_TOKEN_LENGTH] = {0};
-            sscanf(check_new_session,"/browser_ws?auth_token=%50s",auth_token);
+            if (is_browser_not_mesh) {
+                sscanf(check_new_browser_session, "/browser_ws?auth_token=%50s", auth_token);
+            } else {
+                sscanf(check_new_mesh_session, "/mesh_ws?auth_token=%50s", auth_token);
+            }
             auth_token[UTILS_AUTH_TOKEN_LENGTH - 1] = '\0';
             if (auth_token[0] != '\0' && strcmp(auth_token, current_auth_token) == 0) {
-                int fd = httpd_req_to_sockfd(req);
-                add_client(fd, auth_token);
+                add_client(fd, auth_token, is_browser_not_mesh);
                 current_auth_token[0] = '\0';
                 ESP_LOGI(TAG, "WebSocket handshake complete for client %d", fd);
                 return ESP_OK; // WebSocket handshake happens here
@@ -102,8 +112,43 @@ esp_err_t client_handler(httpd_req_t *req) {
             return ESP_FAIL;
         }
 
-        cJSON *response = cJSON_CreateObject();
-        perform_request(message, response);
+        // re-determine if browser or mesh client
+        for (int i = 0; i < WS_CONFIG_MAX_CLIENTS; i++) {
+            if (client_sockets[i].descriptor == fd) {
+                is_browser_not_mesh = client_sockets[i].is_browser_not_mesh;
+                break;
+            }
+        }
+        if (is_browser_not_mesh) {
+            // perform the request made by the local websocket client
+            cJSON *response = cJSON_CreateObject();
+            perform_request(message, response);
+        } else {
+            // queue message from mesh client to forward via LoRa
+            cJSON *id_obj = cJSON_GetObjectItem(message, "id");
+            if (!id_obj) {
+                ESP_LOGE(TAG, "incoming LoRa queue message not formatted properly:\n  %s", cJSON_PrintUnformatted(message));
+                free(ws_pkt.payload);
+                cJSON_Delete(message);
+                return ESP_FAIL;
+            }
+            bool found = false;
+            for (int i=0; i<MESH_SIZE; i++) {
+                if (strcmp(all_messages[i].id, id_obj->valuestring) == 0) {
+                    // update existing message
+                    found = true;
+                    strcpy(all_messages[i].message, (char *)ws_pkt.payload);
+                    i = MESH_SIZE;
+                } else if (strcmp(all_messages[i].id, "") == 0) {
+                    // create new message
+                    found = true;
+                    strcpy(all_messages[i].id, id_obj->valuestring);
+                    strcpy(all_messages[i].message, (char *)ws_pkt.payload);
+                    i = MESH_SIZE;
+                }
+            }
+            if (!found) ESP_LOGE(TAG, "LoRa queue full! Dropping message: %s", cJSON_PrintUnformatted(message));
+        }
 
         cJSON_Delete(message);
     } else {
@@ -332,13 +377,13 @@ void message_queue_task(void *pvParameters) {
     }
 }
 
-void event_handler(void *arg, esp_event_base_t event_base, int32_t event_id, void *event_data) {
+void websocket_event_handler(void *arg, esp_event_base_t event_base, int32_t event_id, void *event_data) {
     esp_websocket_event_data_t *ws_event_data = (esp_websocket_event_data_t *)event_data;
 
     switch (event_id) {
         case WEBSOCKET_EVENT_CONNECTED:
             if (VERBOSE) ESP_LOGI(TAG, "WebSocket connected");
-            char websocket_connect_message[128];
+            char websocket_connect_message[WS_MESSAGE_MAX_LEN];
             snprintf(websocket_connect_message, sizeof(websocket_connect_message), "{\"type\":\"register\",\"id\":\"%s\"}", ESP_ID);
             send_message(websocket_connect_message);
             break;
@@ -357,6 +402,11 @@ void event_handler(void *arg, esp_event_base_t event_base, int32_t event_id, voi
                 cJSON_Delete(message);
                 break;
             }
+
+            // this case should never be triggered by the mesh ws
+            // event handling, so just continue with the code below
+            // for browser ws events and use this handler universally
+            // for both mesh and browser ws clients
 
             cJSON *response = cJSON_CreateObject();
             esp_err_t err = perform_request(message, response);
@@ -452,7 +502,7 @@ void websocket_task(void *pvParameters) {
         message.CITH = (uint16_t)(two_bytes[0] << 8 | two_bytes[1]);
 
         // cJSON_AddStringToObject(data, "IP", ESP_IP);
-        char *data_string = cJSON_PrintUnformatted(data); // goes to website
+        char* data_string = LORA_IS_RECEIVER ? "" : get_data(); // goes to website
 
         // add this after forming data_string because if a message is received
         // by the website then obviously the ESP32 is connected to WiFi
@@ -528,7 +578,7 @@ void websocket_task(void *pvParameters) {
                         vTaskDelay(pdMS_TO_TICKS(1000));
                         continue;
                     }
-                    esp_websocket_register_events(ws_client, WEBSOCKET_EVENT_ANY, event_handler, NULL);
+                    esp_websocket_register_events(ws_client, WEBSOCKET_EVENT_ANY, websocket_event_handler, NULL);
                     if (esp_websocket_client_start(ws_client) != ESP_OK) {
                         ESP_LOGE(TAG, "Failed to start WebSocket client");
                         esp_websocket_client_destroy(ws_client);
@@ -545,7 +595,7 @@ void websocket_task(void *pvParameters) {
                     esp_websocket_client_destroy(ws_client);
                     ws_client = NULL;
                 } else {
-                    char message[1024];
+                    char message[WS_MESSAGE_MAX_LEN];
                     snprintf(message, sizeof(message), "{\"type\":\"data\",\"id\":\"%s\",\"content\":%s}", ESP_ID, data_string);
                     send_message(message);
                     // send_message(&message);

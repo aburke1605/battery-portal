@@ -9,6 +9,7 @@
 #include <esp_log.h>
 #include <nvs_flash.h>
 #include <esp_wifi.h>
+#include <esp_mac.h>
 #include <esp_websocket_client.h>
 
 static struct rendered_page rendered_html_pages[WS_MAX_N_HTML_PAGES];
@@ -16,28 +17,103 @@ static uint8_t n_rendered_html_pages = 0;
 
 static const char* TAG = "AP";
 
+wifi_ap_record_t *wifi_scan(void) {
+    // configure Wi-Fi scan settings
+    wifi_scan_config_t scan_config = {
+        .ssid = NULL,        // all SSIDs
+        .bssid = NULL,       // all BSSIDs
+        .channel = 0,        // all channels
+        .show_hidden = false,
+        .scan_type = WIFI_SCAN_TYPE_PASSIVE,
+    };
+
+    ESP_ERROR_CHECK(esp_wifi_scan_start(&scan_config, true)); // blocking scan
+
+    // get the number of APs found
+    uint16_t ap_num = 0;
+    ESP_ERROR_CHECK(esp_wifi_scan_get_ap_num(&ap_num));
+
+    // allocate memory for AP info and retrieve the list
+    wifi_ap_record_t *ap_info = malloc(sizeof(wifi_ap_record_t) * ap_num);
+    if (ap_info == NULL) {
+        ESP_LOGE("AP", "Failed to allocate memory for AP list");
+        return false;
+    }
+    ESP_ERROR_CHECK(esp_wifi_scan_get_ap_records(&ap_num, ap_info));
+
+    for (int i = 0; i < ap_num; i++) {
+        if (strncmp((const char*)ap_info[i].ssid, "ROOT ", 5) == 0) return &ap_info[i];
+    }
+
+    free(ap_info);
+
+    return NULL;
+}
+
+void ap_n_clients_handler(void *arg, esp_event_base_t event_base, int32_t event_id, void *event_data) {
+    if (event_base == WIFI_EVENT) {
+        switch (event_id) {
+            case WIFI_EVENT_STA_START:
+                ESP_LOGI(TAG, "Wi-Fi STA started");
+                break;
+
+            case WIFI_EVENT_AP_STACONNECTED: {
+                wifi_event_ap_staconnected_t *event = (wifi_event_ap_staconnected_t *) event_data;
+                num_connected_clients++;
+                ESP_LOGI(TAG, "Station "MACSTR" joined, AID=%d. Clients: %d",
+                         MAC2STR(event->mac), event->aid, num_connected_clients);
+                break;
+            }
+
+            case WIFI_EVENT_AP_STADISCONNECTED: {
+                wifi_event_ap_stadisconnected_t *event = (wifi_event_ap_stadisconnected_t *) event_data;
+                num_connected_clients--;
+                ESP_LOGI(TAG, "Station "MACSTR" left, AID=%d. Clients: %d",
+                         MAC2STR(event->mac), event->aid, num_connected_clients);
+                break;
+            }
+
+            default:
+                break;
+        }
+    }
+}
+
 void wifi_init(void) {
-    // Initialize NVS
+    // initialize NVS
     esp_err_t ret = nvs_flash_init();
     if (ret == ESP_ERR_NVS_NO_FREE_PAGES || ret == ESP_ERR_NVS_NEW_VERSION_FOUND) {
         ESP_ERROR_CHECK(nvs_flash_erase());
         ESP_ERROR_CHECK(nvs_flash_init());
     }
 
-    // Initialize the Wi-Fi stack
+    // initialize the Wi-Fi stack
     ESP_ERROR_CHECK(esp_netif_init());
     ESP_ERROR_CHECK(esp_event_loop_create_default());
     
     esp_netif_create_default_wifi_sta();
-    esp_netif_t *ap_netif = esp_netif_create_default_wifi_ap();
 
     wifi_init_config_t cfg = WIFI_INIT_CONFIG_DEFAULT();
     ESP_ERROR_CHECK(esp_wifi_init(&cfg));
 
-    // Set Wi-Fi mode to both AP and STA
+    // use only STA at first to scan for APs
+    ESP_ERROR_CHECK(esp_wifi_set_mode(WIFI_MODE_STA));
+    ESP_ERROR_CHECK(esp_wifi_start());
+    vTaskDelay(pdMS_TO_TICKS(100));
+
+    // scan for other WiFi APs
+    wifi_ap_record_t * AP_exists = wifi_scan();
+
+    // stop WiFi before changing mode
+    ESP_ERROR_CHECK(esp_wifi_stop());
+
+    // create the AP network interface
+    ap_netif = esp_netif_create_default_wifi_ap();
+
+    // set Wi-Fi mode to both AP and STA
     ESP_ERROR_CHECK(esp_wifi_set_mode(WIFI_MODE_APSTA));
 
-    // Configure the Access Point
+    // configure the Access Point
     wifi_config_t wifi_ap_config = {
         .ap = {
             .channel = 1,
@@ -47,42 +123,42 @@ void wifi_init(void) {
     };
 
     // set the SSID as well
-    uint8_t charge[2] = {};
-    read_bytes(0, I2C_STATE_OF_CHARGE_REG, charge, sizeof(charge));
-
-    char buffer[strlen(ESP_ID) + 2 + 5 + 1 + 1]; // "BMS_01" + ": " + uint16_t, + "%" + "\0"
-    snprintf(buffer, sizeof(buffer), "%s: %d%%", ESP_ID, charge[1] << 8 | charge[0]);
+    char buffer[5 + strlen(ESP_ID) + 2 + 5 + 1 + 1]; // "ROOT " + "BMS_01" + ": " + uint16_t, + "%" + "\0"
+    if (LORA_IS_RECEIVER) {
+        snprintf(buffer, sizeof(buffer), "LoRa RECEIVER");
+    } else {
+        uint8_t charge[2] = {};
+        read_bytes(0, I2C_STATE_OF_CHARGE_REG, charge, sizeof(charge));
+        snprintf(buffer, sizeof(buffer), "%s%s: %d%%", !AP_exists?"ROOT ":"", ESP_ID, charge[1] << 8 | charge[0]);
+    }
 
     strncpy((char *)wifi_ap_config.ap.ssid, buffer, sizeof(wifi_ap_config.ap.ssid) - 1);
-    wifi_ap_config.ap.ssid[sizeof(wifi_ap_config.ap.ssid) - 1] = '\0'; // Ensure null-termination
-    wifi_ap_config.ap.ssid_len = strlen((char *)wifi_ap_config.ap.ssid); // Set SSID length
+    wifi_ap_config.ap.ssid[sizeof(wifi_ap_config.ap.ssid) - 1] = '\0'; // ensure null-termination
+    wifi_ap_config.ap.ssid_len = strlen((char *)wifi_ap_config.ap.ssid); // set SSID length
+
+    // specific configurations or ROOT or non-ROOT APs
+    if (!AP_exists) {
+        // keep count of number of connected clients
+        ESP_ERROR_CHECK(esp_event_handler_register(WIFI_EVENT, ESP_EVENT_ANY_ID, &ap_n_clients_handler, NULL));
+        is_root = true;
+    } else {
+        // must change IP address from default so
+        // can send messages to ROOT at 192.168.4.1
+        esp_netif_ip_info_t ip_info;
+        IP4_ADDR(&ip_info.ip, 192,168,5,1);
+        IP4_ADDR(&ip_info.gw, 192,168,5,1);
+        IP4_ADDR(&ip_info.netmask, 255,255,255,0);
+        esp_netif_dhcps_stop(ap_netif);
+        esp_netif_set_ip_info(ap_netif, &ip_info);
+        esp_netif_dhcps_start(ap_netif);
+    }
 
     ESP_ERROR_CHECK(esp_wifi_set_config(ESP_IF_WIFI_AP, &wifi_ap_config));
 
-
-    // manually set the netmask and gateway as something different from first ESP
-    ESP_ERROR_CHECK(esp_netif_dhcps_stop(ap_netif));
-    snprintf(ESP_subnet_IP, sizeof(ESP_subnet_IP), "192.168.4.1");
-    esp_ip4_addr_t ip_info = {
-        .addr = esp_ip4addr_aton(ESP_subnet_IP),
-    };
-    esp_ip4_addr_t netmask = {
-        .addr = esp_ip4addr_aton("255.255.255.0"),
-    };
-
-    esp_ip4_addr_t gateway = {
-        .addr = esp_ip4addr_aton(ESP_subnet_IP),
-    };
-    esp_netif_ip_info_t ip_info_struct;
-    ip_info_struct.ip = ip_info;
-    ip_info_struct.netmask = netmask;
-    ip_info_struct.gw = gateway;
-    ESP_ERROR_CHECK(esp_netif_set_ip_info(ap_netif, &ip_info_struct));
-    ESP_ERROR_CHECK(esp_netif_dhcps_start(ap_netif));
-    ESP_LOGI(TAG, "AP initialized with IP: %s", ESP_subnet_IP);
-
+    // restart WiFi
     ESP_LOGI(TAG, "Starting WiFi AP... SSID: %s", wifi_ap_config.ap.ssid);
     ESP_ERROR_CHECK(esp_wifi_start());
+    vTaskDelay(pdMS_TO_TICKS(100));
 }
 
 esp_err_t redirect_handler(httpd_req_t *req) {
@@ -266,11 +342,35 @@ esp_err_t login_handler(httpd_req_t *req) {
     return ESP_OK;
 }
 
+esp_err_t num_clients_handler(httpd_req_t *req) {
+    vTaskSuspend(merge_root_task_handle);
+    char response[64];
+    snprintf(response, sizeof(response), "{\"num_connected_clients\": %d}", num_connected_clients);
+
+    httpd_resp_set_type(req, "application/json");
+    httpd_resp_send(req, response, HTTPD_RESP_USE_STRLEN);
+
+    // big delay before resuming to give
+    // other AP time to receive message
+    vTaskDelay(pdMS_TO_TICKS(10000));
+    vTaskResume(merge_root_task_handle);
+
+    return ESP_OK;
+}
+
+esp_err_t restart_handler(httpd_req_t *req) {
+    ESP_LOGI(TAG, "I am being told to restart");
+    esp_restart();
+
+    return ESP_OK;
+}
+
 httpd_handle_t start_webserver(void) {
     // create sockets for clients
     for (int i = 0; i < WS_CONFIG_MAX_CLIENTS; i++) {
         client_sockets[i].descriptor = -1;
         client_sockets[i].auth_token[0] = '\0';
+        client_sockets[i].is_browser_not_mesh = true;
     }
 
     httpd_config_t config = HTTPD_DEFAULT_CONFIG();
@@ -338,6 +438,22 @@ httpd_handle_t start_webserver(void) {
             .is_websocket = true
         };
         httpd_register_uri_handler(server, &ws_uri);
+
+        ws_uri.uri = "/mesh_ws";
+        httpd_register_uri_handler(server, &ws_uri);
+
+        httpd_uri_t mesh_uri = {
+            .uri       = "/api_num_clients",
+            .method    = HTTP_GET,
+            .handler   = num_clients_handler,
+            .user_ctx  = NULL
+        };
+        httpd_register_uri_handler(server, &mesh_uri);
+
+        mesh_uri.uri = "/no_you_restart",
+        mesh_uri.method = HTTP_POST,
+        mesh_uri.handler = restart_handler,
+        httpd_register_uri_handler(server, &mesh_uri);
 
         httpd_uri_t favicon_uri = {
             .uri       = "/favicon.png",
