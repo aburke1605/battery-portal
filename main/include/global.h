@@ -3,16 +3,23 @@
 
 #include "include/config.h"
 
+#include <esp_wifi.h>
 #include <esp_http_server.h>
 
+extern esp_netif_t *ap_netif;
+extern bool is_root;
+extern int num_connected_clients;
 extern char ESP_ID[UTILS_ID_LENGTH + 1];
 extern httpd_handle_t server;
 extern bool connected_to_WiFi;
-extern char ESP_subnet_IP[15];
 extern client_socket client_sockets[WS_CONFIG_MAX_CLIENTS];
 extern char current_auth_token[UTILS_AUTH_TOKEN_LENGTH];
 extern QueueHandle_t ws_queue;
+extern LoRa_message all_messages[MESH_SIZE];
 
 extern TaskHandle_t websocket_task_handle;
+
+extern TaskHandle_t mesh_websocket_task_handle;
+extern TaskHandle_t merge_root_task_handle;
 
 #endif // GLOBAL_H

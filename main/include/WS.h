@@ -25,7 +25,7 @@ typedef struct __attribute__((packed)) {
     uint16_t CITH;
 } ws_payload;
 
-void add_client(int fd, const char* tkn);
+void add_client(int fd, const char* tkn, bool browser);
 
 void remove_client(int fd);
 
@@ -38,7 +38,7 @@ void send_message(const char *message);
 
 void message_queue_task(void *pvParameters);
 
-void event_handler(void *arg, esp_event_base_t event_base, int32_t event_id, void *event_data);
+void websocket_event_handler(void *arg, esp_event_base_t event_base, int32_t event_id, void *event_data);
 
 void websocket_task(void *pvParameters);
 

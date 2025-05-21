@@ -6,7 +6,12 @@
 #include <esp_err.h>
 #include <esp_http_server.h>
 
+#define MIN(a, b) ((a) < (b) ? (a) : (b))
+#define MAX(a, b) ((a) > (b) ? (a) : (b))
+
 void send_fake_request();
+
+char *send_fake_login_post_request();
 
 esp_err_t get_POST_data(httpd_req_t *req, char* content, size_t content_size);
 
@@ -23,5 +28,9 @@ char* read_file(const char* path);
 char* replace_placeholder(const char *html, const char *const placeholders[], const char*const substitutes[], size_t num_replacements);
 
 uint8_t get_block(uint8_t offset);
+
+int compare_mac(const uint8_t *mac1, const uint8_t *mac2);
+
+int calculate_transmission_delay(uint8_t spreading_factor, uint8_t bandwidth, uint8_t n_preamble_symbols, uint16_t payload_length, uint8_t coding_rate, bool header, bool low_data_rate_optimisation);
 
 #endif // UTILS_H
