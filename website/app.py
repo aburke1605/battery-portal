@@ -59,6 +59,7 @@ def serve_react_static(path):
 
 # Import user model for migrations
 from user import User, Role
+from battery import BatteryInfo
 
 # Create the database and tables if they don't exist
 # Create seed data
