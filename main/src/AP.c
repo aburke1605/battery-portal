@@ -343,26 +343,23 @@ esp_err_t login_handler(httpd_req_t *req) {
 }
 
 esp_err_t num_clients_handler(httpd_req_t *req) {
-    printf("suspending merge_task...\n");
     vTaskSuspend(merge_root_task_handle);
     char response[64];
     snprintf(response, sizeof(response), "{\"num_connected_clients\": %d}", num_connected_clients);
 
     httpd_resp_set_type(req, "application/json");
     httpd_resp_send(req, response, HTTPD_RESP_USE_STRLEN);
-    printf("sent: %s\n", response);
 
     // big delay before resuming to give
     // other AP time to receive message
     vTaskDelay(pdMS_TO_TICKS(10000));
-    printf("resuming merge_task\n");
     vTaskResume(merge_root_task_handle);
 
     return ESP_OK;
 }
 
 esp_err_t restart_handler(httpd_req_t *req) {
-    printf("I am being told to restart\n");
+    ESP_LOGI(TAG, "I am being told to restart");
     esp_restart();
 
     return ESP_OK;

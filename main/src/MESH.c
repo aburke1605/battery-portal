@@ -79,13 +79,13 @@ void connect_to_root_task(void *pvParameters) {
                                              ((uint32_t)my_mac[4] << 8)  |
                                              ((uint32_t)my_mac[5]);
                     int time_delay = unique_number % 100000 + 5000;
-                    printf("delaying for %d ms...\n", time_delay);
+                    ESP_LOGI(TAG, "delaying for %d ms...", time_delay);
                     vTaskDelay(pdMS_TO_TICKS(time_delay));
-                    printf("trying for last time... ");
+                    ESP_LOGI(TAG, "trying for last time... ");
                     // try to connect to new root AP which has possibly restarted earlier than this
                     ap_info = wifi_scan();
                     if (!ap_info) {
-                        printf("fail, restarting\n");
+                        ESP_LOGI(TAG, "fail, restarting");
                         // hopefully become now the only root AP
                         esp_restart();
                     }
@@ -184,14 +184,12 @@ esp_err_t ap_n_client_comparison_handler(esp_http_client_event_t *evt) {
 
                 cJSON *message = cJSON_Parse(output_buffer);
                 if (message) {
-                    printf("woohoo\n");
                     cJSON *ext_num_object = cJSON_GetObjectItem(message, "num_connected_clients");
                     if (ext_num_object) {
                         int ext_num = ext_num_object->valueint;
-                        printf("the number is %d\n", ext_num);
                         if (ext_num - 1 >= num_connected_clients) {
                             // -1 to account for the connection of this ESP32 to the other root AP
-                            printf("I will shut down!\n");
+                            ESP_LOGI(TAG, "I will restart!");
                             esp_restart();
                         } else {
                             esp_http_client_config_t config = {
@@ -226,25 +224,12 @@ void merge_root_task(void *pvParameters) {
     while (true) {
         uint8_t my_mac[6];
         esp_wifi_get_mac(WIFI_IF_AP, my_mac);
-        printf("My BSSID: %02x:%02x:%02x:%02x:%02x:%02x\n",
-            my_mac[0], my_mac[1], my_mac[2],
-            my_mac[3], my_mac[4], my_mac[5]);
 
         wifi_ap_record_t * ap_info = wifi_scan();
         if (ap_info) {
-            printf("another root AP found!!\n SSID: %s, BSSID: %02x:%02x:%02x:%02x:%02x:%02x\n",
-                ap_info->ssid,
-                ap_info->bssid[0], ap_info->bssid[1], ap_info->bssid[2],
-                ap_info->bssid[3], ap_info->bssid[4], ap_info->bssid[5]);
+            ESP_LOGW(TAG, "Another root AP found!!\n SSID: %s", ap_info->ssid);
 
             int my_int = compare_mac(my_mac, ap_info->bssid);
-            if (my_int < 0) {
-                printf("I will change IP\n");
-            } else if(my_int > 0) {
-                printf("I will NOT change IP\n");
-            } else {
-                printf("major error\n");
-            }
 
             wifi_config_t *wifi_sta_config = malloc(sizeof(wifi_config_t));
             memset(wifi_sta_config, 0, sizeof(wifi_config_t));
@@ -282,7 +267,7 @@ void merge_root_task(void *pvParameters) {
                     esp_netif_dhcps_stop(ap_netif);
                     esp_netif_set_ip_info(ap_netif, &ip_info);
                     esp_netif_dhcps_start(ap_netif);
-                    printf("changed IP to 192.168.10.1\n");
+                    ESP_LOGI(TAG, "changed IP to 192.168.10.1");
                     // delay to allow it to update
                     vTaskDelay(pdMS_TO_TICKS(5000));
                 }
@@ -313,7 +298,7 @@ void merge_root_task(void *pvParameters) {
                     esp_netif_dhcps_stop(ap_netif);
                     esp_netif_set_ip_info(ap_netif, &ip_info);
                     esp_netif_dhcps_start(ap_netif);
-                    printf("changed IP back to 192.168.4.1\n");
+                    ESP_LOGI(TAG, "changed IP back to 192.168.4.1");
                 }
 
                 esp_wifi_disconnect();
