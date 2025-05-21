@@ -7,11 +7,6 @@
 
 #include <esp_err.h>
 
-typedef struct {
-    char id[10];
-    char message[WS_MESSAGE_MAX_LEN];
-} LoRa_message;
-
 
 void lora_reset();
 

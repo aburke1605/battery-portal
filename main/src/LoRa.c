@@ -140,39 +140,9 @@ void lora_configure_defaults() {
 void lora_tx_task(void *pvParameters) {
     char individual_message[LORA_MAX_PACKET_LEN];
 
-    LoRa_message all_messages[LORA_QUEUE_SIZE] = {0};
-    // initiate
-    for (int i=0; i<LORA_QUEUE_SIZE; i++) strcpy(all_messages[i].id, "");
-
     char combined_message[3 + (LORA_MAX_PACKET_LEN + 2) * (LORA_QUEUE_SIZE + 1) - 2 + 3]; // +3 for "_S_", +2 for ", " between each message instance, +1 for this ESP32s own BMS data, -2 for strenuous ", ", +3 for "_E_"
 
     while (true) {
-        if (xQueueReceive(lora_queue, individual_message, pdMS_TO_TICKS(1000)) == pdPASS) {
-            ESP_LOGI(TAG, "Received \"%s\" from queue", individual_message);
-            cJSON *message_json = cJSON_Parse(individual_message);
-            cJSON *id_obj = cJSON_GetObjectItem(message_json, "id");
-            if (id_obj) {
-                char *id = id_obj->valuestring;
-                bool found = false;
-                for (int i=0; i<LORA_QUEUE_SIZE; i++) {
-                    if (strcmp(all_messages[i].id, id) == 0) {
-                        found = true;
-                        strcpy(all_messages[i].message, individual_message);
-                        break;
-                    } else if (strcmp(all_messages[i].id, "") == 0) {
-                        found = true;
-                        strcpy(all_messages[i].id, id);
-                        strcpy(all_messages[i].message, individual_message);
-                        break;
-                    }
-                }
-
-                if (!found) printf("error: no space!\n");
-            }
-
-            cJSON_Delete(message_json);
-        }
-
         // now form the LoRa message out of non-empty messages and transmit
         size_t combined_capacity = sizeof(combined_message);
         combined_message[0] = '\0';
@@ -186,6 +156,12 @@ void lora_tx_task(void *pvParameters) {
             if (strcmp(all_messages[i].id, "") != 0) {
                 strncat(combined_message, ", ", combined_capacity - strlen(combined_message) - 1);
                 strncat(combined_message, all_messages[i].message, combined_capacity - strlen(combined_message) - 1);
+
+                // clear the message slot again in case of disconnect
+                strcpy(all_messages[i].id, "");
+                all_messages[i].id[0] = '\0';
+                strcpy(all_messages[i].message, "");
+                all_messages[i].message[0] = '\0';
             }
         }
 

@@ -125,9 +125,29 @@ esp_err_t client_handler(httpd_req_t *req) {
             perform_request(message, response);
         } else {
             // queue message from mesh client to forward via LoRa
-            if (xQueueSend(lora_queue, cJSON_PrintUnformatted(message), portMAX_DELAY) != pdPASS) {
-                ESP_LOGE(TAG, "LoRa queue full! Dropping message: %s", cJSON_PrintUnformatted(message));
+            cJSON *id_obj = cJSON_GetObjectItem(message, "id");
+            if (!id_obj) {
+                ESP_LOGE(TAG, "incoming LoRa queue message not formatted properly:\n  %s", cJSON_PrintUnformatted(message));
+                free(ws_pkt.payload);
+                cJSON_Delete(message);
+                return ESP_FAIL;
             }
+            bool found = false;
+            for (int i=0; i<LORA_QUEUE_SIZE; i++) {
+                if (strcmp(all_messages[i].id, id_obj->valuestring) == 0) {
+                    // update existing message
+                    found = true;
+                    strcpy(all_messages[i].message, (char *)ws_pkt.payload);
+                    i = LORA_QUEUE_SIZE;
+                } else if (strcmp(all_messages[i].id, "") == 0) {
+                    // create new message
+                    found = true;
+                    strcpy(all_messages[i].id, id_obj->valuestring);
+                    strcpy(all_messages[i].message, (char *)ws_pkt.payload);
+                    i = LORA_QUEUE_SIZE;
+                }
+            }
+            if (!found) ESP_LOGE(TAG, "LoRa queue full! Dropping message: %s", cJSON_PrintUnformatted(message));
         }
 
         cJSON_Delete(message);

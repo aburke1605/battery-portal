@@ -195,6 +195,11 @@ typedef struct {
 } client_socket;
 
 typedef struct {
+    char id[10];
+    char message[WS_MESSAGE_MAX_LEN];
+} LoRa_message;
+
+typedef struct {
     int stack_size;
     const char* task_name;
 } TaskParams;

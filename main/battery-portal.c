@@ -22,7 +22,7 @@ bool connected_to_WiFi = false;
 client_socket client_sockets[WS_CONFIG_MAX_CLIENTS];
 char current_auth_token[UTILS_AUTH_TOKEN_LENGTH] = "";
 QueueHandle_t ws_queue;
-QueueHandle_t lora_queue;
+LoRa_message all_messages[LORA_QUEUE_SIZE] = {0};
 
 TaskHandle_t websocket_task_handle = NULL;
 
@@ -116,7 +116,6 @@ void app_main(void) {
             xTaskCreate(&merge_root_task, merge_root_params.task_name, merge_root_params.stack_size, &merge_root_params, 4, &merge_root_task_handle);
 
             lora_init();
-            lora_queue = xQueueCreate(LORA_QUEUE_SIZE, LORA_MAX_PACKET_LEN);
 
             TaskParams lora_tx_params = {.stack_size = 8600, .task_name = "lora_tx_task"};
             xTaskCreate(lora_tx_task, lora_tx_params.task_name, lora_tx_params.stack_size, &lora_tx_params, 3, NULL);
