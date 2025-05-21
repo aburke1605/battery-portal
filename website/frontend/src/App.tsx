@@ -7,7 +7,7 @@ import Blank from "./pages/Blank";
 import AppLayout from "./layout/AppLayout";
 import { ScrollToTop } from "./components/common/ScrollToTop";
 import Home from "./pages/Dashboard/Home";
-import ListPage from "./pages/Battery/ListPage";
+import ListPage from "./pages/Battery/ListPage.tsx";
 import BatteryPage from "./pages/Battery/BatteryPage";
 import UserList from "./pages/User/list";
 import AuthRequire from "./auth/AuthRequire.tsx";

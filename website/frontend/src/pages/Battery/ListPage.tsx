@@ -1,167 +1,288 @@
-// import React, { useState, useEffect } from 'react';
-import { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
-import PageBreadcrumb from "../../components/common/PageBreadCrumb";
-import PageMeta from "../../components/common/PageMeta";
-import { ChevronDown, ChevronLeft, ChevronRight } from 'lucide-react';
-import { BatteryData } from '../../types';
-import BatteryCard from './BatteryCard';
-import apiConfig from '../../apiConfig';
+import { useState, useEffect, useRef } from 'react'
+import { Link } from 'react-router-dom'
+import { ChevronDown} from 'lucide-react';
 
+interface Battery {
+  id: string
+  name: string
+  status: 'active' | 'inactive' | 'maintenance'
+  capacity: number
+  voltage: number
+  children?: Battery[]
+}
 
-export default function ListPage() {
+const batteryData: Battery[] = [
+  {
+    id: 'bms_01',
+    name: 'bms_01',
+    status: 'active',
+    capacity: 100,
+    voltage: 220,
+    children: [
+      {
+        id: 'b1-1',
+        name: 'Battery Unit A',
+        status: 'active',
+        capacity: 85,
+        voltage: 12
+      },
+      {
+        id: 'b1-2',
+        name: 'Battery Unit B',
+        status: 'maintenance',
+        capacity: 60,
+        voltage: 12
+      },
+      {
+        id: 'b1-3',
+        name: 'Battery Unit C',
+        status: 'inactive',
+        capacity: 0,
+        voltage: 0
+      },
+      {
+        id: 'b1-4',
+        name: 'Battery Unit D',
+        status: 'active',
+        capacity: 90,
+        voltage: 12
+      },
+      {
+        id: 'b1-5',
+        name: 'Battery Unit E',
+        status: 'active',
+        capacity: 95,
+        voltage: 12
+      }
+    ]
+  },
+  {
+    id: 'bms_02',
+    name: 'bms_02',
+    status: 'active',
+    capacity: 90,
+    voltage: 220,
+    children: [
+      {
+        id: 'b2-1',
+        name: 'Backup Unit X',
+        status: 'active',
+        capacity: 90,
+        voltage: 12
+      }
+    ]
+  }
+]
+
+const getStatusColor = (status: Battery['status']) => {
+  switch (status) {
+    case 'active':
+      return 'bg-green-100 text-green-800'
+    case 'inactive':
+      return 'bg-red-100 text-red-800'
+    case 'maintenance':
+      return 'bg-yellow-100 text-yellow-800'
+    default:
+      return 'bg-gray-100 text-gray-800'
+  }
+}
+
+// Add this interface for map markers
+interface MapMarker {
+  id: string
+  position: {
+    lat: number
+    lng: number
+  }
+  title: string
+  status: 'active' | 'inactive' | 'maintenance'
+}
+
+// Update the map markers to be more spread across the UK
+const mapMarkers: MapMarker[] = [
+  {
+    id: 'b1',
+    position: { lat: 51.5074, lng: -0.1278 }, // London
+    title: 'Main Power Station',
+    status: 'active'
+  },
+  {
+    id: 'b2',
+    position: { lat: 55.9533, lng: -3.1883 }, // Edinburgh
+    title: 'Backup Power Station',
+    status: 'active'
+  },
+  {
+    id: 'b3',
+    position: { lat: 53.4808, lng: -2.2426 }, // Manchester
+    title: 'Northern Power Station',
+    status: 'maintenance'
+  },
+  {
+    id: 'b4',
+    position: { lat: 53.4084, lng: -2.9916 }, // Liverpool Port
+    title: 'Port Battery Station',
+    status: 'active'
+  }
+]
+
+export default function BatteryPage() {
+  const itemsPerPage = 4
+  const [currentPage, setCurrentPage] = useState(1)
+  const [viewMode, setViewMode] = useState<'grid' | 'map'>('grid')
+  const mapRef = useRef<HTMLDivElement>(null)
+  const [map, setMap] = useState<google.maps.Map | null>(null)
+  const [markers, setMarkers] = useState<google.maps.Marker[]>([])
+  const totalItems = batteryData.length
+  const totalPages = Math.ceil(totalItems / itemsPerPage)
+  const startIndex = (currentPage - 1) * itemsPerPage
+  const endIndex = Math.min(startIndex + itemsPerPage, totalItems)
+  const currentBatteries = batteryData.slice(startIndex, endIndex)
+
   const [statusFilter, setStatusFilter] = useState('all');
   const [sortBy, setSortBy] = useState('status');
-  const [batteries, setBatteries] = useState<BatteryData[]>([]);
-  const [searchTerm] = useState('');
 
-  // Get data from Webscocket
+  // Initialize Google Maps
   useEffect(() => {
-    const ws = new WebSocket(apiConfig.WEBSOCKET_BROWSER);
-    console.log(apiConfig.WEBSOCKET_BROWSER);
-    ws.onopen = () => {
-      console.log('WebSocket connected');
-    };
-  
-    ws.onmessage = (event) => {
-      try {
-        const data = JSON.parse(event.data);
-        if (data) {
-          console.log('Parsed ESPs:', data);
-          const batteryArray: BatteryData[] = Object.entries(data).map(([esp_id, battery]: [string, any]) => ({
-            esp_id: esp_id,
-            new_esp_id: "",
-            charge: battery?.Q  || 0,
-            health: battery?.H || 0,
-            voltage: battery?.V/10 || 0,
-            current: battery?.I/10 || 0,
-            temperature: battery?.aT/10 || 0,
-            internal_temperature: battery?.iT/10 || 0,
-            BL: battery?.BL || 0,
-            BH: battery?.BH || 0,
-            CITL: battery?.CITL || 0,
-            CITH: battery?.CITH || 0,
-            CCT: battery?.CCT || 0,
-            DCT: battery?.DCT || 0,
-            isConnected: battery ? true : false,
-            // location: "Unknown",
-            // isCharging: false,
-            status: "good",
-            // lastMaintenance: "2025-03-15",
-            // type: "Lithium-Ion",
-            // capacity: 100,
-            // cycleCount: 124,
-            timestamp: Date.now(),
-          }));
-  
-          console.log('Parsed batteries:', batteryArray);
-          setBatteries(batteryArray);
-        }
-      } catch (err) {
-        console.error('Failed to parse WebSocket message', err);
-      }
-    };
-  
-    ws.onclose = () => {
-      console.log('WebSocket disconnected');
-    };
-  
-    ws.onerror = (err) => {
-      console.error('WebSocket error:', err);
-    };
-  
+    if (viewMode === 'map' && mapRef.current && !map) {
+      const script = document.createElement('script')
+      script.src = `https://maps.googleapis.com/maps/api/js?key=AIzaSyDnwT87aH7CyWG6c7gSNxgA7lfclPOVpvQ`
+      script.async = true
+      script.defer = true
+      script.onload = initializeMap
+      document.head.appendChild(script)
+    }
+  }, [viewMode, map])
+
+  const initializeMap = () => {
+    if (mapRef.current) {
+      const ukCenter = { lat: 54.5, lng: -2.0 }
+      const newMap = new google.maps.Map(mapRef.current, {
+        center: ukCenter,
+        zoom: 6,
+       
+      })
+
+      setMap(newMap)
+      addMarkers(newMap)
+    }
+  }
+
+  const getBatteryIcon = (status: string) => {
+    const color = getMarkerColor(status)
+    return {
+      path: 'M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8zm-1-13h2v6h-2zm0 8h2v2h-2z',
+      fillColor: color,
+      fillOpacity: 1,
+      strokeColor: '#ffffff',
+      strokeWeight: 2,
+      scale: 1.2,
+      anchor: new google.maps.Point(12, 12)
+    }
+  }
+
+  const addMarkers = (map: google.maps.Map) => {
+    const newMarkers = mapMarkers.map(marker => {
+      const markerObj = new google.maps.Marker({
+        position: marker.position,
+        map,
+        title: marker.title,
+        icon: getBatteryIcon(marker.status)
+      })
+
+      // Add click listener with enhanced info window
+      markerObj.addListener('click', () => {
+        const infoWindow = new google.maps.InfoWindow({
+          content: `
+            <div class="p-3 min-w-[200px]">
+              <h3 class="font-semibold text-lg">${marker.title}</h3>
+              <p class="text-sm text-gray-600 mt-1">Status: ${marker.status}</p>
+              <div class="mt-2 text-sm">
+                <p>Capacity: ${marker.id === 'b4' ? '85%' : '90%'}</p>
+                <p>Connected Units: ${marker.id === 'b4' ? '12' : '8'}</p>
+                <p>Last Maintenance: ${marker.id === 'b4' ? '2 days ago' : '1 week ago'}</p>
+              </div>
+              <div class="mt-3 pt-3 border-t border-gray-200">
+                <a 
+                  href="/battery/${marker.id}" 
+                  class="inline-block w-full text-center px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded hover:bg-blue-700 transition-colors"
+                  onclick="window.location.href='/battery/${marker.id}'; return false;"
+                >
+                  View Details
+                </a>
+              </div>
+            </div>
+          `
+        })
+        infoWindow.open(map, markerObj)
+      })
+
+      return markerObj
+    })
+
+    setMarkers(newMarkers)
+  }
+
+  const getMarkerColor = (status: string) => {
+    switch (status) {
+      case 'active':
+        return '#10B981' // green-500
+      case 'inactive':
+        return '#EF4444' // red-500
+      case 'maintenance':
+        return '#F59E0B' // yellow-500
+      default:
+        return '#6B7280' // gray-500
+    }
+  }
+
+  // Cleanup markers when component unmounts
+  useEffect(() => {
     return () => {
-      ws.close();
-    };
-  }, []);
-  
-  
-  
-
-    // Toggle battery charging
-    /* const toggleCharging = (batteryId: string, e?: React.MouseEvent) => {
-      if (e) {
-        e.stopPropagation();
-      }
-    
-    setBatteries(prevBatteries => 
-      prevBatteries.map(battery => 
-        battery.esp_id === batteryId 
-          ? { ...battery, isCharging: !battery.isCharging } 
-          : battery
-        )
-      );
-    }; */
-
-    const navigate = useNavigate();
-    // View battery details
-    const viewBatteryDetails = (battery: BatteryData) => {
-      navigate(`/battery-detail?esp_id=${battery.esp_id}`);
-    };
-
-
-  const filteredBatteries = batteries.filter(battery => {
-    const matchesSearch = 
-      battery.esp_id.toLowerCase().includes(searchTerm.toLowerCase());
-      // || battery.location.toLowerCase().includes(searchTerm.toLowerCase());
-    
-    const matchesStatus = statusFilter === 'all' || battery.status === statusFilter;
-    
-    return matchesSearch && matchesStatus;
-  }).sort((a, b) => {
-    if (sortBy === 'name') {
-      return a.esp_id.localeCompare(b.esp_id);
-    } else if (sortBy === 'chargeLevel') {
-      return b.charge - a.charge;
-    } else if (sortBy === 'health') {
-      return b.health - a.health;
-    } else {
-      // Sort by status (critical first, then warning, then good)
-      const statusOrder = { critical: 0, warning: 1, good: 2, offline: 3 };
-      return statusOrder[a.status] - statusOrder[b.status];
+      markers.forEach(marker => marker.setMap(null))
     }
-  });
+  }, [markers])
 
-  const [currentPage, setCurrentPage] = useState(1);
-  const itemsPerPage = 6;
-  // Calculate pagination
-  const totalPages = Math.ceil(filteredBatteries.length / itemsPerPage);
-  // const paginatedBatteries = useMemo(() => {
-  //   const startIndex = (currentPage - 1) * itemsPerPage;
-  //   return filteredBatteries.slice(startIndex, startIndex + itemsPerPage);
-  // }, [filteredBatteries, currentPage]);
-
-  // Page navigation
-  const goToPage = (page: number) => {
-    setCurrentPage(Math.min(Math.max(1, page), totalPages));
-  };
-
-  // Generate page numbers
-  const getPageNumbers = () => {
-    const pages = [];
-    const maxVisiblePages = 5;
-    let startPage = Math.max(1, currentPage - Math.floor(maxVisiblePages / 2));
-    let endPage = Math.min(totalPages, startPage + maxVisiblePages - 1);
-
-    if (endPage - startPage + 1 < maxVisiblePages) {
-      startPage = Math.max(1, endPage - maxVisiblePages + 1);
-    }
-
-    for (let i = startPage; i <= endPage; i++) {
-      pages.push(i);
-    }
-    return pages;
-  };
-
-
+  const handlePageChange = (page: number) => {
+    setCurrentPage(page)
+    window.scrollTo({ top: 0, behavior: 'smooth' })
+  }
 
   return (
-    <div>
-      <PageMeta
-        title="React.js Chart Dashboard | TailAdmin - React.js Admin Dashboard Template"
-        description="This is React.js Chart Dashboard page for TailAdmin - React.js Tailwind CSS Admin Dashboard Template"
-      />
-      <PageBreadcrumb pageTitle="Batteries" />
+    <main className="container mx-auto px-4 py-8">
+      <div className="flex justify-between items-center mb-6">
+      <button
+          onClick={() => setViewMode(viewMode === 'grid' ? 'map' : 'grid')}
+          className="inline-flex items-center gap-2 px-4 py-2 bg-white rounded-lg border border-gray-200 shadow-sm hover:bg-gray-50 transition-all duration-200 ease-in-out"
+        >
+          <span className="text-sm font-medium text-gray-700">
+            {viewMode === 'grid' ? 'Map' : 'Grid'}
+          </span>
+          <div className="w-5 h-5 flex items-center justify-center">
+            <svg
+              className={`w-4 h-4 text-gray-600 transition-transform duration-200 ${viewMode === 'grid' ? 'rotate-180' : ''}`}
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              {viewMode === 'map' ? (
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z"
+                />
+              ) : (
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7"
+                />
+              )}
+            </svg>
+          </div>
+        </button>
       <div className="space-y-6">
           <div className="flex flex-col md:flex-row md:justify-between md:items-center mb-6 space-y-4 md:space-y-0">
           <div className="flex flex-wrap gap-2">
@@ -196,6 +317,7 @@ export default function ListPage() {
               Offline
             </button>
           </div>
+          
           <div className="flex items-center space-x-2">
             <span className="text-sm text-gray-600">Sort by:</span>
             <div className="relative">
@@ -213,94 +335,177 @@ export default function ListPage() {
             </div>
           </div>
         </div>
-        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
-          {filteredBatteries.map(battery => (
-            <BatteryCard 
-              key={battery.esp_id} 
-              battery={battery} 
-              // onToggleCharging={toggleCharging} 
-              onViewDetails={viewBatteryDetails} 
-            />
+        </div>
+      </div>
+
+      {viewMode === 'grid' ? (
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 xl:grid-cols-3 gap-6">
+          {currentBatteries.map((parentBattery) => (
+            <div key={parentBattery.id} className="bg-white rounded-lg shadow p-4">
+              <div className="flex justify-between items-start mb-3">
+                <div>
+                  <h2 className="text-lg font-semibold">{parentBattery.name}</h2>
+                  <p className="text-sm text-gray-600">Main Power Station</p>
+                </div>
+                <div className="flex items-center gap-2">
+                  <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${getStatusColor(parentBattery.status)}`}>
+                    {parentBattery.status}
+                  </span>
+                  {parentBattery.id === 'b1' && (
+                    <Link
+                      to={`/battery-detail?esp_id=${parentBattery.id}`}
+                      className="px-2 py-0.5 bg-blue-600 text-white rounded hover:bg-blue-700 transition-colors text-xs"
+                    >
+                      Details
+                    </Link>
+                  )}
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-2 mb-3">
+                <div className="bg-gray-50 p-2 rounded">
+                  <p className="text-xs text-gray-600">Capacity</p>
+                  <p className="text-sm font-semibold">{parentBattery.capacity}%</p>
+                </div>
+                <div className="bg-gray-50 p-2 rounded">
+                  <p className="text-xs text-gray-600">Voltage</p>
+                  <p className="text-sm font-semibold">{parentBattery.voltage}V</p>
+                </div>
+              </div>
+
+              <div className="space-y-2">
+                <div className="flex justify-between items-center">
+                  <h3 className="text-sm font-medium text-gray-700">Connected Batteries</h3>
+                  <span className="text-xs text-gray-500">
+                    {parentBattery.children?.length || 0} units
+                  </span>
+                </div>
+                <div className={`space-y-2 ${parentBattery.children && parentBattery.children.length > 3 ? 'max-h-[200px] overflow-y-auto pr-1 custom-scrollbar' : ''}`}>
+                  {parentBattery.children?.map((childBattery) => (
+                    <Link 
+                      to={`/battery-detail?esp_id=${childBattery.id}`}
+                      key={childBattery.id}
+                      className="block p-2 bg-gray-50 rounded hover:bg-gray-100 transition-colors"
+                    >
+                      <div className="flex justify-between items-center">
+                        <div>
+                          <h4 className="text-sm font-medium">{childBattery.name}</h4>
+                          <div className="flex items-center gap-2 mt-0.5">
+                            <span className="text-xs text-gray-600">
+                              {childBattery.capacity}%
+                            </span>
+                            <span className="text-xs text-gray-600">
+                              {childBattery.voltage}V
+                            </span>
+                          </div>
+                        </div>
+                        <span className={`px-1.5 py-0.5 rounded-full text-xs font-medium ${getStatusColor(childBattery.status)}`}>
+                          {childBattery.status}
+                        </span>
+                      </div>
+                    </Link>
+                  ))}
+                </div>
+              </div>
+            </div>
           ))}
         </div>
+      ) : (
+        <div className="bg-white rounded-lg shadow overflow-hidden w-full">
+          <div ref={mapRef} className="w-full h-[700px]" />
+        </div>
+      )}
 
-        {/* Pagination */}
-        <div className="flex items-center justify-between border-t border-gray-200 bg-white px-4 py-3 sm:px-6 rounded-lg shadow-sm">
-          <div className="flex flex-1 justify-between sm:hidden">
-            <button
-              onClick={() => goToPage(currentPage - 1)}
-              disabled={currentPage === 1}
-              className={`relative inline-flex items-center rounded-md px-4 py-2 text-sm font-medium ${
-                currentPage === 1
-                  ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
-                  : 'bg-white text-gray-700 hover:bg-gray-50'
-              } border border-gray-300`}
-            >
-              Previous
-            </button>
-            <button
-              onClick={() => goToPage(currentPage + 1)}
-              disabled={currentPage === totalPages}
-              className={`relative ml-3 inline-flex items-center rounded-md px-4 py-2 text-sm font-medium ${
-                currentPage === totalPages
-                  ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
-                  : 'bg-white text-gray-700 hover:bg-gray-50'
-              } border border-gray-300`}
-            >
-              Next
-            </button>
-          </div>
-          <div className="hidden sm:flex sm:flex-1 sm:items-center sm:justify-between">
-            <div>
-              <p className="text-sm text-gray-700">
-                Showing <span className="font-medium">{(currentPage - 1) * itemsPerPage + 1}</span> to{' '}
-                <span className="font-medium">
-                  {Math.min(currentPage * itemsPerPage, filteredBatteries.length)}
-                </span>{' '}
-                of <span className="font-medium">{filteredBatteries.length}</span> batteries
-              </p>
+      {/* Show pagination only in grid view */}
+      {viewMode === 'grid' && (
+        <div className="mt-8 flex flex-col items-center gap-4">
+          <div className="flex items-center justify-between w-full max-w-2xl">
+            <div className="text-sm text-gray-600">
+              Showing {startIndex + 1} to {endIndex} of {totalItems} entries
             </div>
-            <div>
-              <nav className="isolate inline-flex -space-x-px rounded-md shadow-sm" aria-label="Pagination">
-                <button
-                  onClick={() => goToPage(currentPage - 1)}
-                  disabled={currentPage === 1}
-                  className={`relative inline-flex items-center rounded-l-md px-2 py-2 text-gray-400 ring-1 ring-inset ring-gray-300 hover:bg-gray-50 focus:z-20 focus:outline-offset-0 ${
-                    currentPage === 1 ? 'cursor-not-allowed' : 'hover:text-gray-700'
-                  }`}
-                >
-                  <span className="sr-only">Previous</span>
-                  <ChevronLeft className="h-5 w-5" aria-hidden="true" />
-                </button>
-                {getPageNumbers().map((page) => (
+            
+            <div className="flex items-center gap-2">
+              <button
+                onClick={() => handlePageChange(1)}
+                disabled={currentPage === 1}
+                className="px-3 py-1 rounded border border-gray-300 disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50"
+              >
+                First
+              </button>
+              
+              <button
+                onClick={() => handlePageChange(currentPage - 1)}
+                disabled={currentPage === 1}
+                className="px-3 py-1 rounded border border-gray-300 disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50"
+              >
+                Previous
+              </button>
+
+              <div className="flex gap-1">
+                {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
                   <button
                     key={page}
-                    onClick={() => goToPage(page)}
-                    className={`relative inline-flex items-center px-4 py-2 text-sm font-semibold ${
+                    onClick={() => handlePageChange(page)}
+                    className={`w-8 h-8 rounded ${
                       currentPage === page
-                        ? 'z-10 bg-blue-600 text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600'
-                        : 'text-gray-900 ring-1 ring-inset ring-gray-300 hover:bg-gray-50 focus:outline-offset-0'
+                        ? 'bg-blue-600 text-white'
+                        : 'border border-gray-300 hover:bg-gray-50'
                     }`}
                   >
                     {page}
                   </button>
                 ))}
-                <button
-                  onClick={() => goToPage(currentPage + 1)}
-                  disabled={currentPage === totalPages}
-                  className={`relative inline-flex items-center rounded-r-md px-2 py-2 text-gray-400 ring-1 ring-inset ring-gray-300 hover:bg-gray-50 focus:z-20 focus:outline-offset-0 ${
-                    currentPage === totalPages ? 'cursor-not-allowed' : 'hover:text-gray-700'
-                  }`}
-                >
-                  <span className="sr-only">Next</span>
-                  <ChevronRight className="h-5 w-5" aria-hidden="true" />
-                </button>
-              </nav>
+              </div>
+
+              <button
+                onClick={() => handlePageChange(currentPage + 1)}
+                disabled={currentPage === totalPages}
+                className="px-3 py-1 rounded border border-gray-300 disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50"
+              >
+                Next
+              </button>
+
+              <button
+                onClick={() => handlePageChange(totalPages)}
+                disabled={currentPage === totalPages}
+                className="px-3 py-1 rounded border border-gray-300 disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50"
+              >
+                Last
+              </button>
+            </div>
+
+            <div className="text-sm text-gray-600">
+              Page {currentPage} of {totalPages}
             </div>
           </div>
         </div>
-
-      </div>
-    </div>
-  );
+      )}
+    </main>
+  )
 }
+
+const styles = `
+  .custom-scrollbar::-webkit-scrollbar {
+    width: 4px;
+  }
+
+  .custom-scrollbar::-webkit-scrollbar-track {
+    background: #f1f1f1;
+    border-radius: 2px;
+  }
+
+  .custom-scrollbar::-webkit-scrollbar-thumb {
+    background: #cbd5e1;
+    border-radius: 2px;
+  }
+
+  .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+    background: #94a3b8;
+  }
+`
+
+if (typeof document !== 'undefined') {
+  const styleSheet = document.createElement('style')
+  styleSheet.textContent = styles
+  document.head.appendChild(styleSheet)
+} 
