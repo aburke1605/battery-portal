@@ -114,6 +114,7 @@
 #define WS_CONFIG_MAX_CLIENTS 3
 
 #define MESH_MAX_HTTP_RECV_BUFFER 128
+#define MESH_SIZE 10
 
 
 // LoRa:
@@ -180,7 +181,6 @@
 #define REG_DIO_MAPPING_1       0x40
 #define REG_VERSION             0x42
 
-#define LORA_QUEUE_SIZE 10
 #define LORA_MAX_PACKET_LEN 255
 
 // modes

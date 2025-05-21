@@ -140,7 +140,7 @@ void lora_configure_defaults() {
 void lora_tx_task(void *pvParameters) {
     char individual_message[LORA_MAX_PACKET_LEN];
 
-    char combined_message[3 + (LORA_MAX_PACKET_LEN + 2) * (LORA_QUEUE_SIZE + 1) - 2 + 3]; // +3 for "_S_", +2 for ", " between each message instance, +1 for this ESP32s own BMS data, -2 for strenuous ", ", +3 for "_E_"
+    char combined_message[3 + (LORA_MAX_PACKET_LEN + 2) * (MESH_SIZE + 1) - 2 + 3]; // +3 for "_S_", +2 for ", " between each message instance, +1 for this ESP32s own BMS data, -2 for strenuous ", ", +3 for "_E_"
 
     while (true) {
         // now form the LoRa message out of non-empty messages and transmit
@@ -152,7 +152,7 @@ void lora_tx_task(void *pvParameters) {
         snprintf(individual_message, sizeof(individual_message), "{\"type\":\"data\",\"id\":\"%s\",\"content\":%s}", ESP_ID, data_string);
         strncat(combined_message, individual_message, combined_capacity - strlen(combined_message) - 1);
 
-        for (int i=0; i<LORA_QUEUE_SIZE; i++) {
+        for (int i=0; i<MESH_SIZE; i++) {
             if (strcmp(all_messages[i].id, "") != 0) {
                 strncat(combined_message, ", ", combined_capacity - strlen(combined_message) - 1);
                 strncat(combined_message, all_messages[i].message, combined_capacity - strlen(combined_message) - 1);
@@ -223,7 +223,7 @@ void lora_tx_task(void *pvParameters) {
 
 void lora_rx_task(void *pvParameters) {
     uint8_t buffer[LORA_MAX_PACKET_LEN + 1];
-    char combined_message[(LORA_MAX_PACKET_LEN + 2) * (LORA_QUEUE_SIZE + 1) - 2]; // +2 for ", " between each message instance, +1 for this ESP32s own BMS data, -2 for strenuous "
+    char combined_message[(LORA_MAX_PACKET_LEN + 2) * (MESH_SIZE + 1) - 2]; // +2 for ", " between each message instance, +1 for this ESP32s own BMS data, -2 for strenuous "
     size_t combined_capacity = sizeof(combined_message);
     bool chunked = false;
 

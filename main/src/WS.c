@@ -133,18 +133,18 @@ esp_err_t client_handler(httpd_req_t *req) {
                 return ESP_FAIL;
             }
             bool found = false;
-            for (int i=0; i<LORA_QUEUE_SIZE; i++) {
+            for (int i=0; i<MESH_SIZE; i++) {
                 if (strcmp(all_messages[i].id, id_obj->valuestring) == 0) {
                     // update existing message
                     found = true;
                     strcpy(all_messages[i].message, (char *)ws_pkt.payload);
-                    i = LORA_QUEUE_SIZE;
+                    i = MESH_SIZE;
                 } else if (strcmp(all_messages[i].id, "") == 0) {
                     // create new message
                     found = true;
                     strcpy(all_messages[i].id, id_obj->valuestring);
                     strcpy(all_messages[i].message, (char *)ws_pkt.payload);
-                    i = LORA_QUEUE_SIZE;
+                    i = MESH_SIZE;
                 }
             }
             if (!found) ESP_LOGE(TAG, "LoRa queue full! Dropping message: %s", cJSON_PrintUnformatted(message));

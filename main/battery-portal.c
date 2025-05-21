@@ -22,7 +22,7 @@ bool connected_to_WiFi = false;
 client_socket client_sockets[WS_CONFIG_MAX_CLIENTS];
 char current_auth_token[UTILS_AUTH_TOKEN_LENGTH] = "";
 QueueHandle_t ws_queue;
-LoRa_message all_messages[LORA_QUEUE_SIZE] = {0};
+LoRa_message all_messages[MESH_SIZE] = {0};
 
 TaskHandle_t websocket_task_handle = NULL;
 
