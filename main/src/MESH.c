@@ -113,7 +113,7 @@ void mesh_websocket_task(void *pvParameters) {
     while (true) {
         char *data_string = get_data();
 
-        if (connected_to_root && data_string != NULL) {
+        if (connected_to_root && data_string != NULL && strcmp(mesh_ws_auth_token, "") != 0) {
             char uri[40+UTILS_AUTH_TOKEN_LENGTH];
             snprintf(uri, sizeof(uri), "ws://192.168.4.1:80/mesh_ws?auth_token=%s", mesh_ws_auth_token);
             const esp_websocket_client_config_t websocket_cfg = {
