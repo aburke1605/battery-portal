@@ -526,7 +526,7 @@ void websocket_task(void *pvParameters) {
         if (json_string != NULL && data_string != NULL) {
             // first send to all connected WebSocket clients
             for (int i = 0; i < WS_CONFIG_MAX_CLIENTS; i++) {
-                if (client_sockets[i].descriptor >= 0) {
+                if (client_sockets[i].is_browser_not_mesh && client_sockets[i].descriptor >= 0) {
                     httpd_ws_frame_t ws_pkt = {
                         .payload = (uint8_t *)json_string,
                         .len = strlen(json_string),
