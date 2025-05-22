@@ -19,6 +19,7 @@ int num_connected_clients = 0;
 char ESP_ID[UTILS_ID_LENGTH + 1] = "unknown";
 httpd_handle_t server = NULL;
 bool connected_to_WiFi = false;
+bool connected_to_root = false;
 client_socket client_sockets[WS_CONFIG_MAX_CLIENTS];
 char current_auth_token[UTILS_AUTH_TOKEN_LENGTH] = "";
 QueueHandle_t ws_queue;
