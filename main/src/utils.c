@@ -92,7 +92,7 @@ char *send_fake_login_post_request() {
     vTaskDelay(pdMS_TO_TICKS(5000));
 
     if (err == ESP_OK) {
-        if (VERBOSE) ESP_LOGI("HTTP_CLIENT", "HTTP POST Status = %d, Response = %s", esp_http_client_get_status_code(client), response.buffer);
+        if (VERBOSE) ESP_LOGI("MESH", "HTTP POST Status = %d, Response = %s", esp_http_client_get_status_code(client), response.buffer);
         cJSON *response_object = cJSON_Parse(response.buffer);
         cJSON *auth_token = cJSON_GetObjectItem(response_object, "auth_token");
 
