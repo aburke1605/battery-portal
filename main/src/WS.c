@@ -385,7 +385,7 @@ void websocket_event_handler(void *arg, esp_event_base_t event_base, int32_t eve
             if (VERBOSE) ESP_LOGI(TAG, "WebSocket connected");
             char websocket_connect_message[WS_MESSAGE_MAX_LEN];
             snprintf(websocket_connect_message, sizeof(websocket_connect_message), "{\"type\":\"register\",\"id\":\"%s\"}", ESP_ID);
-            send_message(websocket_connect_message);
+            if (esp_websocket_client_is_connected(ws_client)) send_message(websocket_connect_message);
             break;
 
         case WEBSOCKET_EVENT_DISCONNECTED:
