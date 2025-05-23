@@ -159,6 +159,11 @@
 #else
     #define LORA_Rx_PAYL_CRC false
 #endif
+#ifdef CONFIG_HIGH_POWER
+    #define LORA_HIGH_POWER true
+#else
+    #define LORA_HIGH_POWER false
+#endif
 
 // register addresses
 #define REG_FIFO                0x00
@@ -167,6 +172,7 @@
 #define REG_FRF_MID             0x07
 #define REG_FRF_LSB             0x08
 #define REG_PA_CONFIG           0x09
+#define REG_PA_DAC              0x4D
 #define REG_LNA                 0x0C
 #define REG_FIFO_ADDR_PTR       0x0D
 #define REG_FIFO_TX_BASE_ADDR   0x0E

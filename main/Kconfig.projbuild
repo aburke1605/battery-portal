@@ -263,6 +263,12 @@ config Rx_PAYL_CRC
     help
       Set to true to enamble cyclic redundancy generation and check on payload.
 
+config HIGH_POWER
+    bool "High power mode"
+    default n
+    help
+      Set to true to enable +20 dBm high power transmission. WARNING: ensure 1% duty cycle and adequate cooling.
+
 endmenu
 
 

@@ -134,6 +134,9 @@ void lora_configure_defaults() {
     // Set output power to 13 dBm using PA_BOOST
     lora_write_register(REG_PA_CONFIG, 0b10001111);  // PA_BOOST, OutputPower=13 dBm
 
+    if (LORA_HIGH_POWER) lora_write_register(REG_PA_DAC, 0x87);
+    else lora_write_register(REG_PA_DAC, 0x84);
+
     ESP_LOGI(TAG, "SX127x configured to RadioHead defaults");
 }
 
