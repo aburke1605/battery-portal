@@ -105,12 +105,12 @@ void lora_configure_defaults() {
     lora_write_register(REG_LNA, 0b00100011);  // LNA_MAX_GAIN | LNA_BOOST
 
     // Enable AGC (bit 2 of RegModemConfig3)
-    lora_write_register(REG_MODEM_CONFIG_3,  // bits:
-        (0b00001111 & 0)         << 4 |      //  7-4
-        (0b00000001 & LORA_LDRO) << 3 |      //  3
-        (0b00000001 & 1)         << 2 |      //  2    AGC on
-        (0b00000011 & 0)                     //  1-0
-    );  // LowDataRateOptimize off, AGC on
+    lora_write_register(REG_MODEM_CONFIG_3,                                                                    // bits:
+        (0b00001111 & 0)         << 4 |                                                                        //  7-4
+        (0b00000001 & (LORA_LDRO | (calculate_symbol_length(LORA_SF, LORA_BW) > 16.0 ? true : false))) << 3 |  //  3
+        (0b00000001 & 1)         << 2 |                                                                        //  2    AGC on
+        (0b00000011 & 0)                                                                                       //  1-0
+    );
 
     // Configure modem parameters:
     //  bandwidth, coding rate, header
