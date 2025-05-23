@@ -345,7 +345,7 @@ esp_err_t perform_request(cJSON *message, cJSON *response) {
 }
 
 void send_message(const char *message) {
-    if (xQueueSend(ws_queue, message, portMAX_DELAY) != pdPASS) {
+    if (xQueueSend(ws_queue, message, pdMS_TO_TICKS(100)) != pdPASS) {
         ESP_LOGE(TAG, "WebSocket queue full! Dropping message: %s", message);
     }
 }
