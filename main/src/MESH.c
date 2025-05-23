@@ -154,9 +154,9 @@ void mesh_websocket_task(void *pvParameters) {
 
         // clean up
         free(data_string);
-    }
 
-    vTaskDelay(pdMS_TO_TICKS(1000));
+        vTaskDelay(pdMS_TO_TICKS(1000));
+    }
 }
 
 esp_err_t ap_n_client_comparison_handler(esp_http_client_event_t *evt) {
