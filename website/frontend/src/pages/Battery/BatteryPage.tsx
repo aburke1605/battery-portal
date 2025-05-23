@@ -1,5 +1,4 @@
 import { useState, useEffect, useRef } from 'react';
-import { useNavigate } from 'react-router-dom';
 import PageBreadcrumb from "../../components/common/PageBreadCrumb";
 import PageMeta from "../../components/common/PageMeta";
 import { BatteryData } from '../../types';
@@ -31,7 +30,6 @@ export default function BatteryPage({ isFromEsp32 = false }: BatteriesPageProps)
     //const [setBatteries] = useState<BatteryData[]>(initialBatteries);
     const [voltageThreshold] = useState(46.5);
 
-    const navigate = useNavigate();
     const sleep = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
 
     // Get data from Webscocket
@@ -116,8 +114,8 @@ export default function BatteryPage({ isFromEsp32 = false }: BatteriesPageProps)
             if (updatedValues.new_esp_id && updatedValues.new_esp_id != esp_id) {
                 console.log("ESP ID changed, redirecting in 5s...");
                 await sleep(5000);
-                const prefix = window.location.protocol == 'https:' ? 'battery-detail' : 'esp32';
-                navigate(`/${prefix}?esp_id=${updatedValues.new_esp_id}`);
+                const prefix = window.location.protocol === 'https:' ? 'battery-detail' : 'esp32';
+                window.location.href = `/${prefix}?esp_id=${updatedValues.new_esp_id}#/`;
             }
         } else {
             console.warn("WebSocket not connected, cannot send update.");
