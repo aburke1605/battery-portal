@@ -100,7 +100,7 @@ void app_main(void) {
     if (LORA_IS_RECEIVER) {
         lora_init();
 
-        TaskParams lora_rx_params = {.stack_size = 5000, .task_name = "lora_rx_task"};
+        TaskParams lora_rx_params = {.stack_size = 6000, .task_name = "lora_rx_task"};
         xTaskCreate(lora_rx_task, lora_rx_params.task_name, lora_rx_params.stack_size, &lora_rx_params, 1, NULL);
     }
 
