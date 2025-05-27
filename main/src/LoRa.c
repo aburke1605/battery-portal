@@ -106,9 +106,9 @@ void lora_configure_defaults() {
 
     // Enable AGC (bit 2 of RegModemConfig3)
     lora_write_register(REG_MODEM_CONFIG_3,                                                                    // bits:
-        (0b00001111 & 0)         << 4 |                                                                        //  7-4
+        (0b00001111 & 0)                                                                               << 4 |  //  7-4
         (0b00000001 & (LORA_LDRO | (calculate_symbol_length(LORA_SF, LORA_BW) > 16.0 ? true : false))) << 3 |  //  3
-        (0b00000001 & 1)         << 2 |                                                                        //  2    AGC on
+        (0b00000001 & 1)                                                                               << 2 |  //  2    AGC on
         (0b00000011 & 0)                                                                                       //  1-0
     );
 
@@ -132,9 +132,13 @@ void lora_configure_defaults() {
     lora_write_register(REG_PREAMBLE_LSB, 0x08);
 
     // Set output power to 13 dBm using PA_BOOST
-    lora_write_register(REG_PA_CONFIG, 0b10001111);  // PA_BOOST, OutputPower=13 dBm
+    lora_write_register(REG_PA_CONFIG,           // bits:
+        (0b00000001 & 1)                 << 7 |  // 7   PA BOOST
+        (0b00000111 & 0x04)              << 4 |  // 6-4
+        (0b00001111 & LORA_OUTPUT_POWER)
+    );
 
-    if (LORA_HIGH_POWER) lora_write_register(REG_PA_DAC, 0x87);
+    if (LORA_POWER_BOOST) lora_write_register(REG_PA_DAC, 0x87);
     else lora_write_register(REG_PA_DAC, 0x84);
 
     ESP_LOGI(TAG, "SX127x configured to RadioHead defaults");

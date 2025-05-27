@@ -159,10 +159,11 @@
 #else
     #define LORA_Rx_PAYL_CRC false
 #endif
-#ifdef CONFIG_HIGH_POWER
-    #define LORA_HIGH_POWER true
+#define LORA_OUTPUT_POWER CONFIG_OUTPUT_POWER
+#ifdef CONFIG_POWER_BOOST
+    #define LORA_POWER_BOOST true
 #else
-    #define LORA_HIGH_POWER false
+    #define LORA_POWER_BOOST false
 #endif
 
 // register addresses
