@@ -125,6 +125,7 @@ void app_main(void) {
 
     while (true) {
         if (VERBOSE) ESP_LOGI("main", "%ld bytes available in heap", esp_get_free_heap_size());
+        if (esp_get_minimum_free_heap_size() < 2000) esp_restart();
         vTaskDelay(pdMS_TO_TICKS(10000));
     }
 }
