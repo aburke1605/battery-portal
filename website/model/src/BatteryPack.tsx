@@ -29,6 +29,8 @@ const getColorFromTemp = (temperature: number): string => {
 };
 
 const Cell: React.FC<{ label: string, position: [number, number, number]; temperature: number; charge: number }> = ({ label, position, temperature, charge }) => {
+  const nSegments = 32;
+  const frameWidth = 1.0;
   const frameHeight = 2.5;
   const fillHeight = Math.max(charge * frameHeight, 0.05); // avoid invisible fill
   const unfilledHeight = frameHeight - fillHeight;
@@ -37,20 +39,20 @@ const Cell: React.FC<{ label: string, position: [number, number, number]; temper
     <group position={position}>
       {/* unfilled */}
       <mesh position={[0, fillHeight + unfilledHeight / 2, 0]}>
-        <cylinderGeometry args={[1, 1, unfilledHeight, 32]} />
+        <cylinderGeometry args={[frameWidth, frameWidth, unfilledHeight, nSegments]} />
         <meshStandardMaterial color="white" transparent opacity={0.2} />
         <Edges scale={1.01} threshold={15} />
       </mesh>
 
       {/* filled */}
       <mesh position={[0, fillHeight / 2, 0]}>
-        <cylinderGeometry args={[1, 1, fillHeight, 32]} />
+        <cylinderGeometry args={[frameWidth, frameWidth, fillHeight, nSegments]} />
         <meshStandardMaterial color={color} />
         <Edges scale={1.01} threshold={15} />
       </mesh>
 
       {/* label */}
-      <Html position={[0, frameHeight + 0.4, 0]} center style={{ pointerEvents: "none", fontSize: "12px", color: "white", fontWeight: "bolder" }}>
+      <Html position={[0, frameHeight + 0.4, 0]} center style={{ pointerEvents: "none", fontSize: "12px", color: "white", fontWeight: "bolder", whiteSpace: "nowrap" }}>
         {label}
       </Html>
     </group>
