@@ -1,10 +1,12 @@
 from flask import request, jsonify, Blueprint
-from sqlalchemy import Table, Column, DateTime, Integer, Float, String, Enum, insert, select
+from sqlalchemy import Table, Column, DateTime, Integer, Float, insert, select, inspect, and_
 from sqlalchemy.exc import IntegrityError
-from datetime import datetime
+from datetime import datetime, timedelta
+import time
 import enum
-
+from threading import Thread
 from db import DB
+from collections import defaultdict
 
 # Blueprint setup
 battery_bp = Blueprint('battery_bp', __name__, url_prefix='/api/battery')
@@ -22,13 +24,67 @@ class BatteryInfo(DB.Model):
     name = DB.Column(DB.String(100), nullable=False)
     online_status = DB.Column(DB.Enum(OnlineStatusEnum), nullable=False, default=OnlineStatusEnum.offline)
     last_updated_time = DB.Column(DB.DateTime, default=datetime.now, onupdate=datetime.now, nullable=False)
-    lat = DB.Column(DB.Float, nullable=False)
-    lon = DB.Column(DB.Float, nullable=False)
+    lat = DB.Column(DB.Float, nullable=True)
+    lon = DB.Column(DB.Float, nullable=True)
     parent_id = DB.Column(DB.String(64), DB.ForeignKey('battery_info.id'), nullable=True)
     children = DB.relationship('BatteryInfo', backref=DB.backref('parent', remote_side=[id]), lazy=True)
 
     def __repr__(self):
         return f'<BatteryInfo {self.id} - {self.name}>'
+
+def update_from_esp(data_list):
+    # First object in array is the master node
+    if not data_list or data_list is None:
+        return False
+    parent_id = 0
+    for i, content_data in enumerate(data_list):
+        battery_id = content_data['id']
+        data = content_data['content']
+        # Set parent_id for non-master nodes
+        if i == 0:
+            parent_id = battery_id
+        try:
+            # Try to get existing record
+            battery = DB.session.get(BatteryInfo, battery_id)
+            if battery:
+                # Update existing record
+                battery.name = battery_id
+                battery.online_status = OnlineStatusEnum.online
+                battery.parent_id = None if i == 0 else parent_id
+                battery.last_updated_time = datetime.now()
+                print(f"Updated existing battery with ID: {battery_id}")
+            else:
+                # Insert new record
+                battery = BatteryInfo(
+                    id=battery_id,
+                    name=battery_id,
+                    online_status=OnlineStatusEnum.online,
+                    parent_id=None if i == 0 else parent_id,
+                    last_updated_time = datetime.now()
+                )
+                DB.session.add(battery)
+                print(f"Inserted new battery with ID: {battery_id}")
+            # Commit the transaction
+            DB.session.commit()
+        except Exception as e:
+            DB.session.rollback()
+            print(f"Error processing battery ID {battery_id}: {e}")
+        # Dynamic create battery data table
+        data_table = create_battery_data_table(battery_id)
+        try:
+            stmt = insert(data_table).values(
+                timestamp=datetime.now(),
+                soc=data['Q'],
+                temperature=data['aT']/10,
+                voltage=data['V']/10,
+                current=data['I']/10
+            )
+            DB.session.execute(stmt)
+            DB.session.commit()
+            print(f"Inserted new battery_data with ID: {battery_id}")
+        except Exception as e:
+            DB.session.rollback()
+            print(f"Error processing battery_data ID {battery_id}: {e}")
 
 # Dynamic battery_data_<battery_id> table factory
 def create_battery_data_table(battery_id, metadata=None):
@@ -36,82 +92,91 @@ def create_battery_data_table(battery_id, metadata=None):
         metadata = DB.metadata
 
     table_name = f"battery_data_{battery_id.lower()}"
-    return Table(
-        table_name,
-        metadata,
-        Column('timestamp', DateTime, primary_key=True, default=datetime.utcnow, nullable=False),
-        Column('soc', Integer, nullable=False),
-        Column('temperature', Float, nullable=False),
-        Column('voltage', Float, nullable=False),
-        Column('current', Float, nullable=False),
-    )
-
-# API: Register a new battery
-@battery_bp.route('/battery/register', methods=['POST'])
-def register_battery():
-    data = request.json
-    try:
-        battery = BatteryInfo(
-            id=data['id'],
-            name=data['name'],
-            online_status=OnlineStatusEnum(data.get('online_status', 'offline')),
-            lat=data['lat'],
-            lon=data['lon'],
-            parent_id=data.get('parent_id')
+    # Check if table exists
+    inspector = inspect(DB.engine)
+    if not inspector.has_table(table_name):
+        data_table = Table(
+            table_name,
+            metadata,
+            Column('id', Integer, primary_key=True, autoincrement=True),  # Auto-incremented PK
+            Column('timestamp', DateTime, nullable=False, default=datetime.now),
+            Column('soc', Integer, nullable=False),
+            Column('temperature', Float, nullable=False),
+            Column('voltage', Float, nullable=False),
+            Column('current', Float, nullable=False),
         )
-        DB.session.add(battery)
-        DB.session.commit()
+        data_table.create(bind=DB.engine)
+        print(f"Created table: {table_name}")
+    else:
+        data_table = DB.metadata.tables[table_name]
 
-        # Create dynamic battery_data table
-        dynamic_table = create_battery_data_table(battery.id)
-        dynamic_table.create(bind=DB.engine, checkfirst=True)
+    return data_table
 
-        return jsonify({'message': f'Battery {battery.id} registered successfully'}), 201
-    except IntegrityError:
-        DB.session.rollback()
-        return jsonify({'error': 'Battery ID already exists'}), 409
-    except Exception as e:
-        DB.session.rollback()
-        return jsonify({'error': str(e)}), 400
+def build_battery_tree(batteries):
+    node_map = {}
+    children_map = defaultdict(list)
 
-# API: Insert battery data into dynamic table
-@battery_bp.route('/battery/<battery_id>/data', methods=['POST'])
-def insert_battery_data(battery_id):
-    data = request.json
-    table = create_battery_data_table(battery_id)
+    # First, create dicts of battery info and collect children
+    for b in batteries:
+        node_map[b.id] = {
+            'id': b.id,
+            'name': b.name,
+            'online_status': b.online_status.value,
+            'last_updated_time': b.last_updated_time.isoformat(),
+            'lat': b.lat,
+            'lon': b.lon,
+            'capacity': '80',
+            'voltage': '20',
+            'parent_id': b.parent_id,
+            'status': 'active' if b.online_status == OnlineStatusEnum.online else 'inactive',
+            'children': []
+        }
+        if b.parent_id:
+            children_map[b.parent_id].append(b.id)
 
-    try:
-        stmt = insert(table).values(
-            timestamp=datetime.strptime(data['timestamp'], '%Y-%m-%d %H:%M:%S'),
-            soc=data['soc'],
-            temperature=data['temperature'],
-            voltage=data['voltage'],
-            current=data['current']
-        )
-        DB.session.execute(stmt)
-        DB.session.commit()
-        return jsonify({'message': 'Battery data inserted'}), 201
-    except Exception as e:
-        DB.session.rollback()
-        return jsonify({'error': str(e)}), 400
+    # Link children to parents
+    for parent_id, child_ids in children_map.items():
+        if parent_id in node_map:
+            for child_id in child_ids:
+                node_map[parent_id]['children'].append(node_map[child_id])
 
-# API: Query battery data
-@battery_bp.route('/battery/<battery_id>/data', methods=['GET'])
-def get_battery_data(battery_id):
-    table = create_battery_data_table(battery_id)
-    try:
-        stmt = select(table).order_by(table.c.timestamp.desc()).limit(10)
-        result = DB.session.execute(stmt).fetchall()
-        records = [
-            {
-                'timestamp': row.timestamp.strftime('%Y-%m-%d %H:%M:%S'),
-                'soc': row.soc,
-                'temperature': row.temperature,
-                'voltage': row.voltage,
-                'current': row.current
-            }
-            for row in result
-        ]
-        return jsonify(records)
-    except Exception as e:
-        return jsonify({'error': str(e)}), 400
+    # Extract roots (top-level batteries with no parent)
+    tree = [node for node in node_map.values() if node['parent_id'] is None]
+    return tree
+
+@battery_bp.route('/list', methods=['GET'])
+def get_batteries():
+    batteries = DB.session.query(BatteryInfo).all()
+    battery_tree = build_battery_tree(batteries)
+    return jsonify(battery_tree)
+
+# Check online status
+def check_online_task(app):
+    def run():
+        with app.app_context():
+            print("Started check_online task.")
+            while True:
+                try:
+                    cutoff_time = datetime.now() - timedelta(minutes=1)
+                    print(cutoff_time)
+                    stale_batteries = DB.session.query(BatteryInfo).filter(
+                        and_(
+                            BatteryInfo.online_status == OnlineStatusEnum.online,
+                            BatteryInfo.last_updated_time < cutoff_time
+                        )
+                    ).all()
+                    print(stale_batteries)
+                    for battery in stale_batteries:
+                        print(f"[Monitor] Setting '{battery.id}' offline")
+                        battery.online_status = OnlineStatusEnum.offline
+
+                    if stale_batteries:
+                        DB.session.commit()
+
+                except Exception as e:
+                    DB.session.rollback()
+                    print(f"[Monitor] Error: {e}")
+
+                time.sleep(60)
+
+    return Thread(target=run, daemon=True)

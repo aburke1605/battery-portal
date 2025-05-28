@@ -11,69 +11,6 @@ interface Battery {
   children?: Battery[]
 }
 
-const batteryData: Battery[] = [
-  {
-    id: 'bms_01',
-    name: 'bms_01',
-    status: 'active',
-    capacity: 100,
-    voltage: 220,
-    children: [
-      {
-        id: 'b1-1',
-        name: 'Battery Unit A',
-        status: 'active',
-        capacity: 85,
-        voltage: 12
-      },
-      {
-        id: 'b1-2',
-        name: 'Battery Unit B',
-        status: 'maintenance',
-        capacity: 60,
-        voltage: 12
-      },
-      {
-        id: 'b1-3',
-        name: 'Battery Unit C',
-        status: 'inactive',
-        capacity: 0,
-        voltage: 0
-      },
-      {
-        id: 'b1-4',
-        name: 'Battery Unit D',
-        status: 'active',
-        capacity: 90,
-        voltage: 12
-      },
-      {
-        id: 'b1-5',
-        name: 'Battery Unit E',
-        status: 'active',
-        capacity: 95,
-        voltage: 12
-      }
-    ]
-  },
-  {
-    id: 'bms_02',
-    name: 'bms_02',
-    status: 'active',
-    capacity: 90,
-    voltage: 220,
-    children: [
-      {
-        id: 'b2-1',
-        name: 'Backup Unit X',
-        status: 'active',
-        capacity: 90,
-        voltage: 12
-      }
-    ]
-  }
-]
-
 const getStatusColor = (status: Battery['status']) => {
   switch (status) {
     case 'active':
@@ -133,14 +70,39 @@ export default function BatteryPage() {
   const mapRef = useRef<HTMLDivElement>(null)
   const [map, setMap] = useState<google.maps.Map | null>(null)
   const [markers, setMarkers] = useState<google.maps.Marker[]>([])
+  
+  const [batteryData, setBatteryData] = useState<Battery[]>([])
   const totalItems = batteryData.length
-  const totalPages = Math.ceil(totalItems / itemsPerPage)
   const startIndex = (currentPage - 1) * itemsPerPage
   const endIndex = Math.min(startIndex + itemsPerPage, totalItems)
   const currentBatteries = batteryData.slice(startIndex, endIndex)
+  
+  const totalPages = Math.ceil(totalItems / itemsPerPage)
+  
 
   const [statusFilter, setStatusFilter] = useState('all');
   const [sortBy, setSortBy] = useState('status');
+
+  useEffect(() => {
+    const fetchBatteryData = async () => {
+      try {
+        const response = await fetch('/api/battery/list')
+        const data = await response.json()
+        setBatteryData(data)
+      } catch (error) {
+        console.error('Error fetching battery data:', error)
+      } finally {
+        //setLoading(false)
+      }
+    }
+
+    fetchBatteryData()
+    const interval = setInterval(fetchBatteryData, 10000)
+    return () => {
+      clearInterval(interval)
+    }
+  }, [])
+
 
   // Initialize Google Maps
   useEffect(() => {

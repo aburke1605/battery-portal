@@ -6,7 +6,7 @@ from threading import Lock, Thread
 import time
 import json
 
-from db import update_db
+from battery import update_from_esp
 
 time_of_last_update = None
 def update_time():
@@ -65,6 +65,7 @@ def forward_to_esp32(esp_id, message):
                 logger.error(f"Error communicating with {esp_id}: {e}")
                 return {"esp_id": esp_id, "error": str(e)}
 
+# WS connection between browser client and flask webserver
 @sock.route('/browser_ws')
 def browser_ws(ws):
     with lock:
@@ -90,17 +91,29 @@ def browser_ws(ws):
         with lock:
             browser_clients.discard(ws) # remove browser on disconnect
 
-
+# WS connection between esp and flask webserver
+# First object in array is the Master node
+# [{
+#     "type":"data",
+#     "id":"esp1_master",
+#     "content":{
+#         "Q":88,"H":88,"V":41,"I":0,"aT":268,"iT":235,"BL":0,"BH":0,"CCT":0,"DCT":0,"CITL":0,"CITH":0
+#     }
+# }, {
+#     "type":"data",
+#     "id":"esp2_node",
+#     "content":{
+#         "Q":88,"H":88,"V":41,"I":0,"aT":268,"iT":235,"BL":0,"BH":0,"CCT":0,"DCT":0,"CITL":0,"CITH":0
+#     }
+# }]
 @sock.route('/esp_ws')
 def esp_ws(ws):
-    meta_data = {"ws": ws, "content": None}
-
+    print('esp_ws')
     try:
         while True:
             message = ws.receive()
             if message is None:  # esp disconnected
                 break
-
 
             response = {
                 "type": "response",
@@ -108,44 +121,30 @@ def esp_ws(ws):
             }
 
             try:
-                data = json.loads(message)
-                esp_id = data["id"]
-                if data["type"] == "register":
-                    with lock:
-                        esp_clients.add(frozenset(meta_data.items()))
-                        update_time()
-                    logger.info(f"ESP connected. Total ESPs: {len(esp_clients)}")
-                elif data["type"] == "response":
-                    # should go to forward_request_to_esp32() or ping_esps() instead
-                    with response_lock:
-                        pending_responses[esp_id] = data["content"]
-                    continue
-                else:
-                    esp_clients.discard(frozenset(meta_data.items())) # remove old entry
-                    meta_data["content"] = json.dumps({"esp_id": esp_id, **data["content"]}) # update content
-                    esp_clients.add(frozenset(meta_data.items())) # re-add updated data
-
-                    broadcast() # send data to browsers
-
-                    update_db(esp_id, data["content"]) # update server db
+                data_list = json.loads(message)
+                if not data_list:
+                    break
+  
+                master_node = data_list[0]
+  
+                esp_clients.add(master_node['id'])
+                update_from_esp(data_list)
 
                 response["type"] = "echo"
                 response["content"] = message
+
             except json.JSONDecodeError:
                 response["content"]["status"] = "error"
                 response["content"]["message"] = "invalid json"
-
             ws.send(json.dumps(response))
-
 
     except Exception as e:
         logger.error(f"ESP WebSocket error: {e}")
 
-
     finally:
         with lock:
-            esp_clients.discard(frozenset(meta_data.items())) # remove esp on disconnect
-            update_time()
+            pass
+            #esp_clients.discard(frozenset(meta_data.items())) # remove esp on disconnect
         logger.info(f"ESP disconnected. Total ESPs: {len(esp_clients)}")
 
 def ping_esps(delay=5):
@@ -187,5 +186,5 @@ def ping_esps(delay=5):
 
         time.sleep(20)
 
-thread = Thread(target=ping_esps, daemon=True)
-thread.start()
+# thread = Thread(target=ping_esps, daemon=True)
+# thread.start()

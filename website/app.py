@@ -10,6 +10,9 @@ import flask_admin
 from dotenv import load_dotenv
 from flask_migrate import Migrate
 from seed import seed_data
+# Import user model for migrations
+from user import User, Role
+from battery import battery_bp, check_online_task
 
 
 # Load environment variables from .env file will not overwrite system env vars
@@ -34,6 +37,7 @@ app.config.from_pyfile('config.py')
 # Register blueprints
 app.register_blueprint(db_bp)
 app.register_blueprint(user_bp)
+app.register_blueprint(battery_bp)
 # Register websocket
 sock.init_app(app)
 # Db setup
@@ -57,10 +61,9 @@ def admin():
 def serve_react_static(path):
     return send_from_directory("frontend/dist", path)
 
-# Import user model for migrations
-from user import User, Role
-from battery import BatteryInfo
-
+# Start scheduled task
+check_online_thread = check_online_task(app)
+check_online_thread.start()
 # Create the database and tables if they don't exist
 # Create seed data
 seed_data(app)
