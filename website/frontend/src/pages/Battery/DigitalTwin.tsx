@@ -27,6 +27,7 @@ export type { CellData };
 
 type BatteryPackProps = {
   cells: CellData[];
+  esp_id: string;
   connected: boolean;
 }
 
@@ -146,7 +147,7 @@ const Cell: React.FC<CellData> = ({ label, position, temperature, charge, isChar
   );
 };
 
-const BatteryPack: React.FC<BatteryPackProps> = ({ cells, connected }) => {
+const BatteryPack: React.FC<BatteryPackProps> = ({ cells, esp_id, connected }) => {
   return (
     <Canvas 
       camera={{ position: [-20, 20, -20], fov: 50 }}
@@ -172,15 +173,17 @@ const BatteryPack: React.FC<BatteryPackProps> = ({ cells, connected }) => {
           whiteSpace: "nowrap",
         }}
       >
-        <>
-          Welcome to digital twin view!
-          {!connected ? (
-            <>
-              <br />
-              Loading battery data...
-            </>
-          ) : null}
-        </>
+        {!connected ? (
+          <>
+            Welcome to digital twin view!
+            <br />
+            Loading battery data...
+          </>
+        ) :
+          <>
+          {esp_id}
+          </>
+        }
       </Html>
 
       <Thermometer />
@@ -298,7 +301,7 @@ export default function DigitalTwin({ isFromEsp32 = false }: BatteriesPageProps)
 
   return (
     <div style={{ height: "100vh" }}>
-      <BatteryPack cells={cells} connected={batteryItem?true:false}/>
+      <BatteryPack cells={cells} esp_id={batteryItem?batteryItem.esp_id:"simulation"} connected={batteryItem?true:false}/>
     </div>
   );
 }
