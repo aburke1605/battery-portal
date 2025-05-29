@@ -5,6 +5,8 @@ import * as THREE from "three";
 import { useAuth } from "../../auth/AuthContext";
 import apiConfig from "../../apiConfig";
 import { BatteryData } from "../../types";
+import { useLoader } from '@react-three/fiber'
+import { SVGLoader } from 'three-stdlib'
 
 const cellNSegments = 32;
 const cellFrameWidth = 1.0;
@@ -19,6 +21,7 @@ type CellData = {
   position: [number, number, number];
   temperature: number;
   charge: number;
+  isCharging: boolean;
 };
 export type { CellData };
 
@@ -79,7 +82,39 @@ const Thermometer: React.FC = () => {
   );
 };
 
-const Cell: React.FC<{ label: string, position: [number, number, number]; temperature: number; charge: number }> = ({ label, position, temperature, charge }) => {
+const ChargingBolt = () => {
+  const svg = useLoader(SVGLoader, '/bolt.svg')
+
+  // Extract shapes from SVG
+  const shapes = useMemo(() => {
+    return svg.paths.flatMap(path => path.toShapes(true))
+  }, [svg])
+
+  return (
+    <group position={[0.1, cellFrameHeight + 0.9, 0.1]} scale={[0.001, 0.001, 0.001]}>
+      {shapes.map((shape, index) => (
+        <mesh key={index} castShadow receiveShadow>
+          <extrudeGeometry
+            args={[
+              shape,
+              {
+                depth: 20,
+                bevelEnabled: true,
+                bevelSegments: 5,
+                steps: 1,
+                bevelSize: 1,
+                bevelThickness: 5,
+              },
+            ]}
+          />
+          <meshStandardMaterial color="yellow" metalness={0.5} roughness={0.2} />
+        </mesh>
+      ))}
+    </group>
+  )
+}
+
+const Cell: React.FC<CellData> = ({ label, position, temperature, charge, isCharging }) => {
   const fillHeight = Math.max(charge * cellFrameHeight, 0.0);
   const unfilledHeight = cellFrameHeight - fillHeight;
   const color = getColorFromTemp(temperature);
@@ -103,6 +138,10 @@ const Cell: React.FC<{ label: string, position: [number, number, number]; temper
       <Html position={[0, cellFrameHeight + 0.4, 0]} center style={{ pointerEvents: "none", fontSize: "12px", color: "white", fontWeight: "bolder", whiteSpace: "nowrap" }}>
         {label}
       </Html>
+
+      {isCharging ? (
+        <ChargingBolt />
+      ) : null}
     </group>
   );
 };
@@ -118,7 +157,7 @@ const BatteryPack: React.FC<BatteryPackProps> = ({ cells, connected }) => {
       <OrbitControls />
 
       {cells.map((cell, idx) => (
-        <Cell key={idx} label={cell.label} position={cell.position} temperature={cell.temperature} charge={cell.charge} />
+        <Cell key={idx} label={cell.label} position={cell.position} temperature={cell.temperature} charge={cell.charge} isCharging={cell.isCharging} />
       ))}
 
       <Html
@@ -235,26 +274,26 @@ export default function DigitalTwin({ isFromEsp32 = false }: BatteriesPageProps)
   
   const cells: CellData[] = batteryItem ?
     // websocket data
-    ([{ label: "real cell", temperature: batteryItem.temperature, position: [0, 0, 0], charge: batteryItem.charge/100 }])
+    ([{ label: "real cell", temperature: batteryItem.temperature, position: [0, 0, 0], charge: batteryItem.charge/100, isCharging: batteryItem.current>0?true:false }])
     :
     // some hardcoded examples
     ([
-      { label: "cell 1", temperature: 5, position: [-3, 0, -3], charge: 0.8 },
-      { label: "cell 2", temperature: 10, position: [-1, 0, -3], charge: 0.9 },
-      { label: "cell 3", temperature: 15, position: [1, 0, -3], charge: 1.0 },
-      { label: "cell 4", temperature: 20, position: [3, 0, -3], charge: 0.9 },
-      { label: "cell 5", temperature: 25, position: [3, 0, -1], charge: 0.8 },
-      { label: "cell 6", temperature: 30, position: [1, 0, -1], charge: 0.7 },
-      { label: "cell 7", temperature: 35, position: [-1, 0, -1], charge: 0.6 },
-      { label: "cell 8", temperature: 40, position: [-3, 0, -1], charge: 0.5 },
-      { label: "cell 9", temperature: 45, position: [-3, 0, 1], charge: 0.4 },
-      { label: "cell 10", temperature: 50, position: [-1, 0, 1], charge: 0.3 },
-      { label: "cell 11", temperature: 55, position: [1, 0, 1], charge: 0.2 },
-      { label: "cell 12", temperature: 60, position: [3, 0, 1], charge: 0.1 },
-      { label: "cell 13", temperature: 65, position: [3, 0, 3], charge: 0.0 },
-      { label: "cell 14", temperature: 70, position: [1, 0, 3], charge: 0.1 },
-      { label: "cell 15", temperature: 75, position: [-1, 0, 3], charge: 0.2 },
-      { label: "cell 16", temperature: 80, position: [-3, 0, 3], charge: 0.3 },
+      { label: "cell 1", temperature: 5, position: [-3, 0, -3], charge: 0.8, isCharging: false },
+      { label: "cell 2", temperature: 10, position: [-1, 0, -3], charge: 0.9, isCharging: false },
+      { label: "cell 3", temperature: 15, position: [1, 0, -3], charge: 1.0, isCharging: false },
+      { label: "cell 4", temperature: 20, position: [3, 0, -3], charge: 0.9, isCharging: false },
+      { label: "cell 5", temperature: 25, position: [3, 0, -1], charge: 0.8, isCharging: false },
+      { label: "cell 6", temperature: 30, position: [1, 0, -1], charge: 0.7, isCharging: false },
+      { label: "cell 7", temperature: 35, position: [-1, 0, -1], charge: 0.6, isCharging: false },
+      { label: "cell 8", temperature: 40, position: [-3, 0, -1], charge: 0.5, isCharging: false },
+      { label: "cell 9", temperature: 45, position: [-3, 0, 1], charge: 0.4, isCharging: false },
+      { label: "cell 10", temperature: 50, position: [-1, 0, 1], charge: 0.3, isCharging: false },
+      { label: "cell 11", temperature: 55, position: [1, 0, 1], charge: 0.2, isCharging: false },
+      { label: "cell 12", temperature: 60, position: [3, 0, 1], charge: 0.1, isCharging: false },
+      { label: "cell 13", temperature: 65, position: [3, 0, 3], charge: 0.0, isCharging: false },
+      { label: "cell 14", temperature: 70, position: [1, 0, 3], charge: 0.1, isCharging: false },
+      { label: "cell 15", temperature: 75, position: [-1, 0, 3], charge: 0.2, isCharging: false },
+      { label: "cell 16", temperature: 80, position: [-3, 0, 3], charge: 0.3, isCharging: false },
   ]);
 
   return (
