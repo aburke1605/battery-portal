@@ -12,12 +12,25 @@
   "dependencies": {
     "@react-three/drei": "^10.1.1",
     "@react-three/fiber": "^9.1.2",
+    "apexcharts": "^4.7.0",
+    "axios": "^1.9.0",
+    "lucide-react": "^0.511.0",
+    "mock-socket": "^9.3.1",
     "react": "^19.1.0",
+    "react-apexcharts": "^1.7.0",
     "react-dom": "^19.1.0",
-    "three": "^0.176.0"
+    "react-dropzone": "^14.3.8",
+    "react-flatpickr": "^4.0.10",
+    "react-router": "^7.6.1",
+    "react-router-dom": "^7.6.1",
+    "recharts": "^2.15.3",
+    "tailwind-merge": "^3.3.0",
+    "three": "^0.176.0",
+    "vite-plugin-svgr": "^4.3.0"
   },
   "devDependencies": {
     "@eslint/js": "^9.25.0",
+    "@types/node": "^22.15.24",
     "@types/react": "^19.1.2",
     "@types/react-dom": "^19.1.2",
     "@vitejs/plugin-react": "^4.4.1",
