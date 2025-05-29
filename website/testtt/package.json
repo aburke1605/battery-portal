@@ -23,7 +23,6 @@
     "react-dom": "^19.1.0",
     "react-dropzone": "^14.3.8",
     "react-flatpickr": "^4.0.10",
-    "react-head": "^3.4.2",
     "react-router": "^7.6.1",
     "react-router-dom": "^7.6.1",
     "recharts": "^2.15.3",
