@@ -24,6 +24,7 @@ export type { CellData };
 
 type BatteryPackProps = {
   cells: CellData[];
+  connected: boolean;
 }
 
 const getColorFromTemp = (temperature: number): string => {
@@ -106,7 +107,7 @@ const Cell: React.FC<{ label: string, position: [number, number, number]; temper
   );
 };
 
-const BatteryPack: React.FC<BatteryPackProps> = ({ cells }) => {
+const BatteryPack: React.FC<BatteryPackProps> = ({ cells, connected }) => {
   return (
     <Canvas 
       camera={{ position: [-20, 20, -20], fov: 50 }}
@@ -119,6 +120,29 @@ const BatteryPack: React.FC<BatteryPackProps> = ({ cells }) => {
       {cells.map((cell, idx) => (
         <Cell key={idx} label={cell.label} position={cell.position} temperature={cell.temperature} charge={cell.charge} />
       ))}
+
+      <Html
+        position={[0, 3 * cellFrameHeight, 0]}
+        center
+        style={{
+          pointerEvents: "none",
+          fontSize: "20px",
+          color: "white",
+          fontWeight: "bolder",
+          textAlign: "center",
+          whiteSpace: "nowrap",
+        }}
+      >
+        <>
+          Welcome to digital twin view!
+          {!connected ? (
+            <>
+              <br />
+              Loading battery data...
+            </>
+          ) : null}
+        </>
+      </Html>
 
       <Thermometer />
     </Canvas>
@@ -196,6 +220,7 @@ export default function DigitalTwin({ isFromEsp32 = false }: BatteriesPageProps)
       
         ws.current.onclose = () => {
           console.log('WebSocket disconnected');
+          setSelectedBattery(null);
         };
       
         ws.current.onerror = (err) => {
@@ -234,7 +259,7 @@ export default function DigitalTwin({ isFromEsp32 = false }: BatteriesPageProps)
 
   return (
     <div style={{ height: "100vh" }}>
-      <BatteryPack cells={cells} />
+      <BatteryPack cells={cells} connected={batteryItem?true:false}/>
     </div>
   );
 }
