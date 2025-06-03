@@ -1,12 +1,13 @@
-import React, { useEffect, useMemo, useRef, useState } from "react";
+import React, { useCallback, useMemo, useState } from "react";
 import { Canvas } from "@react-three/fiber";
 import { Edges, Html, OrbitControls } from "@react-three/drei";
 import * as THREE from "three";
 import { useAuth } from "../../auth/AuthContext";
 import apiConfig from "../../apiConfig";
-import { BatteryData } from "../../types";
+import { BatteryData, parseBatteryData } from "../../types";
 import { useLoader } from '@react-three/fiber'
 import { SVGLoader } from 'three-stdlib'
+import { useWebSocket } from "../../hooks/useWebSocket";
 
 const cellNSegments = 32;
 const cellFrameWidth = 1.0;
@@ -207,72 +208,21 @@ export default function DigitalTwin({ isFromEsp32 = false }: BatteriesPageProps)
         ws_url += "?auth_token=" + getAuthToken();
     }
     const urlParams = new URLSearchParams(queryString);
-    const esp_id = urlParams.get('esp_id');
-    const [batteryItem, setSelectedBattery] = useState<BatteryData | null>(null);
-    
-    const ws = useRef<WebSocket | null>(null);
-    useEffect(() => {
-        
-        ws.current = new WebSocket(ws_url);
+    let esp_id = urlParams.get('esp_id');
+    if (esp_id == null) esp_id = "empty";
 
-        ws.current.onopen = () => {
-          console.log('WebSocket connected');
-        };
-      
-        ws.current.onmessage = (event) => {
-            console.log('Received message', event.data);
-            if (!esp_id) {
-                return;
-            }
-            try {
-                const data = JSON.parse(event.data);
-                console.log('Received WebSocket message:', data);
-                const battery = data[esp_id];
-                const batteryItem: BatteryData = {
-                    esp_id: esp_id,
-                    new_esp_id: "",
-                    charge: battery?.Q  || 0,
-                    health: battery?.H || 0,
-                    voltage: battery?.V/10 || 0,
-                    current: battery?.I/10 || 0,
-                    temperature: battery?.aT/10 || 0,
-                    internal_temperature: battery?.iT/10 || 0,
-                    BL: battery?.BL || 0,
-                    BH: battery?.BH || 0,
-                    CITL: battery?.CITL || 0,
-                    CITH: battery?.CITH || 0,
-                    CCT: battery?.CCT || 0,
-                    DCT: battery?.DCT || 0,
-                    isConnected: isFromEsp32 ? (battery?.connected_to_WiFi || false) : (battery?true:false),
-                    // location: "Unknown",
-                    // isCharging: false,
-                    status: "good",
-                    // lastMaintenance: "2025-03-15",
-                    // type: "Lithium-Ion",
-                    // capacity: 100,
-                    // cycleCount: 124,
-                    timestamp: Date.now(),
-                };
-                console.log('Found battery:', batteryItem);
-                setSelectedBattery(batteryItem || null);
-            } catch (err) {
-                console.error('Failed to parse WebSocket message', err);
-            }
-        };
-      
-        ws.current.onclose = () => {
-          console.log('WebSocket disconnected');
-          setSelectedBattery(null);
-        };
-      
-        ws.current.onerror = (err) => {
-          console.error('WebSocket error:', err);
-        };
-      
-        return () => {
-          ws.current?.close();
-        };
+    const [batteryItem, setSelectedBattery] = useState<BatteryData | null>(null);
+
+    // Get data from Webscocket
+    const handleMessage = useCallback((data: any) => {
+        const battery = data[esp_id];
+        const parsed = parseBatteryData(esp_id, battery, true);
+        setSelectedBattery(parsed);
     }, [esp_id]);
+    useWebSocket({
+        url: ws_url,
+        onMessage: handleMessage,
+    });
   
   
   const cells: CellData[] = batteryItem ?
