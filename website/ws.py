@@ -182,6 +182,13 @@ def ping_esps(delay=5):
                         esp_clients.discard(frozenset(esp))
                         update_time()
 
+                        # clear current list on web page by sending empty WS message
+                        for browser in set(browser_clients): # copy set to avoid modification issues
+                            try:
+                                browser.send("{}")
+                            except Exception:
+                                browser_clients.discard(browser) # remove disconnected clients
+
                 except Exception as e:
                     logger.error(f"Error communicating with {esp_id}: {e}")
 
