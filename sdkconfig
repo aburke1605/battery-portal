@@ -460,6 +460,7 @@ CONFIG_CR=1
 # CONFIG_LDRO is not set
 # CONFIG_Tx_CONT is not set
 CONFIG_Rx_PAYL_CRC=y
+# CONFIG_HIGH_POWER is not set
 # end of [CUSTOM] LoRa Configuration
 
 #

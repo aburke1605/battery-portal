@@ -92,7 +92,7 @@ char *send_fake_login_post_request() {
     vTaskDelay(pdMS_TO_TICKS(5000));
 
     if (err == ESP_OK) {
-        ESP_LOGI("HTTP_CLIENT", "HTTP POST Status = %d, Response = %s", esp_http_client_get_status_code(client), response.buffer);
+        if (VERBOSE) ESP_LOGI("MESH", "HTTP POST Status = %d, Response = %s", esp_http_client_get_status_code(client), response.buffer);
         cJSON *response_object = cJSON_Parse(response.buffer);
         cJSON *auth_token = cJSON_GetObjectItem(response_object, "auth_token");
 
@@ -272,7 +272,7 @@ int compare_mac(const uint8_t *mac1, const uint8_t *mac2) {
     return 0;
 }
 
-int calculate_transmission_delay(uint8_t spreading_factor, uint8_t bandwidth, uint8_t n_preamble_symbols, uint16_t payload_length, uint8_t coding_rate, bool header, bool low_data_rate_optimisation) {
+float calculate_symbol_length(uint8_t spreading_factor, uint8_t bandwidth) {
     float frequencies[] = {7.8, 10.4, 15.6, 20.8, 31.25, 41.7, 62.5, 125.0, 250.0, 500.0};
     if (bandwidth < 0 || bandwidth >= sizeof(frequencies) / sizeof(frequencies[0])) {
         ESP_LOGW("LoRa", "Undefined bandwidth key! Returning to default...");
@@ -280,6 +280,12 @@ int calculate_transmission_delay(uint8_t spreading_factor, uint8_t bandwidth, ui
     }
 
     float t_sym = pow(2, (float)spreading_factor) / (frequencies[bandwidth]);
+
+    return t_sym;
+}
+
+int calculate_transmission_delay(uint8_t spreading_factor, uint8_t bandwidth, uint8_t n_preamble_symbols, uint16_t payload_length, uint8_t coding_rate, bool header, bool low_data_rate_optimisation) {
+    float t_sym = calculate_symbol_length(spreading_factor, bandwidth);
     if (VERBOSE) ESP_LOGI("LoRa", "symbol time: %f ms", t_sym);
 
     float n_payload_symbols = ceil((8*payload_length - 4*spreading_factor + 28 + 16 - (header?20:0)) / (spreading_factor - (low_data_rate_optimisation?2:0)) / 4);

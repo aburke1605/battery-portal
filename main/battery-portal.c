@@ -19,6 +19,7 @@ int num_connected_clients = 0;
 char ESP_ID[UTILS_ID_LENGTH + 1] = "unknown";
 httpd_handle_t server = NULL;
 bool connected_to_WiFi = false;
+bool connected_to_root = false;
 client_socket client_sockets[WS_CONFIG_MAX_CLIENTS];
 char current_auth_token[UTILS_AUTH_TOKEN_LENGTH] = "";
 QueueHandle_t ws_queue;
@@ -80,7 +81,7 @@ void app_main(void) {
         return;
     }
 
-    TaskParams dns_server_params = {.stack_size = 2500, .task_name = "dns_server_task"};
+    TaskParams dns_server_params = {.stack_size = 2600, .task_name = "dns_server_task"};
     xTaskCreate(&dns_server_task, dns_server_params.task_name, dns_server_params.stack_size, &dns_server_params, 2, NULL);
 
     ws_queue = xQueueCreate(WS_QUEUE_SIZE, WS_MESSAGE_MAX_LEN);
@@ -99,7 +100,7 @@ void app_main(void) {
     if (LORA_IS_RECEIVER) {
         lora_init();
 
-        TaskParams lora_rx_params = {.stack_size = 5000, .task_name = "lora_rx_task"};
+        TaskParams lora_rx_params = {.stack_size = 6000, .task_name = "lora_rx_task"};
         xTaskCreate(lora_rx_task, lora_rx_params.task_name, lora_rx_params.stack_size, &lora_rx_params, 1, NULL);
     }
 
@@ -124,6 +125,7 @@ void app_main(void) {
 
     while (true) {
         if (VERBOSE) ESP_LOGI("main", "%ld bytes available in heap", esp_get_free_heap_size());
+        if (esp_get_minimum_free_heap_size() < 2000) esp_restart();
         vTaskDelay(pdMS_TO_TICKS(10000));
     }
 }
