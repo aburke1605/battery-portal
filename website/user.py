@@ -49,7 +49,11 @@ def api_login():
     user = user_datastore.find_user(email=email)
     if user and user.verify_and_update_password(password):
         login_user(user)
-        return jsonify({'success': True}), 200
+        return jsonify({
+            'loggedIn': True,
+            'email': user.email,
+            'roles': [role.name for role in user.roles]  # if using roles
+        })
     return jsonify({'success': False}), 401
 
 @user_bp.route('/check-auth', methods=['GET'])
