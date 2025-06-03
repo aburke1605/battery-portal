@@ -574,9 +574,9 @@ void websocket_task(void *pvParameters) {
                         vTaskDelay(pdMS_TO_TICKS(1000));
                         continue;
                     }
+                    vTaskDelay(pdMS_TO_TICKS(5000));
                 }
 
-                vTaskDelay(pdMS_TO_TICKS(5000));
 
                 if (!esp_websocket_client_is_connected(ws_client)) {
                     esp_websocket_client_stop(ws_client);
