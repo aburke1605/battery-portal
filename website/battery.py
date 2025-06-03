@@ -22,6 +22,8 @@ class BatteryInfo(DB.Model):
 
     id = DB.Column(DB.String(64), primary_key=True)
     name = DB.Column(DB.String(100), nullable=False)
+    temperature = DB.Column(DB.Float, nullable=True)
+    voltage = DB.Column(DB.Float, nullable=True)
     online_status = DB.Column(DB.Enum(OnlineStatusEnum), nullable=False, default=OnlineStatusEnum.offline)
     last_updated_time = DB.Column(DB.DateTime, default=datetime.now, onupdate=datetime.now, nullable=False)
     lat = DB.Column(DB.Float, nullable=True)
@@ -48,16 +50,21 @@ def update_from_esp(data_list):
             battery = DB.session.get(BatteryInfo, battery_id)
             if battery:
                 # Update existing record
-                battery.name = battery_id
+                battery.name=battery_id
+                battery.temperature=data['aT']/10
+                battery.voltage=data['V']/10
                 battery.online_status = OnlineStatusEnum.online
                 battery.parent_id = None if i == 0 else parent_id
                 battery.last_updated_time = datetime.now()
                 print(f"Updated existing battery with ID: {battery_id}")
+                print(battery)
             else:
                 # Insert new record
                 battery = BatteryInfo(
                     id=battery_id,
                     name=battery_id,
+                    temperature=data['aT']/10,
+                    voltage=data['V']/10,
                     online_status=OnlineStatusEnum.online,
                     parent_id=None if i == 0 else parent_id,
                     last_updated_time = datetime.now()
@@ -126,10 +133,9 @@ def build_battery_tree(batteries):
             'last_updated_time': b.last_updated_time.isoformat(),
             'lat': b.lat,
             'lon': b.lon,
-            'capacity': '80',
-            'voltage': '20',
+            'temperature': b.temperature,
+            'voltage': b.voltage,
             'parent_id': b.parent_id,
-            'status': 'active' if b.online_status == OnlineStatusEnum.online else 'inactive',
             'children': []
         }
         if b.parent_id:

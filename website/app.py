@@ -66,7 +66,7 @@ check_online_thread = check_online_task(app)
 check_online_thread.start()
 # Create the database and tables if they don't exist
 # Create seed data
-seed_data(app)
+#seed_data(app)
 
 if __name__ == '__main__':
     app.run(debug=True, ssl_context=("local_cert.pem", "local_key.pem"), host="0.0.0.0")

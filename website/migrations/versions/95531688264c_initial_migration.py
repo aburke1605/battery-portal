@@ -1,8 +1,8 @@
-"""add battery tables
+"""initial migration
 
-Revision ID: 6986ae27e8ae
-Revises: eca0eeb83db4
-Create Date: 2025-05-21 16:10:52.357554
+Revision ID: 95531688264c
+Revises: 
+Create Date: 2025-06-03 14:32:19.011779
 
 """
 from alembic import op
@@ -10,8 +10,8 @@ import sqlalchemy as sa
 
 
 # revision identifiers, used by Alembic.
-revision = '6986ae27e8ae'
-down_revision = 'eca0eeb83db4'
+revision = '95531688264c'
+down_revision = None
 branch_labels = None
 depends_on = None
 
@@ -21,10 +21,12 @@ def upgrade():
     op.create_table('battery_info',
     sa.Column('id', sa.String(length=64), nullable=False),
     sa.Column('name', sa.String(length=100), nullable=False),
+    sa.Column('temperature', sa.Float(), nullable=True),
+    sa.Column('voltage', sa.Float(), nullable=True),
     sa.Column('online_status', sa.Enum('online', 'offline', name='onlinestatusenum'), nullable=False),
     sa.Column('last_updated_time', sa.DateTime(), nullable=False),
-    sa.Column('lat', sa.Float(), nullable=False),
-    sa.Column('lon', sa.Float(), nullable=False),
+    sa.Column('lat', sa.Float(), nullable=True),
+    sa.Column('lon', sa.Float(), nullable=True),
     sa.Column('parent_id', sa.String(length=64), nullable=True),
     sa.ForeignKeyConstraint(['parent_id'], ['battery_info.id'], ),
     sa.PrimaryKeyConstraint('id')

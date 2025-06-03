@@ -5,17 +5,17 @@ import { ChevronDown} from 'lucide-react';
 interface Battery {
   id: string
   name: string
-  status: 'active' | 'inactive' | 'maintenance'
-  capacity: number
+  online_status: 'online' | 'offline' | 'maintenance'
+  temperature: number
   voltage: number
   children?: Battery[]
 }
 
-const getStatusColor = (status: Battery['status']) => {
+const getStatusColor = (status: Battery['online_status']) => {
   switch (status) {
-    case 'active':
+    case 'online':
       return 'bg-green-100 text-green-800'
-    case 'inactive':
+    case 'offline':
       return 'bg-red-100 text-red-800'
     case 'maintenance':
       return 'bg-yellow-100 text-yellow-800'
@@ -36,32 +36,7 @@ interface MapMarker {
 }
 
 // Update the map markers to be more spread across the UK
-const mapMarkers: MapMarker[] = [
-  {
-    id: 'b1',
-    position: { lat: 51.5074, lng: -0.1278 }, // London
-    title: 'Main Power Station',
-    status: 'active'
-  },
-  {
-    id: 'b2',
-    position: { lat: 55.9533, lng: -3.1883 }, // Edinburgh
-    title: 'Backup Power Station',
-    status: 'active'
-  },
-  {
-    id: 'b3',
-    position: { lat: 53.4808, lng: -2.2426 }, // Manchester
-    title: 'Northern Power Station',
-    status: 'maintenance'
-  },
-  {
-    id: 'b4',
-    position: { lat: 53.4084, lng: -2.9916 }, // Liverpool Port
-    title: 'Port Battery Station',
-    status: 'active'
-  }
-]
+const mapMarkers: MapMarker[] = []
 
 export default function BatteryPage() {
   const itemsPerPage = 4
@@ -213,9 +188,63 @@ export default function BatteryPage() {
   return (
     <main className="container mx-auto px-4 py-8">
       <div className="flex justify-between items-center mb-6">
-      <button
+     
+        <div className="space-y-6">
+            <div className="flex flex-col md:flex-row md:justify-between md:items-center mb-6 space-y-4 md:space-y-0">
+            <div className="flex flex-wrap gap-2">
+              <button 
+                className={`px-4 py-2 rounded-full text-sm font-medium ${statusFilter === 'all' ? 'bg-blue-100 text-blue-800' : 'bg-gray-100 text-gray-800 hover:bg-gray-200'}`}
+                onClick={() => setStatusFilter('all')}
+              >
+                All Batteries
+              </button>
+              <button 
+                className={`px-4 py-2 rounded-full text-sm font-medium ${statusFilter === 'good' ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800 hover:bg-gray-200'}`}
+                onClick={() => setStatusFilter('good')}
+              >
+                Good
+              </button>
+              <button 
+                className={`px-4 py-2 rounded-full text-sm font-medium ${statusFilter === 'warning' ? 'bg-amber-100 text-amber-800' : 'bg-gray-100 text-gray-800 hover:bg-gray-200'}`}
+                onClick={() => setStatusFilter('warning')}
+              >
+                Warning
+              </button>
+              <button 
+                className={`px-4 py-2 rounded-full text-sm font-medium ${statusFilter === 'critical' ? 'bg-red-100 text-red-800' : 'bg-gray-100 text-gray-800 hover:bg-gray-200'}`}
+                onClick={() => setStatusFilter('critical')}
+              >
+                Critical
+              </button>
+              <button 
+                className={`px-4 py-2 rounded-full text-sm font-medium ${statusFilter === 'offline' ? 'bg-gray-200 text-gray-800' : 'bg-gray-100 text-gray-800 hover:bg-gray-200'}`}
+                onClick={() => setStatusFilter('offline')}
+              >
+                Offline
+              </button>
+            </div>
+            
+            <div className="flex items-center space-x-2" style={{ display: 'none' }}>
+              <span className="text-sm text-gray-600">Sort by:</span>
+              <div className="relative">
+                <select 
+                  className="appearance-none bg-white border rounded-md px-4 py-2 pr-8 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm"
+                  value={sortBy}
+                  onChange={(e) => setSortBy(e.target.value)}
+                >
+                  <option value="status">Status</option>
+                  <option value="name">Name</option>
+                  <option value="chargeLevel">Charge Level</option>
+                  <option value="health">Health</option>
+                </select>
+                <ChevronDown size={16} className="absolute right-2 top-2.5 text-gray-500 pointer-events-none" />
+              </div>
+            </div>
+          </div>
+        </div>
+         <button 
           onClick={() => setViewMode(viewMode === 'grid' ? 'map' : 'grid')}
-          className="inline-flex items-center gap-2 px-4 py-2 bg-white rounded-lg border border-gray-200 shadow-sm hover:bg-gray-50 transition-all duration-200 ease-in-out"
+          className="flex space-x-2 items-center gap-2 px-4 py-2 bg-white rounded-lg border border-gray-200 shadow-sm hover:bg-gray-50 transition-all duration-200 ease-in-out"
         >
           <span className="text-sm font-medium text-gray-700">
             {viewMode === 'grid' ? 'Map' : 'Grid'}
@@ -245,59 +274,6 @@ export default function BatteryPage() {
             </svg>
           </div>
         </button>
-      <div className="space-y-6">
-          <div className="flex flex-col md:flex-row md:justify-between md:items-center mb-6 space-y-4 md:space-y-0">
-          <div className="flex flex-wrap gap-2">
-            <button 
-              className={`px-4 py-2 rounded-full text-sm font-medium ${statusFilter === 'all' ? 'bg-blue-100 text-blue-800' : 'bg-gray-100 text-gray-800 hover:bg-gray-200'}`}
-              onClick={() => setStatusFilter('all')}
-            >
-              All Batteries
-            </button>
-            <button 
-              className={`px-4 py-2 rounded-full text-sm font-medium ${statusFilter === 'good' ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800 hover:bg-gray-200'}`}
-              onClick={() => setStatusFilter('good')}
-            >
-              Good
-            </button>
-            <button 
-              className={`px-4 py-2 rounded-full text-sm font-medium ${statusFilter === 'warning' ? 'bg-amber-100 text-amber-800' : 'bg-gray-100 text-gray-800 hover:bg-gray-200'}`}
-              onClick={() => setStatusFilter('warning')}
-            >
-              Warning
-            </button>
-            <button 
-              className={`px-4 py-2 rounded-full text-sm font-medium ${statusFilter === 'critical' ? 'bg-red-100 text-red-800' : 'bg-gray-100 text-gray-800 hover:bg-gray-200'}`}
-              onClick={() => setStatusFilter('critical')}
-            >
-              Critical
-            </button>
-            <button 
-              className={`px-4 py-2 rounded-full text-sm font-medium ${statusFilter === 'offline' ? 'bg-gray-200 text-gray-800' : 'bg-gray-100 text-gray-800 hover:bg-gray-200'}`}
-              onClick={() => setStatusFilter('offline')}
-            >
-              Offline
-            </button>
-          </div>
-          
-          <div className="flex items-center space-x-2">
-            <span className="text-sm text-gray-600">Sort by:</span>
-            <div className="relative">
-              <select 
-                className="appearance-none bg-white border rounded-md px-4 py-2 pr-8 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm"
-                value={sortBy}
-                onChange={(e) => setSortBy(e.target.value)}
-              >
-                <option value="status">Status</option>
-                <option value="name">Name</option>
-                <option value="chargeLevel">Charge Level</option>
-                <option value="health">Health</option>
-              </select>
-              <ChevronDown size={16} className="absolute right-2 top-2.5 text-gray-500 pointer-events-none" />
-            </div>
-          </div>
-        </div>
-        </div>
       </div>
 
       {viewMode === 'grid' ? (
@@ -307,27 +283,25 @@ export default function BatteryPage() {
               <div className="flex justify-between items-start mb-3">
                 <div>
                   <h2 className="text-lg font-semibold">{parentBattery.name}</h2>
-                  <p className="text-sm text-gray-600">Main Power Station</p>
+                  <p className="text-sm text-gray-600">Master Node</p>
                 </div>
                 <div className="flex items-center gap-2">
-                  <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${getStatusColor(parentBattery.status)}`}>
-                    {parentBattery.status}
-                  </span>
-                  {parentBattery.id === 'b1' && (
                     <Link
                       to={`/battery-detail?esp_id=${parentBattery.id}`}
                       className="px-2 py-0.5 bg-blue-600 text-white rounded hover:bg-blue-700 transition-colors text-xs"
                     >
                       Details
                     </Link>
-                  )}
+                  <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${getStatusColor(parentBattery.online_status)}`}>
+                    {parentBattery.online_status}
+                  </span>
                 </div>
               </div>
 
               <div className="grid grid-cols-2 gap-2 mb-3">
                 <div className="bg-gray-50 p-2 rounded">
-                  <p className="text-xs text-gray-600">Capacity</p>
-                  <p className="text-sm font-semibold">{parentBattery.capacity}%</p>
+                  <p className="text-xs text-gray-600">temperature</p>
+                  <p className="text-sm font-semibold">{parentBattery.temperature}°C</p>
                 </div>
                 <div className="bg-gray-50 p-2 rounded">
                   <p className="text-xs text-gray-600">Voltage</p>
@@ -354,15 +328,15 @@ export default function BatteryPage() {
                           <h4 className="text-sm font-medium">{childBattery.name}</h4>
                           <div className="flex items-center gap-2 mt-0.5">
                             <span className="text-xs text-gray-600">
-                              {childBattery.capacity}%
+                              {childBattery.temperature}°C
                             </span>
                             <span className="text-xs text-gray-600">
                               {childBattery.voltage}V
                             </span>
                           </div>
                         </div>
-                        <span className={`px-1.5 py-0.5 rounded-full text-xs font-medium ${getStatusColor(childBattery.status)}`}>
-                          {childBattery.status}
+                        <span className={`px-1.5 py-0.5 rounded-full text-xs font-medium ${getStatusColor(childBattery.online_status)}`}>
+                          {childBattery.online_status}
                         </span>
                       </div>
                     </Link>
