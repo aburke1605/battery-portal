@@ -28,8 +28,9 @@ class BatteryInfo(DB.Model):
     last_updated_time = DB.Column(DB.DateTime, default=datetime.now, onupdate=datetime.now, nullable=False)
     lat = DB.Column(DB.Float, nullable=True)
     lon = DB.Column(DB.Float, nullable=True)
-    parent_id = DB.Column(DB.String(64), DB.ForeignKey('battery_info.id'), nullable=True)
-    children = DB.relationship('BatteryInfo', backref=DB.backref('parent', remote_side=[id]), lazy=True)
+    lon_test = DB.Column(DB.Float, nullable=True)
+    lon_test_db = DB.Column(DB.Float, nullable=True)
+    parent_id = DB.Column(DB.String(64), nullable=True)
 
     def __repr__(self):
         return f'<BatteryInfo {self.id} - {self.name}>'
