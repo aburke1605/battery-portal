@@ -111,7 +111,7 @@ void connect_to_root_task(void *pvParameters) {
 
 void mesh_websocket_task(void *pvParameters) {
     while (true) {
-        char *data_string = get_data();
+        char *data_string = get_data(false);
 
         if (connected_to_root && data_string != NULL && strcmp(mesh_ws_auth_token, "") != 0) {
             char uri[40+UTILS_AUTH_TOKEN_LENGTH];

@@ -155,7 +155,7 @@ void lora_tx_task(void *pvParameters) {
         combined_message[0] = '\0';
         strncat(combined_message, "_S_", combined_capacity - strlen("_S_") - 1);
 
-        char *data_string = get_data();
+        char *data_string = get_data(false);
         snprintf(individual_message, sizeof(individual_message), "{\"type\":\"data\",\"id\":\"%s\",\"content\":%s}", ESP_ID, data_string);
         strncat(combined_message, individual_message, combined_capacity - strlen(combined_message) - 1);
 
