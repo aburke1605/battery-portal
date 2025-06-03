@@ -48,11 +48,13 @@ void connect_to_root_task(void *pvParameters) {
                     esp_err_t err = esp_wifi_connect();
                     if (err == ESP_OK) {
                         ESP_LOGI(TAG, "Success, waiting for connection...");
+                        connected_to_root = true;
                         reconnected = true;
                         vTaskDelay(pdMS_TO_TICKS(1000));
                         break;
                     } else {
                         ESP_LOGW(TAG, "Failed to connect: %s. Retrying...", esp_err_to_name(err));
+                        connected_to_root = false;
                         tries++;
                     }
                 }
@@ -61,6 +63,7 @@ void connect_to_root_task(void *pvParameters) {
             }
 
             if (!reconnected) {
+                connected_to_root = false;
                 vTaskSuspend(mesh_websocket_task_handle);
 
                 // scan to double check there really is no existing root AP
@@ -108,9 +111,9 @@ void connect_to_root_task(void *pvParameters) {
 
 void mesh_websocket_task(void *pvParameters) {
     while (true) {
-        char *data_string = get_data();
+        char *data_string = get_data(false);
 
-        if (data_string != NULL) {
+        if (connected_to_root && data_string != NULL && strcmp(mesh_ws_auth_token, "") != 0) {
             char uri[40+UTILS_AUTH_TOKEN_LENGTH];
             snprintf(uri, sizeof(uri), "ws://192.168.4.1:80/mesh_ws?auth_token=%s", mesh_ws_auth_token);
             const esp_websocket_client_config_t websocket_cfg = {
@@ -151,9 +154,9 @@ void mesh_websocket_task(void *pvParameters) {
 
         // clean up
         free(data_string);
-    }
 
-    vTaskDelay(pdMS_TO_TICKS(1000));
+        vTaskDelay(pdMS_TO_TICKS(1000));
+    }
 }
 
 esp_err_t ap_n_client_comparison_handler(esp_http_client_event_t *evt) {

@@ -1,0 +1,1 @@
+echo | openssl s_client -showcerts -connect batteryportal-e9czhgamgferavf7.ukwest-01.azurewebsites.net:443 2>/dev/null | awk '/-----BEGIN CERTIFICATE-----/{n++} n==2' | openssl x509 -outform PEM > website_cert.pem

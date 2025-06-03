@@ -105,12 +105,12 @@ void lora_configure_defaults() {
     lora_write_register(REG_LNA, 0b00100011);  // LNA_MAX_GAIN | LNA_BOOST
 
     // Enable AGC (bit 2 of RegModemConfig3)
-    lora_write_register(REG_MODEM_CONFIG_3,  // bits:
-        (0b00001111 & 0)         << 4 |      //  7-4
-        (0b00000001 & LORA_LDRO) << 3 |      //  3
-        (0b00000001 & 1)         << 2 |      //  2    AGC on
-        (0b00000011 & 0)                     //  1-0
-    );  // LowDataRateOptimize off, AGC on
+    lora_write_register(REG_MODEM_CONFIG_3,                                                                    // bits:
+        (0b00001111 & 0)                                                                               << 4 |  //  7-4
+        (0b00000001 & (LORA_LDRO | (calculate_symbol_length(LORA_SF, LORA_BW) > 16.0 ? true : false))) << 3 |  //  3
+        (0b00000001 & 1)                                                                               << 2 |  //  2    AGC on
+        (0b00000011 & 0)                                                                                       //  1-0
+    );
 
     // Configure modem parameters:
     //  bandwidth, coding rate, header
@@ -132,7 +132,14 @@ void lora_configure_defaults() {
     lora_write_register(REG_PREAMBLE_LSB, 0x08);
 
     // Set output power to 13 dBm using PA_BOOST
-    lora_write_register(REG_PA_CONFIG, 0b10001111);  // PA_BOOST, OutputPower=13 dBm
+    lora_write_register(REG_PA_CONFIG,           // bits:
+        (0b00000001 & 1)                 << 7 |  // 7   PA BOOST
+        (0b00000111 & 0x04)              << 4 |  // 6-4
+        (0b00001111 & LORA_OUTPUT_POWER)
+    );
+
+    if (LORA_POWER_BOOST) lora_write_register(REG_PA_DAC, 0x87);
+    else lora_write_register(REG_PA_DAC, 0x84);
 
     ESP_LOGI(TAG, "SX127x configured to RadioHead defaults");
 }
@@ -148,7 +155,7 @@ void lora_tx_task(void *pvParameters) {
         combined_message[0] = '\0';
         strncat(combined_message, "_S_", combined_capacity - strlen("_S_") - 1);
 
-        char *data_string = get_data();
+        char *data_string = get_data(false);
         snprintf(individual_message, sizeof(individual_message), "{\"type\":\"data\",\"id\":\"%s\",\"content\":%s}", ESP_ID, data_string);
         strncat(combined_message, individual_message, combined_capacity - strlen(combined_message) - 1);
 

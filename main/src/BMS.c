@@ -69,7 +69,7 @@ esp_err_t unseal() {
     return ESP_OK;
 }
 
-char* get_data() {
+char* get_data(bool local) {
     // create JSON object with sensor data
     cJSON *data = cJSON_CreateObject();
 
@@ -116,8 +116,19 @@ char* get_data() {
     read_bytes(I2C_CHARGE_INHIBIT_CFG_SUBCLASS_ID, I2C_CHG_INHIBIT_TEMP_HIGH_OFFSET, two_bytes, sizeof(two_bytes));
     cJSON_AddNumberToObject(data, "CITH", two_bytes[0] << 8 | two_bytes[1]);
 
-    char *data_string = cJSON_PrintUnformatted(data); // goes to website
+    if (local) {
+        // only needed for local clients
+        cJSON_AddBoolToObject(data, "connected_to_WiFi", connected_to_WiFi);
+        cJSON *full_data = cJSON_CreateObject();
+        cJSON_AddItemToObject(full_data, ESP_ID, data);
 
+        char *full_data_string = cJSON_PrintUnformatted(full_data);
+        cJSON_Delete(full_data);
+
+        return full_data_string;
+    }
+
+    char *data_string = cJSON_PrintUnformatted(data);
     cJSON_Delete(data);
 
     return data_string;

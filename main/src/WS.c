@@ -345,7 +345,7 @@ esp_err_t perform_request(cJSON *message, cJSON *response) {
 }
 
 void send_message(const char *message) {
-    if (xQueueSend(ws_queue, message, portMAX_DELAY) != pdPASS) {
+    if (xQueueSend(ws_queue, message, pdMS_TO_TICKS(100)) != pdPASS) {
         ESP_LOGE(TAG, "WebSocket queue full! Dropping message: %s", message);
     }
 }
@@ -385,7 +385,7 @@ void websocket_event_handler(void *arg, esp_event_base_t event_base, int32_t eve
             if (VERBOSE) ESP_LOGI(TAG, "WebSocket connected");
             char websocket_connect_message[WS_MESSAGE_MAX_LEN];
             snprintf(websocket_connect_message, sizeof(websocket_connect_message), "{\"type\":\"register\",\"id\":\"%s\"}", ESP_ID);
-            send_message(websocket_connect_message);
+            if (esp_websocket_client_is_connected(ws_client)) send_message(websocket_connect_message);
             break;
 
         case WEBSOCKET_EVENT_DISCONNECTED:
@@ -431,10 +431,6 @@ void websocket_event_handler(void *arg, esp_event_base_t event_base, int32_t eve
 
 void websocket_task(void *pvParameters) {
     while (true) {
-        // create JSON object with sensor data
-        cJSON *json = cJSON_CreateObject();
-        cJSON *data = cJSON_CreateObject();
-
         ws_payload message = {
             .type = 1,
         };
@@ -501,26 +497,18 @@ void websocket_task(void *pvParameters) {
         cJSON_AddNumberToObject(data, "CITH", two_bytes[0] << 8 | two_bytes[1]);
         message.CITH = (uint16_t)(two_bytes[0] << 8 | two_bytes[1]);
 
-        // cJSON_AddStringToObject(data, "IP", ESP_IP);
-        char* data_string = LORA_IS_RECEIVER ? "" : get_data(); // goes to website
+        // get sensor data
+        char* data_string = LORA_IS_RECEIVER ? "" : get_data(false); // goes to website
 
-        // add this after forming data_string because if a message is received
-        // by the website then obviously the ESP32 is connected to WiFi
-        cJSON_AddBoolToObject(data, "connected_to_WiFi", connected_to_WiFi);
+        char* full_data_string = get_data(true); // goes to local clients
 
-        cJSON_AddItemToObject(json, ESP_ID, data);
-        char *json_string = cJSON_PrintUnformatted(json); // goes to local clients
-
-        // cJSON_Delete(data);
-        cJSON_Delete(json);
-
-        if (json_string != NULL && data_string != NULL) {
+        if (full_data_string != NULL && data_string != NULL) {
             // first send to all connected WebSocket clients
             for (int i = 0; i < WS_CONFIG_MAX_CLIENTS; i++) {
-                if (client_sockets[i].descriptor >= 0) {
+                if (client_sockets[i].is_browser_not_mesh && client_sockets[i].descriptor >= 0) {
                     httpd_ws_frame_t ws_pkt = {
-                        .payload = (uint8_t *)json_string,
-                        .len = strlen(json_string),
+                        .payload = (uint8_t *)full_data_string,
+                        .len = strlen(full_data_string),
                         .type = HTTPD_WS_TYPE_TEXT,
                     };
 
@@ -600,19 +588,11 @@ void websocket_task(void *pvParameters) {
                     send_message(message);
                     // send_message(&message);
                 }
-
-                if (esp_get_minimum_free_heap_size() < 2000) {
-                    esp_websocket_client_stop(ws_client);
-                    esp_websocket_client_destroy(ws_client);
-                    ws_client = NULL;
-                    vTaskDelay(pdMS_TO_TICKS(5000));
-                    esp_restart();
-                }
             }
 
             // clean up
             free(data_string);
-            free(json_string);
+            free(full_data_string);
         }
 
         // check wifi connection still exists

@@ -1,12 +1,12 @@
-// import React, { useState, useEffect } from 'react';
-import { useState, useEffect } from 'react';
+import { useCallback, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import PageBreadcrumb from "../../components/common/PageBreadCrumb";
 import PageMeta from "../../components/common/PageMeta";
 import { ChevronDown, ChevronLeft, ChevronRight } from 'lucide-react';
-import { BatteryData } from '../../types';
+import { BatteryData, parseBatteryData } from '../../types';
 import BatteryCard from './BatteryCard';
 import apiConfig from '../../apiConfig';
+import { useWebSocket } from '../../hooks/useWebSocket';
 
 
 export default function ListPage() {
@@ -16,67 +16,17 @@ export default function ListPage() {
   const [searchTerm] = useState('');
 
   // Get data from Webscocket
-  useEffect(() => {
-    const ws = new WebSocket(apiConfig.WEBSOCKET_BROWSER);
-    console.log(apiConfig.WEBSOCKET_BROWSER);
-    ws.onopen = () => {
-      console.log('WebSocket connected');
-    };
-  
-    ws.onmessage = (event) => {
-      try {
-        const data = JSON.parse(event.data);
-        if (data) {
-          console.log('Parsed ESPs:', data);
-          const batteryArray: BatteryData[] = Object.entries(data).map(([esp_id, battery]: [string, any]) => ({
-            esp_id: esp_id,
-            new_esp_id: "",
-            charge: battery?.Q  || 0,
-            health: battery?.H || 0,
-            voltage: battery?.V/10 || 0,
-            current: battery?.I/10 || 0,
-            temperature: battery?.aT/10 || 0,
-            internal_temperature: battery?.iT/10 || 0,
-            BL: battery?.BL || 0,
-            BH: battery?.BH || 0,
-            CITL: battery?.CITL || 0,
-            CITH: battery?.CITH || 0,
-            CCT: battery?.CCT || 0,
-            DCT: battery?.DCT || 0,
-            isConnected: battery ? true : false,
-            // location: "Unknown",
-            // isCharging: false,
-            status: "good",
-            // lastMaintenance: "2025-03-15",
-            // type: "Lithium-Ion",
-            // capacity: 100,
-            // cycleCount: 124,
-            timestamp: Date.now(),
-          }));
-  
-          console.log('Parsed batteries:', batteryArray);
-          setBatteries(batteryArray);
-        }
-      } catch (err) {
-        console.error('Failed to parse WebSocket message', err);
-      }
-    };
-  
-    ws.onclose = () => {
-      console.log('WebSocket disconnected');
-    };
-  
-    ws.onerror = (err) => {
-      console.error('WebSocket error:', err);
-    };
-  
-    return () => {
-      ws.close();
-    };
+  const handleMessage = useCallback((data: any) => {
+    const batteries = Object.entries(data).map(([esp_id, raw]) =>
+      parseBatteryData(esp_id, raw)
+    );
+    setBatteries(batteries);
   }, []);
-  
-  
-  
+  useWebSocket({
+    url: apiConfig.WEBSOCKET_BROWSER,
+    onMessage: handleMessage,
+  });
+
 
     // Toggle battery charging
     /* const toggleCharging = (batteryId: string, e?: React.MouseEvent) => {

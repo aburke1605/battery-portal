@@ -210,12 +210,14 @@ config FREQ
 config SF
     int "Spreading factor"
     default 7
+    range 6 12
     help
-      Transmission message spreading factor. Takes values between 6-12.
+      Transmission message spreading factor.
 
 config BW
     int "Bandwidth"
     default 7
+    range 0 9
     help
       Transmission message bandwidth:
        * 0: 7.8 kHz
@@ -232,6 +234,7 @@ config BW
 config CR
     int "Coding rate"
     default 1
+    range 1 4
     help
       Error coding rate. Must be set on receiver when on in implicit header mode.
        * 1: 4/5
@@ -262,6 +265,19 @@ config Rx_PAYL_CRC
     default y
     help
       Set to true to enamble cyclic redundancy generation and check on payload.
+
+config OUTPUT_POWER
+    int "Output power"
+    default 15
+    range 0 15
+    help
+      Pout = 17 - (15 - Output power)
+
+config POWER_BOOST
+    bool "Power boost"
+    default n
+    help
+      Set to true to enable up to +20 dBm high power transmission. WARNING: ensure 1% duty cycle and adequate cooling.
 
 endmenu
 
