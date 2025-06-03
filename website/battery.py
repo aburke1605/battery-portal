@@ -108,7 +108,8 @@ def create_battery_data_table(battery_id, metadata=None):
         data_table.create(bind=DB.engine)
         print(f"Created table: {table_name}")
     else:
-        data_table = DB.metadata.tables[table_name]
+        print(f"Existed table: {table_name}")
+        data_table = Table(table_name, metadata, autoload_with=DB.engine)
 
     return data_table
 
