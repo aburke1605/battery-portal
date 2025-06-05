@@ -86,14 +86,50 @@ char* get_data(bool local) {
     read_bytes(0, I2C_VOLTAGE_REG, two_bytes, sizeof(two_bytes));
     cJSON_AddNumberToObject(data, "V", round_to_dp((float)(two_bytes[1] << 8 | two_bytes[0]) / 1000.0, 1));
 
+    read_bytes(0, I2C_CELL1_VOLTAGE_REG, two_bytes, sizeof(two_bytes));
+    cJSON_AddNumberToObject(data, "V1", round_to_dp((float)((int16_t)(two_bytes[1] << 8 | two_bytes[0])) / 1000.0, 1));
+
+    read_bytes(0, I2C_CELL2_VOLTAGE_REG, two_bytes, sizeof(two_bytes));
+    cJSON_AddNumberToObject(data, "V2", round_to_dp((float)((int16_t)(two_bytes[1] << 8 | two_bytes[0])) / 1000.0, 1));
+
+    read_bytes(0, I2C_CELL3_VOLTAGE_REG, two_bytes, sizeof(two_bytes));
+    cJSON_AddNumberToObject(data, "V3", round_to_dp((float)((int16_t)(two_bytes[1] << 8 | two_bytes[0])) / 1000.0, 1));
+
+    read_bytes(0, I2C_CELL4_VOLTAGE_REG, two_bytes, sizeof(two_bytes));
+    cJSON_AddNumberToObject(data, "V4", round_to_dp((float)((int16_t)(two_bytes[1] << 8 | two_bytes[0])) / 1000.0, 1));
+
     read_bytes(0, I2C_CURRENT_REG, two_bytes, sizeof(two_bytes));
     cJSON_AddNumberToObject(data, "I", round_to_dp((float)((int16_t)(two_bytes[1] << 8 | two_bytes[0])) / 1000.0, 1));
+
+    read_bytes(0, I2C_CELL1_CURRENT_REG, two_bytes, sizeof(two_bytes));
+    cJSON_AddNumberToObject(data, "I1", round_to_dp((float)((int16_t)(two_bytes[1] << 8 | two_bytes[0])) / 1000.0, 1));
+
+    read_bytes(0, I2C_CELL2_CURRENT_REG, two_bytes, sizeof(two_bytes));
+    cJSON_AddNumberToObject(data, "I2", round_to_dp((float)((int16_t)(two_bytes[1] << 8 | two_bytes[0])) / 1000.0, 1));
+
+    read_bytes(0, I2C_CELL3_CURRENT_REG, two_bytes, sizeof(two_bytes));
+    cJSON_AddNumberToObject(data, "I3", round_to_dp((float)((int16_t)(two_bytes[1] << 8 | two_bytes[0])) / 1000.0, 1));
+
+    read_bytes(0, I2C_CELL4_CURRENT_REG, two_bytes, sizeof(two_bytes));
+    cJSON_AddNumberToObject(data, "I4", round_to_dp((float)((int16_t)(two_bytes[1] << 8 | two_bytes[0])) / 1000.0, 1));
 
     read_bytes(0, I2C_TEMPERATURE_REG, two_bytes, sizeof(two_bytes));
     cJSON_AddNumberToObject(data, "aT", round_to_dp((float)(two_bytes[1] << 8 | two_bytes[0]) / 10.0 - 273.15, 1));
 
     read_bytes(0, I2C_INT_TEMPERATURE_REG, two_bytes, sizeof(two_bytes));
     cJSON_AddNumberToObject(data, "iT", round_to_dp((float)(two_bytes[1] << 8 | two_bytes[0]) / 10.0 - 273.15, 1));
+
+    read_bytes(0, I2C_CELL1_TEMPERATURE_REG, two_bytes, sizeof(two_bytes));
+    cJSON_AddNumberToObject(data, "T1", round_to_dp((float)(two_bytes[1] << 8 | two_bytes[0]) / 10.0 - 273.15, 1));
+
+    read_bytes(0, I2C_CELL2_TEMPERATURE_REG, two_bytes, sizeof(two_bytes));
+    cJSON_AddNumberToObject(data, "T2", round_to_dp((float)(two_bytes[1] << 8 | two_bytes[0]) / 10.0 - 273.15, 1));
+
+    read_bytes(0, I2C_CELL3_TEMPERATURE_REG, two_bytes, sizeof(two_bytes));
+    cJSON_AddNumberToObject(data, "T3", round_to_dp((float)(two_bytes[1] << 8 | two_bytes[0]) / 10.0 - 273.15, 1));
+
+    read_bytes(0, I2C_CELL4_TEMPERATURE_REG, two_bytes, sizeof(two_bytes));
+    cJSON_AddNumberToObject(data, "T4", round_to_dp((float)(two_bytes[1] << 8 | two_bytes[0]) / 10.0 - 273.15, 1));
 
 
     // configurable data too
