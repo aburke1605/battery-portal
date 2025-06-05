@@ -23,6 +23,18 @@ export interface BatteryData {
   // isCharging: boolean;
   timestamp: number;
   isConnected: boolean;
+  cell1_current: number;
+  cell2_current: number;
+  cell3_current: number;
+  cell4_current: number;
+  cell1_temperature: number;
+  cell2_temperature: number;
+  cell3_temperature: number;
+  cell4_temperature: number;
+  cell1_voltage: number;
+  cell2_voltage: number;
+  cell3_voltage: number;
+  cell4_voltage: number;
 }
 
 export const parseBatteryData = (
@@ -47,6 +59,18 @@ export const parseBatteryData = (
   isConnected: isFromEsp32 ? !!raw?.connected_to_WiFi : !!raw,
   status: "good",
   timestamp: Date.now(),
+  cell1_current: raw?.I1 / 10 || 0,
+  cell2_current: raw?.I2 / 10 || 0,
+  cell3_current: raw?.I3 / 10 || 0,
+  cell4_current: raw?.I4 / 10 || 0,
+  cell1_temperature: raw?.T1 / 10 || 0,
+  cell2_temperature: raw?.T2 / 10 || 0,
+  cell3_temperature: raw?.T3 / 10 || 0,
+  cell4_temperature: raw?.T4 / 10 || 0,
+  cell1_voltage: raw?.V1 / 10 || 0,
+  cell2_voltage: raw?.V2 / 10 || 0,
+  cell3_voltage: raw?.V3 / 10 || 0,
+  cell4_voltage: raw?.V4 / 10 || 0,
 });
 
 // Alert Data Types

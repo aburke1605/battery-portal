@@ -648,6 +648,30 @@ const BatteryDetail: React.FC<BatteryDetailProps> = ({
                         )} */}
                       </div>
                     </div>
+                    <div>
+                      <h4 className="text-sm font-medium text-gray-500 mb-2">Cell 1</h4>
+                      <p className="text-2xl font-semibold text-gray-900">{battery.cell1_current} A </p>
+                      <p className="text-2xl font-semibold text-gray-900">{battery.cell1_temperature} °C</p>
+                      <p className="text-2xl font-semibold text-gray-900">{battery.cell1_voltage} V</p>
+                    </div>
+                    <div>
+                      <h4 className="text-sm font-medium text-gray-500 mb-2">Cell 2</h4>
+                      <p className="text-2xl font-semibold text-gray-900">{battery.cell2_current} A</p>
+                      <p className="text-2xl font-semibold text-gray-900">{battery.cell2_temperature} °C</p>
+                      <p className="text-2xl font-semibold text-gray-900">{battery.cell2_voltage} V</p>
+                    </div>
+                    <div>
+                      <h4 className="text-sm font-medium text-gray-500 mb-2">Cell 3</h4>
+                      <p className="text-2xl font-semibold text-gray-900">{battery.cell3_current} A</p>
+                      <p className="text-2xl font-semibold text-gray-900">{battery.cell3_temperature} °C</p>
+                      <p className="text-2xl font-semibold text-gray-900">{battery.cell3_voltage} V</p>
+                    </div>
+                    <div>
+                      <h4 className="text-sm font-medium text-gray-500 mb-2">Cell 4</h4>
+                      <p className="text-2xl font-semibold text-gray-900">{battery.cell4_current} A</p>
+                      <p className="text-2xl font-semibold text-gray-900">{battery.cell4_temperature} °C</p>
+                      <p className="text-2xl font-semibold text-gray-900">{battery.cell4_voltage} V</p>
+                    </div>
                     {/* <div>
                       <h4 className="text-sm font-medium text-gray-500 mb-2">Capacity</h4>
                       <p className="text-2xl font-semibold text-gray-900">{battery.capacity} kWh</p>
