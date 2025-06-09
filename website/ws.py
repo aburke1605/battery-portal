@@ -124,15 +124,19 @@ def esp_ws(ws):
                 data_list = json.loads(message)
                 if not data_list:
                     break
-  
-                master_node = data_list[0]
-  
-                esp_clients.add(master_node['id'])
+                # TODO how to reconstruct node data structure?
                 update_from_esp(data_list)
-
                 response["type"] = "echo"
                 response["content"] = message
-
+                # Add each data to esp_clients for broadcasting
+                for data in data_list:
+                    esp_id = data["content"].get("esp_id", data["id"])
+                    meta_data = {
+                        "ws": ws,
+                        "content":  json.dumps({"esp_id": esp_id, **data["content"]})
+                    }
+                    esp_clients.add(frozenset(meta_data.items())) # re-add updated data
+                broadcast()
             except json.JSONDecodeError:
                 response["content"]["status"] = "error"
                 response["content"]["message"] = "invalid json"
@@ -144,6 +148,7 @@ def esp_ws(ws):
     finally:
         with lock:
             pass
+            # TODO: remove esp from esp_clients 
             #esp_clients.discard(frozenset(meta_data.items())) # remove esp on disconnect
         logger.info(f"ESP disconnected. Total ESPs: {len(esp_clients)}")
 
