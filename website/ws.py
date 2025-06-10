@@ -5,6 +5,7 @@ from flask_sock import Sock
 from threading import Lock, Thread
 import time
 import json
+from urllib.parse import parse_qs
 
 from battery import update_from_esp
 
@@ -36,6 +37,8 @@ def broadcast():
         message = json.dumps(esp_data)
 
         for browser in set(browser_clients): # copy set to avoid modification issues
+            print('broadcasting to browser')
+            print( browser_clients)
             try:
                 browser.send(message) # broadcast to all browsers
             except Exception:
@@ -66,8 +69,14 @@ def forward_to_esp32(esp_id, message):
                 return {"esp_id": esp_id, "error": str(e)}
 
 # WS connection between browser client and flask webserver
+# TODO get data from database first then connect to ws
 @sock.route('/browser_ws')
 def browser_ws(ws):
+    query_string = ws.environ.get("QUERY_STRING", "")
+    query = parse_qs(query_string)
+    client_id = query.get("client_id", [None])[0]
+    logger.info(f"New connection: client_id={client_id}")
+
     with lock:
         browser_clients.add(ws)
 
