@@ -20,7 +20,7 @@ lock = Lock()
 response_lock = Lock()
 
 esp_clients = set()
-browser_clients = set()
+browser_clients = {}
 pending_responses = {}
 
 def broadcast():
@@ -34,15 +34,15 @@ def broadcast():
             content = json.loads(content)
             esp_data[content.pop("esp_id")] = content
 
-        message = json.dumps(esp_data)
-
-        for browser in set(browser_clients): # copy set to avoid modification issues
+        for esp_id, browser in browser_clients.items(): # copy set to avoid modification issues
             print('broadcasting to browser')
-            print( browser_clients)
             try:
+                if not esp_data[esp_id]:
+                    continue  # no data for this esp_id
+                message = json.dumps({esp_id: esp_data[esp_id]})
                 browser.send(message) # broadcast to all browsers
             except Exception:
-                browser_clients.discard(browser) # remove disconnected clients
+                del browser_clients[esp_id] # remove disconnected clients
 
 def forward_to_esp32(esp_id, message):
     with lock:
@@ -74,11 +74,11 @@ def forward_to_esp32(esp_id, message):
 def browser_ws(ws):
     query_string = ws.environ.get("QUERY_STRING", "")
     query = parse_qs(query_string)
-    client_id = query.get("client_id", [None])[0]
-    logger.info(f"New connection: client_id={client_id}")
+    esp_id = query.get("esp_id", [None])[0]
+    print(f"New connection: esp_id={esp_id}")
 
     with lock:
-        browser_clients.add(ws)
+        browser_clients[esp_id] = ws
 
     try:
         while True:
@@ -98,7 +98,7 @@ def browser_ws(ws):
 
     finally:
         with lock:
-            browser_clients.discard(ws) # remove browser on disconnect
+            del browser_clients[esp_id]  # remove browser client from dictionary
 
 # WS connection between esp and flask webserver
 # First object in array is the Master node

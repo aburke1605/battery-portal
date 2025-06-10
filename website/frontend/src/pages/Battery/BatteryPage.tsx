@@ -21,11 +21,10 @@ export default function BatteryPage({ isFromEsp32 = false }: BatteriesPageProps)
     if (!isFromEsp32) {
         const hash = window.location.hash;  // e.g., "#/battery-detail?esp_id=BMS_02"
         queryString = hash.split('?')[1];  // Extract "esp_id=BMS_02"
-    } else {
-        ws_url += "?auth_token=" + getAuthToken();
     }
     const urlParams = new URLSearchParams(queryString);
     const esp_id = urlParams.get('esp_id');
+    ws_url = isFromEsp32 ? ws_url += "?auth_token=" + getAuthToken() : ws_url += "?esp_id=" + esp_id;
 
     const [batteryItem, setSelectedBattery] = useState<BatteryData | null>(null);
     //const [setBatteries] = useState<BatteryData[]>(initialBatteries);
