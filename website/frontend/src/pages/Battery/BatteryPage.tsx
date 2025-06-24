@@ -211,7 +211,7 @@ export default function BatteryPage({ isFromEsp32 = false }: BatteriesPageProps)
                         sendReset={sendReset}
                     />
                 ) : (
-                    <p>Loading battery data...</p> // fallback UI
+                    <p> Connecting to battery... </p> // fallback UI
                 )}
             </div>
         </div>

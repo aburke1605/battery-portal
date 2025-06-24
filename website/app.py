@@ -61,9 +61,6 @@ def admin():
 def serve_react_static(path):
     return send_from_directory("frontend/dist", path)
 
-# Start scheduled task
-check_online_thread = check_online_task(app)
-check_online_thread.start()
 # Create the database and tables if they don't exist
 # Create seed data
 seed_data(app)

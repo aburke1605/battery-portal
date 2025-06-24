@@ -157,34 +157,3 @@ def get_batteries():
     batteries = DB.session.query(BatteryInfo).all()
     battery_tree = build_battery_tree(batteries)
     return jsonify(battery_tree)
-
-# Check online status
-def check_online_task(app):
-    def run():
-        with app.app_context():
-            print("Started check_online task.")
-            while True:
-                try:
-                    cutoff_time = datetime.now() - timedelta(minutes=1)
-                    print(cutoff_time)
-                    stale_batteries = DB.session.query(BatteryInfo).filter(
-                        and_(
-                            BatteryInfo.online_status == OnlineStatusEnum.online,
-                            BatteryInfo.last_updated_time < cutoff_time
-                        )
-                    ).all()
-                    print(stale_batteries)
-                    for battery in stale_batteries:
-                        print(f"[Monitor] Setting '{battery.id}' offline")
-                        battery.online_status = OnlineStatusEnum.offline
-
-                    if stale_batteries:
-                        DB.session.commit()
-
-                except Exception as e:
-                    DB.session.rollback()
-                    print(f"[Monitor] Error: {e}")
-
-                time.sleep(60)
-
-    return Thread(target=run, daemon=True)
