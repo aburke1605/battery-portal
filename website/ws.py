@@ -19,31 +19,25 @@ sock = Sock()
 lock = Lock()
 response_lock = Lock()
 
-esp_clients = set()
+esp_clients = {}
 browser_clients = {}
 pending_responses = {}
 
-def broadcast():
-    with lock:
-        esp_data = {}
-        for esp in esp_clients:
-            content = dict(esp)["content"]
-            if content == None:
-                # still registering
-                continue
-            content = json.loads(content)
-            esp_data[content.pop("esp_id")] = content
-
-        for esp_id, browser in browser_clients.items(): # copy set to avoid modification issues
-            print('broadcasting to browser')
-            try:
-                if not esp_data[esp_id]:
-                    continue  # no data for this esp_id
-                message = json.dumps({esp_id: esp_data[esp_id]})
-                browser.send(message) # broadcast to all browsers
-            except Exception:
+# Broadcast to all browser clients
+def broadcast(esp_id, data):
+    if not esp_id or not data:
+        return
+    if esp_id in browser_clients: # copy set to avoid modification issues
+        print('Broadcasting to browser', esp_id)
+        try:
+            ws_browser = browser_clients[esp_id]
+            message = json.dumps({esp_id: data})
+            ws_browser.send(message) # broadcast to all browsers
+        except Exception:
+            with lock:
                 del browser_clients[esp_id] # remove disconnected clients
 
+# TODO how to forwarrd to mutiple esp clients?
 def forward_to_esp32(esp_id, message):
     with lock:
         for esp in set(esp_clients):
@@ -51,54 +45,43 @@ def forward_to_esp32(esp_id, message):
             if content == None:
                 # still registering
                 continue
-
             try:
                 content = json.loads(content)
                 if content.get("esp_id") != esp_id:
                     # not the right one
                     continue
-
-
                 ws = dict(set(esp))["ws"]
                 ws.send(message)
-
                 return {"esp_id": esp_id, "message": "request sent to esp32"}
-
             except Exception as e:
                 logger.error(f"Error communicating with {esp_id}: {e}")
                 return {"esp_id": esp_id, "error": str(e)}
 
 # WS connection between browser client and flask webserver
-# TODO get data from database first then connect to ws
 @sock.route('/browser_ws')
 def browser_ws(ws):
     query_string = ws.environ.get("QUERY_STRING", "")
     query = parse_qs(query_string)
     esp_id = query.get("esp_id", [None])[0]
     print(f"New connection: esp_id={esp_id}")
-
     with lock:
         browser_clients[esp_id] = ws
-
     try:
         while True:
             message = ws.receive()
-            if message is None: # browser disconnected
+            if message is None:
                 break
             try:
                 data = json.loads(message)
                 esp_id = data["content"]["data"]["esp_id"]
                 forward_to_esp32(esp_id, message)
-
             except json.JSONDecodeError:
                 logger.error("/browser_ws: invalid JSON")
-
     except Exception as e:
         logger.error(f"Browser WebSocket error: {e}")
-
     finally:
         with lock:
-            del browser_clients[esp_id]  # remove browser client from dictionary
+            del browser_clients[esp_id]
 
 # WS connection between esp and flask webserver
 # First object in array is the Master node
@@ -115,59 +98,45 @@ def browser_ws(ws):
 #         "Q":88,"H":88,"V":41,"I":0,"aT":268,"iT":235,"BL":0,"BH":0,"CCT":0,"DCT":0,"CITL":0,"CITH":0
 #     }
 # }]
-@sock.route('/esp_ws')
+@sock.route('/esp_ws')  
 def esp_ws(ws):
-    print('esp_ws')
+    print('A new ESP connected', ws)
     try:
+        # TODO Consider the edge cases expection
         while True:
             message = ws.receive()
-            if message is None:  # esp disconnected
-                break
-
+            data_list = json.loads(message)
+            # Record Ids for contructing the esp_clitnes
+            # TODO: handle the case when data_list is empty
+            ids = [data["id"] for data in data_list]
+            master_id = ids[0]
+            esp_clients[master_id] = {'ws': ws, 'ids': ids, 'last_updated': time.time()}
+            # Forward the message to all browser clients
+            for data in data_list:
+                esp_id = data["id"]
+                esp_clients[esp_id] = {'ws': ws, 'content': data["content"]}
+                broadcast(esp_id, data["content"])
+            # Update database
+            update_from_esp(data_list)
             response = {
                 "type": "response",
-                "content": {}
+                "content": "Ok"
             }
-
-            try:
-                data_list = json.loads(message)
-                if not data_list:
-                    break
-                # TODO how to reconstruct node data structure?
-                update_from_esp(data_list)
-                response["type"] = "echo"
-                response["content"] = message
-                # Add each data to esp_clients for broadcasting
-                for data in data_list:
-                    esp_id = data["content"].get("esp_id", data["id"])
-                    meta_data = {
-                        "ws": ws,
-                        "content":  json.dumps({"esp_id": esp_id, **data["content"]})
-                    }
-                    esp_clients.add(frozenset(meta_data.items())) # re-add updated data
-                broadcast()
-            except json.JSONDecodeError:
-                response["content"]["status"] = "error"
-                response["content"]["message"] = "invalid json"
             ws.send(json.dumps(response))
-
     except Exception as e:
         logger.error(f"ESP WebSocket error: {e}")
-
     finally:
-        with lock:
-            pass
-            # TODO: remove esp from esp_clients 
-            #esp_clients.discard(frozenset(meta_data.items())) # remove esp on disconnect
         logger.info(f"ESP disconnected. Total ESPs: {len(esp_clients)}")
 
+# Check structure of esp_clients and handle offline ESPs
 def ping_esps(delay=5):
     while True:
         message = {
             "type": "query",
             "content": "are you still there?",
         }
-
+        print("Pinging ESPs...")
+        print(esp_clients)
         with lock:
             for esp in set(esp_clients):
                 content = dict(esp)["content"]
@@ -200,5 +169,5 @@ def ping_esps(delay=5):
 
         time.sleep(20)
 
-# thread = Thread(target=ping_esps, daemon=True)
-# thread.start()
+thread = Thread(target=ping_esps, daemon=True)
+thread.start()

@@ -12,7 +12,7 @@ from flask_migrate import Migrate
 from seed import seed_data
 # Import user model for migrations
 from user import User, Role
-from battery import battery_bp, check_online_task
+from battery import battery_bp
 
 
 # Load environment variables from .env file will not overwrite system env vars
