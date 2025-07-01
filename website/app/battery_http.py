@@ -1,12 +1,10 @@
-from flask import request, jsonify, Blueprint
+from flask import jsonify, Blueprint
 from sqlalchemy import Table, Column, DateTime, Integer, Float, insert, select, inspect, and_
-from sqlalchemy.exc import IntegrityError
-from datetime import datetime, timedelta
-import time
+from datetime import datetime
 import enum
-from threading import Thread
-from db import DB
+from app.db import DB
 from collections import defaultdict
+from app.battery_status import esp_clients, browser_clients
 
 # Blueprint setup
 battery_bp = Blueprint('battery_bp', __name__, url_prefix='/api/battery')
@@ -24,61 +22,72 @@ class BatteryInfo(DB.Model):
     name = DB.Column(DB.String(100), nullable=False)
     temperature = DB.Column(DB.Float, nullable=True)
     voltage = DB.Column(DB.Float, nullable=True)
-    online_status = DB.Column(DB.Enum(OnlineStatusEnum), nullable=False, default=OnlineStatusEnum.offline)
     last_updated_time = DB.Column(DB.DateTime, default=datetime.now, onupdate=datetime.now, nullable=False)
     lat = DB.Column(DB.Float, nullable=True)
     lon = DB.Column(DB.Float, nullable=True)
-    lon_test = DB.Column(DB.Float, nullable=True)
-    lon_test_db = DB.Column(DB.Float, nullable=True)
     parent_id = DB.Column(DB.String(64), nullable=True)
 
     def __repr__(self):
         return f'<BatteryInfo {self.id} - {self.name}>'
 
-def update_from_esp(data_list):
-    # First object in array is the master node
-    if not data_list or data_list is None:
+# Reset parent_id for all batteries
+def reset_structure():
+    all_batteries = DB.session.query(BatteryInfo).all()
+    for b in all_batteries:
+        b.parent_id = None
+    DB.session.commit()
+
+# Update the structure of batteries based on esp_client_ids
+def update_structure(esp_client_ids):
+    if not esp_clients or len(esp_client_ids) == 0:
         return False
+    # Restructure parent-child relationships based on esp_client
     parent_id = 0
-    for i, content_data in enumerate(data_list):
-        battery_id = content_data['id']
+    for i, esp_id in esp_client_ids:
+        parent_id = esp_id if i == 0 else 0
+        battery = DB.session.get(BatteryInfo, esp_id)
+        if battery:
+            battery.parent_id = 0 if i == 0 else parent_id
+            battery.last_updated_time = datetime.now()
+        DB.session.commit()
+
+# Update the database with new battery data
+def update_database(data_list):
+    # First object in array is the master node
+    if not data_list or len(data_list) == 0:
+        return False
+    for _, content_data in enumerate(data_list):
+        esp_id = content_data['id']
         data = content_data['content']
-        # Set parent_id for non-master nodes
-        if i == 0:
-            parent_id = battery_id
         try:
             # Try to get existing record
-            battery = DB.session.get(BatteryInfo, battery_id)
+            battery = DB.session.get(BatteryInfo, esp_id)
             if battery:
                 # Update existing record
-                battery.name=battery_id
+                battery.name=esp_id
                 battery.temperature=data['aT']/10
                 battery.voltage=data['V']/10
-                battery.online_status = OnlineStatusEnum.online
-                battery.parent_id = None if i == 0 else parent_id
                 battery.last_updated_time = datetime.now()
-                print(f"Updated existing battery with ID: {battery_id}")
+                print(f"Updated existing battery with ID: {esp_id}")
                 print(battery)
             else:
                 # Insert new record
                 battery = BatteryInfo(
-                    id=battery_id,
-                    name=battery_id,
+                    id=esp_id,
+                    name=esp_id,
                     temperature=data['aT']/10,
                     voltage=data['V']/10,
-                    online_status=OnlineStatusEnum.online,
-                    parent_id=None if i == 0 else parent_id,
                     last_updated_time = datetime.now()
                 )
                 DB.session.add(battery)
-                print(f"Inserted new battery with ID: {battery_id}")
+                print(f"Inserted new battery with ID: {esp_id}")
             # Commit the transaction
             DB.session.commit()
         except Exception as e:
             DB.session.rollback()
-            print(f"Error processing battery ID {battery_id}: {e}")
+            print(f"Error processing battery ID {esp_id}: {e}")
         # Dynamic create battery data table
-        data_table = create_battery_data_table(battery_id)
+        data_table = create_battery_data_table(esp_id)
         try:
             stmt = insert(data_table).values(
                 timestamp=datetime.now(),
@@ -89,17 +98,17 @@ def update_from_esp(data_list):
             )
             DB.session.execute(stmt)
             DB.session.commit()
-            print(f"Inserted new battery_data with ID: {battery_id}")
+            print(f"Inserted new battery_data with ID: {esp_id}")
         except Exception as e:
             DB.session.rollback()
-            print(f"Error processing battery_data ID {battery_id}: {e}")
+            print(f"Error processing battery_data ID {esp_id}: {e}")
 
-# Dynamic battery_data_<battery_id> table factory
-def create_battery_data_table(battery_id, metadata=None):
+# Dynamic battery_data_<esp_id> table factory
+def create_battery_data_table(esp_id, metadata=None):
     if metadata is None:
         metadata = DB.metadata
 
-    table_name = f"battery_data_{battery_id.lower()}"
+    table_name = f"battery_data_{esp_id.lower()}"
     # Check if table exists
     inspector = inspect(DB.engine)
     if not inspector.has_table(table_name):
@@ -121,16 +130,18 @@ def create_battery_data_table(battery_id, metadata=None):
 
     return data_table
 
+# Structure the battery tree for UI display
 def build_battery_tree(batteries):
     node_map = {}
     children_map = defaultdict(list)
-
-    # First, create dicts of battery info and collect children
+    # Get all online batteries
+    online_esp_ids = [esp_id for client in esp_clients.values() for esp_id in client['ids']]
+    # Create dicts of battery info and collect children
     for b in batteries:
         node_map[b.id] = {
             'id': b.id,
             'name': b.name,
-            'online_status': b.online_status.value,
+            'online_status': OnlineStatusEnum.online if b.id in online_esp_ids else OnlineStatusEnum.offline,
             'last_updated_time': b.last_updated_time.isoformat(),
             'lat': b.lat,
             'lon': b.lon,

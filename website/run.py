@@ -3,16 +3,16 @@ import sys
 import logging
 from flask import Flask, send_from_directory
 from flask_security import Security
-from ws import sock
-from db import db_bp, DB
-from user import user_bp, user_datastore
+from app.battery_ws import sock
+from app.db import db_bp, DB
+from app.user import user_bp, user_datastore
 import flask_admin
 from dotenv import load_dotenv
 from flask_migrate import Migrate
-from seed import seed_data
+from app.seed import seed_data
 # Import user model for migrations
-from user import User, Role
-from battery import battery_bp
+from app.user import User, Role
+from app.battery_http import battery_bp
 
 
 # Load environment variables from .env file will not overwrite system env vars
@@ -66,4 +66,4 @@ def serve_react_static(path):
 seed_data(app)
 
 if __name__ == '__main__':
-    app.run(debug=True, ssl_context=("local_cert.pem", "local_key.pem"), host="0.0.0.0")
+    app.run(debug=True, ssl_context=("./cert/local_cert.pem", "./cert/local_key.pem"), host="0.0.0.0")

@@ -4,7 +4,7 @@ from flask import Blueprint, request, jsonify
 from flask_security import SQLAlchemyUserDatastore, UserMixin, RoleMixin, login_user, login_required, logout_user
 from flask_security.utils import hash_password
 from flask_login import current_user
-from db import DB
+from app.db import DB
 
 # Blueprint setup
 user_bp = Blueprint('user_bp', __name__, url_prefix='/api/users')

@@ -9,3 +9,4 @@ mysql-connector-python==9.2.0
 matplotlib==3.10.0 
 Flask-Migrate==4.1.0
 python-dotenv==1.1.0
+apscheduler==3.11.0

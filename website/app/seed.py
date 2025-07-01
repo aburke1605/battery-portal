@@ -1,6 +1,6 @@
 from flask_security.utils import hash_password
-from db import DB
-from user import User, Role, user_datastore
+from app.db import DB
+from app.user import User, Role, user_datastore
 import os
 from flask_migrate import upgrade
 

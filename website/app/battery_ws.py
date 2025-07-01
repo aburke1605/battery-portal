@@ -2,26 +2,16 @@ import logging
 logger = logging.getLogger(__name__)
 
 from flask_sock import Sock
-from threading import Lock, Thread
+from threading import Lock
 import time
 import json
 from urllib.parse import parse_qs
-
-from battery import update_from_esp
-
-time_of_last_update = None
-def update_time():
-    global time_of_last_update
-    time_of_last_update = time.strftime('%H:%M:%S')
-update_time()
+from apscheduler.schedulers.background import BackgroundScheduler
+from app.battery_http import update_database, update_structure, reset_structure
+from app.battery_status import esp_clients, browser_clients
 
 sock = Sock()
 lock = Lock()
-response_lock = Lock()
-
-esp_clients = {}
-browser_clients = {}
-pending_responses = {}
 
 # Broadcast to all browser clients
 def broadcast(esp_id, data):
@@ -117,7 +107,7 @@ def esp_ws(ws):
                 esp_clients[esp_id] = {'ws': ws, 'content': data["content"]}
                 broadcast(esp_id, data["content"])
             # Update database
-            update_from_esp(data_list)
+            update_database(data_list)
             response = {
                 "type": "response",
                 "content": "Ok"
@@ -129,45 +119,21 @@ def esp_ws(ws):
         logger.info(f"ESP disconnected. Total ESPs: {len(esp_clients)}")
 
 # Check structure of esp_clients and handle offline ESPs
-def ping_esps(delay=5):
-    while True:
-        message = {
-            "type": "query",
-            "content": "are you still there?",
-        }
-        print("Pinging ESPs...")
-        print(esp_clients)
-        with lock:
-            for esp in set(esp_clients):
-                content = dict(esp)["content"]
-                if content == None:
-                    # still registering
-                    continue
+def check_online():
+    print("Checking online ESP clients...")
+    # Check if esp_clients is offline
+    now = time.time()
+    timeout = 30  # 30 seconds timeout for ESP clients
+    with lock:
+        reset_structure()
+        for esp_id, client in list(esp_clients.items()):
+            if now - client['last_updated'] > timeout:
+                print(f"ESP group master_id {esp_id} is offline.")
+                del esp_clients[esp_id]
+                continue
+            # Reconstruct esp_clients
+            update_structure(client['ids'])
 
-                try:
-                    content = json.loads(content)
-                    esp_id = content.get("esp_id")
-
-                    ws = dict(set(esp))["ws"]
-                    ws.send(json.dumps(message))
-
-                    start = time.time()
-                    response = False
-                    while not response and time.time() - start < delay: # seconds
-                        with response_lock:
-                            if esp_id in pending_responses.keys():
-                                if pending_responses.pop(esp_id)["response"] == "yes":
-                                    response = True
-                        time.sleep(0.1)
-
-                    if not response:
-                        esp_clients.discard(frozenset(esp))
-                        update_time()
-
-                except Exception as e:
-                    logger.error(f"Error communicating with {esp_id}: {e}")
-
-        time.sleep(20)
-
-thread = Thread(target=ping_esps, daemon=True)
-thread.start()
+scheduler = BackgroundScheduler()
+scheduler.add_job(check_online, 'interval', seconds=30)
+scheduler.start()
