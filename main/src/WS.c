@@ -194,6 +194,7 @@ esp_err_t perform_request(cJSON *message, cJSON *response) {
             if (esp_id && strcmp(esp_id->valuestring, "") != 0 && esp_id->valuestring != ESP_ID) {
                 ESP_LOGI(TAG, "Changing device name...");
                 write_bytes(I2C_DATA_SUBCLASS_ID, I2C_NAME_OFFSET, (uint8_t *)esp_id->valuestring, 11);
+                strcpy(ESP_ID, esp_id->valuestring);
             }
 
             int BL = cJSON_GetObjectItem(data, "BL")->valueint;
@@ -349,27 +350,17 @@ void send_message(const char *message) {
         ESP_LOGE(TAG, "WebSocket queue full! Dropping message: %s", message);
     }
 }
-// void send_message(const ws_payload *message) {
-//     if (xQueueSend(ws_queue, message, portMAX_DELAY) != pdPASS) {
-//         ESP_LOGE(TAG, "WebSocket queue full! Dropping message.");
-//     }
-// }
 
 void message_queue_task(void *pvParameters) {
     char message[WS_MESSAGE_MAX_LEN];
-    // ws_payload message;
 
     while (true) {
         if (xQueueReceive(ws_queue, message, portMAX_DELAY) == pdPASS) {
-        // if (xQueueReceive(ws_queue, &message, portMAX_DELAY) == pdPASS) {
             if (esp_websocket_client_is_connected(ws_client)) {
                 if (VERBOSE) ESP_LOGI(TAG, "Sending: %s", message);
                 esp_websocket_client_send_text(ws_client, message, strlen(message), portMAX_DELAY);
-                // if (VERBOSE) ESP_LOGI(TAG, "Sending message to server...");
-                // esp_websocket_client_send_bin(ws_client, (const char*)&message, sizeof(ws_payload), portMAX_DELAY);
             } else {
                 ESP_LOGW(TAG, "WebSocket not connected, dropping message: %s", message);
-                // ESP_LOGW(TAG, "WebSocket not connected, dropping message.");
             }
         }
 
@@ -431,72 +422,6 @@ void websocket_event_handler(void *arg, esp_event_base_t event_base, int32_t eve
 
 void websocket_task(void *pvParameters) {
     while (true) {
-        ws_payload message = {
-            .type = 1,
-        };
-
-        uint8_t eleven_bytes[11];
-        uint8_t two_bytes[2];
-
-        read_bytes(I2C_DATA_SUBCLASS_ID, I2C_NAME_OFFSET, eleven_bytes, sizeof(eleven_bytes));
-        if (strcmp((char *)eleven_bytes, "") != 0) strncpy(ESP_ID, (char *)eleven_bytes, 10);
-        // cJSON_AddStringToObject(data, "name", ESP_ID);
-        char esp_id_number[3];
-        strcpy(esp_id_number, &ESP_ID[4]);
-        message.esp_id = atoi(esp_id_number);
-
-        // read sensor data
-        // these values are big-endian
-        read_bytes(0, I2C_STATE_OF_CHARGE_REG, two_bytes, sizeof(two_bytes));
-        cJSON_AddNumberToObject(data, "Q", two_bytes[1] << 8 | two_bytes[0]);
-        message.Q = (uint8_t)(two_bytes[1] << 8 | two_bytes[0]);
-
-        read_bytes(0, I2C_STATE_OF_HEALTH_REG, two_bytes, sizeof(two_bytes));
-        cJSON_AddNumberToObject(data, "H", two_bytes[1] << 8 | two_bytes[0]);
-        message.H = (uint8_t)(two_bytes[1] << 8 | two_bytes[0]);
-
-        read_bytes(0, I2C_VOLTAGE_REG, two_bytes, sizeof(two_bytes));
-        cJSON_AddNumberToObject(data, "V", round_to_dp((float)(two_bytes[1] << 8 | two_bytes[0]) / 1000.0, 1));
-        message.V = (uint8_t)round_to_dp((float)(two_bytes[1] << 8 | two_bytes[0]) / 1000.0, 1);
-
-        read_bytes(0, I2C_CURRENT_REG, two_bytes, sizeof(two_bytes));
-        cJSON_AddNumberToObject(data, "I", round_to_dp((float)((int16_t)(two_bytes[1] << 8 | two_bytes[0])) / 1000.0, 1));
-        message.I = (int8_t)round_to_dp((float)(two_bytes[1] << 8 | two_bytes[0]) / 1000.0, 1);
-
-        read_bytes(0, I2C_TEMPERATURE_REG, two_bytes, sizeof(two_bytes));
-        cJSON_AddNumberToObject(data, "aT", round_to_dp((float)(two_bytes[1] << 8 | two_bytes[0]) / 10.0 - 273.15, 1));
-        message.aT = (int16_t)round_to_dp((float)(two_bytes[1] << 8 | two_bytes[0]) / 10.0 - 273.15, 1);
-
-        read_bytes(0, I2C_INT_TEMPERATURE_REG, two_bytes, sizeof(two_bytes));
-        cJSON_AddNumberToObject(data, "iT", round_to_dp((float)(two_bytes[1] << 8 | two_bytes[0]) / 10.0 - 273.15, 1));
-        message.iT = (int16_t)round_to_dp((float)(two_bytes[1] << 8 | two_bytes[0]) / 10.0 - 273.15, 1);
-
-        // configurable data too
-        // these values are little-endian
-        read_bytes(I2C_DISCHARGE_SUBCLASS_ID, I2C_BL_OFFSET, two_bytes, sizeof(two_bytes));
-        cJSON_AddNumberToObject(data, "BL", two_bytes[0] << 8 | two_bytes[1]);
-        message.BL = (uint16_t)(two_bytes[0] << 8 | two_bytes[1]);
-
-        read_bytes(I2C_DISCHARGE_SUBCLASS_ID, I2C_BH_OFFSET, two_bytes, sizeof(two_bytes));
-        cJSON_AddNumberToObject(data, "BH", two_bytes[0] << 8 | two_bytes[1]);
-        message.BH = (uint16_t)(two_bytes[0] << 8 | two_bytes[1]);
-
-        read_bytes(I2C_CURRENT_THRESHOLDS_SUBCLASS_ID, I2C_CHG_CURRENT_THRESHOLD_OFFSET, two_bytes, sizeof(two_bytes));
-        cJSON_AddNumberToObject(data, "CCT", two_bytes[0] << 8 | two_bytes[1]);
-        message.CCT = (uint8_t)(two_bytes[0] << 8 | two_bytes[1]);
-
-        read_bytes(I2C_CURRENT_THRESHOLDS_SUBCLASS_ID, I2C_DSG_CURRENT_THRESHOLD_OFFSET, two_bytes, sizeof(two_bytes));
-        cJSON_AddNumberToObject(data, "DCT", two_bytes[0] << 8 | two_bytes[1]);
-        message.DCT = (uint8_t)(two_bytes[0] << 8 | two_bytes[1]);
-
-        read_bytes(I2C_CHARGE_INHIBIT_CFG_SUBCLASS_ID, I2C_CHG_INHIBIT_TEMP_LOW_OFFSET, two_bytes, sizeof(two_bytes));
-        cJSON_AddNumberToObject(data, "CITL", two_bytes[0] << 8 | two_bytes[1]);
-        message.CITL = (int8_t)(two_bytes[0] << 8 | two_bytes[1]);
-
-        read_bytes(I2C_CHARGE_INHIBIT_CFG_SUBCLASS_ID, I2C_CHG_INHIBIT_TEMP_HIGH_OFFSET, two_bytes, sizeof(two_bytes));
-        cJSON_AddNumberToObject(data, "CITH", two_bytes[0] << 8 | two_bytes[1]);
-        message.CITH = (uint16_t)(two_bytes[0] << 8 | two_bytes[1]);
-
         // get sensor data
         char* data_string = LORA_IS_RECEIVER ? "" : get_data(false); // goes to website
 
