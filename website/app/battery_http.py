@@ -65,7 +65,8 @@ def update_database(data_list):
     # First object in array is the master node
     if not data_list or len(data_list) == 0:
         return False
-    for _, content_data in enumerate(data_list):
+    parent_id = data_list[0]['id']
+    for i, content_data in enumerate(data_list):
         esp_id = content_data['id']
         data = content_data['content']
         try:
@@ -76,6 +77,7 @@ def update_database(data_list):
                 battery.name=esp_id
                 battery.temperature=data['aT']/10
                 battery.voltage=data['V']/10
+                battery.parent_id = None if i == 0 else parent_id
                 battery.last_updated_time = datetime.now()
                 print(f"Updated existing battery with ID: {esp_id}")
                 print(battery)
