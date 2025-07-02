@@ -376,14 +376,17 @@ void lora_tx_task(void *pvParameters) {
         n_devices = 1; // reset
 
 
-
-        uint16_t full_len = strlen(combined_message);
-        uint8_t chunk[LORA_MAX_PACKET_LEN + 1] = {0};  // room for payload + '\0'
+        uint8_t encoded_combined_payload[(sizeof(radio_payload) + 1) * (MESH_SIZE + 1)];
+        //                                         ^              ^            ^    ^
+        //                                     19 bytes       allow for       total number
+        //                                       per           escaped        of devices in
+        //                                     payload      character per    mesh, including
+        //                                                 payload, on avg        self
+        size_t full_len = encode_frame(combined_payload, sizeof(combined_payload), encoded_combined_payload);
+        uint8_t chunk[LORA_MAX_PACKET_LEN] = {0};
         for (int offset = 0; offset < full_len; offset += LORA_MAX_PACKET_LEN) {
             int chunk_len = MIN(LORA_MAX_PACKET_LEN, full_len - offset);
-            memcpy(chunk, combined_message + offset, chunk_len);
-            chunk[chunk_len] = '\0';  // optional if treated as string
-
+            memcpy(chunk, encoded_combined_payload + offset, chunk_len);
 
             // Set to standby
             lora_write_register(REG_OP_MODE, 0b10000001);  // LoRa + standby
@@ -419,7 +422,7 @@ void lora_tx_task(void *pvParameters) {
             vTaskDelay(pdMS_TO_TICKS(50));  // brief delay between chunks
         }
         int transmission_delay = calculate_transmission_delay(LORA_SF, LORA_BW, 8, full_len, LORA_CR, LORA_HEADER, LORA_LDRO);
-        ESP_LOGI(TAG, "Packet sent: \"%s\". Delaying for %d ms", combined_message, transmission_delay);
+        ESP_LOGI(TAG, "Radio packet sent. Delaying for %d ms", transmission_delay);
 
         vTaskDelay(pdMS_TO_TICKS(transmission_delay));
     }
