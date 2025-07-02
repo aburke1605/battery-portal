@@ -510,8 +510,7 @@ void websocket_task(void *pvParameters) {
                 } else {
                     char message[WS_MESSAGE_MAX_LEN];
                     snprintf(message, sizeof(message), "{\"type\":\"data\",\"id\":\"%s\",\"content\":%s}", ESP_ID, data_string);
-                    send_message(message);
-                    // send_message(&message);
+                    if (!LORA_IS_RECEIVER) send_message(message);
                 }
             }
 
