@@ -516,7 +516,7 @@ void websocket_task(void *pvParameters) {
             }
 
             // clean up
-            free(data_string);
+            if (!LORA_IS_RECEIVER) free(data_string);
             free(full_data_string);
         }
 
