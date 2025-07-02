@@ -25,21 +25,24 @@ def broadcast(esp_id, data):
         except Exception:
             del browser_clients[esp_id] # remove disconnected clients
 
-# TODO how to forwarrd to mutiple esp clients?
+# Forwarrd to master esp32 client from browser client
+# {
+# 'type': 'request', 
+# 'master_id': 'esp1_master', 
+# 'esp_id': 'esp1_master',
+# 'content': {'summary': 'change-settings', 'data': {'esp_id': 'esp1_master', 'BL': 0, 'BH': 0, 'CITL': -21, 'CITH': 0, 'CCT': 0, 'DCT': 0}}
+# }
 def forward_to_esp32(esp_id, message):
-    with lock:
-        for esp in set(esp_clients):
-            content = dict(esp)["content"]
-            if content == None:
-                # still registering
-                continue
+    if not esp_id or not message:
+        return {"esp_id": esp_id, "error": "Invalid esp_id or message"}
+    # Check which esp master belongs to
+    for master_id, value in esp_clients.items():
+        if esp_id in value["ids"]:
             try:
-                content = json.loads(content)
-                if content.get("esp_id") != esp_id:
-                    # not the right one
-                    continue
-                ws = dict(set(esp))["ws"]
-                ws.send(message)
+                content = json.loads(message)
+                content["master_id"] = master_id
+                content["esp_id"] = esp_id
+                value['ws'].send(content)
                 return {"esp_id": esp_id, "message": "request sent to esp32"}
             except Exception as e:
                 logger.error(f"Error communicating with {esp_id}: {e}")
