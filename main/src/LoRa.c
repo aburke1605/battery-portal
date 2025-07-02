@@ -294,10 +294,28 @@ size_t decode_frame(const uint8_t* input, size_t input_len, uint8_t* output) {
 
 void convert_from_binary(uint8_t* decoded_message) {
     uint8_t n_devices = decoded_message[0];
+    cJSON* json_array = cJSON_CreateArray();
+    if (json_array == NULL) {
+        ESP_LOGE(TAG, "Failed to create JSON array");
+        return;
+    }
+
     for (uint8_t i=0; i<n_devices; i++) {
         radio_payload* payload = (radio_payload*)&decoded_message[1+i*sizeof(radio_payload)];
         cJSON* message = cJSON_CreateObject();
+        if (message == NULL) {
+            ESP_LOGE(TAG, "Failed to create JSON object");
+            cJSON_Delete(json_array);
+            return;
+        }
         cJSON* content = cJSON_CreateObject();
+        if (content == NULL) {
+            ESP_LOGE(TAG, "Failed to create content object");
+            cJSON_Delete(message);
+            cJSON_Delete(json_array);
+            return;
+        }
+
         cJSON_AddNumberToObject(content, "Q", payload->Q);
         cJSON_AddNumberToObject(content, "H", payload->H);
         cJSON_AddNumberToObject(content, "V", payload->V);
@@ -314,19 +332,22 @@ void convert_from_binary(uint8_t* decoded_message) {
         if (payload->type == 1) cJSON_AddStringToObject(message, "type", "data");
 
         char id_str[8]; // enough to hold "bms_255\0"
-        sprintf(id_str, "bms_%u", payload->esp_id);
+        snprintf(id_str, sizeof(id_str), "bms_%u", payload->esp_id);
         cJSON_AddStringToObject(message, "id", id_str);
 
         cJSON_AddItemToObject(message, "content", content);
 
+        cJSON_AddItemToArray(json_array, message);
+    }
 
-        char* message_string = cJSON_PrintUnformatted(message);
-        cJSON_Delete(message);
-        if (message_string == NULL) {
-            ESP_LOGE(TAG, "Failed to print cJSON to string\n");
-            return;
-        }
-        else send_message(message_string);
+    char* message_string = cJSON_PrintUnformatted(json_array);
+    cJSON_Delete(json_array);
+    if (message_string == NULL) {
+        ESP_LOGE(TAG, "Failed to print cJSON to string\n");
+        return;
+    } else {
+        send_message(message_string);
+        free(message_string);
     }
 }
 
