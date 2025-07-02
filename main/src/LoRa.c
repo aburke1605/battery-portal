@@ -333,22 +333,38 @@ void convert_from_binary(uint8_t* decoded_message) {
 void lora_tx_task(void *pvParameters) {
     char individual_message[LORA_MAX_PACKET_LEN];
 
-    char combined_message[3 + (LORA_MAX_PACKET_LEN + 2) * (MESH_SIZE + 1) - 2 + 3]; // +3 for "_S_", +2 for ", " between each message instance, +1 for this ESP32s own BMS data, -2 for strenuous ", ", +3 for "_E_"
+    uint8_t n_devices = 1; // the transmitter, at least
 
     while (true) {
         // now form the LoRa message out of non-empty messages and transmit
-        size_t combined_capacity = sizeof(combined_message);
-        combined_message[0] = '\0';
-        strncat(combined_message, "_S_", combined_capacity - strlen("_S_") - 1);
+        for (int i=0; i<MESH_SIZE; i++) {
+            if (strcmp(all_messages[i].id, "") != 0)
+                n_devices++;
+        }
 
+        uint8_t combined_payload[1 + n_devices * sizeof(radio_payload)];
+        combined_payload[0] = n_devices; // first bytes is number of radio_payloads to expect
+
+        // get own data first
         char *data_string = get_data(false);
         snprintf(individual_message, sizeof(individual_message), "{\"type\":\"data\",\"id\":\"%s\",\"content\":%s}", ESP_ID, data_string);
-        strncat(combined_message, individual_message, combined_capacity - strlen(combined_message) - 1);
+        // add to radio payload
+        radio_payload* payload;
+        payload = convert_to_binary(individual_message);
+        if (payload == NULL) continue;
+        memcpy(&combined_payload[1], (uint8_t*)payload, sizeof(radio_payload));
+        free(payload);
 
+        // now add the data of other devices in mesh to payload
+        n_devices = 1;
         for (int i=0; i<MESH_SIZE; i++) {
             if (strcmp(all_messages[i].id, "") != 0) {
-                strncat(combined_message, ", ", combined_capacity - strlen(combined_message) - 1);
-                strncat(combined_message, all_messages[i].message, combined_capacity - strlen(combined_message) - 1);
+                n_devices++;
+
+                payload = convert_to_binary(all_messages[i].message);
+                if (payload == NULL) continue;
+                memcpy(&combined_payload[1 + (n_devices-1) * sizeof(radio_payload)], (uint8_t*)payload, sizeof(radio_payload));
+                free(payload);
 
                 // clear the message slot again in case of disconnect
                 strcpy(all_messages[i].id, "");
@@ -357,12 +373,7 @@ void lora_tx_task(void *pvParameters) {
                 all_messages[i].message[0] = '\0';
             }
         }
-
-        strncat(combined_message, "_E_", combined_capacity - strlen("_E_") - 1);
-
-        if (strlen(combined_message) >= sizeof(combined_message) - 1) {
-            ESP_LOGW(TAG, "combined_message may have been truncated!");
-        }
+        n_devices = 1; // reset
 
 
 
