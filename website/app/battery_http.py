@@ -30,26 +30,35 @@ class BatteryInfo(DB.Model):
     def __repr__(self):
         return f'<BatteryInfo {self.id} - {self.name}>'
 
-# Reset parent_id for all batteries
-def reset_structure():
+# Update the structure of batteries based on esp_client_ids
+def update_structure(esp_group_ids):
+    if not esp_group_ids or len(esp_group_ids) == 0:
+        return
+    # Reset all batteries' parent_id to None
     all_batteries = DB.session.query(BatteryInfo).all()
     for b in all_batteries:
         b.parent_id = None
     DB.session.commit()
-
-# Update the structure of batteries based on esp_client_ids
-def update_structure(esp_client_ids):
-    if not esp_clients or len(esp_client_ids) == 0:
-        return False
-    # Restructure parent-child relationships based on esp_client
-    parent_id = 0
-    for i, esp_id in esp_client_ids:
-        parent_id = esp_id if i == 0 else 0
-        battery = DB.session.get(BatteryInfo, esp_id)
-        if battery:
-            battery.parent_id = 0 if i == 0 else parent_id
-            battery.last_updated_time = datetime.now()
-        DB.session.commit()
+    for esp_client_ids in esp_group_ids:
+        # Restructure parent-child relationships based on esp_client
+        print(esp_client_ids)
+        parent_id = None
+        for i, esp_id in enumerate(esp_client_ids):
+            print(esp_id)
+            if i == 0:
+                # First ESP in the list is the master node
+                parent_id = esp_id
+            battery = DB.session.get(BatteryInfo, esp_id)
+            print(battery)
+            if battery:
+                if i == 0:
+                    # Master node has no parent
+                    battery.parent_id = None
+                else:
+                    # Set parent_id for child nodes
+                    battery.parent_id = parent_id
+                battery.last_updated_time = datetime.now()
+            DB.session.commit()
 
 # Update the database with new battery data
 def update_database(data_list):
@@ -141,7 +150,7 @@ def build_battery_tree(batteries):
         node_map[b.id] = {
             'id': b.id,
             'name': b.name,
-            'online_status': OnlineStatusEnum.online if b.id in online_esp_ids else OnlineStatusEnum.offline,
+            'online_status': OnlineStatusEnum.online.value if b.id in online_esp_ids else OnlineStatusEnum.offline.value,
             'last_updated_time': b.last_updated_time.isoformat(),
             'lat': b.lat,
             'lon': b.lon,

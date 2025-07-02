@@ -13,6 +13,8 @@ from app.seed import seed_data
 # Import user model for migrations
 from app.user import User, Role
 from app.battery_http import battery_bp
+from app.battery_ws import check_online
+from apscheduler.schedulers.background import BackgroundScheduler
 
 
 # Load environment variables from .env file will not overwrite system env vars
@@ -61,9 +63,12 @@ def admin():
 def serve_react_static(path):
     return send_from_directory("frontend/dist", path)
 
-# Create the database and tables if they don't exist
 # Create seed data
 seed_data(app)
+# Start the background scheduler to check online status
+scheduler = BackgroundScheduler()
+scheduler.add_job(check_online, 'interval', seconds=30, args=[app]) 
+scheduler.start()
 
 if __name__ == '__main__':
     app.run(debug=True, ssl_context=("./cert/local_cert.pem", "./cert/local_key.pem"), host="0.0.0.0")

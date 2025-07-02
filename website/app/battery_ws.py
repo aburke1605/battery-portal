@@ -6,8 +6,7 @@ from threading import Lock
 import time
 import json
 from urllib.parse import parse_qs
-from apscheduler.schedulers.background import BackgroundScheduler
-from app.battery_http import update_database, update_structure, reset_structure
+from app.battery_http import update_database, update_structure
 from app.battery_status import esp_clients, browser_clients
 
 sock = Sock()
@@ -104,7 +103,7 @@ def esp_ws(ws):
             # Forward the message to all browser clients
             for data in data_list:
                 esp_id = data["id"]
-                esp_clients[esp_id] = {'ws': ws, 'content': data["content"]}
+                #esp_clients[esp_id] = {'ws': ws, 'content': data["content"]}
                 broadcast(esp_id, data["content"])
             # Update database
             update_database(data_list)
@@ -119,21 +118,21 @@ def esp_ws(ws):
         logger.info(f"ESP disconnected. Total ESPs: {len(esp_clients)}")
 
 # Check structure of esp_clients and handle offline ESPs
-def check_online():
-    print("Checking online ESP clients...")
-    # Check if esp_clients is offline
-    now = time.time()
-    timeout = 30  # 30 seconds timeout for ESP clients
-    with lock:
-        reset_structure()
-        for esp_id, client in list(esp_clients.items()):
-            if now - client['last_updated'] > timeout:
-                print(f"ESP group master_id {esp_id} is offline.")
-                del esp_clients[esp_id]
-                continue
+def check_online(app):
+    with app.app_context():
+        print("Checking online ESP clients...")
+        print(esp_clients)
+        # Check if esp_clients is offline
+        now = time.time()
+        timeout = 30  # 30 seconds timeout for ESP clients
+        with lock:
             # Reconstruct esp_clients
-            update_structure(client['ids'])
-
-scheduler = BackgroundScheduler()
-scheduler.add_job(check_online, 'interval', seconds=30)
-scheduler.start()
+            esp_group_ids = [v["ids"] for v in esp_clients.values()]
+            print(esp_group_ids)
+            update_structure(esp_group_ids)
+            for esp_id, client in list(esp_clients.items()):
+                print("last_updated:", now - client['last_updated'])
+                if now - client['last_updated'] > timeout:
+                    print(f"ESP group master_id {esp_id} is offline.")
+                    del esp_clients[esp_id]
+                    continue
