@@ -430,8 +430,13 @@ void lora_tx_task(void *pvParameters) {
 
 void lora_rx_task(void *pvParameters) {
     uint8_t buffer[LORA_MAX_PACKET_LEN + 1];
-    char combined_message[(LORA_MAX_PACKET_LEN + 2) * (MESH_SIZE + 1) - 2]; // +2 for ", " between each message instance, +1 for this ESP32s own BMS data, -2 for strenuous "
-    size_t combined_capacity = sizeof(combined_message);
+    uint8_t encoded_payload[(sizeof(radio_payload) + 1) * (MESH_SIZE + 1)];
+    //                                ^              ^            ^    ^
+    //                            19 bytes       allow for       total number
+    //                              per           escaped        of devices in
+    //                            payload      character per    mesh, including
+    //                                        payload, on avg        self
+    size_t full_len = 0;
     bool chunked = false;
 
     // Configure FIFO base addr for RX
@@ -453,52 +458,27 @@ void lora_rx_task(void *pvParameters) {
                 uint8_t fifo_rx_current = lora_read_register(0x10);
                 lora_write_register(REG_FIFO_ADDR_PTR, fifo_rx_current);
 
-                for (int i = 0; i < len; i++) {
+                for (int i = 0; i < len; i++)
                     buffer[i] = lora_read_register(0x00); // 0x00 = REG_FIFO ?
-                }
-                buffer[len] = '\0';  // Null-terminate
 
-                int start_position = 0;
-                int read_length = len;
-                if (strncmp((char *)buffer, "_S_", 3) == 0) {
-                    combined_message[0] = '\0';
-                    start_position = 3;
-                    read_length -= 3;
-                    if (strncmp((char *)&buffer[len - 3], "_E_", 3) != 0) chunked = true;
-                    else read_length -= 3;
-                } else if (chunked && strncmp((char *)&buffer[len - 3], "_E_", 3) == 0) {
-                    read_length -= 3;
-                    chunked = false;
-                }
-                strncat(combined_message, (char *)&buffer[start_position], read_length);
+
+                if (!chunked && buffer[0] == FRAME_END) {
+                    if (buffer[len - 1] != FRAME_END) chunked = true;
+                } else if (chunked && buffer[len - 1] == FRAME_END) chunked = false;
+                memcpy(&encoded_payload[full_len], buffer, len);
+                full_len += len;
 
                 if (!chunked) {
                     uint8_t rssi_raw = lora_read_register(0x1A);
                     int rssi_dbm = -157 + rssi_raw;
 
-                    ESP_LOGI(TAG, "Received: \"%s\", RSSI: %d dBm", combined_message, rssi_dbm);
+                    uint8_t decoded_payload[full_len];
+                    size_t decoded_len = decode_frame(encoded_payload, full_len, decoded_payload);
+                    full_len = 0;
 
-                    char full_message[strlen(combined_message)];
-                    strcpy(full_message, combined_message);
-                    char interesting_bit[strlen(combined_message)];
-                    while (strlen(full_message) > 0) {
-                        char *remaining_message = strstr(full_message, "}, {");
-                        if (remaining_message) {
-                            // extract first message
-                            strncpy(interesting_bit, full_message, strlen(full_message) - strlen(remaining_message) + 1);
-                            interesting_bit[strlen(full_message) - strlen(remaining_message) + 1] = '\0';
-                            send_message(interesting_bit);
+                    convert_from_binary(decoded_payload);
 
-                            // forward the rest
-                            strncpy(full_message, &remaining_message[3], strlen(remaining_message) - 3);
-                            full_message[strlen(remaining_message) - 3] = '\0';
-                        } else {
-                            // send final message
-                            send_message(full_message);
-                            full_message[0] = '\0';
-                        }
-                        vTaskDelay(pdMS_TO_TICKS(10));
-                    }
+                    ESP_LOGI(TAG, "Received radio message with RSSI: %d dBm", rssi_dbm);
                 }
             }
 
