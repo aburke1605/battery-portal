@@ -23,8 +23,7 @@ def broadcast(esp_id, data):
             message = json.dumps({esp_id: data})
             ws_browser.send(message) # broadcast to all browsers
         except Exception:
-            with lock:
-                del browser_clients[esp_id] # remove disconnected clients
+            del browser_clients[esp_id] # remove disconnected clients
 
 # TODO how to forwarrd to mutiple esp clients?
 def forward_to_esp32(esp_id, message):
@@ -91,22 +90,26 @@ def browser_ws(ws):
 def esp_ws(ws):
     print('A new ESP connected', ws)
     try:
-        # TODO Consider the edge cases expection
         while True:
             message = ws.receive()
+            if not message:
+                continue
             data_list = json.loads(message)
             # Record Ids for contructing the esp_clitnes
-            # TODO: handle the case when data_list is empty
+            if not data_list or len(data_list) == 0:
+                logger.error("Received empty data list from ESP")
+                continue
             ids = [data["id"] for data in data_list]
             master_id = ids[0]
-            esp_clients[master_id] = {'ws': ws, 'ids': ids, 'last_updated': time.time()}
+            with lock:
+                esp_clients[master_id] = {'ws': ws, 'ids': ids, 'last_updated': time.time()}
             # Forward the message to all browser clients
             for data in data_list:
                 esp_id = data["id"]
-                #esp_clients[esp_id] = {'ws': ws, 'content': data["content"]}
                 broadcast(esp_id, data["content"])
             # Update database
-            update_database(data_list)
+            with lock:
+                update_database(data_list)
             response = {
                 "type": "response",
                 "content": "Ok"
@@ -121,14 +124,12 @@ def esp_ws(ws):
 def check_online(app):
     with app.app_context():
         print("Checking online ESP clients...")
-        print(esp_clients)
         # Check if esp_clients is offline
         now = time.time()
         timeout = 30  # 30 seconds timeout for ESP clients
         with lock:
             # Reconstruct esp_clients
             esp_group_ids = [v["ids"] for v in esp_clients.values()]
-            print(esp_group_ids)
             update_structure(esp_group_ids)
             for esp_id, client in list(esp_clients.items()):
                 print("last_updated:", now - client['last_updated'])
