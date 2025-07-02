@@ -35,6 +35,10 @@ esp_err_t lora_init();
 
 void lora_configure_defaults();
 
+radio_payload* convert_to_binary(char* message);
+
+void convert_from_binary(uint8_t* decoded_message);
+
 void lora_tx_task(void *pvParameters);
 
 void lora_rx_task(void *pvParameters);

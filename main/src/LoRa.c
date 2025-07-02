@@ -144,6 +144,128 @@ void lora_configure_defaults() {
     ESP_LOGI(TAG, "SX127x configured to RadioHead defaults");
 }
 
+radio_payload* convert_to_binary(char* message) {
+    radio_payload* payload = malloc(sizeof(radio_payload));
+    if (payload == NULL) {
+        ESP_LOGE(TAG, "Failed to allocate memory\n");
+        return NULL;
+    }
+    payload->type = 1;
+
+    cJSON *json = cJSON_Parse(message);
+    if (!json) {
+        ESP_LOGE(TAG, "Failed to parse JSON");
+        return NULL;
+    }
+
+    cJSON *id = cJSON_GetObjectItem(json, "id");
+    if (!id) {
+        ESP_LOGE(TAG, "Failed to parse JSON: no id");
+        return NULL;
+    }
+    if (strcmp(id->valuestring, "unknown") == 0)
+        payload->esp_id = 0;
+    else {
+        char esp_id_number[3];
+        strcpy(esp_id_number, &id->valuestring[4]);
+        payload->esp_id = atoi(esp_id_number);
+    }
+
+    cJSON *content = cJSON_GetObjectItem(json, "content");
+    if (!content) {
+        ESP_LOGE(TAG, "Failed to parse JSON: no content");
+        return NULL;
+    }
+    cJSON *obj;
+
+    obj = cJSON_GetObjectItem(content, "Q");
+    if (obj) payload->Q = (uint8_t)obj->valueint;
+    obj = NULL;
+
+    obj = cJSON_GetObjectItem(content, "H");
+    if (obj) payload->H = (uint8_t)obj->valueint;
+    obj = NULL;
+
+    obj = cJSON_GetObjectItem(content, "V");
+    if (obj) payload->V = (uint8_t)obj->valueint;
+    obj = NULL;
+
+    obj = cJSON_GetObjectItem(content, "I");
+    if (obj) payload->I = (int8_t)obj->valueint;
+    obj = NULL;
+
+    obj = cJSON_GetObjectItem(content, "aT");
+    if (obj) payload->aT = (int16_t)obj->valueint;
+    obj = NULL;
+
+    obj = cJSON_GetObjectItem(content, "iT");
+    if (obj) payload->iT = (int16_t)obj->valueint;
+    obj = NULL;
+
+    obj = cJSON_GetObjectItem(content, "BL");
+    if (obj) payload->BL = (uint16_t)obj->valueint;
+    obj = NULL;
+
+    obj = cJSON_GetObjectItem(content, "BH");
+    if (obj) payload->BH = (uint16_t)obj->valueint;
+    obj = NULL;
+
+    obj = cJSON_GetObjectItem(content, "CCT");
+    if (obj) payload->CCT = (uint8_t)obj->valueint;
+    obj = NULL;
+
+    obj = cJSON_GetObjectItem(content, "DCT");
+    if (obj) payload->DCT = (uint8_t)obj->valueint;
+    obj = NULL;
+
+    obj = cJSON_GetObjectItem(content, "CITL");
+    if (obj) payload->CITL = (int8_t)obj->valueint;
+    obj = NULL;
+
+    obj = cJSON_GetObjectItem(content, "CITH");
+    if (obj) payload->CITH = (uint16_t)obj->valueint;
+
+    return payload;
+}
+
+void convert_from_binary(uint8_t* decoded_message) {
+    uint8_t n_devices = decoded_message[0];
+    for (uint8_t i=0; i<n_devices; i++) {
+        radio_payload* payload = (radio_payload*)&decoded_message[1+i*sizeof(radio_payload)];
+        cJSON* message = cJSON_CreateObject();
+        cJSON* content = cJSON_CreateObject();
+        cJSON_AddNumberToObject(content, "Q", payload->Q);
+        cJSON_AddNumberToObject(content, "H", payload->H);
+        cJSON_AddNumberToObject(content, "V", payload->V);
+        cJSON_AddNumberToObject(content, "I", payload->I);
+        cJSON_AddNumberToObject(content, "aT", payload->aT);
+        cJSON_AddNumberToObject(content, "iT", payload->iT);
+        cJSON_AddNumberToObject(content, "BL", payload->BL);
+        cJSON_AddNumberToObject(content, "BH", payload->BH);
+        cJSON_AddNumberToObject(content, "CCT", payload->CCT);
+        cJSON_AddNumberToObject(content, "DCT", payload->DCT);
+        cJSON_AddNumberToObject(content, "CITL", payload->CITL);
+        cJSON_AddNumberToObject(content, "CITH", payload->CITH);
+
+        if (payload->type == 1) cJSON_AddStringToObject(message, "type", "data");
+
+        char id_str[8]; // enough to hold "bms_255\0"
+        sprintf(id_str, "bms_%u", payload->esp_id);
+        cJSON_AddStringToObject(message, "id", id_str);
+
+        cJSON_AddItemToObject(message, "content", content);
+
+
+        char* message_string = cJSON_PrintUnformatted(message);
+        cJSON_Delete(message);
+        if (message_string == NULL) {
+            ESP_LOGE(TAG, "Failed to print cJSON to string\n");
+            return;
+        }
+        else send_message(message_string);
+    }
+}
+
 void lora_tx_task(void *pvParameters) {
     char individual_message[LORA_MAX_PACKET_LEN];
 
