@@ -228,6 +228,70 @@ radio_payload* convert_to_binary(char* message) {
     return payload;
 }
 
+size_t encode_frame(const uint8_t* input, size_t input_len, uint8_t* output) {
+    /*
+      The beginning and end of a radio message will be marked with 0x7E (decimal 126, char '~').
+      This means any instances of 126 in the data should be 'escaped' - using 0x7D (decimal 125).
+      Any instances of 125 should also be escaped.
+      The replacements are:
+          0x7E -> 0x7D 0x5E
+          0x7D -> 0x7D 0x5D
+    */
+
+    size_t out_len = 0;
+    output[out_len++] = FRAME_END; // start of frame
+
+    for (size_t i = 0; i < input_len; ++i) {
+        if (input[i] == FRAME_END) {
+            output[out_len++] = FRAME_ESC;
+            output[out_len++] = ESC_END;
+        } else if (input[i] == FRAME_ESC) {
+            output[out_len++] = FRAME_ESC;
+            output[out_len++] = ESC_ESC;
+        } else {
+            output[out_len++] = input[i];
+        }
+    }
+
+    output[out_len++] = FRAME_END; // end of frame
+    return out_len;
+}
+
+size_t decode_frame(const uint8_t* input, size_t input_len, uint8_t* output) {
+    /*
+      Opposite to the encode_frame function:
+          remove instances of 0x7E
+          replace 0x7D 0x5E -> 0x7E
+          replace 0x7D 0x5D -> 0x7D
+    */
+    size_t out_len = 0;
+    bool in_escape = false;
+
+    for (size_t i = 0; i < input_len; ++i) {
+        uint8_t byte = input[i];
+
+        if (byte == FRAME_END) {
+            continue; // skip or mark frame boundaries
+        } else if (byte == FRAME_ESC) {
+            in_escape = true;
+        } else {
+            if (in_escape) {
+                if (byte == ESC_END)
+                    output[out_len++] = FRAME_END;
+                else if (byte == ESC_ESC)
+                    output[out_len++] = FRAME_ESC;
+                else
+                    ; // invalid escape, discard or handle
+                in_escape = false;
+            } else {
+                output[out_len++] = byte;
+            }
+        }
+    }
+
+    return out_len;
+}
+
 void convert_from_binary(uint8_t* decoded_message) {
     uint8_t n_devices = decoded_message[0];
     for (uint8_t i=0; i<n_devices; i++) {

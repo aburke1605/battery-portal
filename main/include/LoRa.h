@@ -24,6 +24,10 @@ typedef struct __attribute__((packed)) {
     uint16_t CITH;
 } radio_payload;
 
+#define FRAME_END     0x7E  // marks beginning and end of message
+#define FRAME_ESC     0x7D  // escape character
+#define ESC_END       0x5E  // escaped 0x7E → 0x7D 0x5E
+#define ESC_ESC       0x5D  // escaped 0x7D → 0x7D 0x5D
 
 void lora_reset();
 
@@ -36,6 +40,10 @@ esp_err_t lora_init();
 void lora_configure_defaults();
 
 radio_payload* convert_to_binary(char* message);
+
+size_t encode_frame(const uint8_t* input, size_t input_len, uint8_t* output);
+
+size_t decode_frame(const uint8_t* input, size_t input_len, uint8_t* output);
 
 void convert_from_binary(uint8_t* decoded_message);
 
