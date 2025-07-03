@@ -352,7 +352,7 @@ void send_message(const char *message) {
 }
 
 void message_queue_task(void *pvParameters) {
-    char message[WS_MESSAGE_MAX_LEN];
+    char message[LORA_IS_RECEIVER?((1 + MESH_SIZE) * WS_MESSAGE_MAX_LEN + 100):(WS_MESSAGE_MAX_LEN)];
 
     while (true) {
         if (xQueueReceive(ws_queue, message, portMAX_DELAY) == pdPASS) {
@@ -505,9 +505,11 @@ void websocket_task(void *pvParameters) {
                     esp_websocket_client_destroy(ws_client);
                     ws_client = NULL;
                 } else {
-                    char message[WS_MESSAGE_MAX_LEN];
-                    snprintf(message, sizeof(message), "{\"type\":\"data\",\"id\":\"%s\",\"content\":%s}", ESP_ID, data_string);
-                    if (!LORA_IS_RECEIVER) send_message(message);
+                    if (!LORA_IS_RECEIVER) {
+                        char message[WS_MESSAGE_MAX_LEN];
+                        snprintf(message, sizeof(message), "{\"type\":\"data\",\"id\":\"%s\",\"content\":%s}", ESP_ID, data_string);
+                        send_message(message);
+                    }
                 }
             }
 
