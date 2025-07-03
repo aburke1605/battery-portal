@@ -47,10 +47,6 @@ size_t decode_frame(const uint8_t* input, size_t input_len, uint8_t* output);
 
 void convert_from_binary(uint8_t* decoded_message);
 
-void lora_tx_task(void *pvParameters);
-
-void lora_rx_task(void *pvParameters);
-
 void lora_task(void *pvParameters);
 
 #endif // LORA_H
