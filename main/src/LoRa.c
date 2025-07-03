@@ -358,7 +358,7 @@ void lora_task(void *pvParameters) {
     uint8_t RX_encoded_payload[(sizeof(radio_payload) + 1) * (MESH_SIZE + 1)];
     //                                   ^              ^            ^    ^
     //                               19 bytes       allow for       total number
-    //                                 per           escaped        of devices in
+    //                                 per          1 escaped       of devices in
     //                               payload      character per    mesh, including
     //                                           payload, on avg        self
     size_t RX_full_len = 0;
@@ -481,7 +481,7 @@ void lora_task(void *pvParameters) {
             uint8_t encoded_combined_payload[(sizeof(radio_payload) + 1) * (MESH_SIZE + 1)];
             //                                         ^              ^            ^    ^
             //                                     19 bytes       allow for       total number
-            //                                       per           escaped        of devices in
+            //                                       per          1 escaped       of devices in
             //                                     payload      character per    mesh, including
             //                                                 payload, on avg        self
             size_t full_len = encode_frame(combined_payload, sizeof(combined_payload), encoded_combined_payload);
@@ -516,7 +516,7 @@ void lora_task(void *pvParameters) {
             int transmission_delay = calculate_transmission_delay(LORA_SF, LORA_BW, 8, full_len, LORA_CR, LORA_HEADER, LORA_LDRO);
             ESP_LOGI(TAG, "Radio packet sent. Delaying for %d ms", transmission_delay);
 
-            TX_delay_transmission_until = (int64_t)(transmission_delay * 1000) + esp_timer_get_time();// + 10000000;
+            TX_delay_transmission_until = (int64_t)(transmission_delay * 1000) + esp_timer_get_time();
 
             // set DIO0 = RxDone again
             lora_write_register(REG_DIO_MAPPING_1, 0b00000000); // bits 7-6 for DIO0
