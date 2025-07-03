@@ -386,7 +386,7 @@ void websocket_event_handler(void *arg, esp_event_base_t event_base, int32_t eve
 
             cJSON *message = cJSON_Parse((char *)ws_event_data->data_ptr);
             if (!message) {
-                ESP_LOGE(TAG, "invalid json");
+                ESP_LOGE(TAG, "invalid json: %s", (char *)ws_event_data->data_ptr);
                 cJSON_Delete(message);
                 break;
             }
