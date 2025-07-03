@@ -98,14 +98,7 @@ void app_main(void) {
     xTaskCreate(&websocket_task, websocket_params.task_name, websocket_params.stack_size, &websocket_params, 1, &websocket_task_handle);
 
 
-    if (LORA_IS_RECEIVER) {
-        lora_init();
-
-        TaskParams lora_rx_params = {.stack_size = 6000, .task_name = "lora_rx_task"};
-        xTaskCreate(lora_rx_task, lora_rx_params.task_name, lora_rx_params.stack_size, &lora_rx_params, 1, NULL);
-    }
-
-    else {
+    if (!LORA_IS_RECEIVER) {
         if (!is_root) {
             TaskParams connect_to_root_params = {.stack_size = 2500, .task_name = "connect_to_root_task"};
             xTaskCreate(&connect_to_root_task, connect_to_root_params.task_name, connect_to_root_params.stack_size, &connect_to_root_params, 4, NULL);
@@ -115,13 +108,13 @@ void app_main(void) {
         } else {
             TaskParams merge_root_params = {.stack_size = 2300, .task_name = "merge_root_task"};
             xTaskCreate(&merge_root_task, merge_root_params.task_name, merge_root_params.stack_size, &merge_root_params, 4, &merge_root_task_handle);
-
-            lora_init();
-
-            TaskParams lora_tx_params = {.stack_size = 8700, .task_name = "lora_tx_task"};
-            xTaskCreate(lora_tx_task, lora_tx_params.task_name, lora_tx_params.stack_size, &lora_tx_params, 3, NULL);
         }
     }
+
+    lora_init();
+
+    TaskParams lora_params = {.stack_size = 8700, .task_name = "lora_task"};
+    xTaskCreate(lora_task, lora_params.task_name, lora_params.stack_size, &lora_params, 1, NULL);
 
     while (true) {
         if (VERBOSE) ESP_LOGI("main", "%ld bytes available in heap", esp_get_free_heap_size());

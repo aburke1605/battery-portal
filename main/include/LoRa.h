@@ -51,4 +51,6 @@ void lora_tx_task(void *pvParameters);
 
 void lora_rx_task(void *pvParameters);
 
+void lora_task(void *pvParameters);
+
 #endif // LORA_H

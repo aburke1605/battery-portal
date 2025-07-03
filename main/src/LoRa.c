@@ -10,6 +10,7 @@
 #include <driver/gpio.h>
 #include <esp_err.h>
 #include <esp_log.h>
+#include <esp_timer.h>
 
 static spi_device_handle_t lora_spi;
 extern QueueHandle_t lora_queue;
@@ -505,6 +506,180 @@ void lora_rx_task(void *pvParameters) {
 
             // Clear IRQ flags again
             lora_write_register(REG_IRQ_FLAGS, 0b11111111);
+        }
+
+        vTaskDelay(pdMS_TO_TICKS(10));
+    }
+}
+
+void lora_task(void *pvParameters) {
+    // receiver variables
+    uint8_t RX_buffer[LORA_MAX_PACKET_LEN + 1];
+    uint8_t RX_encoded_payload[(sizeof(radio_payload) + 1) * (MESH_SIZE + 1)];
+    //                                   ^              ^            ^    ^
+    //                               19 bytes       allow for       total number
+    //                                 per           escaped        of devices in
+    //                               payload      character per    mesh, including
+    //                                           payload, on avg        self
+    size_t RX_full_len = 0;
+    bool RX_chunked = false;
+
+
+    // transmitter variables
+    char TX_individual_message[LORA_MAX_PACKET_LEN];
+    uint8_t TX_n_devices = 1; // the transmitter, at least
+    int64_t TX_delay_transmission_until = 0; // microseconds
+
+
+    // setup
+    lora_write_register(REG_FIFO_RX_BASE_ADDR, 0x00);
+    lora_write_register(REG_FIFO_TX_BASE_ADDR, 0x00);
+    lora_write_register(REG_FIFO_ADDR_PTR, 0x00);
+    // clear IRQ flags
+    lora_write_register(REG_IRQ_FLAGS, 0b11111111);
+
+
+    // task loop
+    while(true) {
+        /*
+            -------------
+            RECEIVER CODE
+            -------------
+        */
+        // enter continuous RX mode
+        lora_write_register(REG_OP_MODE, 0b10000101); // LoRa + RX mode
+        // wait for RX done (DIO0 goes high)
+        if (gpio_get_level(PIN_NUM_DIO0) == 1) {
+            uint8_t irq_flags = lora_read_register(REG_IRQ_FLAGS);
+            if (irq_flags & 0x40) {  // RX_DONE
+                uint8_t len = lora_read_register(0x13);  // RX bytes
+                uint8_t fifo_rx_current = lora_read_register(0x10);
+                lora_write_register(REG_FIFO_ADDR_PTR, fifo_rx_current);
+
+                for (int i = 0; i < len; i++)
+                    RX_buffer[i] = lora_read_register(0x00); // 0x00 = REG_FIFO ?
+
+
+                if (!RX_chunked && RX_buffer[0] == FRAME_END) {
+                    if (RX_buffer[len - 1] != FRAME_END) RX_chunked = true;
+                } else if (RX_chunked && RX_buffer[len - 1] == FRAME_END) RX_chunked = false;
+                memcpy(&RX_encoded_payload[RX_full_len], RX_buffer, len);
+                RX_full_len += len;
+
+                if (!RX_chunked) {
+                    uint8_t rssi_raw = lora_read_register(0x1A);
+                    int rssi_dbm = -157 + rssi_raw;
+
+                    uint8_t decoded_payload[RX_full_len];
+                    size_t decoded_len = decode_frame(RX_encoded_payload, RX_full_len, decoded_payload);
+                    RX_full_len = 0;
+
+                    ESP_LOGI(TAG, "Received radio message with RSSI: %d dBm", rssi_dbm);
+                    if (LORA_IS_RECEIVER) convert_from_binary(decoded_payload);
+                    //
+                    //
+                    // else {
+                    //      is a master node, so figure out
+                    //      which mode the request is for then
+                    //      perform_request(); etc.
+                    // }
+                    //
+                }
+            }
+
+            // Clear IRQ flags again
+            lora_write_register(REG_IRQ_FLAGS, 0b11111111);
+        }
+
+
+        /*
+            ----------------
+            TRANSMITTER CODE
+            ----------------
+        */
+        if (!LORA_IS_RECEIVER && esp_timer_get_time() > TX_delay_transmission_until) {
+            // now form the LoRa message out of non-empty messages and transmit
+            for (int i=0; i<MESH_SIZE; i++) {
+                if (strcmp(all_messages[i].id, "") != 0)
+                    TX_n_devices++;
+            }
+
+            uint8_t combined_payload[1 + TX_n_devices * sizeof(radio_payload)];
+            combined_payload[0] = TX_n_devices; // first bytes is number of radio_payloads to expect
+
+            // get own data first
+            char *data_string = get_data(false);
+            snprintf(TX_individual_message, sizeof(TX_individual_message), "{\"type\":\"data\",\"id\":\"%s\",\"content\":%s}", ESP_ID, data_string);
+            // add to radio payload
+            radio_payload* payload;
+            payload = convert_to_binary(TX_individual_message);
+            if (payload == NULL) continue;
+            memcpy(&combined_payload[1], (uint8_t*)payload, sizeof(radio_payload));
+            free(payload);
+
+            // now add the data of other devices in mesh to payload
+            TX_n_devices = 1;
+            for (int i=0; i<MESH_SIZE; i++) {
+                if (strcmp(all_messages[i].id, "") != 0) {
+                    TX_n_devices++;
+
+                    payload = convert_to_binary(all_messages[i].message);
+                    if (payload == NULL) continue;
+                    memcpy(&combined_payload[1 + (TX_n_devices-1) * sizeof(radio_payload)], (uint8_t*)payload, sizeof(radio_payload));
+                    free(payload);
+
+                    // clear the message slot again in case of disconnect
+                    strcpy(all_messages[i].id, "");
+                    all_messages[i].id[0] = '\0';
+                    strcpy(all_messages[i].message, "");
+                    all_messages[i].message[0] = '\0';
+                }
+            }
+            TX_n_devices = 1; // reset
+
+
+            uint8_t encoded_combined_payload[(sizeof(radio_payload) + 1) * (MESH_SIZE + 1)];
+            //                                         ^              ^            ^    ^
+            //                                     19 bytes       allow for       total number
+            //                                       per           escaped        of devices in
+            //                                     payload      character per    mesh, including
+            //                                                 payload, on avg        self
+            size_t full_len = encode_frame(combined_payload, sizeof(combined_payload), encoded_combined_payload);
+            uint8_t chunk[LORA_MAX_PACKET_LEN] = {0};
+            for (int offset = 0; offset < full_len; offset += LORA_MAX_PACKET_LEN) {
+                int chunk_len = MIN(LORA_MAX_PACKET_LEN, full_len - offset);
+                memcpy(chunk, encoded_combined_payload + offset, chunk_len);
+
+                lora_write_register(REG_OP_MODE, 0b10000001); // LoRa + standby
+
+                // set DIO0 = TxDone
+                lora_write_register(REG_DIO_MAPPING_1, 0b01000000); // bits 7-6 for DIO0
+
+                // write payload to FIFO
+                for (int i = 0; i < chunk_len; i++)
+                    lora_write_register(REG_FIFO, chunk[i]);
+
+                lora_write_register(REG_PAYLOAD_LENGTH, chunk_len);
+
+                lora_write_register(REG_IRQ_FLAGS, 0b11111111); // clear all IRQ flags
+
+                lora_write_register(REG_OP_MODE, 0b10000011); // LoRa + TX mode
+
+                // wait for TX done (DIO0 goes high)
+                while (gpio_get_level(PIN_NUM_DIO0) == 0)
+                    vTaskDelay(pdMS_TO_TICKS(1));
+
+                lora_write_register(REG_IRQ_FLAGS, 0b00001000);  // clear TxDone
+
+                vTaskDelay(pdMS_TO_TICKS(50)); // brief delay between chunks
+            }
+            int transmission_delay = calculate_transmission_delay(LORA_SF, LORA_BW, 8, full_len, LORA_CR, LORA_HEADER, LORA_LDRO);
+            ESP_LOGI(TAG, "Radio packet sent. Delaying for %d ms", transmission_delay);
+
+            TX_delay_transmission_until = (int64_t)(transmission_delay * 1000) + esp_timer_get_time();// + 10000000;
+
+            // set DIO0 = RxDone again
+            lora_write_register(REG_DIO_MAPPING_1, 0b00000000); // bits 7-6 for DIO0
         }
 
         vTaskDelay(pdMS_TO_TICKS(10));
