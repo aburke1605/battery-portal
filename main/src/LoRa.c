@@ -504,6 +504,8 @@ void lora_task(void *pvParameters) {
                     // set DIO0 = TxDone
                     lora_write_register(REG_DIO_MAPPING_1, 0b01000000); // bits 7-6 for DIO0
 
+                    lora_write_register(REG_FIFO_ADDR_PTR, 0x00); // reset FIFO pointer to base address
+
                     // write payload to FIFO
                     for (int i = 0; i < chunk_len; i++)
                         lora_write_register(REG_FIFO, chunk[i]);
