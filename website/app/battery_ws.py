@@ -42,7 +42,7 @@ def forward_to_esp32(esp_id, message):
                 content = json.loads(message)
                 content["master_id"] = master_id
                 content["esp_id"] = esp_id
-                value['ws'].send(content)
+                value['ws'].send(json.dumps(content))
                 return {"esp_id": esp_id, "message": "request sent to esp32"}
             except Exception as e:
                 logger.error(f"Error communicating with {esp_id}: {e}")
