@@ -400,8 +400,15 @@ void lora_task(void *pvParameters) {
                     RX_buffer[i] = lora_read_register(0x00); // 0x00 = REG_FIFO ?
 
 
-                if (!RX_chunked && RX_buffer[0] == FRAME_END) {
-                    if (RX_buffer[len - 1] != FRAME_END) RX_chunked = true;
+                if (!RX_chunked) {
+                    if (RX_buffer[0] == FRAME_END) {
+                        if (RX_buffer[len - 1] != FRAME_END) RX_chunked = true;
+                    }
+                    else {
+                        // bogus message received
+                        lora_write_register(REG_IRQ_FLAGS, 0b11111111);
+                        continue;
+                    }
                 } else if (RX_chunked && RX_buffer[len - 1] == FRAME_END) RX_chunked = false;
                 memcpy(&RX_encoded_payload[RX_full_len], RX_buffer, len);
                 RX_full_len += len;
