@@ -5,9 +5,11 @@
 
 #include <esp_err.h>
 
-esp_err_t reset();
+void reset();
 
-esp_err_t unseal();
+void seal();
+
+void unseal();
 
 char* get_data(bool local);
 
