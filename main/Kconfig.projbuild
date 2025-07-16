@@ -195,6 +195,18 @@ config UNSEAL_CMD_2
     help
       Set the second half of the UNSEAL command code for the BMS.
 
+config FULL_ACCESS_CMD_1
+    hex "BMS FULL ACCESS command code (first half)"
+    default 0xFFFF
+    help
+      Set the first half of the FULL ACCESS command code for the BMS.
+
+config FULL_ACCESS_CMD_2
+    hex "BMS FULL ACCESS command code (second half)"
+    default 0xFFFF
+    help
+      Set the second half of the FULL ACCESS command code for the BMS.
+
 endmenu
 
 

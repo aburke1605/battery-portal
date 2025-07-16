@@ -11,6 +11,8 @@ void seal();
 
 void unseal();
 
+void full_access();
+
 int8_t get_sealed_status();
 
 char* get_data(bool local);

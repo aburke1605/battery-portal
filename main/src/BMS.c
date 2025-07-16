@@ -42,6 +42,9 @@ void seal() {
     uint8_t word[2] = { (BMS_SEAL_CMD >> 8) & 0xFF, BMS_SEAL_CMD & 0xFF };
     write_word(I2C_MANUFACTURER_ACCESS, word, sizeof(word));
 
+    // delay to allow seal to complete
+    vTaskDelay(pdMS_TO_TICKS(I2C_DELAY));
+
     if (get_sealed_status() == 0)
         ESP_LOGI(TAG, "Seal command sent successfully.");
     
@@ -67,8 +70,43 @@ void unseal() {
     word[1] = BMS_UNSEAL_CMD_1 & 0xFF;
     write_word(I2C_MANUFACTURER_ACCESS, word, sizeof(word));
 
+    // delay to allow unseal to complete
+    vTaskDelay(pdMS_TO_TICKS(I2C_DELAY));
+
     if (get_sealed_status() == 1)
         ESP_LOGI(TAG, "Unseal command sent successfully.");
+
+    // resume
+    if (suspending) vTaskResume(websocket_task_handle);
+}
+
+void full_access() {
+    // first do regular unseal
+    unseal();
+
+    // pause all tasks with regular I2C communication
+    bool suspending = false;
+    if (websocket_task_handle && eTaskGetState(websocket_task_handle) != eSuspended) {
+        suspending = true;
+        vTaskSuspend(websocket_task_handle);
+    }
+
+    uint8_t word[2];
+
+    word[0] = (BMS_FULL_ACCESS_CMD_2 >> 8) & 0xFF;
+    word[1] = BMS_FULL_ACCESS_CMD_2 & 0xFF;
+    write_word(I2C_MANUFACTURER_ACCESS, word, sizeof(word));
+
+    word[0] = (BMS_FULL_ACCESS_CMD_1 >> 8) & 0xFF;
+    word[1] = BMS_FULL_ACCESS_CMD_1 & 0xFF;
+    write_word(I2C_MANUFACTURER_ACCESS, word, sizeof(word));
+
+    // delay to allow full access to complete
+    vTaskDelay(pdMS_TO_TICKS(I2C_DELAY));
+
+    printf("%d\n", get_sealed_status());
+    if (get_sealed_status() == 2)
+        ESP_LOGI(TAG, "Full access command sent successfully.");
 
     // resume
     if (suspending) vTaskResume(websocket_task_handle);
