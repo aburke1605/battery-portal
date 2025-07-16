@@ -57,7 +57,7 @@ const BatteryCard: React.FC<BatteryCardProps> = ({ battery, onViewDetails }) => 
         <div className="grid grid-cols-2 gap-4">
           <div>
             <div className="text-sm text-gray-500">Temperature:</div>
-            <div className={`font-medium ${getTemperatureColor(battery.temperature)}`}>{battery.temperature}°C</div>
+            <div className={`font-medium ${getTemperatureColor(battery.cell_temperature)}`}>{battery.cell_temperature}°C</div>
           </div>
           <div>
             <div className="text-sm text-gray-500">Voltage:</div>

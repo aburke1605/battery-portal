@@ -4,14 +4,9 @@ export interface BatteryData {
   new_esp_id: string;
   status: 'good' | 'warning' | 'critical' | 'offline';
   charge: number;
-  temperature: number;
-  internal_temperature: number;
-  BL: number;
-  BH: number;
-  CITL: number;
-  CITH: number;
-  CCT: number;
-  DCT: number;
+  ambient_temperature: number;
+  cell_temperature: number;
+  OCT_threshold: number;
   voltage: number;
   current: number;
   health: number;
@@ -48,29 +43,24 @@ export const parseBatteryData = (
   health: raw?.H || 0,
   voltage: raw?.V / 10 || 0,
   current: raw?.I / 10 || 0,
-  temperature: raw?.aT / 10 || 0,
-  internal_temperature: raw?.iT / 10 || 0,
-  BL: raw?.BL || 0,
-  BH: raw?.BH || 0,
-  CITL: raw?.CITL || 0,
-  CITH: raw?.CITH || 0,
-  CCT: raw?.CCT || 0,
-  DCT: raw?.DCT || 0,
+  ambient_temperature: raw?.aT / 10 || 0,
+  cell_temperature: raw?.cT / 10 || 0,
+  OCT_threshold: raw?.OCT_threshold || 0,
   isConnected: isFromEsp32 ? !!raw?.connected_to_WiFi : !!raw,
   status: "good",
   timestamp: Date.now(),
-  cell1_current: raw?.I1 / 10 || 0,
-  cell2_current: raw?.I2 / 10 || 0,
-  cell3_current: raw?.I3 / 10 || 0,
-  cell4_current: raw?.I4 / 10 || 0,
-  cell1_temperature: raw?.T1 / 10 || 0,
-  cell2_temperature: raw?.T2 / 10 || 0,
-  cell3_temperature: raw?.T3 / 10 || 0,
-  cell4_temperature: raw?.T4 / 10 || 0,
-  cell1_voltage: raw?.V1 / 10 || 0,
-  cell2_voltage: raw?.V2 / 10 || 0,
-  cell3_voltage: raw?.V3 / 10 || 0,
-  cell4_voltage: raw?.V4 / 10 || 0,
+  cell1_current: raw?.I1 / 100 || 0,
+  cell2_current: raw?.I2 / 100 || 0,
+  cell3_current: raw?.I3 / 100 || 0,
+  cell4_current: raw?.I4 / 100 || 0,
+  cell1_temperature: raw?.T1 / 100 || 0,
+  cell2_temperature: raw?.T2 / 100 || 0,
+  cell3_temperature: raw?.T3 / 100 || 0,
+  cell4_temperature: raw?.T4 / 100 || 0,
+  cell1_voltage: raw?.V1 / 100 || 0,
+  cell2_voltage: raw?.V2 / 100 || 0,
+  cell3_voltage: raw?.V3 / 100 || 0,
+  cell4_voltage: raw?.V4 / 100 || 0,
 });
 
 // Alert Data Types
