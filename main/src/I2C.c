@@ -57,10 +57,7 @@ void device_scan(void) {
 
 esp_err_t read_SBS_data(uint8_t reg, uint8_t* data, size_t data_size) {
     esp_err_t ret = check_device();
-    if (ret != ESP_OK) {
-        printf("device not detected!\n");
-        return ret;
-    }
+    if (ret != ESP_OK) return ret;
 
     if (!data || data_size == 0) {
         ESP_LOGE(TAG, "Invalid data buffer or length.");
@@ -79,10 +76,7 @@ esp_err_t read_SBS_data(uint8_t reg, uint8_t* data, size_t data_size) {
 
 void write_word(uint8_t command, uint8_t* word, size_t word_size) {
     esp_err_t ret = check_device();
-    if (ret != ESP_OK) {
-        printf("device not detected!\n");
-        return;
-    }
+    if (ret != ESP_OK) return;
 
     uint8_t data[1 + word_size];
     data[0] = command;
@@ -91,17 +85,14 @@ void write_word(uint8_t command, uint8_t* word, size_t word_size) {
 
     ret = i2c_master_transmit(i2c_device, data, sizeof(data), I2C_MASTER_TIMEOUT_MS);
     if (ret != ESP_OK) {
-        printf("failed to write word!\n");
+        ESP_LOGE(TAG, "Failed to write word!");
         return;
     }
 }
 
 void read_data_flash(uint8_t* address, size_t address_size, uint8_t* data, size_t data_size) {
     esp_err_t ret = check_device();
-    if (ret != ESP_OK) {
-        printf("device not detected!\n");
-        return;
-    }
+    if (ret != ESP_OK) return;
 
     uint8_t addr[2 + address_size];
     addr[0] = I2C_MANUFACTURER_BLOCK_ACCESS;
@@ -112,7 +103,7 @@ void read_data_flash(uint8_t* address, size_t address_size, uint8_t* data, size_
     // write the number of bytes of the address of the data we want to read, and the address itself
     ret = i2c_master_transmit(i2c_device, addr, sizeof(addr), I2C_MASTER_TIMEOUT_MS);
     if (ret != ESP_OK) {
-        printf("failed to write!\n");
+        ESP_LOGE(TAG, "Failed to write in read_data_flash!");
         return;
     }
     // initiate read
@@ -130,16 +121,13 @@ void read_data_flash(uint8_t* address, size_t address_size, uint8_t* data, size_
         for (size_t i=0; i<MIN(data_size, sizeof(buff)-1-address_size); i++)
             data[i] = buff[1 + address_size + i];
     } else {
-        printf("failed to read!\n");
+        ESP_LOGE(TAG, "Failed to read in read_data_flash!");
     }
 }
 
 void write_data_flash(uint8_t* address, size_t address_size, uint8_t* data, size_t data_size) {
     esp_err_t ret = check_device();
-    if (ret != ESP_OK) {
-        printf("device not detected!\n");
-        return;
-    }
+    if (ret != ESP_OK) return;
 
     uint8_t block[1 + 1 + address_size + data_size];
     block[0] = I2C_MANUFACTURER_BLOCK_ACCESS;
@@ -153,7 +141,7 @@ void write_data_flash(uint8_t* address, size_t address_size, uint8_t* data, size
 
     ret = i2c_master_transmit(i2c_device, block, sizeof(block), I2C_MASTER_TIMEOUT_MS);
     if (ret != ESP_OK) {
-        printf("failed to write block!\n");
+        ESP_LOGE(TAG, "Failed to write block!");
     }
     vTaskDelay(pdMS_TO_TICKS(100));
 }
