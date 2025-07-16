@@ -78,6 +78,7 @@ void app_main(void) {
         read_data_flash(address, sizeof(address), data_flash, sizeof(data_flash));
         uint8_t name_length = MIN(data_flash[0], UTILS_ID_LENGTH);
         if (strcmp((char *)data_flash, "") != 0) strncpy(ESP_ID, (char *)&data_flash[1], name_length);
+        ESP_ID[name_length] = '\0';
     }
 
     wifi_init();
