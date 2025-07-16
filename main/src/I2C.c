@@ -55,110 +55,105 @@ void device_scan(void) {
     if (n_devices == 0) ESP_LOGW(TAG, "No devices found.");
 }
 
-esp_err_t read_data(uint8_t reg, uint8_t* data, size_t n_bytes) {
-    if (!data || n_bytes == 0) {
+esp_err_t read_SBS_data(uint8_t reg, uint8_t* data, size_t data_size) {
+    esp_err_t ret = check_device();
+    if (ret != ESP_OK) {
+        printf("device not detected!\n");
+        return ret;
+    }
+
+    if (!data || data_size == 0) {
         ESP_LOGE(TAG, "Invalid data buffer or length.");
         return ESP_ERR_INVALID_ARG;
-        // TODO: error check the rest of this function
     }
-    esp_err_t ret;
 
-    ret = check_device();
-    if (ret != ESP_OK) return ret;
-
-    // Transmit the register address
+    // transmit the register address
     ret = i2c_master_transmit(i2c_device, &reg, 1, I2C_MASTER_TIMEOUT_MS);
     if (ret != ESP_OK) return ret;
 
-    // Receive the data
-    ret = i2c_master_receive(i2c_device, data, n_bytes, I2C_MASTER_TIMEOUT_MS);
+    // receive the response data
+    ret = i2c_master_receive(i2c_device, data, data_size, I2C_MASTER_TIMEOUT_MS);
 
     return ret;
 }
 
-esp_err_t write_data(uint8_t reg, uint32_t data, size_t n_btyes) {
-    esp_err_t ret;
-
-    ret = check_device();
-    if (ret != ESP_OK) return ret;
-
-    uint8_t buffer[1 + n_btyes] = {};
-    buffer[0] = reg;
-    // LSB first
-    for (size_t i = 0; i < n_btyes; i++) {
-        buffer[i+1] = (data >> (8 * i)) & 0xFF; // using `x & 0xFF` ensures only LSB of x is used
-    }
-
-    ret = i2c_master_transmit(i2c_device, buffer, sizeof(buffer), pdMS_TO_TICKS(I2C_MASTER_TIMEOUT_MS));
-
+void write_word(uint8_t command, uint8_t* word, size_t word_size) {
+    esp_err_t ret = check_device();
     if (ret != ESP_OK) {
-        ESP_LOGE(TAG, "Failed to write byte to I2C device: %s", esp_err_to_name(ret));
+        printf("device not detected!\n");
+        return;
     }
 
-    return ret;
+    uint8_t data[1 + word_size];
+    data[0] = command;
+    for (size_t i=0; i<word_size; i++)
+        data[1 + i] = word[word_size - 1 - i]; // assumed little-endian(?)
+
+    ret = i2c_master_transmit(i2c_device, data, sizeof(data), I2C_MASTER_TIMEOUT_MS);
+    if (ret != ESP_OK) {
+        printf("failed to write word!\n");
+        return;
+    }
 }
 
-void read_bytes(uint8_t subclass, uint8_t offset, uint8_t* data, size_t n_bytes) {
-    esp_err_t ret;
+void read_data_flash(uint8_t* address, size_t address_size, uint8_t* data, size_t data_size) {
+    esp_err_t ret = check_device();
+    if (ret != ESP_OK) {
+        printf("device not detected!\n");
+        return;
+    }
 
-    if (subclass == 0) {
-        // request is a read of simple memory data
-        ret = read_data(offset, data, n_bytes);
+    uint8_t addr[2 + address_size];
+    addr[0] = I2C_MANUFACTURER_BLOCK_ACCESS;
+    addr[1] = address_size;
+    for (int i=0; i<address_size; i++)
+        addr[2 + i] = address[address_size - 1 - i]; // little-endian
+
+    // write the number of bytes of the address of the data we want to read, and the address itself
+    ret = i2c_master_transmit(i2c_device, addr, sizeof(addr), I2C_MASTER_TIMEOUT_MS);
+    if (ret != ESP_OK) {
+        printf("failed to write!\n");
+        return;
+    }
+    // initiate read
+    uint8_t MAC = I2C_MANUFACTURER_BLOCK_ACCESS;
+    ret = i2c_master_transmit(i2c_device, &MAC, 1, I2C_MASTER_TIMEOUT_MS);
+
+
+    uint8_t buff[1 + address_size + 32]; // each ManufacturerBlockAccess() block is maximum 32 bytes,
+                                         // plus first byte which states the number of bytes in returned block,
+                                         // plus extra bytes to echo the address
+    for (size_t i=0; i<sizeof(buff); i++) buff[i] = 0; // initialise to zeros
+
+    ret = i2c_master_receive(i2c_device, buff, sizeof(buff), I2C_MASTER_TIMEOUT_MS);
+    if (ret == ESP_OK) {
+        for (size_t i=0; i<MIN(data_size, sizeof(buff)-1-address_size); i++)
+            data[i] = buff[1 + address_size + i];
     } else {
-        uint8_t block = get_block(offset);
-
-        // specify the location in memory
-        ret = write_data(I2C_DATA_FLASH_CLASS, subclass, 1);
-        ret = write_data(I2C_DATA_FLASH_BLOCK, block, 1);
-
-        ret = read_data(I2C_BLOCK_DATA_START + offset%32, data, n_bytes);
-    }
-
-    if (ret != ESP_OK) {
-        // TODO: fill out
+        printf("failed to read!\n");
     }
 }
 
-esp_err_t write_bytes(uint8_t subclass, uint8_t offset, uint8_t* data, size_t n_bytes) {
-    esp_err_t ret;
-
-    // TODO: assert offset%32 + n_bytes < 32
-
-    uint8_t block = get_block(offset);
-    ret = write_data(I2C_DATA_FLASH_CLASS, subclass, 1);
-    ret = write_data(I2C_DATA_FLASH_BLOCK, block, 1);
-
-    char block_data[32] = {0};
-    ret = read_data(I2C_BLOCK_DATA_START, (uint8_t*)block_data, sizeof(block_data));
+void write_data_flash(uint8_t* address, size_t address_size, uint8_t* data, size_t data_size) {
+    esp_err_t ret = check_device();
     if (ret != ESP_OK) {
-        ESP_LOGE(TAG, "Failed to read Block Data.");
-        return ret;
+        printf("device not detected!\n");
+        return;
     }
 
-    for (int i=0; i<n_bytes; i++) {
-        ret = write_data(I2C_BLOCK_DATA_START + offset%32 + i, data[i], 1);
-        if (ret != ESP_OK) {
-            ESP_LOGE(TAG, "Failed to write data byte %d", i);
-            return ret;
-        }
-        block_data[offset%32 + i] = data[i]; // to calculate checksum
-    }
+    uint8_t block[1 + 1 + address_size + data_size];
+    block[0] = I2C_MANUFACTURER_BLOCK_ACCESS;
+    block[1] = address_size + data_size;
 
-    // Calculate new checksum
-    uint8_t checksum = 0;
-    for (int i = 0; i < sizeof(block_data); i++) {
-        checksum += block_data[i];
-    }
-    checksum = 0xFF - checksum;
+    for (uint8_t i=0; i<address_size; i++)
+        block[2 + i] = address[address_size - 1 - i]; // little-endian
 
-    // Write new checksum
-    ret = write_data(I2C_BLOCK_DATA_CHECKSUM, checksum, 1);
+    for (uint8_t i=0; i<data_size; i++)
+        block[2 + address_size + i] = data[i];
+
+    ret = i2c_master_transmit(i2c_device, block, sizeof(block), I2C_MASTER_TIMEOUT_MS);
     if (ret != ESP_OK) {
-        ESP_LOGE(TAG, "Failed to write Block Data Checksum.");
-        return ret;
+        printf("failed to write block!\n");
     }
-
-    vTaskDelay(pdMS_TO_TICKS(1000));
-
-    return ESP_OK;
+    vTaskDelay(pdMS_TO_TICKS(100));
 }
