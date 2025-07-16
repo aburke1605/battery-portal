@@ -206,6 +206,8 @@ esp_err_t perform_request(cJSON *message, cJSON *response) {
                 for (size_t i=0; i<new_id_length; i++)
                     new_id_data[1 + i] = new_id[i];
                 write_data_flash(address, sizeof(address), new_id_data, sizeof(new_id_data));
+                strncpy(ESP_ID, (char *)&new_id_data[1], new_id_length);
+                ESP_ID[new_id_length] = '\0';
             }
 
             int OTC_threshold = cJSON_GetObjectItem(data, "OTC_threshold")->valueint;
