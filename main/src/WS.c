@@ -193,63 +193,34 @@ esp_err_t perform_request(cJSON *message, cJSON *response) {
             cJSON *esp_id = cJSON_GetObjectItem(data, "new_esp_id");
             if (esp_id && strcmp(esp_id->valuestring, "") != 0 && esp_id->valuestring != ESP_ID) {
                 ESP_LOGI(TAG, "Changing device name...");
-                write_bytes(I2C_DATA_SUBCLASS_ID, I2C_NAME_OFFSET, (uint8_t *)esp_id->valuestring, 11);
+
+                uint8_t address[2] = {
+                    (I2C_DEVICE_NAME >> 8) && 0xFF,
+                     I2C_DEVICE_NAME       && 0xFF,
+                };
+                char* new_id = (char*)esp_id->valuestring;
+                size_t new_id_length = strlen(new_id);
+                if (new_id_length > 20) new_id_length = 20;
+                uint8_t new_id_data[1+new_id_length];
+                new_id_data[0] = new_id_length;
+                for (size_t i=0; i<new_id_length; i++)
+                    new_id_data[1 + i] = new_id[i];
+                write_data_flash(address, sizeof(address), new_id_data, sizeof(new_id_data));
             }
 
-            int BL = cJSON_GetObjectItem(data, "BL")->valueint;
-            int BH = cJSON_GetObjectItem(data, "BH")->valueint;
-            int CITL = cJSON_GetObjectItem(data, "CITL")->valueint;
-            int CITH = cJSON_GetObjectItem(data, "CITH")->valueint;
-            int CCT = cJSON_GetObjectItem(data, "CCT")->valueint;
-            int DCT = cJSON_GetObjectItem(data, "DCT")->valueint;
+            int OTC_threshold = cJSON_GetObjectItem(data, "OTC_threshold")->valueint;
 
-            uint8_t two_bytes[2];
-            read_bytes(I2C_DISCHARGE_SUBCLASS_ID, I2C_BL_OFFSET, two_bytes, sizeof(two_bytes));
-            if (BL != (two_bytes[0] << 8 | two_bytes[1])) {
-                ESP_LOGI(TAG, "Changing BL voltage...");
-                two_bytes[0] = (BL >> 8) & 0xFF;
-                two_bytes[1] =  BL       & 0xFF;
-                write_bytes(I2C_DISCHARGE_SUBCLASS_ID, I2C_BL_OFFSET, two_bytes, sizeof(two_bytes));
-            }
-
-            read_bytes(I2C_DISCHARGE_SUBCLASS_ID, I2C_BH_OFFSET, two_bytes, sizeof(two_bytes));
-            if (BH != (two_bytes[0] << 8 | two_bytes[1])) {
-                ESP_LOGI(TAG, "Changing BH voltage...");
-                two_bytes[0] = (BH >> 8) & 0xFF;
-                two_bytes[1] =  BH       & 0xFF;
-                write_bytes(I2C_DISCHARGE_SUBCLASS_ID, I2C_BH_OFFSET, two_bytes, sizeof(two_bytes));
-            }
-
-            read_bytes(I2C_CHARGE_INHIBIT_CFG_SUBCLASS_ID, I2C_CHG_INHIBIT_TEMP_LOW_OFFSET, two_bytes, sizeof(two_bytes));
-            if (CITL != (two_bytes[0] << 8 | two_bytes[1])) {
-                ESP_LOGI(TAG, "Changing charge inhibit low temperature threshold...");
-                two_bytes[0] = (CITL >> 8) & 0xFF;
-                two_bytes[1] =  CITL       & 0xFF;
-                write_bytes(I2C_CHARGE_INHIBIT_CFG_SUBCLASS_ID, I2C_CHG_INHIBIT_TEMP_LOW_OFFSET, two_bytes, sizeof(two_bytes));
-            }
-
-            read_bytes(I2C_CHARGE_INHIBIT_CFG_SUBCLASS_ID, I2C_CHG_INHIBIT_TEMP_HIGH_OFFSET, two_bytes, sizeof(two_bytes));
-            if (CITH != (two_bytes[0] << 8 | two_bytes[1])) {
-                ESP_LOGI(TAG, "Changing charge inhibit high temperature threshold...");
-                two_bytes[0] = (CITH >> 8) & 0xFF;
-                two_bytes[1] =  CITH       & 0xFF;
-                write_bytes(I2C_CHARGE_INHIBIT_CFG_SUBCLASS_ID, I2C_CHG_INHIBIT_TEMP_HIGH_OFFSET, two_bytes, sizeof(two_bytes));
-            }
-
-            read_bytes(I2C_CURRENT_THRESHOLDS_SUBCLASS_ID, I2C_CHG_CURRENT_THRESHOLD_OFFSET, two_bytes, sizeof(two_bytes));
-            if (CCT != (two_bytes[0] << 8 | two_bytes[1])) {
-                ESP_LOGI(TAG, "Changing charge current threshold...");
-                two_bytes[0] = (CCT >> 8) & 0xFF;
-                two_bytes[1] =  CCT       & 0xFF;
-                write_bytes(I2C_CURRENT_THRESHOLDS_SUBCLASS_ID, I2C_CHG_CURRENT_THRESHOLD_OFFSET, two_bytes, sizeof(two_bytes));
-            }
-
-            read_bytes(I2C_CURRENT_THRESHOLDS_SUBCLASS_ID, I2C_DSG_CURRENT_THRESHOLD_OFFSET, two_bytes, sizeof(two_bytes));
-            if (DCT != (two_bytes[0] << 8 | two_bytes[1])) {
-                ESP_LOGI(TAG, "Changing discharge current threshold...");
-                two_bytes[0] = (DCT >> 8) & 0xFF;
-                two_bytes[1] =  DCT       & 0xFF;
-                write_bytes(I2C_CURRENT_THRESHOLDS_SUBCLASS_ID, I2C_DSG_CURRENT_THRESHOLD_OFFSET, two_bytes, sizeof(two_bytes));
+            uint8_t address[2] = {
+                (I2C_OTC_THRESHOLD >> 8) & 0xFF,
+                 I2C_OTC_THRESHOLD       & 0xFF
+            };
+            uint8_t data_flash[2] = {0};
+            read_data_flash(address, sizeof(address), data_flash, sizeof(data_flash));
+            if (OTC_threshold != (data_flash[1] << 8 | data_flash[0])) {
+                ESP_LOGI(TAG, "Changing OTC threshold...");
+                data_flash[0] =  OTC_threshold       & 0xFF;
+                data_flash[1] = (OTC_threshold >> 8) & 0xFF;
+                write_data_flash(address, sizeof(address), data_flash, sizeof(data_flash));
             }
 
             gpio_set_level(I2C_LED_GPIO_PIN, 0);

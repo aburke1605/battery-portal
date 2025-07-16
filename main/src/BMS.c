@@ -96,84 +96,54 @@ char* get_data(bool local) {
     // create JSON object with sensor data
     cJSON *data = cJSON_CreateObject();
 
-    uint8_t two_bytes[2];
+    uint8_t data_SBS[2] = {0};
+    uint8_t address[2] = {0};
+    uint8_t data_flash[2] = {0};
+    uint8_t block_data_flash[32] = {0};
 
     // read sensor data
-    // these values are big-endian
-    read_bytes(0, I2C_STATE_OF_CHARGE_REG, two_bytes, sizeof(two_bytes));
-    cJSON_AddNumberToObject(data, "Q", two_bytes[1] << 8 | two_bytes[0]);
+    read_SBS_data(I2C_RELATIVE_STATE_OF_CHARGE, data_SBS, sizeof(data_SBS));
+    cJSON_AddNumberToObject(data, "Q", data_SBS[1] << 8 | data_SBS[0]);
 
-    read_bytes(0, I2C_STATE_OF_HEALTH_REG, two_bytes, sizeof(two_bytes));
-    cJSON_AddNumberToObject(data, "H", two_bytes[1] << 8 | two_bytes[0]);
+    read_SBS_data(I2C_STATE_OF_HEALTH, data_SBS, sizeof(data_SBS));
+    cJSON_AddNumberToObject(data, "H", data_SBS[1] << 8 | data_SBS[0]);
 
-    read_bytes(0, I2C_VOLTAGE_REG, two_bytes, sizeof(two_bytes));
-    cJSON_AddNumberToObject(data, "V", round_to_dp((float)(two_bytes[1] << 8 | two_bytes[0]) / 1000.0, 1));
+    read_SBS_data(I2C_TEMPERATURE, data_SBS, sizeof(data_SBS));
+    cJSON_AddNumberToObject(data, "aT", round_to_dp((float)(data_SBS[1] << 8 | data_SBS[0]) / 10.0 - 273.15, 1));
 
-    read_bytes(0, I2C_CELL1_VOLTAGE_REG, two_bytes, sizeof(two_bytes));
-    cJSON_AddNumberToObject(data, "V1", round_to_dp((float)((int16_t)(two_bytes[1] << 8 | two_bytes[0])) / 1000.0, 1));
+    read_SBS_data(I2C_VOLTAGE, data_SBS, sizeof(data_SBS));
+    cJSON_AddNumberToObject(data, "V", round_to_dp((float)((int16_t)(data_SBS[1] << 8 | data_SBS[0])) / 1000.0, 1));
 
-    read_bytes(0, I2C_CELL2_VOLTAGE_REG, two_bytes, sizeof(two_bytes));
-    cJSON_AddNumberToObject(data, "V2", round_to_dp((float)((int16_t)(two_bytes[1] << 8 | two_bytes[0])) / 1000.0, 1));
+    read_SBS_data(I2C_CURRENT, data_SBS, sizeof(data_SBS));
+    cJSON_AddNumberToObject(data, "I", round_to_dp((float)((int16_t)(data_SBS[1] << 8 | data_SBS[0])) / 1000.0, 1));
 
-    read_bytes(0, I2C_CELL3_VOLTAGE_REG, two_bytes, sizeof(two_bytes));
-    cJSON_AddNumberToObject(data, "V3", round_to_dp((float)((int16_t)(two_bytes[1] << 8 | two_bytes[0])) / 1000.0, 1));
+    address[0] = (I2C_DA_STATUS_1 >> 8) & 0xFF;
+    address[1] =  I2C_DA_STATUS_1       & 0xFF;
+    read_data_flash(address, sizeof(address), block_data_flash, sizeof(block_data_flash));
+    cJSON_AddNumberToObject(data, "V1", round_to_dp((float)((int16_t)(block_data_flash[1] << 8 | block_data_flash[0])) / 1000.0, 2));
+    cJSON_AddNumberToObject(data, "V2", round_to_dp((float)((int16_t)(block_data_flash[3] << 8 | block_data_flash[2])) / 1000.0, 2));
+    cJSON_AddNumberToObject(data, "V3", round_to_dp((float)((int16_t)(block_data_flash[5] << 8 | block_data_flash[4])) / 1000.0, 2));
+    cJSON_AddNumberToObject(data, "V4", round_to_dp((float)((int16_t)(block_data_flash[7] << 8 | block_data_flash[6])) / 1000.0, 2));
+    cJSON_AddNumberToObject(data, "I1", round_to_dp((float)((int16_t)(block_data_flash[13] << 8 | block_data_flash[12])) / 1000.0, 2));
+    cJSON_AddNumberToObject(data, "I2", round_to_dp((float)((int16_t)(block_data_flash[15] << 8 | block_data_flash[14])) / 1000.0, 2));
+    cJSON_AddNumberToObject(data, "I3", round_to_dp((float)((int16_t)(block_data_flash[17] << 8 | block_data_flash[16])) / 1000.0, 2));
+    cJSON_AddNumberToObject(data, "I4", round_to_dp((float)((int16_t)(block_data_flash[19] << 8 | block_data_flash[18])) / 1000.0, 2));
 
-    read_bytes(0, I2C_CELL4_VOLTAGE_REG, two_bytes, sizeof(two_bytes));
-    cJSON_AddNumberToObject(data, "V4", round_to_dp((float)((int16_t)(two_bytes[1] << 8 | two_bytes[0])) / 1000.0, 1));
-
-    read_bytes(0, I2C_CURRENT_REG, two_bytes, sizeof(two_bytes));
-    cJSON_AddNumberToObject(data, "I", round_to_dp((float)((int16_t)(two_bytes[1] << 8 | two_bytes[0])) / 1000.0, 1));
-
-    read_bytes(0, I2C_CELL1_CURRENT_REG, two_bytes, sizeof(two_bytes));
-    cJSON_AddNumberToObject(data, "I1", round_to_dp((float)((int16_t)(two_bytes[1] << 8 | two_bytes[0])) / 1000.0, 1));
-
-    read_bytes(0, I2C_CELL2_CURRENT_REG, two_bytes, sizeof(two_bytes));
-    cJSON_AddNumberToObject(data, "I2", round_to_dp((float)((int16_t)(two_bytes[1] << 8 | two_bytes[0])) / 1000.0, 1));
-
-    read_bytes(0, I2C_CELL3_CURRENT_REG, two_bytes, sizeof(two_bytes));
-    cJSON_AddNumberToObject(data, "I3", round_to_dp((float)((int16_t)(two_bytes[1] << 8 | two_bytes[0])) / 1000.0, 1));
-
-    read_bytes(0, I2C_CELL4_CURRENT_REG, two_bytes, sizeof(two_bytes));
-    cJSON_AddNumberToObject(data, "I4", round_to_dp((float)((int16_t)(two_bytes[1] << 8 | two_bytes[0])) / 1000.0, 1));
-
-    read_bytes(0, I2C_TEMPERATURE_REG, two_bytes, sizeof(two_bytes));
-    cJSON_AddNumberToObject(data, "aT", round_to_dp((float)(two_bytes[1] << 8 | two_bytes[0]) / 10.0 - 273.15, 1));
-
-    read_bytes(0, I2C_INT_TEMPERATURE_REG, two_bytes, sizeof(two_bytes));
-    cJSON_AddNumberToObject(data, "iT", round_to_dp((float)(two_bytes[1] << 8 | two_bytes[0]) / 10.0 - 273.15, 1));
-
-    read_bytes(0, I2C_CELL1_TEMPERATURE_REG, two_bytes, sizeof(two_bytes));
-    cJSON_AddNumberToObject(data, "T1", round_to_dp((float)(two_bytes[1] << 8 | two_bytes[0]) / 10.0 - 273.15, 1));
-
-    read_bytes(0, I2C_CELL2_TEMPERATURE_REG, two_bytes, sizeof(two_bytes));
-    cJSON_AddNumberToObject(data, "T2", round_to_dp((float)(two_bytes[1] << 8 | two_bytes[0]) / 10.0 - 273.15, 1));
-
-    read_bytes(0, I2C_CELL3_TEMPERATURE_REG, two_bytes, sizeof(two_bytes));
-    cJSON_AddNumberToObject(data, "T3", round_to_dp((float)(two_bytes[1] << 8 | two_bytes[0]) / 10.0 - 273.15, 1));
-
-    read_bytes(0, I2C_CELL4_TEMPERATURE_REG, two_bytes, sizeof(two_bytes));
-    cJSON_AddNumberToObject(data, "T4", round_to_dp((float)(two_bytes[1] << 8 | two_bytes[0]) / 10.0 - 273.15, 1));
+    address[0] = (I2C_DA_STATUS_2 >> 8) & 0xFF;
+    address[1] =  I2C_DA_STATUS_2       & 0xFF;
+    read_data_flash(address, sizeof(address), block_data_flash, sizeof(block_data_flash));
+    cJSON_AddNumberToObject(data, "T1", round_to_dp((float)(block_data_flash[3] << 8 | block_data_flash[2]) / 10.0 - 273.15, 2));
+    cJSON_AddNumberToObject(data, "T2", round_to_dp((float)(block_data_flash[5] << 8 | block_data_flash[4]) / 10.0 - 273.15, 2));
+    cJSON_AddNumberToObject(data, "T3", round_to_dp((float)(block_data_flash[7] << 8 | block_data_flash[6]) / 10.0 - 273.15, 2));
+    cJSON_AddNumberToObject(data, "T4", round_to_dp((float)(block_data_flash[9] << 8 | block_data_flash[8]) / 10.0 - 273.15, 2));
+    cJSON_AddNumberToObject(data, "cT", round_to_dp((float)(block_data_flash[11] << 8 | block_data_flash[10]) / 10.0 - 273.15, 1));
 
 
     // configurable data too
-    // these values are little-endian
-    read_bytes(I2C_DISCHARGE_SUBCLASS_ID, I2C_BL_OFFSET, two_bytes, sizeof(two_bytes));
-    cJSON_AddNumberToObject(data, "BL", two_bytes[0] << 8 | two_bytes[1]);
-
-    read_bytes(I2C_DISCHARGE_SUBCLASS_ID, I2C_BH_OFFSET, two_bytes, sizeof(two_bytes));
-    cJSON_AddNumberToObject(data, "BH", two_bytes[0] << 8 | two_bytes[1]);
-
-    read_bytes(I2C_CURRENT_THRESHOLDS_SUBCLASS_ID, I2C_CHG_CURRENT_THRESHOLD_OFFSET, two_bytes, sizeof(two_bytes));
-    cJSON_AddNumberToObject(data, "CCT", two_bytes[0] << 8 | two_bytes[1]);
-
-    read_bytes(I2C_CURRENT_THRESHOLDS_SUBCLASS_ID, I2C_DSG_CURRENT_THRESHOLD_OFFSET, two_bytes, sizeof(two_bytes));
-    cJSON_AddNumberToObject(data, "DCT", two_bytes[0] << 8 | two_bytes[1]);
-
-    read_bytes(I2C_CHARGE_INHIBIT_CFG_SUBCLASS_ID, I2C_CHG_INHIBIT_TEMP_LOW_OFFSET, two_bytes, sizeof(two_bytes));
-    cJSON_AddNumberToObject(data, "CITL", two_bytes[0] << 8 | two_bytes[1]);
-
-    read_bytes(I2C_CHARGE_INHIBIT_CFG_SUBCLASS_ID, I2C_CHG_INHIBIT_TEMP_HIGH_OFFSET, two_bytes, sizeof(two_bytes));
-    cJSON_AddNumberToObject(data, "CITH", two_bytes[0] << 8 | two_bytes[1]);
+    address[0] = (I2C_OTC_THRESHOLD >> 8) & 0xFF;
+    address[1] =  I2C_OTC_THRESHOLD       & 0xFF;
+    read_data_flash(address, sizeof(address), data_flash, sizeof(data_flash));
+    cJSON_AddNumberToObject(data, "OTC_threshold", round_to_dp((float)(data_flash[1] << 8 | data_flash[0]) / 10.0, 1));
 
     if (local) {
         // only needed for local clients

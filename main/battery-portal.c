@@ -7,6 +7,7 @@
 #include "include/MESH.h"
 #include "include/LoRa.h"
 #include "include/WS.h"
+#include "include/utils.h"
 
 #include <esp_log.h>
 #include <esp_spiffs.h>
@@ -54,8 +55,10 @@ void app_main(void) {
     if (!LORA_IS_RECEIVER) {
         // do a BMS reset on boot
         reset();
-
-        vTaskDelay(pdMS_TO_TICKS(1000));
+        while (get_sealed_status() != 1) {
+            unseal();
+            vTaskDelay(pdMS_TO_TICKS(1000));
+        }
 
         // Initialize the GPIO pin as an output for LED toggling
         gpio_config_t io_conf = {
@@ -67,9 +70,14 @@ void app_main(void) {
         };
         gpio_config(&io_conf);
 
-        uint8_t eleven_bytes[11];
-        read_bytes(I2C_DATA_SUBCLASS_ID, I2C_NAME_OFFSET, eleven_bytes, sizeof(eleven_bytes));
-        if (strcmp((char *)eleven_bytes, "") != 0) strncpy(ESP_ID, (char *)eleven_bytes, 10);
+        uint8_t address[2] = {
+            (I2C_DEVICE_NAME >> 8) & 0xFF,
+             I2C_DEVICE_NAME       & 0xFF,
+        };
+        uint8_t data_flash[UTILS_ID_LENGTH + 1] = {0}; // S21 data type
+        read_data_flash(address, sizeof(address), data_flash, sizeof(data_flash));
+        uint8_t name_length = MIN(data_flash[0], UTILS_ID_LENGTH);
+        if (strcmp((char *)data_flash, "") != 0) strncpy(ESP_ID, (char *)&data_flash[1], name_length);
     }
 
     wifi_init();

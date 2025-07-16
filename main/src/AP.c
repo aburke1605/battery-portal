@@ -127,9 +127,9 @@ void wifi_init(void) {
     if (LORA_IS_RECEIVER) {
         snprintf(buffer, sizeof(buffer), "LoRa RECEIVER");
     } else {
-        uint8_t charge[2] = {};
-        read_bytes(0, I2C_STATE_OF_CHARGE_REG, charge, sizeof(charge));
-        snprintf(buffer, sizeof(buffer), "%s%s: %d%%", !AP_exists?"ROOT ":"", ESP_ID, charge[1] << 8 | charge[0]);
+        uint8_t data_SBS[2] = {0};
+        read_SBS_data(I2C_RELATIVE_STATE_OF_CHARGE, data_SBS, sizeof(data_SBS));
+        snprintf(buffer, sizeof(buffer), "%s%s: %d%%", !AP_exists?"ROOT ":"", ESP_ID, data_SBS[1] << 8 | data_SBS[0]);
     }
 
     strncpy((char *)wifi_ap_config.ap.ssid, buffer, sizeof(wifi_ap_config.ap.ssid) - 1);
