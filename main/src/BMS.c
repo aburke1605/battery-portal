@@ -74,6 +74,24 @@ void unseal() {
     if (suspending) vTaskResume(websocket_task_handle);
 }
 
+int8_t get_sealed_status() {
+    // read OperationStatus
+    uint8_t addr[2] = { 0x00, 0x54 };
+    uint8_t data[4] = {0}; // expect 4 bytes for OperationStatus
+    read_data_flash(addr, sizeof(addr), data, sizeof(data));
+    bool SEC0 = 0b00000001 & data[1];
+    bool SEC1 = 0b00000010 & data[1];
+
+    if (SEC1 & SEC0)
+        return 0; // sealed
+    else if (SEC1 & !SEC0)
+        return 1; // unsealed
+    else if (!SEC1 & SEC0)
+        return 2; // unsealed full access
+    else
+        return -1; // error
+}
+
 char* get_data(bool local) {
     // create JSON object with sensor data
     cJSON *data = cJSON_CreateObject();
