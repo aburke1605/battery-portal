@@ -91,7 +91,7 @@ config FREQ_HZ
 
 config DELAY
     int "I2C delay (ms)"
-    default 300
+    default 500
     help
       Set the time delay betwen successive I2C commands.
 

@@ -35,7 +35,7 @@ esp_err_t i2c_master_init(void) {
 
 esp_err_t check_device() {
     esp_err_t ret = i2c_master_probe(i2c_bus, I2C_ADDR, I2C_MASTER_TIMEOUT_MS);
-    if (ret != ESP_OK) ESP_LOGE(TAG, "I2C device not found.");
+    if (ret != ESP_OK) ESP_LOGE(TAG, "I2C device not found at address 0x%x.", I2C_ADDR);
 
     return ret;
 }
