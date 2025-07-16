@@ -195,8 +195,8 @@ esp_err_t perform_request(cJSON *message, cJSON *response) {
                 ESP_LOGI(TAG, "Changing device name...");
 
                 uint8_t address[2] = {
-                    (I2C_DEVICE_NAME >> 8) && 0xFF,
-                     I2C_DEVICE_NAME       && 0xFF,
+                    (I2C_DEVICE_NAME_ADDR >> 8) && 0xFF,
+                     I2C_DEVICE_NAME_ADDR       && 0xFF,
                 };
                 char* new_id = (char*)esp_id->valuestring;
                 size_t new_id_length = strlen(new_id);
@@ -211,8 +211,8 @@ esp_err_t perform_request(cJSON *message, cJSON *response) {
             int OTC_threshold = cJSON_GetObjectItem(data, "OTC_threshold")->valueint;
 
             uint8_t address[2] = {
-                (I2C_OTC_THRESHOLD >> 8) & 0xFF,
-                 I2C_OTC_THRESHOLD       & 0xFF
+                (I2C_OTC_THRESHOLD_ADDR >> 8) & 0xFF,
+                 I2C_OTC_THRESHOLD_ADDR       & 0xFF
             };
             uint8_t data_flash[2] = {0};
             read_data_flash(address, sizeof(address), data_flash, sizeof(data_flash));

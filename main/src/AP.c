@@ -128,7 +128,7 @@ void wifi_init(void) {
         snprintf(buffer, sizeof(buffer), "LoRa RECEIVER");
     } else {
         uint8_t data_SBS[2] = {0};
-        read_SBS_data(I2C_RELATIVE_STATE_OF_CHARGE, data_SBS, sizeof(data_SBS));
+        read_SBS_data(I2C_RELATIVE_STATE_OF_CHARGE_ADDR, data_SBS, sizeof(data_SBS));
         snprintf(buffer, sizeof(buffer), "%s%s: %d%%", !AP_exists?"ROOT ":"", ESP_ID, data_SBS[1] << 8 | data_SBS[0]);
     }
 
@@ -163,7 +163,7 @@ void wifi_init(void) {
 
 esp_err_t redirect_handler(httpd_req_t *req) {
     // just need to redirect to the uri where ws data is sent
-    char redirect_url[25];
+    char redirect_url[35];
     snprintf(redirect_url, sizeof(redirect_url), "/esp32?esp_id=%s", ESP_ID);
 
     httpd_resp_set_status(req, "302 Found");

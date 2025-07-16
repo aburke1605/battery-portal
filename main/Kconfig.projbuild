@@ -64,95 +64,136 @@ config SCAN_I2C
     help
       Set to true to scan addresses for connected I2C devices.
 
+
 config I2C_ADDR
     hex "I2C Device Address"
-    default 0x55
+    default 0x0B
     help
       Set the hexadecimal address of the I2C device.
 
-config I2C_MASTER_SDA_PIN
+config MASTER_SDA_PIN
     int "I2C Serial Data (SDA) GPIO"
     default 22
     help
       Set the GPIO number for the I2C SDA line.
 
-config I2C_MASTER_SCL_PIN
+config MASTER_SCL_PIN
     int "I2C Serial Clock (SCL) GPIO"
     default 21
     help
       Set the GPIO number for the I2C SCL line.
 
-config I2C_FREQ_HZ
+config FREQ_HZ
     int "I2C Clock Frequency (Hz)"
     default 50000
     help
       Set the clock frequency for the I2C device.
 
-config I2C_DELAY
+config DELAY
     int "I2C delay (ms)"
     default 300
     help
       Set the time delay betwen successive I2C commands.
 
-config I2C_CONTROL_REG
-    hex "BMS 'Control()' command code"
+
+config MANUFACTURER_ACCESS
+    hex "BMS 'ManufacturerAccess()' command code"
     default 0x00
     help
-      Set the Control() command code (initial byte) for the BMS.
+      Set the ManufacturerAccess() command code for the BMS.
 
-config I2C_CONTROL_RESET_SUBCMD
+config MANUFACTURER_BLOCK_ACCESS
+    hex "BMS 'ManufacturerBlockAccess()' command code"
+    default 0x44
+    help
+      Set the ManufacturerBlockAccess() command code for the BMS.
+
+
+config RELATIVE_STATE_OF_CHARGE_ADDR
+    hex "BMS relative SOC Address"
+    default 0x0D
+    help
+      Set the SBS address for the BMS to read the battery realtive state of charge.
+
+config STATE_OF_HEALTH_ADDR
+    hex "BMS SOH Address"
+    default 0x4F
+    help
+      Set the SBS address for the BMS to read the battery state of health.
+
+config TEMPERATURE_ADDR
+    hex "BMS Temperature Address"
+    default 0x08
+    help
+      Set the SBS address for the BMS to read the battery temperature.
+
+config VOLTAGE_ADDR
+    hex "BMS Voltage Address"
+    default 0x09
+    help
+      Set the SBS address for the BMS to read the battery voltage.
+
+config CURRENT_ADDR
+    hex "BMS Current Address"
+    default 0x0A
+    help
+      Set the SBS address for the BMS to read the battery average current.
+
+
+config DEVICE_NAME_ADDR
+    hex "BMS Device Name Address"
+    default 0x4085
+    help
+      Set the Data Flash address to read the BMS device name.
+
+config OPERATION_STATUS_ADDR
+    hex "BMS Operation Status Address"
+    default 0x0054
+    help
+      Set the Data Flash address to read the BMS sealed status and more.
+
+config DA_STATUS_1_ADDR
+    hex "BMS DA Status 1 Address"
+    default 0x0071
+    help
+      Set the Data Flash address to read the BMS cell voltages, currents, and more.
+
+config DA_STATUS_2_ADDR
+    hex "BMS DA Status 2 Address"
+    default 0x0072
+    help
+      Set the Data Flash address to read the BMS cell temperatures and more.
+
+config OTC_THRESHOLD_ADDR
+    hex "BMS OTC Threshold Address"
+    default 0x4888
+    help
+      Set the Data Flash address to read the BMS OverTemperature Charge threshold.
+
+
+config RESET_CMD
     hex "BMS RESET command code"
     default 0x0041
     help
       Set the RESET command code for the BMS.
 
-config I2C_CONTROL_UNSEAL_SUBCMD_1
+config SEAL_CMD
+    hex "BMS SEAL command code"
+    default 0x0030
+    help
+      Set the SEAL command code for the BMS.
+
+config UNSEAL_CMD_1
     hex "BMS UNSEAL command code (first half)"
     default 0x3672
     help
       Set the first half of the UNSEAL command code for the BMS.
 
-config I2C_CONTROL_UNSEAL_SUBCMD_2
+config UNSEAL_CMD_2
     hex "BMS UNSEAL command code (second half)"
     default 0x0414
     help
       Set the second half of the UNSEAL command code for the BMS.
-
-config STATE_OF_CHARGE_REG
-    hex "BMS SOC Address"
-    default 0x2C
-    help
-      Set the register address for the BMS to read the battery state of charge.
-
-config STATE_OF_HEALTH_REG
-    hex "BMS SOH Address"
-    default 0x2E
-    help
-      Set the register address for the BMS to read the battery state of health.
-
-config VOLTAGE_REG
-    hex "BMS Voltage Address"
-    default 0x08
-    help
-      Set the register address for the BMS to read the battery voltage.
-
-config CURRENT_REG
-    hex "BMS Current Address"
-    default 0x14
-    help
-      Set the register address for the BMS to read the battery average current.
-
-config TEMPERATURE_REG
-    hex "BMS Temperature Address"
-    default 0x06
-    help
-      Set the register address for the BMS to read the battery temperature.
-
-config INT_TEMPERATURE_REG
-    hex "BMS Internal Temperature Address"
-    default 0x28
-    help
-      Set the register address for the BMS to read the battery internal temperature.
 
 endmenu
 

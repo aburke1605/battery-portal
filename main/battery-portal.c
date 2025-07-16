@@ -71,8 +71,8 @@ void app_main(void) {
         gpio_config(&io_conf);
 
         uint8_t address[2] = {
-            (I2C_DEVICE_NAME >> 8) & 0xFF,
-             I2C_DEVICE_NAME       & 0xFF,
+            (I2C_DEVICE_NAME_ADDR >> 8) & 0xFF,
+             I2C_DEVICE_NAME_ADDR       & 0xFF,
         };
         uint8_t data_flash[UTILS_ID_LENGTH + 1] = {0}; // S21 data type
         read_data_flash(address, sizeof(address), data_flash, sizeof(data_flash));
