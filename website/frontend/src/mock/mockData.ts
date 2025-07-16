@@ -189,7 +189,7 @@ export const initialBatteries: BatteryData[] = [
     cell2_voltage: 2,
     cell3_voltage: 3,
     cell4_voltage: 4,
-    OCT_threshold: 550,
+    OTC_threshold: 550,
   },
   {
     esp_id: 'B-002',
@@ -221,7 +221,7 @@ export const initialBatteries: BatteryData[] = [
     cell2_voltage: 2,
     cell3_voltage: 3,
     cell4_voltage: 4,
-    OCT_threshold: 550,
+    OTC_threshold: 550,
   },
   {
     esp_id: 'B-003',
@@ -253,7 +253,7 @@ export const initialBatteries: BatteryData[] = [
     cell2_voltage: 2,
     cell3_voltage: 3,
     cell4_voltage: 4,
-    OCT_threshold: 550,
+    OTC_threshold: 550,
   },
   {
     esp_id: 'B-004',
@@ -285,7 +285,7 @@ export const initialBatteries: BatteryData[] = [
     cell2_voltage: 2,
     cell3_voltage: 3,
     cell4_voltage: 4,
-    OCT_threshold: 550,
+    OTC_threshold: 550,
   },
   {
     esp_id: 'B-005',
@@ -317,7 +317,7 @@ export const initialBatteries: BatteryData[] = [
     cell2_voltage: 2,
     cell3_voltage: 3,
     cell4_voltage: 4,
-    OCT_threshold: 550,
+    OTC_threshold: 550,
   },
   {
     esp_id: 'B-006',
@@ -349,7 +349,7 @@ export const initialBatteries: BatteryData[] = [
     cell2_voltage: 2,
     cell3_voltage: 3,
     cell4_voltage: 4,
-    OCT_threshold: 550,
+    OTC_threshold: 550,
   },
   {
     esp_id: 'B-007',
@@ -381,7 +381,7 @@ export const initialBatteries: BatteryData[] = [
     cell2_voltage: 2,
     cell3_voltage: 3,
     cell4_voltage: 4,
-    OCT_threshold: 550,
+    OTC_threshold: 550,
   },
   {
     esp_id: 'B-008',
@@ -413,7 +413,7 @@ export const initialBatteries: BatteryData[] = [
     cell2_voltage: 2,
     cell3_voltage: 3,
     cell4_voltage: 4,
-    OCT_threshold: 550,
+    OTC_threshold: 550,
   },
   {
     esp_id: 'B-009',
@@ -445,7 +445,7 @@ export const initialBatteries: BatteryData[] = [
     cell2_voltage: 2,
     cell3_voltage: 3,
     cell4_voltage: 4,
-    OCT_threshold: 550,
+    OTC_threshold: 550,
   }
 ];
 

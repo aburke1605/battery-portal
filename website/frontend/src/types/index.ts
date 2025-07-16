@@ -6,7 +6,7 @@ export interface BatteryData {
   charge: number;
   ambient_temperature: number;
   cell_temperature: number;
-  OCT_threshold: number;
+  OTC_threshold: number;
   voltage: number;
   current: number;
   health: number;
@@ -45,7 +45,7 @@ export const parseBatteryData = (
   current: raw?.I / 10 || 0,
   ambient_temperature: raw?.aT / 10 || 0,
   cell_temperature: raw?.cT / 10 || 0,
-  OCT_threshold: raw?.OCT_threshold || 0,
+  OTC_threshold: raw?.OTC_threshold || 0,
   isConnected: isFromEsp32 ? !!raw?.connected_to_WiFi : !!raw,
   status: "good",
   timestamp: Date.now(),

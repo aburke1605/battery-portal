@@ -62,23 +62,23 @@ const BatteryDetail: React.FC<BatteryDetailProps> = ({
   const [eduroam_password, setEduroamPassword] = useState("");
 
   // range
-  const OCT_threshold_min = 45;
-  const OCT_threshold_max = 65;
+  const OTC_threshold_min = 450;
+  const OTC_threshold_max = 650;
   // initialise
   const [values, setValues] = useState<Partial<BatteryData>>({
     esp_id: battery.esp_id,
-    OCT_threshold: battery.OCT_threshold
+    OTC_threshold: battery.OTC_threshold
   });
   // websocket update
   useEffect(() => {
     if (!isEditing) {
       setValues({
         esp_id: battery.esp_id,
-        OCT_threshold: battery.OCT_threshold
+        OTC_threshold: battery.OTC_threshold
       });
       setHasChanges(false);
     }
-  }, [battery.esp_id, battery.OCT_threshold, isEditing]);
+  }, [battery.esp_id, battery.OTC_threshold, isEditing]);
   // slider update
   const handleSliderChange = (key: string) => (e: React.ChangeEvent<HTMLInputElement>) => {
     const { value, type } = e.target;
@@ -101,7 +101,7 @@ const BatteryDetail: React.FC<BatteryDetailProps> = ({
   // reset sliders
   const handleReset = () => {
     setValues({
-      OCT_threshold: battery.OCT_threshold
+      OTC_threshold: battery.OTC_threshold
     });
     setIsEditing(false);
     setHasChanges(false);
@@ -361,18 +361,18 @@ const BatteryDetail: React.FC<BatteryDetailProps> = ({
                           onChange={handleSliderChange("new_esp_id")}
                         />
 
-                        <label className="block text-sm font-medium text-gray-700">OCT threshold: {values.OCT_threshold} [0.1 °C]</label>
+                        <label className="block text-sm font-medium text-gray-700">OCT threshold: {values.OTC_threshold} [0.1 °C]</label>
                         <input
                           type="range"
                           className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer mt-2"
-                          min={OCT_threshold_min}
-                          max={OCT_threshold_max}
-                          value={values.OCT_threshold}
-                          onChange={handleSliderChange("OCT_threshold")}
+                          min={OTC_threshold_min}
+                          max={OTC_threshold_max}
+                          value={values.OTC_threshold}
+                          onChange={handleSliderChange("OTC_threshold")}
                         />
                         <div className="flex justify-between text-xs text-gray-500 mt-1">
-                          <span>{OCT_threshold_min} [0.1 °C]</span>
-                          <span>{OCT_threshold_max} [0.1 °C]</span>
+                          <span>{OTC_threshold_min} [0.1 °C]</span>
+                          <span>{OTC_threshold_max} [0.1 °C]</span>
                         </div>
 
                         {hasChanges && (
