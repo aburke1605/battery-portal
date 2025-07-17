@@ -189,6 +189,10 @@ export const initialBatteries: BatteryData[] = [
     cell2_voltage: 2,
     cell3_voltage: 3,
     cell4_voltage: 4,
+    cell1_charge: 50,
+    cell2_charge: 50,
+    cell3_charge: 50,
+    cell4_charge: 50,
     OTC_threshold: 550,
   },
   {
@@ -221,6 +225,10 @@ export const initialBatteries: BatteryData[] = [
     cell2_voltage: 2,
     cell3_voltage: 3,
     cell4_voltage: 4,
+    cell1_charge: 50,
+    cell2_charge: 50,
+    cell3_charge: 50,
+    cell4_charge: 50,
     OTC_threshold: 550,
   },
   {
@@ -253,6 +261,10 @@ export const initialBatteries: BatteryData[] = [
     cell2_voltage: 2,
     cell3_voltage: 3,
     cell4_voltage: 4,
+    cell1_charge: 50,
+    cell2_charge: 50,
+    cell3_charge: 50,
+    cell4_charge: 50,
     OTC_threshold: 550,
   },
   {
@@ -285,6 +297,10 @@ export const initialBatteries: BatteryData[] = [
     cell2_voltage: 2,
     cell3_voltage: 3,
     cell4_voltage: 4,
+    cell1_charge: 50,
+    cell2_charge: 50,
+    cell3_charge: 50,
+    cell4_charge: 50,
     OTC_threshold: 550,
   },
   {
@@ -317,6 +333,10 @@ export const initialBatteries: BatteryData[] = [
     cell2_voltage: 2,
     cell3_voltage: 3,
     cell4_voltage: 4,
+    cell1_charge: 50,
+    cell2_charge: 50,
+    cell3_charge: 50,
+    cell4_charge: 50,
     OTC_threshold: 550,
   },
   {
@@ -349,6 +369,10 @@ export const initialBatteries: BatteryData[] = [
     cell2_voltage: 2,
     cell3_voltage: 3,
     cell4_voltage: 4,
+    cell1_charge: 50,
+    cell2_charge: 50,
+    cell3_charge: 50,
+    cell4_charge: 50,
     OTC_threshold: 550,
   },
   {
@@ -381,6 +405,10 @@ export const initialBatteries: BatteryData[] = [
     cell2_voltage: 2,
     cell3_voltage: 3,
     cell4_voltage: 4,
+    cell1_charge: 50,
+    cell2_charge: 50,
+    cell3_charge: 50,
+    cell4_charge: 50,
     OTC_threshold: 550,
   },
   {
@@ -413,6 +441,10 @@ export const initialBatteries: BatteryData[] = [
     cell2_voltage: 2,
     cell3_voltage: 3,
     cell4_voltage: 4,
+    cell1_charge: 50,
+    cell2_charge: 50,
+    cell3_charge: 50,
+    cell4_charge: 50,
     OTC_threshold: 550,
   },
   {
@@ -445,6 +477,10 @@ export const initialBatteries: BatteryData[] = [
     cell2_voltage: 2,
     cell3_voltage: 3,
     cell4_voltage: 4,
+    cell1_charge: 50,
+    cell2_charge: 50,
+    cell3_charge: 50,
+    cell4_charge: 50,
     OTC_threshold: 550,
   }
 ];

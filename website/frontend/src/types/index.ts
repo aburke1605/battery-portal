@@ -30,6 +30,10 @@ export interface BatteryData {
   cell2_voltage: number;
   cell3_voltage: number;
   cell4_voltage: number;
+  cell1_charge: number;
+  cell2_charge: number;
+  cell3_charge: number;
+  cell4_charge: number;
 }
 
 export const parseBatteryData = (
@@ -61,6 +65,10 @@ export const parseBatteryData = (
   cell2_voltage: raw?.V2 / 100 || 0,
   cell3_voltage: raw?.V3 / 100 || 0,
   cell4_voltage: raw?.V4 / 100 || 0,
+  cell1_charge: raw?.Q1 || 0,
+  cell2_charge: raw?.Q2 || 0,
+  cell3_charge: raw?.Q3 || 0,
+  cell4_charge: raw?.Q4 || 0,
 });
 
 // Alert Data Types
