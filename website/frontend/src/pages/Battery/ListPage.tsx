@@ -48,6 +48,9 @@ export default function ListPage() {
     const viewBatteryDetails = (battery: BatteryData) => {
       navigate(`/battery-detail?esp_id=${battery.esp_id}`);
     };
+    const viewDigitalTwin = (battery: BatteryData) => {
+      navigate(`/digital-twin?esp_id=${battery.esp_id}`);
+    };
 
 
   const filteredBatteries = batteries.filter(battery => {
@@ -169,7 +172,8 @@ export default function ListPage() {
               key={battery.esp_id} 
               battery={battery} 
               // onToggleCharging={toggleCharging} 
-              onViewDetails={viewBatteryDetails} 
+              onViewDetails={viewBatteryDetails}
+              onViewTwin={viewDigitalTwin}
             />
           ))}
         </div>

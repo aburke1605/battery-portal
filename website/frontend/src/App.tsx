@@ -12,6 +12,7 @@ import BatteryPage from "./pages/Battery/BatteryPage";
 import UserList from "./pages/User/list";
 import AuthRequire from "./auth/AuthRequire.tsx";
 import {AuthProvider} from "./auth/AuthContext.tsx";
+import DigitalTwin from "./pages/Battery/DigitalTwin.tsx";
 
 
 export default function App() {
@@ -39,6 +40,7 @@ export default function App() {
             <Route path="/settings" element={<SystemSettings />} />
             <Route path="/batteries" element={<ListPage />} />
             <Route path="/battery-detail" element={<BatteryPage />} />
+            <Route path="/digital-twin" element={<DigitalTwin />} />
 
           </Route>
 

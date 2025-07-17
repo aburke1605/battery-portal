@@ -7,6 +7,7 @@ import time
 import json
 
 from db import update_db
+from utils import process_telemetry_data
 
 time_of_last_update = None
 def update_time():
@@ -122,6 +123,7 @@ def esp_ws(ws):
                     continue
                 else:
                     esp_clients.discard(frozenset(meta_data.items())) # remove old entry
+                    process_telemetry_data(data["content"])
                     meta_data["content"] = json.dumps({"esp_id": esp_id, **data["content"]}) # update content
                     esp_clients.add(frozenset(meta_data.items())) # re-add updated data
 
