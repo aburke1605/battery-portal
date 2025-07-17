@@ -18,7 +18,9 @@ void reset() {
         vTaskSuspend(websocket_task_handle);
     }
 
-    uint8_t word[2] = { (BMS_RESET_CMD >> 8) & 0xFF, BMS_RESET_CMD & 0xFF };
+    uint8_t word[2] = {0};
+    convert_uint_to_n_bytes(BMS_RESET_CMD, word, sizeof(word), true);
+
     write_word(I2C_MANUFACTURER_ACCESS, word, sizeof(word));
 
     // delay to allow reset to complete
@@ -39,7 +41,8 @@ void seal() {
         vTaskSuspend(websocket_task_handle);
     }
 
-    uint8_t word[2] = { (BMS_SEAL_CMD >> 8) & 0xFF, BMS_SEAL_CMD & 0xFF };
+    uint8_t word[2] = {0};
+    convert_uint_to_n_bytes(BMS_SEAL_CMD, word, sizeof(word), true);
     write_word(I2C_MANUFACTURER_ACCESS, word, sizeof(word));
 
     // delay to allow seal to complete
@@ -62,12 +65,10 @@ void unseal() {
 
     uint8_t word[2];
 
-    word[0] = (BMS_UNSEAL_CMD_2 >> 8) & 0xFF;
-    word[1] = BMS_UNSEAL_CMD_2 & 0xFF;
+    convert_uint_to_n_bytes(BMS_UNSEAL_CMD_2, word, sizeof(word), true);
     write_word(I2C_MANUFACTURER_ACCESS, word, sizeof(word));
 
-    word[0] = (BMS_UNSEAL_CMD_1 >> 8) & 0xFF;
-    word[1] = BMS_UNSEAL_CMD_1 & 0xFF;
+    convert_uint_to_n_bytes(BMS_UNSEAL_CMD_1, word, sizeof(word), true);
     write_word(I2C_MANUFACTURER_ACCESS, word, sizeof(word));
 
     // delay to allow unseal to complete
@@ -93,12 +94,10 @@ void full_access() {
 
     uint8_t word[2];
 
-    word[0] = (BMS_FULL_ACCESS_CMD_2 >> 8) & 0xFF;
-    word[1] = BMS_FULL_ACCESS_CMD_2 & 0xFF;
+    convert_uint_to_n_bytes(BMS_FULL_ACCESS_CMD_2, word, sizeof(word), true);
     write_word(I2C_MANUFACTURER_ACCESS, word, sizeof(word));
 
-    word[0] = (BMS_FULL_ACCESS_CMD_1 >> 8) & 0xFF;
-    word[1] = BMS_FULL_ACCESS_CMD_1 & 0xFF;
+    convert_uint_to_n_bytes(BMS_FULL_ACCESS_CMD_1, word, sizeof(word), true);
     write_word(I2C_MANUFACTURER_ACCESS, word, sizeof(word));
 
     // delay to allow full access to complete
@@ -114,7 +113,8 @@ void full_access() {
 
 int8_t get_sealed_status() {
     // read OperationStatus
-    uint8_t addr[2] = { (I2C_OPERATION_STATUS_ADDR >> 8) & 0xFF, I2C_OPERATION_STATUS_ADDR & 0xFF };
+    uint8_t addr[2] = {0};
+    convert_uint_to_n_bytes(I2C_OPERATION_STATUS_ADDR, addr, sizeof(addr), true);
     uint8_t data[4] = {0}; // expect 4 bytes for OperationStatus
     read_data_flash(addr, sizeof(addr), data, sizeof(data));
     bool SEC0 = 0b00000001 & data[1];
@@ -155,8 +155,7 @@ char* get_data(bool local) {
     read_SBS_data(I2C_CURRENT_ADDR, data_SBS, sizeof(data_SBS));
     cJSON_AddNumberToObject(data, "I", round_to_dp((float)((int16_t)(data_SBS[1] << 8 | data_SBS[0])) / 1000.0, 1));
 
-    address[0] = (I2C_DA_STATUS_1_ADDR >> 8) & 0xFF;
-    address[1] =  I2C_DA_STATUS_1_ADDR       & 0xFF;
+    convert_uint_to_n_bytes(I2C_DA_STATUS_1_ADDR, address, sizeof(address), true);
     read_data_flash(address, sizeof(address), block_data_flash, sizeof(block_data_flash));
     cJSON_AddNumberToObject(data, "V1", round_to_dp((float)((int16_t)(block_data_flash[1] << 8 | block_data_flash[0])) / 1000.0, 2));
     cJSON_AddNumberToObject(data, "V2", round_to_dp((float)((int16_t)(block_data_flash[3] << 8 | block_data_flash[2])) / 1000.0, 2));
@@ -167,8 +166,7 @@ char* get_data(bool local) {
     cJSON_AddNumberToObject(data, "I3", round_to_dp((float)((int16_t)(block_data_flash[17] << 8 | block_data_flash[16])) / 1000.0, 2));
     cJSON_AddNumberToObject(data, "I4", round_to_dp((float)((int16_t)(block_data_flash[19] << 8 | block_data_flash[18])) / 1000.0, 2));
 
-    address[0] = (I2C_DA_STATUS_2_ADDR >> 8) & 0xFF;
-    address[1] =  I2C_DA_STATUS_2_ADDR       & 0xFF;
+    convert_uint_to_n_bytes(I2C_DA_STATUS_2_ADDR, address, sizeof(address), true);
     read_data_flash(address, sizeof(address), block_data_flash, sizeof(block_data_flash));
     cJSON_AddNumberToObject(data, "T1", round_to_dp((float)(block_data_flash[3] << 8 | block_data_flash[2]) / 10.0 - 273.15, 2));
     cJSON_AddNumberToObject(data, "T2", round_to_dp((float)(block_data_flash[5] << 8 | block_data_flash[4]) / 10.0 - 273.15, 2));
@@ -178,8 +176,7 @@ char* get_data(bool local) {
 
 
     // configurable data too
-    address[0] = (I2C_OTC_THRESHOLD_ADDR >> 8) & 0xFF;
-    address[1] =  I2C_OTC_THRESHOLD_ADDR       & 0xFF;
+    convert_uint_to_n_bytes(I2C_OTC_THRESHOLD_ADDR, address, sizeof(address), true);
     read_data_flash(address, sizeof(address), data_flash, sizeof(data_flash));
     cJSON_AddNumberToObject(data, "OTC_threshold", round_to_dp((float)(data_flash[1] << 8 | data_flash[0]) / 10.0, 1));
 
