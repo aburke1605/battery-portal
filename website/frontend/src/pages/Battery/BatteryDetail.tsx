@@ -62,43 +62,23 @@ const BatteryDetail: React.FC<BatteryDetailProps> = ({
   const [eduroam_password, setEduroamPassword] = useState("");
 
   // range
-  const BL_min = 2000;
-  const BL_max = 3000;
-  const BH_min = 4000;
-  const BH_max = 5000;
-  const CITL_min = -50;
-  const CITL_max =  50;
-  const CITH_min = 400;
-  const CITH_max = 500;
-  const CCT_min = 70;
-  const CCT_max = 80;
-  const DCT_min = 55;
-  const DCT_max = 65;
+  const OTC_threshold_min = 450;
+  const OTC_threshold_max = 650;
   // initialise
   const [values, setValues] = useState<Partial<BatteryData>>({
     esp_id: battery.esp_id,
-    BL: battery.BL,
-    BH: battery.BH,
-    CITL: battery.CITL,
-    CITH: battery.CITH,
-    CCT: battery.CCT,
-    DCT: battery.DCT,
+    OTC_threshold: battery.OTC_threshold
   });
   // websocket update
   useEffect(() => {
     if (!isEditing) {
       setValues({
         esp_id: battery.esp_id,
-        BL: battery.BL,
-        BH: battery.BH,
-        CITL: battery.CITL,
-        CITH: battery.CITH,
-        CCT: battery.CCT,
-        DCT: battery.DCT,
+        OTC_threshold: battery.OTC_threshold
       });
       setHasChanges(false);
     }
-  }, [battery.esp_id, battery.BL, battery.BH, battery.CITL, battery.CITH, battery.CCT, battery.DCT, isEditing]);
+  }, [battery.esp_id, battery.OTC_threshold, isEditing]);
   // slider update
   const handleSliderChange = (key: string) => (e: React.ChangeEvent<HTMLInputElement>) => {
     const { value, type } = e.target;
@@ -121,12 +101,7 @@ const BatteryDetail: React.FC<BatteryDetailProps> = ({
   // reset sliders
   const handleReset = () => {
     setValues({
-      BL: battery.BL,
-      BH: battery.BH,
-      CITL: battery.CITL,
-      CITH: battery.CITH,
-      CCT: battery.CCT,
-      DCT: battery.DCT,
+      OTC_threshold: battery.OTC_threshold
     });
     setIsEditing(false);
     setHasChanges(false);
@@ -386,88 +361,18 @@ const BatteryDetail: React.FC<BatteryDetailProps> = ({
                           onChange={handleSliderChange("new_esp_id")}
                         />
 
-                        <label className="block text-sm font-medium text-gray-700">BL: {values.BL} [mV]</label>
+                        <label className="block text-sm font-medium text-gray-700">OCT threshold: {values.OTC_threshold} [0.1 °C]</label>
                         <input
                           type="range"
                           className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer mt-2"
-                          min={BL_min}
-                          max={BL_max}
-                          value={values.BL}
-                          onChange={handleSliderChange("BL")}
+                          min={OTC_threshold_min}
+                          max={OTC_threshold_max}
+                          value={values.OTC_threshold}
+                          onChange={handleSliderChange("OTC_threshold")}
                         />
                         <div className="flex justify-between text-xs text-gray-500 mt-1">
-                          <span>{BL_min} [mV]</span>
-                          <span>{BL_max} [mV]</span>
-                        </div>
-
-                        <label className="block text-sm font-medium text-gray-700">BH: {values.BH} [mV]</label>
-                        <input
-                          type="range"
-                          className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer mt-2"
-                          min={BH_min}
-                          max={BH_max}
-                          value={values.BH}
-                          onChange={handleSliderChange("BH")}
-                        />
-                        <div className="flex justify-between text-xs text-gray-500 mt-1">
-                          <span>{BH_min} [mV]</span>
-                          <span>{BH_max} [mV]</span>
-                        </div>
-
-                        <label className="block text-sm font-medium text-gray-700">CITL: {values.CITL} [0.1 °C]</label>
-                        <input
-                          type="range"
-                          className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer mt-2"
-                          min={CITL_min}
-                          max={CITL_max}
-                          value={values.CITL}
-                          onChange={handleSliderChange("CITL")}
-                        />
-                        <div className="flex justify-between text-xs text-gray-500 mt-1">
-                          <span>{CITL_min} [0.1 °C]</span>
-                          <span>{CITL_max} [0.1 °C]</span>
-                        </div>
-
-                        <label className="block text-sm font-medium text-gray-700">CITH: {values.CITH} [0.1 °C]</label>
-                        <input
-                          type="range"
-                          className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer mt-2"
-                          min={CITH_min}
-                          max={CITH_max}
-                          value={values.CITH}
-                          onChange={handleSliderChange("CITH")}
-                        />
-                        <div className="flex justify-between text-xs text-gray-500 mt-1">
-                          <span>{CITH_min} [0.1 °C]</span>
-                          <span>{CITH_max} [0.1 °C]</span>
-                        </div>
-
-                        <label className="block text-sm font-medium text-gray-700">CCT: {values.CCT} [0.1 °C]</label>
-                        <input
-                          type="range"
-                          className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer mt-2"
-                          min={CCT_min}
-                          max={CCT_max}
-                          value={values.CCT}
-                          onChange={handleSliderChange("CCT")}
-                        />
-                        <div className="flex justify-between text-xs text-gray-500 mt-1">
-                          <span>{CCT_min} [mA]</span>
-                          <span>{CCT_max} [mA]</span>
-                        </div>
-
-                        <label className="block text-sm font-medium text-gray-700">DCT: {values.DCT} [0.1 °C]</label>
-                        <input
-                          type="range"
-                          className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer mt-2"
-                          min={DCT_min}
-                          max={DCT_max}
-                          value={values.DCT}
-                          onChange={handleSliderChange("DCT")}
-                        />
-                        <div className="flex justify-between text-xs text-gray-500 mt-1">
-                          <span>{DCT_min} [mA]</span>
-                          <span>{DCT_max} [mA]</span>
+                          <span>{OTC_threshold_min} [0.1 °C]</span>
+                          <span>{OTC_threshold_max} [0.1 °C]</span>
                         </div>
 
                         {hasChanges && (
@@ -647,6 +552,30 @@ const BatteryDetail: React.FC<BatteryDetailProps> = ({
                           <span>Discharge current</span>
                         )} */}
                       </div>
+                    </div>
+                    <div>
+                      <h4 className="text-sm font-medium text-gray-500 mb-2">Cell 1</h4>
+                      <p className="text-2xl font-semibold text-gray-900">{battery.cell1_current} A </p>
+                      <p className="text-2xl font-semibold text-gray-900">{battery.cell1_temperature} °C</p>
+                      <p className="text-2xl font-semibold text-gray-900">{battery.cell1_voltage} V</p>
+                    </div>
+                    <div>
+                      <h4 className="text-sm font-medium text-gray-500 mb-2">Cell 2</h4>
+                      <p className="text-2xl font-semibold text-gray-900">{battery.cell2_current} A</p>
+                      <p className="text-2xl font-semibold text-gray-900">{battery.cell2_temperature} °C</p>
+                      <p className="text-2xl font-semibold text-gray-900">{battery.cell2_voltage} V</p>
+                    </div>
+                    <div>
+                      <h4 className="text-sm font-medium text-gray-500 mb-2">Cell 3</h4>
+                      <p className="text-2xl font-semibold text-gray-900">{battery.cell3_current} A</p>
+                      <p className="text-2xl font-semibold text-gray-900">{battery.cell3_temperature} °C</p>
+                      <p className="text-2xl font-semibold text-gray-900">{battery.cell3_voltage} V</p>
+                    </div>
+                    <div>
+                      <h4 className="text-sm font-medium text-gray-500 mb-2">Cell 4</h4>
+                      <p className="text-2xl font-semibold text-gray-900">{battery.cell4_current} A</p>
+                      <p className="text-2xl font-semibold text-gray-900">{battery.cell4_temperature} °C</p>
+                      <p className="text-2xl font-semibold text-gray-900">{battery.cell4_voltage} V</p>
                     </div>
                     {/* <div>
                       <h4 className="text-sm font-medium text-gray-500 mb-2">Capacity</h4>
@@ -888,14 +817,14 @@ const BatteryDetail: React.FC<BatteryDetailProps> = ({
               <ThermometerSun size={16} className="mr-1" /> Temperature
             </h3>
             <div className="flex items-end space-x-2">
-              <span className="text-3xl font-bold text-orange-700">Ambient: {battery.temperature}°C</span>
-              {battery.temperature > 35 && (
+              <span className="text-3xl font-bold text-orange-700">Ambient: {battery.ambient_temperature}°C</span>
+              {battery.ambient_temperature > 35 && (
                 <span className="text-red-500 text-sm">Above normal</span>
               )}
             </div>
             <div className="flex items-end space-x-2">
-              <span className="text-3xl font-bold text-orange-700">Internal: {battery.internal_temperature}°C</span>
-              {battery.internal_temperature > 35 && (
+              <span className="text-3xl font-bold text-orange-700">Cell: {battery.cell_temperature}°C</span>
+              {battery.cell_temperature > 35 && (
                 <span className="text-red-500 text-sm">Above normal</span>
               )}
             </div>
