@@ -13,8 +13,8 @@ const cellNSegments = 32;
 const cellFrameWidth = 1.0;
 const cellFrameHeight = 2.5;
 
-const maxTemp = 80;
-const minTemp = 0;
+const maxTemp = 30;
+const minTemp = 20;
 const clamp = (val: number, min: number, max: number) => Math.max(min, Math.min(max, val));
 
 type CellData = {
