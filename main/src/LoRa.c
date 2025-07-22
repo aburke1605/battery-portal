@@ -480,7 +480,7 @@ void lora_tx_task(void *pvParameters) {
         int transmission_delay = calculate_transmission_delay(LORA_SF, LORA_BW, 8, full_len, LORA_CR, LORA_HEADER, LORA_LDRO);
         ESP_LOGI(TAG, "Radio packet sent. Delaying for %d ms", transmission_delay);
 
-        vTaskDelay(pdMS_TO_TICKS(transmission_delay));
+        vTaskDelay(pdMS_TO_TICKS(MAX(transmission_delay, 1000)));
     }
 }
 
