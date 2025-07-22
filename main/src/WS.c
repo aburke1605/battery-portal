@@ -473,9 +473,13 @@ void websocket_task(void *pvParameters) {
                     ws_client = NULL;
                 } else {
                     if (!LORA_IS_RECEIVER) {
-                        char message[WS_MESSAGE_MAX_LEN];
-                        snprintf(message, sizeof(message), "{\"type\":\"data\",\"id\":\"%s\",\"content\":%s}", ESP_ID, data_string);
-                        send_message(message);
+                        char *message = malloc(WS_MESSAGE_MAX_LEN);
+                        if (!message) ESP_LOGE(TAG, "Couldn't allocate memory in websocket_task!");
+                        else {
+                            snprintf(message, WS_MESSAGE_MAX_LEN, "{\"type\":\"data\",\"id\":\"%s\",\"content\":%s}", ESP_ID, data_string);
+                            send_message(message);
+                            free(message);
+                        }
                     }
                 }
             }
