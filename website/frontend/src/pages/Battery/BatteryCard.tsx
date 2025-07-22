@@ -11,10 +11,11 @@ interface BatteryCardProps {
   battery: BatteryData;
   // onToggleCharging: (batteryId: string, e?: React.MouseEvent) => void;
   onViewDetails: (battery: BatteryData) => void;
+  onViewTwin: (battery: BatteryData) => void;
 }
 
 // const BatteryCard: React.FC<BatteryCardProps> = ({ battery, onToggleCharging, onViewDetails }) => {
-const BatteryCard: React.FC<BatteryCardProps> = ({ battery, onViewDetails }) => {
+const BatteryCard: React.FC<BatteryCardProps> = ({ battery, onViewDetails, onViewTwin }) => {
   // Get battery icon based on charge level and status
   // const getBatteryIcon = (battery: BatteryData) => {
   //   if (battery.status === 'offline') return <Battery className="text-gray-400" />;
@@ -57,7 +58,7 @@ const BatteryCard: React.FC<BatteryCardProps> = ({ battery, onViewDetails }) => 
         <div className="grid grid-cols-2 gap-4">
           <div>
             <div className="text-sm text-gray-500">Temperature:</div>
-            <div className={`font-medium ${getTemperatureColor(battery.temperature)}`}>{battery.temperature}°C</div>
+            <div className={`font-medium ${getTemperatureColor(battery.cell_temperature)}`}>{battery.cell_temperature}°C</div>
           </div>
           <div>
             <div className="text-sm text-gray-500">Voltage:</div>
@@ -90,11 +91,18 @@ const BatteryCard: React.FC<BatteryCardProps> = ({ battery, onViewDetails }) => 
               </>
             )}
           </button> */}
-          <button 
+          <button
             onClick={() => onViewDetails(battery)}
             className="flex items-center text-blue-600 hover:text-blue-800"
           >
             <span className="text-sm mr-1">Details</span>
+            <ExternalLink size={16} />
+          </button>
+          <button
+            onClick={() => onViewTwin(battery)}
+            className="flex items-center text-blue-600 hover:text-blue-800"
+          >
+            <span className="text-sm mr-1">Digital Twin</span>
             <ExternalLink size={16} />
           </button>
         </div>

@@ -64,95 +64,273 @@ config SCAN_I2C
     help
       Set to true to scan addresses for connected I2C devices.
 
+
 config I2C_ADDR
     hex "I2C Device Address"
-    default 0x55
+    default 0x0B
     help
       Set the hexadecimal address of the I2C device.
 
-config I2C_MASTER_SDA_PIN
+config MASTER_SDA_PIN
     int "I2C Serial Data (SDA) GPIO"
     default 22
     help
       Set the GPIO number for the I2C SDA line.
 
-config I2C_MASTER_SCL_PIN
+config MASTER_SCL_PIN
     int "I2C Serial Clock (SCL) GPIO"
     default 21
     help
       Set the GPIO number for the I2C SCL line.
 
-config I2C_FREQ_HZ
+config FREQ_HZ
     int "I2C Clock Frequency (Hz)"
     default 50000
     help
       Set the clock frequency for the I2C device.
 
-config I2C_DELAY
+config DELAY
     int "I2C delay (ms)"
-    default 300
+    default 500
     help
       Set the time delay betwen successive I2C commands.
 
-config I2C_CONTROL_REG
-    hex "BMS 'Control()' command code"
+
+config MANUFACTURER_ACCESS
+    hex "BMS 'ManufacturerAccess()' command code"
     default 0x00
     help
-      Set the Control() command code (initial byte) for the BMS.
+      Set the ManufacturerAccess() command code for the BMS.
 
-config I2C_CONTROL_RESET_SUBCMD
+config MANUFACTURER_BLOCK_ACCESS
+    hex "BMS 'ManufacturerBlockAccess()' command code"
+    default 0x44
+    help
+      Set the ManufacturerBlockAccess() command code for the BMS.
+
+
+config RELATIVE_STATE_OF_CHARGE_ADDR
+    hex "BMS relative SOC Address"
+    default 0x0D
+    help
+      Set the SBS address for the BMS to read the battery realtive state of charge.
+
+config STATE_OF_HEALTH_ADDR
+    hex "BMS SOH Address"
+    default 0x4F
+    help
+      Set the SBS address for the BMS to read the battery state of health.
+
+config TEMPERATURE_ADDR
+    hex "BMS Temperature Address"
+    default 0x08
+    help
+      Set the SBS address for the BMS to read the battery temperature.
+
+config VOLTAGE_ADDR
+    hex "BMS Voltage Address"
+    default 0x09
+    help
+      Set the SBS address for the BMS to read the battery voltage.
+
+config CURRENT_ADDR
+    hex "BMS Current Address"
+    default 0x0A
+    help
+      Set the SBS address for the BMS to read the battery average current.
+
+
+config DEVICE_NAME_ADDR
+    hex "BMS Device Name Address"
+    default 0x4085
+    help
+      Set the Data Flash address to read the BMS device name.
+
+config OPERATION_STATUS_ADDR
+    hex "BMS Operation Status Address"
+    default 0x0054
+    help
+      Set the Data Flash address to read the BMS sealed status and more.
+
+config DA_STATUS_1_ADDR
+    hex "BMS DA Status 1 Address"
+    default 0x0071
+    help
+      Set the Data Flash address to read the BMS cell voltages, currents, and more.
+
+config DA_STATUS_2_ADDR
+    hex "BMS DA Status 2 Address"
+    default 0x0072
+    help
+      Set the Data Flash address to read the BMS cell temperatures and more.
+
+config OTC_THRESHOLD_ADDR
+    hex "BMS OTC Threshold Address"
+    default 0x4888
+    help
+      Set the Data Flash address to read the BMS OverTemperature Charge threshold.
+
+
+config RESET_CMD
     hex "BMS RESET command code"
     default 0x0041
     help
       Set the RESET command code for the BMS.
 
-config I2C_CONTROL_UNSEAL_SUBCMD_1
+config SEAL_CMD
+    hex "BMS SEAL command code"
+    default 0x0030
+    help
+      Set the SEAL command code for the BMS.
+
+config UNSEAL_CMD_1
     hex "BMS UNSEAL command code (first half)"
     default 0x3672
     help
       Set the first half of the UNSEAL command code for the BMS.
 
-config I2C_CONTROL_UNSEAL_SUBCMD_2
+config UNSEAL_CMD_2
     hex "BMS UNSEAL command code (second half)"
     default 0x0414
     help
       Set the second half of the UNSEAL command code for the BMS.
 
-config STATE_OF_CHARGE_REG
-    hex "BMS SOC Address"
-    default 0x2C
+config FULL_ACCESS_CMD_1
+    hex "BMS FULL ACCESS command code (first half)"
+    default 0xFFFF
     help
-      Set the register address for the BMS to read the battery state of charge.
+      Set the first half of the FULL ACCESS command code for the BMS.
 
-config STATE_OF_HEALTH_REG
-    hex "BMS SOH Address"
-    default 0x2E
+config FULL_ACCESS_CMD_2
+    hex "BMS FULL ACCESS command code (second half)"
+    default 0xFFFF
     help
-      Set the register address for the BMS to read the battery state of health.
+      Set the second half of the FULL ACCESS command code for the BMS.
 
-config VOLTAGE_REG
-    hex "BMS Voltage Address"
-    default 0x08
-    help
-      Set the register address for the BMS to read the battery voltage.
+endmenu
 
-config CURRENT_REG
-    hex "BMS Current Address"
-    default 0x14
-    help
-      Set the register address for the BMS to read the battery average current.
 
-config TEMPERATURE_REG
-    hex "BMS Temperature Address"
-    default 0x06
-    help
-      Set the register address for the BMS to read the battery temperature.
+menu "[CUSTOM] LoRa Configuration"
 
-config INT_TEMPERATURE_REG
-    hex "BMS Internal Temperature Address"
-    default 0x28
+config IS_RECEIVER
+    bool "Receiver"
+    default n
     help
-      Set the register address for the BMS to read the battery internal temperature.
+      Set to true to configure the ESP32 as receiver rather than transmitter (default).
+
+config SPI_SCK_PIN
+    int "SPI SCK GPIO"
+    default 18
+    help
+      Set the GPIO number for the SPI clock (SCK) line.
+
+config SPI_MOSI_PIN
+    int "SPI MOSI GPIO"
+    default 23
+    help
+      Set the GPIO number for the SPI master out, slave in (MOSI) line.
+
+config SPI_MISO_PIN
+    int "SPI MISO GPIO"
+    default 19
+    help
+      Set the GPIO number for the SPI master in, slave out (MISO) line.
+
+config SPI_NSS_CS_PIN
+    int "SPI NSS/CS GPIO"
+    default 5
+    help
+      Set the GPIO number for the SPI chip select line.
+
+config SPI_RST_PIN
+    int "SPI RESET GPIO"
+    default 26
+    help
+      Set the GPIO number for the SPI manual reset line.
+
+config SPI_DIO0_PIN
+    int "SPI IRQ/DIO0 GPIO"
+    default 27
+    help
+      Set the GPIO number for the SPI LoRa interrupt line.
+
+config FREQ
+    int "Transmission frequency (MHz)"
+    default 868
+    help
+      Transmission frequency. Common choices are 433, 868 and 915 MHz.
+
+config SF
+    int "Spreading factor"
+    default 7
+    range 6 12
+    help
+      Transmission message spreading factor.
+
+config BW
+    int "Bandwidth"
+    default 7
+    range 0 9
+    help
+      Transmission message bandwidth:
+       * 0: 7.8 kHz
+       * 1: 10.4 kHz
+       * 2: 15.6 kHz
+       * 3: 20.8 kHz
+       * 4: 31.25 kHz
+       * 5: 41.7 kHz
+       * 6: 62.5 kHz
+       * 7: 125 kHz
+       * 8: 250 kHz
+       * 9: 500 kHz
+
+config CR
+    int "Coding rate"
+    default 1
+    range 1 4
+    help
+      Error coding rate. Must be set on receiver when on in implicit header mode.
+       * 1: 4/5
+       * 2: 4/6
+       * 3: 4/7
+       * 4: 4/8
+
+config HEADER
+    bool "Implicit header"
+    default n
+    help
+      Set to true to remove explicit header.
+
+config LDRO
+    bool "Low data rate optimisation"
+    default n
+    help
+      Set to true to enable low data rate optimisation.
+
+config Tx_CONT
+    bool "Continuous transmission mode"
+    default n
+    help
+      Set to true to enable continuous transmission mode (used for spectral analysis).
+
+config Rx_PAYL_CRC
+    bool "Payload CRC"
+    default y
+    help
+      Set to true to enamble cyclic redundancy generation and check on payload.
+
+config OUTPUT_POWER
+    int "Output power"
+    default 15
+    range 0 15
+    help
+      Pout = 17 - (15 - Output power)
+
+config POWER_BOOST
+    bool "Power boost"
+    default n
+    help
+      Set to true to enable up to +20 dBm high power transmission. WARNING: ensure 1% duty cycle and adequate cooling.
 
 endmenu
 

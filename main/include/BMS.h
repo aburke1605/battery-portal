@@ -1,10 +1,20 @@
 #ifndef BMS_H
 #define BMS_H
 
+#include <stdbool.h>
+
 #include <esp_err.h>
 
-esp_err_t reset();
+void reset();
 
-esp_err_t unseal();
+void seal();
+
+void unseal();
+
+void full_access();
+
+int8_t get_sealed_status();
+
+char* get_data(bool local);
 
 #endif // BMS_H

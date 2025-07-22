@@ -9,12 +9,12 @@ esp_err_t check_device();
 
 void device_scan(void);
 
-esp_err_t read_data(uint8_t reg, uint8_t* data, size_t n_bytes);
+esp_err_t read_SBS_data(uint8_t reg, uint8_t* data, size_t data_size);
 
-esp_err_t write_data(uint8_t reg, uint32_t data, size_t n_bytes);
+void write_word(uint8_t command, uint8_t* word, size_t word_size);
 
-void read_bytes(uint8_t subclass, uint8_t offset, uint8_t* data, size_t n_bytes);
+void read_data_flash(uint8_t* address, size_t address_size, uint8_t* data, size_t data_size);
 
-esp_err_t write_bytes(uint8_t subclass, uint8_t offset, uint8_t* data, size_t n_bytes);
+void write_data_flash(uint8_t* address, size_t address_size, uint8_t* data, size_t data_size);
 
 #endif // I2C_H

@@ -1,7 +1,9 @@
 import { useState, useEffect, useRef } from 'react'
 import { Link } from 'react-router-dom'
-import { ChevronDown} from 'lucide-react';
 import { format } from "date-fns";
+// import { useNavigate } from 'react-router-dom';
+import { ChevronDown } from 'lucide-react';
+// import { BatteryData } from '../../types';
 
 interface Battery {
   id: string
@@ -187,6 +189,69 @@ export default function BatteryPage() {
     window.scrollTo({ top: 0, behavior: 'smooth' })
   }
 
+  // const navigate = useNavigate();
+  //   // View battery details
+  //   const viewBatteryDetails = (battery: BatteryData) => {
+  //     navigate(`/battery-detail?esp_id=${battery.esp_id}`);
+  //   };
+  //   const viewDigitalTwin = (battery: BatteryData) => {
+  //     navigate(`/digital-twin?esp_id=${battery.esp_id}`);
+  //   };
+
+
+  // const filteredBatteries = batteries.filter(battery => {
+  //   const matchesSearch = 
+  //     battery.esp_id.toLowerCase().includes(searchTerm.toLowerCase());
+  //     // || battery.location.toLowerCase().includes(searchTerm.toLowerCase());
+    
+  //   const matchesStatus = statusFilter === 'all' || battery.status === statusFilter;
+    
+  //   return matchesSearch && matchesStatus;
+  // }).sort((a, b) => {
+  //   if (sortBy === 'name') {
+  //     return a.esp_id.localeCompare(b.esp_id);
+  //   } else if (sortBy === 'chargeLevel') {
+  //     return b.charge - a.charge;
+  //   } else if (sortBy === 'health') {
+  //     return b.health - a.health;
+  //   } else {
+  //     // Sort by status (critical first, then warning, then good)
+  //     const statusOrder = { critical: 0, warning: 1, good: 2, offline: 3 };
+  //     return statusOrder[a.status] - statusOrder[b.status];
+  //   }
+  // });
+
+  // const [currentPage, setCurrentPage] = useState(1);
+  // const itemsPerPage = 6;
+  // // Calculate pagination
+  // const totalPages = Math.ceil(filteredBatteries.length / itemsPerPage);
+  // // const paginatedBatteries = useMemo(() => {
+  // //   const startIndex = (currentPage - 1) * itemsPerPage;
+  // //   return filteredBatteries.slice(startIndex, startIndex + itemsPerPage);
+  // // }, [filteredBatteries, currentPage]);
+
+  // // Page navigation
+  // const goToPage = (page: number) => {
+  //   setCurrentPage(Math.min(Math.max(1, page), totalPages));
+  // };
+
+  // // Generate page numbers
+  // const getPageNumbers = () => {
+  //   const pages = [];
+  //   const maxVisiblePages = 5;
+  //   let startPage = Math.max(1, currentPage - Math.floor(maxVisiblePages / 2));
+  //   let endPage = Math.min(totalPages, startPage + maxVisiblePages - 1);
+
+  //   if (endPage - startPage + 1 < maxVisiblePages) {
+  //     startPage = Math.max(1, endPage - maxVisiblePages + 1);
+  //   }
+
+  //   for (let i = startPage; i <= endPage; i++) {
+  //     pages.push(i);
+  //   }
+  //   return pages;
+  // };
+
   return (
     <main className="container mx-auto px-4 py-8">
       <div className="flex justify-between items-center mb-6">
@@ -294,6 +359,12 @@ export default function BatteryPage() {
                     >
                       Details
                     </Link>
+                    <Link
+                      to={`/digital-twin?esp_id=${parentBattery.id}`}
+                      className="px-2 py-0.5 bg-blue-600 text-white rounded hover:bg-blue-700 transition-colors text-xs"
+                    >
+                      Ditial Twin
+                    </Link>
                   <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${getStatusColor(parentBattery.online_status)}`}>
                     {parentBattery.online_status}
                   </span>
@@ -325,6 +396,12 @@ export default function BatteryPage() {
                       key={childBattery.id}
                       className="block p-2 bg-gray-50 rounded hover:bg-gray-100 transition-colors"
                     >
+                    <Link
+                      to={`/digital-twin?esp_id=${childBattery.id}`}
+                      className="px-2 py-0.5 bg-blue-600 text-white rounded hover:bg-blue-700 transition-colors text-xs"
+                    >
+                      Ditial Twin
+                    </Link>
                       <div className="flex justify-between items-center">
                         <div>
                           <h4 className="text-sm font-medium">{childBattery.name}</h4>

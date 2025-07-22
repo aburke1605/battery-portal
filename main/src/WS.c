@@ -20,7 +20,7 @@ static esp_websocket_client_handle_t ws_client = NULL;
 
 static const char* TAG = "WS";
 
-void add_client(int fd, const char* tkn) {
+void add_client(int fd, const char* tkn, bool browser) {
     for (int i = 0; i < WS_CONFIG_MAX_CLIENTS; i++) {
         if (client_sockets[i].descriptor == fd) {
             return;
@@ -28,6 +28,7 @@ void add_client(int fd, const char* tkn) {
             client_sockets[i].descriptor = fd;
             strncpy(client_sockets[i].auth_token, tkn, UTILS_AUTH_TOKEN_LENGTH);
             client_sockets[i].auth_token[UTILS_AUTH_TOKEN_LENGTH - 1] = '\0';
+            client_sockets[i].is_browser_not_mesh = browser;
             ESP_LOGI(TAG, "Client %d added", fd);
             return;
         }
@@ -40,6 +41,7 @@ void remove_client(int fd) {
         if (client_sockets[i].descriptor == fd) {
             client_sockets[i].descriptor = -1;
             client_sockets[i].auth_token[0] = '\0';
+            client_sockets[i].is_browser_not_mesh = true;
             ESP_LOGI(TAG, "Client %d removed", fd);
             return;
         }
@@ -47,16 +49,24 @@ void remove_client(int fd) {
 }
 
 esp_err_t client_handler(httpd_req_t *req) {
+    int fd = httpd_req_to_sockfd(req);
+
     // register new clients...
+    bool is_browser_not_mesh = true; // arbitrary assumption
     if (req->method == HTTP_GET) {
-        char *check_new_session = strstr(req->uri, "/browser_ws?auth_token=");
-        if (check_new_session) {
+        char *check_new_browser_session = strstr(req->uri, "/browser_ws?auth_token=");
+        char *check_new_mesh_session = strstr(req->uri, "/mesh_ws?auth_token=");
+        if (check_new_browser_session || check_new_mesh_session) {
+            if (!check_new_browser_session && check_new_mesh_session) is_browser_not_mesh = false;
             char auth_token[UTILS_AUTH_TOKEN_LENGTH] = {0};
-            sscanf(check_new_session,"/browser_ws?auth_token=%50s",auth_token);
+            if (is_browser_not_mesh) {
+                sscanf(check_new_browser_session, "/browser_ws?auth_token=%50s", auth_token);
+            } else {
+                sscanf(check_new_mesh_session, "/mesh_ws?auth_token=%50s", auth_token);
+            }
             auth_token[UTILS_AUTH_TOKEN_LENGTH - 1] = '\0';
             if (auth_token[0] != '\0' && strcmp(auth_token, current_auth_token) == 0) {
-                int fd = httpd_req_to_sockfd(req);
-                add_client(fd, auth_token);
+                add_client(fd, auth_token, is_browser_not_mesh);
                 current_auth_token[0] = '\0';
                 ESP_LOGI(TAG, "WebSocket handshake complete for client %d", fd);
                 return ESP_OK; // WebSocket handshake happens here
@@ -102,8 +112,43 @@ esp_err_t client_handler(httpd_req_t *req) {
             return ESP_FAIL;
         }
 
-        cJSON *response = cJSON_CreateObject();
-        perform_request(message, response);
+        // re-determine if browser or mesh client
+        for (int i = 0; i < WS_CONFIG_MAX_CLIENTS; i++) {
+            if (client_sockets[i].descriptor == fd) {
+                is_browser_not_mesh = client_sockets[i].is_browser_not_mesh;
+                break;
+            }
+        }
+        if (is_browser_not_mesh) {
+            // perform the request made by the local websocket client
+            cJSON *response = cJSON_CreateObject();
+            perform_request(message, response);
+        } else {
+            // queue message from mesh client to forward via LoRa
+            cJSON *id_obj = cJSON_GetObjectItem(message, "id");
+            if (!id_obj) {
+                ESP_LOGE(TAG, "incoming LoRa queue message not formatted properly:\n  %s", cJSON_PrintUnformatted(message));
+                free(ws_pkt.payload);
+                cJSON_Delete(message);
+                return ESP_FAIL;
+            }
+            bool found = false;
+            for (int i=0; i<MESH_SIZE; i++) {
+                if (strcmp(all_messages[i].id, id_obj->valuestring) == 0) {
+                    // update existing message
+                    found = true;
+                    strcpy(all_messages[i].message, (char *)ws_pkt.payload);
+                    i = MESH_SIZE;
+                } else if (strcmp(all_messages[i].id, "") == 0) {
+                    // create new message
+                    found = true;
+                    strcpy(all_messages[i].id, id_obj->valuestring);
+                    strcpy(all_messages[i].message, (char *)ws_pkt.payload);
+                    i = MESH_SIZE;
+                }
+            }
+            if (!found) ESP_LOGE(TAG, "LoRa queue full! Dropping message: %s", cJSON_PrintUnformatted(message));
+        }
 
         cJSON_Delete(message);
     } else {
@@ -148,63 +193,31 @@ esp_err_t perform_request(cJSON *message, cJSON *response) {
             cJSON *esp_id = cJSON_GetObjectItem(data, "new_esp_id");
             if (esp_id && strcmp(esp_id->valuestring, "") != 0 && esp_id->valuestring != ESP_ID) {
                 ESP_LOGI(TAG, "Changing device name...");
-                write_bytes(I2C_DATA_SUBCLASS_ID, I2C_NAME_OFFSET, (uint8_t *)esp_id->valuestring, 11);
+
+                uint8_t address[2] = {0};
+                convert_uint_to_n_bytes(I2C_DEVICE_NAME_ADDR, address, sizeof(address), true);
+                char* new_id = (char*)esp_id->valuestring;
+                size_t new_id_length = strlen(new_id);
+                if (new_id_length > 20) new_id_length = 20;
+                uint8_t new_id_data[1+new_id_length];
+                new_id_data[0] = new_id_length;
+                for (size_t i=0; i<new_id_length; i++)
+                    new_id_data[1 + i] = new_id[i];
+                write_data_flash(address, sizeof(address), new_id_data, sizeof(new_id_data));
+                strncpy(ESP_ID, (char *)&new_id_data[1], new_id_length);
+                ESP_ID[new_id_length] = '\0';
             }
 
-            int BL = cJSON_GetObjectItem(data, "BL")->valueint;
-            int BH = cJSON_GetObjectItem(data, "BH")->valueint;
-            int CITL = cJSON_GetObjectItem(data, "CITL")->valueint;
-            int CITH = cJSON_GetObjectItem(data, "CITH")->valueint;
-            int CCT = cJSON_GetObjectItem(data, "CCT")->valueint;
-            int DCT = cJSON_GetObjectItem(data, "DCT")->valueint;
+            int OTC_threshold = cJSON_GetObjectItem(data, "OTC_threshold")->valueint;
 
-            uint8_t two_bytes[2];
-            read_bytes(I2C_DISCHARGE_SUBCLASS_ID, I2C_BL_OFFSET, two_bytes, sizeof(two_bytes));
-            if (BL != (two_bytes[0] << 8 | two_bytes[1])) {
-                ESP_LOGI(TAG, "Changing BL voltage...");
-                two_bytes[0] = (BL >> 8) & 0xFF;
-                two_bytes[1] =  BL       & 0xFF;
-                write_bytes(I2C_DISCHARGE_SUBCLASS_ID, I2C_BL_OFFSET, two_bytes, sizeof(two_bytes));
-            }
-
-            read_bytes(I2C_DISCHARGE_SUBCLASS_ID, I2C_BH_OFFSET, two_bytes, sizeof(two_bytes));
-            if (BH != (two_bytes[0] << 8 | two_bytes[1])) {
-                ESP_LOGI(TAG, "Changing BH voltage...");
-                two_bytes[0] = (BH >> 8) & 0xFF;
-                two_bytes[1] =  BH       & 0xFF;
-                write_bytes(I2C_DISCHARGE_SUBCLASS_ID, I2C_BH_OFFSET, two_bytes, sizeof(two_bytes));
-            }
-
-            read_bytes(I2C_CHARGE_INHIBIT_CFG_SUBCLASS_ID, I2C_CHG_INHIBIT_TEMP_LOW_OFFSET, two_bytes, sizeof(two_bytes));
-            if (CITL != (two_bytes[0] << 8 | two_bytes[1])) {
-                ESP_LOGI(TAG, "Changing charge inhibit low temperature threshold...");
-                two_bytes[0] = (CITL >> 8) & 0xFF;
-                two_bytes[1] =  CITL       & 0xFF;
-                write_bytes(I2C_CHARGE_INHIBIT_CFG_SUBCLASS_ID, I2C_CHG_INHIBIT_TEMP_LOW_OFFSET, two_bytes, sizeof(two_bytes));
-            }
-
-            read_bytes(I2C_CHARGE_INHIBIT_CFG_SUBCLASS_ID, I2C_CHG_INHIBIT_TEMP_HIGH_OFFSET, two_bytes, sizeof(two_bytes));
-            if (CITH != (two_bytes[0] << 8 | two_bytes[1])) {
-                ESP_LOGI(TAG, "Changing charge inhibit high temperature threshold...");
-                two_bytes[0] = (CITH >> 8) & 0xFF;
-                two_bytes[1] =  CITH       & 0xFF;
-                write_bytes(I2C_CHARGE_INHIBIT_CFG_SUBCLASS_ID, I2C_CHG_INHIBIT_TEMP_HIGH_OFFSET, two_bytes, sizeof(two_bytes));
-            }
-
-            read_bytes(I2C_CURRENT_THRESHOLDS_SUBCLASS_ID, I2C_CHG_CURRENT_THRESHOLD_OFFSET, two_bytes, sizeof(two_bytes));
-            if (CCT != (two_bytes[0] << 8 | two_bytes[1])) {
-                ESP_LOGI(TAG, "Changing charge current threshold...");
-                two_bytes[0] = (CCT >> 8) & 0xFF;
-                two_bytes[1] =  CCT       & 0xFF;
-                write_bytes(I2C_CURRENT_THRESHOLDS_SUBCLASS_ID, I2C_CHG_CURRENT_THRESHOLD_OFFSET, two_bytes, sizeof(two_bytes));
-            }
-
-            read_bytes(I2C_CURRENT_THRESHOLDS_SUBCLASS_ID, I2C_DSG_CURRENT_THRESHOLD_OFFSET, two_bytes, sizeof(two_bytes));
-            if (DCT != (two_bytes[0] << 8 | two_bytes[1])) {
-                ESP_LOGI(TAG, "Changing discharge current threshold...");
-                two_bytes[0] = (DCT >> 8) & 0xFF;
-                two_bytes[1] =  DCT       & 0xFF;
-                write_bytes(I2C_CURRENT_THRESHOLDS_SUBCLASS_ID, I2C_DSG_CURRENT_THRESHOLD_OFFSET, two_bytes, sizeof(two_bytes));
+            uint8_t address[2] = {0};
+            convert_uint_to_n_bytes(I2C_OTC_THRESHOLD_ADDR, address, sizeof(address), true);
+            uint8_t data_flash[2] = {0};
+            read_data_flash(address, sizeof(address), data_flash, sizeof(data_flash));
+            if (OTC_threshold != (data_flash[1] << 8 | data_flash[0])) {
+                ESP_LOGI(TAG, "Changing OTC threshold...");
+                convert_uint_to_n_bytes(OTC_threshold, data_flash, sizeof(data_flash), false);
+                write_data_flash(address, sizeof(address), data_flash, sizeof(data_flash));
             }
 
             gpio_set_level(I2C_LED_GPIO_PIN, 0);
@@ -300,7 +313,7 @@ esp_err_t perform_request(cJSON *message, cJSON *response) {
 }
 
 void send_message(const char *message) {
-    if (xQueueSend(ws_queue, message, portMAX_DELAY) != pdPASS) {
+    if (xQueueSend(ws_queue, message, pdMS_TO_TICKS(100)) != pdPASS) {
         ESP_LOGE(TAG, "WebSocket queue full! Dropping message: %s", message);
     }
 }
@@ -332,15 +345,15 @@ void message_queue_task(void *pvParameters) {
     }
 }
 
-void event_handler(void *arg, esp_event_base_t event_base, int32_t event_id, void *event_data) {
+void websocket_event_handler(void *arg, esp_event_base_t event_base, int32_t event_id, void *event_data) {
     esp_websocket_event_data_t *ws_event_data = (esp_websocket_event_data_t *)event_data;
 
     switch (event_id) {
         case WEBSOCKET_EVENT_CONNECTED:
             if (VERBOSE) ESP_LOGI(TAG, "WebSocket connected");
-            char websocket_connect_message[128];
+            char websocket_connect_message[WS_MESSAGE_MAX_LEN];
             snprintf(websocket_connect_message, sizeof(websocket_connect_message), "{\"type\":\"register\",\"id\":\"%s\"}", ESP_ID);
-            send_message(websocket_connect_message);
+            if (esp_websocket_client_is_connected(ws_client)) send_message(websocket_connect_message);
             break;
 
         case WEBSOCKET_EVENT_DISCONNECTED:
@@ -357,6 +370,11 @@ void event_handler(void *arg, esp_event_base_t event_base, int32_t event_id, voi
                 cJSON_Delete(message);
                 break;
             }
+
+            // this case should never be triggered by the mesh ws
+            // event handling, so just continue with the code below
+            // for browser ws events and use this handler universally
+            // for both mesh and browser ws clients
 
             cJSON *response = cJSON_CreateObject();
             esp_err_t err = perform_request(message, response);
@@ -381,10 +399,6 @@ void event_handler(void *arg, esp_event_base_t event_base, int32_t event_id, voi
 
 void websocket_task(void *pvParameters) {
     while (true) {
-        // create JSON object with sensor data
-        cJSON *json = cJSON_CreateObject();
-        cJSON *data = cJSON_CreateObject();
-
         ws_payload message = {
             .type = 1,
         };
@@ -451,26 +465,18 @@ void websocket_task(void *pvParameters) {
         cJSON_AddNumberToObject(data, "CITH", two_bytes[0] << 8 | two_bytes[1]);
         message.CITH = (uint16_t)(two_bytes[0] << 8 | two_bytes[1]);
 
-        // cJSON_AddStringToObject(data, "IP", ESP_IP);
-        char *data_string = cJSON_PrintUnformatted(data); // goes to website
+        // get sensor data
+        char* data_string = LORA_IS_RECEIVER ? "" : get_data(false); // goes to website
 
-        // add this after forming data_string because if a message is received
-        // by the website then obviously the ESP32 is connected to WiFi
-        cJSON_AddBoolToObject(data, "connected_to_WiFi", connected_to_WiFi);
+        char* full_data_string = get_data(true); // goes to local clients
 
-        cJSON_AddItemToObject(json, ESP_ID, data);
-        char *json_string = cJSON_PrintUnformatted(json); // goes to local clients
-
-        // cJSON_Delete(data);
-        cJSON_Delete(json);
-
-        if (json_string != NULL && data_string != NULL) {
+        if (full_data_string != NULL && data_string != NULL) {
             // first send to all connected WebSocket clients
             for (int i = 0; i < WS_CONFIG_MAX_CLIENTS; i++) {
-                if (client_sockets[i].descriptor >= 0) {
+                if (client_sockets[i].is_browser_not_mesh && client_sockets[i].descriptor >= 0) {
                     httpd_ws_frame_t ws_pkt = {
-                        .payload = (uint8_t *)json_string,
-                        .len = strlen(json_string),
+                        .payload = (uint8_t *)full_data_string,
+                        .len = strlen(full_data_string),
                         .type = HTTPD_WS_TYPE_TEXT,
                     };
 
@@ -528,7 +534,7 @@ void websocket_task(void *pvParameters) {
                         vTaskDelay(pdMS_TO_TICKS(1000));
                         continue;
                     }
-                    esp_websocket_register_events(ws_client, WEBSOCKET_EVENT_ANY, event_handler, NULL);
+                    esp_websocket_register_events(ws_client, WEBSOCKET_EVENT_ANY, websocket_event_handler, NULL);
                     if (esp_websocket_client_start(ws_client) != ESP_OK) {
                         ESP_LOGE(TAG, "Failed to start WebSocket client");
                         esp_websocket_client_destroy(ws_client);
@@ -536,33 +542,25 @@ void websocket_task(void *pvParameters) {
                         vTaskDelay(pdMS_TO_TICKS(1000));
                         continue;
                     }
+                    vTaskDelay(pdMS_TO_TICKS(5000));
                 }
 
-                vTaskDelay(pdMS_TO_TICKS(5000));
 
                 if (!esp_websocket_client_is_connected(ws_client)) {
                     esp_websocket_client_stop(ws_client);
                     esp_websocket_client_destroy(ws_client);
                     ws_client = NULL;
                 } else {
-                    char message[1024];
+                    char message[WS_MESSAGE_MAX_LEN];
                     snprintf(message, sizeof(message), "{\"type\":\"data\",\"id\":\"%s\",\"content\":%s}", ESP_ID, data_string);
                     send_message(message);
                     // send_message(&message);
-                }
-
-                if (esp_get_minimum_free_heap_size() < 2000) {
-                    esp_websocket_client_stop(ws_client);
-                    esp_websocket_client_destroy(ws_client);
-                    ws_client = NULL;
-                    vTaskDelay(pdMS_TO_TICKS(5000));
-                    esp_restart();
                 }
             }
 
             // clean up
             free(data_string);
-            free(json_string);
+            free(full_data_string);
         }
 
         // check wifi connection still exists
