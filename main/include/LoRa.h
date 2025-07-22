@@ -13,15 +13,22 @@ typedef struct __attribute__((packed)) {
     uint8_t Q;
     uint8_t H;
     uint8_t V;
+    uint16_t V1;
+    uint16_t V2;
+    uint16_t V3;
+    uint16_t V4;
     int8_t I;
+    int16_t I1;
+    int16_t I2;
+    int16_t I3;
+    int16_t I4;
     int16_t aT;
-    int16_t iT;
-    uint16_t BL;
-    uint16_t BH;
-    uint8_t CCT;
-    uint8_t DCT;
-    int8_t CITL;
-    uint16_t CITH;
+    int16_t cT;
+    int16_t T1;
+    int16_t T2;
+    int16_t T3;
+    int16_t T4;
+    int16_t OTC_threshold;
 } radio_payload;
 
 #define FRAME_END     0x7E  // marks beginning and end of message

@@ -91,9 +91,7 @@ void app_main(void) {
     TaskParams dns_server_params = {.stack_size = 2600, .task_name = "dns_server_task"};
     xTaskCreate(&dns_server_task, dns_server_params.task_name, dns_server_params.stack_size, &dns_server_params, 2, NULL);
 
-    ws_queue =
-        LORA_IS_RECEIVER ? xQueueCreate(1, (1 + MESH_SIZE) * WS_MESSAGE_MAX_LEN + 100) // to be able to send 1 large message from an incoming mesh message
-                         : xQueueCreate(WS_QUEUE_SIZE, WS_MESSAGE_MAX_LEN);
+    ws_queue = xQueueCreate(WS_QUEUE_SIZE, sizeof(char*));
     TaskParams message_queue_params = {.stack_size = 3900, .task_name = "message_queue_task"};
     xTaskCreate(&message_queue_task, message_queue_params.task_name, message_queue_params.stack_size, &message_queue_params, 5, NULL);
 

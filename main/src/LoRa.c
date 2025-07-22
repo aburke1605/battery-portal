@@ -191,40 +191,68 @@ radio_payload* convert_to_binary(char* message) {
     if (obj) payload->V = (uint8_t)obj->valueint;
     obj = NULL;
 
+    obj = cJSON_GetObjectItem(content, "V1");
+    if (obj) payload->V1 = (uint16_t)obj->valueint;
+    obj = NULL;
+
+    obj = cJSON_GetObjectItem(content, "V2");
+    if (obj) payload->V2 = (uint16_t)obj->valueint;
+    obj = NULL;
+
+    obj = cJSON_GetObjectItem(content, "V3");
+    if (obj) payload->V3 = (uint16_t)obj->valueint;
+    obj = NULL;
+
+    obj = cJSON_GetObjectItem(content, "V4");
+    if (obj) payload->V4 = (uint16_t)obj->valueint;
+    obj = NULL;
+
     obj = cJSON_GetObjectItem(content, "I");
     if (obj) payload->I = (int8_t)obj->valueint;
+    obj = NULL;
+
+    obj = cJSON_GetObjectItem(content, "I1");
+    if (obj) payload->I1 = (int16_t)obj->valueint;
+    obj = NULL;
+
+    obj = cJSON_GetObjectItem(content, "I2");
+    if (obj) payload->I2 = (int16_t)obj->valueint;
+    obj = NULL;
+
+    obj = cJSON_GetObjectItem(content, "I3");
+    if (obj) payload->I3 = (int16_t)obj->valueint;
+    obj = NULL;
+
+    obj = cJSON_GetObjectItem(content, "I4");
+    if (obj) payload->I4 = (int16_t)obj->valueint;
     obj = NULL;
 
     obj = cJSON_GetObjectItem(content, "aT");
     if (obj) payload->aT = (int16_t)obj->valueint;
     obj = NULL;
 
-    obj = cJSON_GetObjectItem(content, "iT");
-    if (obj) payload->iT = (int16_t)obj->valueint;
+    obj = cJSON_GetObjectItem(content, "cT");
+    if (obj) payload->cT = (int16_t)obj->valueint;
     obj = NULL;
 
-    obj = cJSON_GetObjectItem(content, "BL");
-    if (obj) payload->BL = (uint16_t)obj->valueint;
+    obj = cJSON_GetObjectItem(content, "T1");
+    if (obj) payload->T1 = (int16_t)obj->valueint;
     obj = NULL;
 
-    obj = cJSON_GetObjectItem(content, "BH");
-    if (obj) payload->BH = (uint16_t)obj->valueint;
+    obj = cJSON_GetObjectItem(content, "T2");
+    if (obj) payload->T2 = (int16_t)obj->valueint;
     obj = NULL;
 
-    obj = cJSON_GetObjectItem(content, "CCT");
-    if (obj) payload->CCT = (uint8_t)obj->valueint;
+    obj = cJSON_GetObjectItem(content, "T3");
+    if (obj) payload->T3 = (int16_t)obj->valueint;
     obj = NULL;
 
-    obj = cJSON_GetObjectItem(content, "DCT");
-    if (obj) payload->DCT = (uint8_t)obj->valueint;
+    obj = cJSON_GetObjectItem(content, "T4");
+    if (obj) payload->T4 = (int16_t)obj->valueint;
     obj = NULL;
 
-    obj = cJSON_GetObjectItem(content, "CITL");
-    if (obj) payload->CITL = (int8_t)obj->valueint;
-    obj = NULL;
-
-    obj = cJSON_GetObjectItem(content, "CITH");
-    if (obj) payload->CITH = (uint16_t)obj->valueint;
+    obj = cJSON_GetObjectItem(content, "OTC_threshold");
+    if (obj) payload->OTC_threshold = (int16_t)obj->valueint;
 
     return payload;
 }
@@ -320,15 +348,22 @@ void convert_from_binary(uint8_t* decoded_message) {
         cJSON_AddNumberToObject(content, "Q", payload->Q);
         cJSON_AddNumberToObject(content, "H", payload->H);
         cJSON_AddNumberToObject(content, "V", payload->V);
+        cJSON_AddNumberToObject(content, "V1", payload->V1);
+        cJSON_AddNumberToObject(content, "V2", payload->V2);
+        cJSON_AddNumberToObject(content, "V3", payload->V3);
+        cJSON_AddNumberToObject(content, "V4", payload->V4);
         cJSON_AddNumberToObject(content, "I", payload->I);
+        cJSON_AddNumberToObject(content, "I1", payload->I1);
+        cJSON_AddNumberToObject(content, "I2", payload->I2);
+        cJSON_AddNumberToObject(content, "I3", payload->I3);
+        cJSON_AddNumberToObject(content, "I4", payload->I4);
         cJSON_AddNumberToObject(content, "aT", payload->aT);
-        cJSON_AddNumberToObject(content, "iT", payload->iT);
-        cJSON_AddNumberToObject(content, "BL", payload->BL);
-        cJSON_AddNumberToObject(content, "BH", payload->BH);
-        cJSON_AddNumberToObject(content, "CCT", payload->CCT);
-        cJSON_AddNumberToObject(content, "DCT", payload->DCT);
-        cJSON_AddNumberToObject(content, "CITL", payload->CITL);
-        cJSON_AddNumberToObject(content, "CITH", payload->CITH);
+        cJSON_AddNumberToObject(content, "cT", payload->cT);
+        cJSON_AddNumberToObject(content, "T1", payload->T1);
+        cJSON_AddNumberToObject(content, "T2", payload->T2);
+        cJSON_AddNumberToObject(content, "T3", payload->T3);
+        cJSON_AddNumberToObject(content, "T4", payload->T4);
+        cJSON_AddNumberToObject(content, "OTC_threshold", payload->OTC_threshold);
 
         if (payload->type == 1) cJSON_AddStringToObject(message, "type", "data");
 
