@@ -313,16 +313,16 @@ esp_err_t perform_request(cJSON *message, cJSON *response) {
 }
 
 void send_message(const char *message) {
-    if (xQueueSend(ws_queue, message, pdMS_TO_TICKS(100)) != pdPASS) {
+    if (xQueueSend(ws_queue, &message, pdMS_TO_TICKS(100)) != pdPASS) {
         ESP_LOGE(TAG, "WebSocket queue full! Dropping message: %s", message);
     }
 }
 
 void message_queue_task(void *pvParameters) {
-    char message[LORA_IS_RECEIVER?((1 + MESH_SIZE) * WS_MESSAGE_MAX_LEN + 100):(WS_MESSAGE_MAX_LEN)];
+    char* message = NULL;
 
     while (true) {
-        if (xQueueReceive(ws_queue, message, portMAX_DELAY) == pdPASS) {
+        if (xQueueReceive(ws_queue, &message, portMAX_DELAY) == pdPASS) {
             if (esp_websocket_client_is_connected(ws_client)) {
                 if (VERBOSE) ESP_LOGI(TAG, "Sending: %s", message);
                 esp_websocket_client_send_text(ws_client, message, strlen(message), portMAX_DELAY);
