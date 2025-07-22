@@ -673,7 +673,6 @@ const BatteryDetail: React.FC<BatteryDetailProps> = ({
                       </>
                     )}
                   </button> */}
-                  <button className="w-full flex items-center justify-center px-4 py-2 border border-blue-300 shadow-sm text-sm font-medium rounded-md text-blue-700 bg-blue-50 hover:bg-blue-100 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
                   <button className="w-full flex items-center justify-center px-4 py-2 border border-blue-300 shadow-sm text-sm font-medium rounded-md text-blue-700 bg-blue-50 hover:bg-blue-100 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
                   onClick={() => viewDigitalTwin(battery)}>
                     <Calendar size={16} className="mr-2" /> Digital Twin
