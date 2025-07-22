@@ -150,13 +150,13 @@ def build_battery_tree(batteries):
     # Create dicts of battery info and collect children
     for b in batteries:
         node_map[b.id] = {
-            'id': b.id,
+            'esp_id': b.id,
             'name': b.name,
-            'online_status': OnlineStatusEnum.online.value if b.id in online_esp_ids else OnlineStatusEnum.offline.value,
+            'status': OnlineStatusEnum.online.value if b.id in online_esp_ids else OnlineStatusEnum.offline.value,
             'last_updated_time': b.last_updated_time.isoformat(),
             'lat': b.lat,
             'lon': b.lon,
-            'temperature': b.temperature,
+            'ambient_temperature': b.temperature,
             'voltage': b.voltage,
             'parent_id': b.parent_id,
             'children': []

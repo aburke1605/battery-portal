@@ -29,6 +29,7 @@ import {
   PenTool as Tool, Clock,
 } from 'lucide-react';
 import { getStatusColor } from '../../utils/helpers';
+import { useNavigate } from 'react-router-dom';
 
 interface BatteryDetailProps {
   battery: BatteryData;
@@ -673,8 +674,9 @@ const BatteryDetail: React.FC<BatteryDetailProps> = ({
                     )}
                   </button> */}
                   <button className="w-full flex items-center justify-center px-4 py-2 border border-blue-300 shadow-sm text-sm font-medium rounded-md text-blue-700 bg-blue-50 hover:bg-blue-100 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
-                    <Calendar size={16} className="mr-2" />
-                    Schedule Maintenance
+                  <button className="w-full flex items-center justify-center px-4 py-2 border border-blue-300 shadow-sm text-sm font-medium rounded-md text-blue-700 bg-blue-50 hover:bg-blue-100 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+                  onClick={() => viewDigitalTwin(battery)}>
+                    <Calendar size={16} className="mr-2" /> Digital Twin
                   </button>
                   <button
                     onClick={() => sendUnseal()}
@@ -736,6 +738,12 @@ const BatteryDetail: React.FC<BatteryDetailProps> = ({
           </div>
         );
     }
+  };
+
+  const navigate = useNavigate();
+
+  const viewDigitalTwin = (battery: BatteryData) => {
+    navigate(`/digital-twin?esp_id=${battery.esp_id}`);
   };
 
   return (
@@ -807,7 +815,7 @@ const BatteryDetail: React.FC<BatteryDetailProps> = ({
             <div className="mt-2 bg-blue-200 rounded-full h-2.5">
               <div 
                 className="h-2.5 rounded-full bg-blue-600" 
-                style={{ width: `${battery.charge}%` }}
+                style={{ width: `${Math.min(battery.charge, 100)}%` }}
               ></div>
             </div>
           </div>

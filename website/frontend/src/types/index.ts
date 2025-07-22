@@ -2,7 +2,7 @@
 export interface BatteryData {
   esp_id: string;
   new_esp_id: string;
-  status: 'good' | 'warning' | 'critical' | 'offline';
+  status: 'online' | 'offline' | 'good' | 'warning' | 'critical' | 'maintenance';
   charge: number;
   ambient_temperature: number;
   cell_temperature: number;
@@ -10,12 +10,6 @@ export interface BatteryData {
   voltage: number;
   current: number;
   health: number;
-  // lastMaintenance: string;
-  // location: string;
-  // type: string;
-  // capacity: number;
-  // cycleCount: number;
-  // isCharging: boolean;
   timestamp: number;
   isConnected: boolean;
   cell1_current: number;
@@ -34,6 +28,8 @@ export interface BatteryData {
   cell2_charge: number;
   cell3_charge: number;
   cell4_charge: number;
+  last_updated_time: string;
+  children?: BatteryData[];
 }
 
 export const parseBatteryData = (
@@ -69,6 +65,7 @@ export const parseBatteryData = (
   cell2_charge: raw?.Q2 || 0,
   cell3_charge: raw?.Q3 || 0,
   cell4_charge: raw?.Q4 || 0,
+  last_updated_time: raw?.last_updated_time,
 });
 
 // Alert Data Types

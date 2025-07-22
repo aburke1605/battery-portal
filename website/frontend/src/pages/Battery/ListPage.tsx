@@ -1,32 +1,21 @@
 import { useState, useEffect, useRef } from 'react'
-import { Link } from 'react-router-dom'
-import { format } from "date-fns";
-// import { useNavigate } from 'react-router-dom';
 import { ChevronDown } from 'lucide-react';
-// import { BatteryData } from '../../types';
+import { BatteryData } from '../../types';
+import BatteryCard from './BatteryCard';
+import { useNavigate } from 'react-router-dom';
 
-interface Battery {
-  id: string
-  name: string
-  online_status: 'online' | 'offline' | 'maintenance'
-  temperature: number
-  voltage: number
-  last_updated_time: string
-  children?: Battery[]
-}
-
-const getStatusColor = (status: Battery['online_status']) => {
-  switch (status) {
-    case 'online':
-      return 'bg-green-100 text-green-800'
-    case 'offline':
-      return 'bg-red-100 text-red-800'
-    case 'maintenance':
-      return 'bg-yellow-100 text-yellow-800'
-    default:
-      return 'bg-gray-100 text-gray-800'
-  }
-}
+// const getStatusColor = (status: BatteryData['status']) => {
+//   switch (status) {
+//     case 'online':
+//       return 'bg-green-100 text-green-800'
+//     case 'offline':
+//       return 'bg-red-100 text-red-800'
+//     case 'maintenance':
+//       return 'bg-yellow-100 text-yellow-800'
+//     default:
+//       return 'bg-gray-100 text-gray-800'
+//   }
+// }
 
 // Add this interface for map markers
 interface MapMarker {
@@ -50,7 +39,7 @@ export default function BatteryPage() {
   const [map, setMap] = useState<google.maps.Map | null>(null)
   const [markers, setMarkers] = useState<google.maps.Marker[]>([])
   
-  const [batteryData, setBatteryData] = useState<Battery[]>([])
+  const [batteryData, setBatteryData] = useState<BatteryData[]>([])
   const totalItems = batteryData.length
   const startIndex = (currentPage - 1) * itemsPerPage
   const endIndex = Math.min(startIndex + itemsPerPage, totalItems)
@@ -65,9 +54,9 @@ export default function BatteryPage() {
   useEffect(() => {
     const fetchBatteryData = async () => {
       try {
-        const response = await fetch('/api/battery/list')
-        const data = await response.json()
-        setBatteryData(data)
+        const response = await fetch('/api/battery/list');
+        const data = await response.json();
+        setBatteryData(data);
       } catch (error) {
         console.error('Error fetching battery data:', error)
       } finally {
@@ -189,68 +178,12 @@ export default function BatteryPage() {
     window.scrollTo({ top: 0, behavior: 'smooth' })
   }
 
-  // const navigate = useNavigate();
-  //   // View battery details
-  //   const viewBatteryDetails = (battery: BatteryData) => {
-  //     navigate(`/battery-detail?esp_id=${battery.esp_id}`);
-  //   };
-  //   const viewDigitalTwin = (battery: BatteryData) => {
-  //     navigate(`/digital-twin?esp_id=${battery.esp_id}`);
-  //   };
-
-
-  // const filteredBatteries = batteries.filter(battery => {
-  //   const matchesSearch = 
-  //     battery.esp_id.toLowerCase().includes(searchTerm.toLowerCase());
-  //     // || battery.location.toLowerCase().includes(searchTerm.toLowerCase());
-    
-  //   const matchesStatus = statusFilter === 'all' || battery.status === statusFilter;
-    
-  //   return matchesSearch && matchesStatus;
-  // }).sort((a, b) => {
-  //   if (sortBy === 'name') {
-  //     return a.esp_id.localeCompare(b.esp_id);
-  //   } else if (sortBy === 'chargeLevel') {
-  //     return b.charge - a.charge;
-  //   } else if (sortBy === 'health') {
-  //     return b.health - a.health;
-  //   } else {
-  //     // Sort by status (critical first, then warning, then good)
-  //     const statusOrder = { critical: 0, warning: 1, good: 2, offline: 3 };
-  //     return statusOrder[a.status] - statusOrder[b.status];
-  //   }
-  // });
-
-  // const [currentPage, setCurrentPage] = useState(1);
-  // const itemsPerPage = 6;
-  // // Calculate pagination
-  // const totalPages = Math.ceil(filteredBatteries.length / itemsPerPage);
-  // // const paginatedBatteries = useMemo(() => {
-  // //   const startIndex = (currentPage - 1) * itemsPerPage;
-  // //   return filteredBatteries.slice(startIndex, startIndex + itemsPerPage);
-  // // }, [filteredBatteries, currentPage]);
-
-  // // Page navigation
-  // const goToPage = (page: number) => {
-  //   setCurrentPage(Math.min(Math.max(1, page), totalPages));
-  // };
-
-  // // Generate page numbers
-  // const getPageNumbers = () => {
-  //   const pages = [];
-  //   const maxVisiblePages = 5;
-  //   let startPage = Math.max(1, currentPage - Math.floor(maxVisiblePages / 2));
-  //   let endPage = Math.min(totalPages, startPage + maxVisiblePages - 1);
-
-  //   if (endPage - startPage + 1 < maxVisiblePages) {
-  //     startPage = Math.max(1, endPage - maxVisiblePages + 1);
-  //   }
-
-  //   for (let i = startPage; i <= endPage; i++) {
-  //     pages.push(i);
-  //   }
-  //   return pages;
-  // };
+  const navigate = useNavigate();
+  // View battery details
+  const viewBatteryDetails = (battery: BatteryData) => {
+    navigate(`/battery-detail?esp_id=${battery.esp_id}`);
+  };
+  
 
   return (
     <main className="container mx-auto px-4 py-8">
@@ -345,84 +278,11 @@ export default function BatteryPage() {
 
       {viewMode === 'grid' ? (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 xl:grid-cols-3 gap-6">
-          {currentBatteries.map((parentBattery) => (
-            <div key={parentBattery.id} className="bg-white rounded-lg shadow p-4">
-              <div className="flex justify-between items-start mb-3">
-                <div>
-                  <h2 className="text-lg font-semibold">{parentBattery.name}</h2>
-                  <p className="text-sm text-gray-600">Last Updated: {format(new Date(parentBattery.last_updated_time), "yyyy-MM-dd HH:mm:ss")}</p>
-                </div>
-                <div className="flex items-center gap-2">
-                    <Link
-                      to={`/battery-detail?esp_id=${parentBattery.id}`}
-                      className="px-2 py-0.5 bg-blue-600 text-white rounded hover:bg-blue-700 transition-colors text-xs"
-                    >
-                      Details
-                    </Link>
-                    <Link
-                      to={`/digital-twin?esp_id=${parentBattery.id}`}
-                      className="px-2 py-0.5 bg-blue-600 text-white rounded hover:bg-blue-700 transition-colors text-xs"
-                    >
-                      Ditial Twin
-                    </Link>
-                  <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${getStatusColor(parentBattery.online_status)}`}>
-                    {parentBattery.online_status}
-                  </span>
-                </div>
-              </div>
-
-              <div className="grid grid-cols-2 gap-2 mb-3">
-                <div className="bg-gray-50 p-2 rounded">
-                  <p className="text-xs text-gray-600">temperature</p>
-                  <p className="text-sm font-semibold">{parentBattery.temperature}°C</p>
-                </div>
-                <div className="bg-gray-50 p-2 rounded">
-                  <p className="text-xs text-gray-600">Voltage</p>
-                  <p className="text-sm font-semibold">{parentBattery.voltage}V</p>
-                </div>
-              </div>
-
-              <div className="space-y-2">
-                <div className="flex justify-between items-center">
-                  <h3 className="text-sm font-medium text-gray-700">Connected Batteries</h3>
-                  <span className="text-xs text-gray-500">
-                    {parentBattery.children?.length || 0} units
-                  </span>
-                </div>
-                <div className={`space-y-2 ${parentBattery.children && parentBattery.children.length > 3 ? 'max-h-[200px] overflow-y-auto pr-1 custom-scrollbar' : ''}`}>
-                  {parentBattery.children?.map((childBattery) => (
-                    <Link 
-                      to={`/battery-detail?esp_id=${childBattery.id}`}
-                      key={childBattery.id}
-                      className="block p-2 bg-gray-50 rounded hover:bg-gray-100 transition-colors"
-                    >
-                    <Link
-                      to={`/digital-twin?esp_id=${childBattery.id}`}
-                      className="px-2 py-0.5 bg-blue-600 text-white rounded hover:bg-blue-700 transition-colors text-xs"
-                    >
-                      Ditial Twin
-                    </Link>
-                      <div className="flex justify-between items-center">
-                        <div>
-                          <h4 className="text-sm font-medium">{childBattery.name}</h4>
-                          <div className="flex items-center gap-2 mt-0.5">
-                            <span className="text-xs text-gray-600">
-                              {childBattery.temperature}°C
-                            </span>
-                            <span className="text-xs text-gray-600">
-                              {childBattery.voltage}V
-                            </span>
-                          </div>
-                        </div>
-                        <span className={`px-1.5 py-0.5 rounded-full text-xs font-medium ${getStatusColor(childBattery.online_status)}`}>
-                          {childBattery.online_status}
-                        </span>
-                      </div>
-                    </Link>
-                  ))}
-                </div>
-              </div>
-            </div>
+          {currentBatteries.map((battery: BatteryData) => (
+            <BatteryCard
+            battery={battery}
+            viewBatteryDetails={viewBatteryDetails}
+            />
           ))}
         </div>
       ) : (
