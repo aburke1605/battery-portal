@@ -204,12 +204,11 @@ export default function DigitalTwin({ isFromEsp32 = false }: BatteriesPageProps)
     if (!isFromEsp32) {
         const hash = window.location.hash;
         queryString = hash.split('?')[1];
-    } else {
-        ws_url += "?auth_token=" + getAuthToken();
     }
     const urlParams = new URLSearchParams(queryString);
     let esp_id = urlParams.get('esp_id');
     if (esp_id == null) esp_id = "empty";
+    ws_url = isFromEsp32 ? ws_url += "?auth_token=" + getAuthToken() : ws_url += "?esp_id=" + esp_id;
 
     const [batteryItem, setSelectedBattery] = useState<BatteryData | null>(null);
 
