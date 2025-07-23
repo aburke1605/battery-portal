@@ -7,11 +7,12 @@ import Blank from "./pages/Blank";
 import AppLayout from "./layout/AppLayout";
 import { ScrollToTop } from "./components/common/ScrollToTop";
 import Home from "./pages/Dashboard/Home";
-import ListPage from "./pages/Battery/ListPage";
+import ListPage from "./pages/Battery/ListPage.tsx";
 import BatteryPage from "./pages/Battery/BatteryPage";
 import UserList from "./pages/User/list";
 import AuthRequire from "./auth/AuthRequire.tsx";
 import {AuthProvider} from "./auth/AuthContext.tsx";
+import Db from "./pages/Db";
 import DigitalTwin from "./pages/Battery/DigitalTwin.tsx";
 
 
@@ -42,10 +43,13 @@ export default function App() {
             <Route path="/battery-detail" element={<BatteryPage />} />
             <Route path="/digital-twin" element={<DigitalTwin />} />
 
+            <Route path="/db" element={<Db />} />
           </Route>
 
           {/* Auth Layout */}
           <Route path="/login" element={<SignIn />} />
+
+          
 
           {/* Fallback Route */}
           <Route path="*" element={<NotFound />} />

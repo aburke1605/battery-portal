@@ -1,110 +1,83 @@
 import React from 'react';
 import { BatteryData } from '../..//types';
-import { 
-  // ToggleRight,
-  // ToggleLeft,
-  ExternalLink
-} from 'lucide-react';
-import { getStatusColor, getChargeLevelColor, getHealthColor, getTemperatureColor } from '../../utils/helpers';
+import { getStatusColor} from '../../utils/helpers';
+import { format } from "date-fns";
 
 interface BatteryCardProps {
   battery: BatteryData;
-  // onToggleCharging: (batteryId: string, e?: React.MouseEvent) => void;
-  onViewDetails: (battery: BatteryData) => void;
-  onViewTwin: (battery: BatteryData) => void;
+  viewBatteryDetails: (battery: BatteryData) => void;
 }
 
-// const BatteryCard: React.FC<BatteryCardProps> = ({ battery, onToggleCharging, onViewDetails }) => {
-const BatteryCard: React.FC<BatteryCardProps> = ({ battery, onViewDetails, onViewTwin }) => {
-  // Get battery icon based on charge level and status
-  // const getBatteryIcon = (battery: BatteryData) => {
-  //   if (battery.status === 'offline') return <Battery className="text-gray-400" />;
-  //   if (battery.status === 'critical') return <BatteryWarning className="text-red-500" />;
-  //   if (battery.status === 'warning') return <BatteryLow className="text-amber-500" />;
-    
-  //   if (battery.chargeLevel > 80) return <BatteryFull className="text-green-500" />;
-  //   if (battery.chargeLevel > 40) return <BatteryMedium className="text-blue-500" />;
-  //   return <BatteryLow className="text-amber-500" />;
-  // };
+
+const BatteryCard: React.FC<BatteryCardProps> = ({ battery, viewBatteryDetails }) => {
 
   return (
-    <div 
-      className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden hover:shadow-md transition-shadow"
-    >
-      <div className="p-5">
-        <div className="flex justify-between items-start mb-3">
-          <h3 className="text-lg font-semibold text-gray-900">{battery.esp_id}</h3>
-          <span className={`text-xs px-2 py-1 rounded-full ${getStatusColor(battery.status)}`}>
-            {battery.status.charAt(0).toUpperCase() + battery.status.slice(1)}
+    <div key={battery.esp_id} className="bg-white rounded-lg shadow p-4">
+      <div className="flex justify-between items-start mb-3">
+        <div>
+          <h2 className="text-lg font-semibold">{battery.esp_id}</h2>
+          <p className="text-sm text-gray-600">Last Updated: {format(new Date(battery.last_updated_time), "yyyy-MM-dd HH:mm:ss")}</p>
+        </div>
+        <div className="flex items-center gap-2">
+            <a
+              href="#"
+              onClick={(e) => {
+                e.preventDefault(); 
+                viewBatteryDetails(battery);
+              }}
+              className="cursor-pointer px-2 py-0.5 bg-blue-600 text-white rounded hover:bg-blue-700 transition-colors text-xs"
+            >
+              Details
+            </a>
+          <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${getStatusColor(battery.status)}`}>
+            {battery.status}
           </span>
         </div>
-        
-        <div className="text-sm text-gray-600 mb-1">ID: {battery.esp_id}</div>
-        {/* <div className="text-sm text-gray-600 mb-4">Location: {battery.location}</div> */}
-        
-        <div className="mb-4">
-          <div className="flex justify-between items-center mb-1">
-            <span className="text-sm font-medium text-gray-700">Charge Level</span>
-            <span className="text-sm font-medium">{battery.charge}%</span>
-          </div>
-          <div className="w-full bg-gray-200 rounded-full h-2.5">
-            <div 
-              className={`h-2.5 rounded-full ${getChargeLevelColor(battery.charge, battery.status)}`}
-              style={{ width: `${battery.charge}%` }}
-            ></div>
-          </div>
-        </div>
-        
-        <div className="grid grid-cols-2 gap-4">
-          <div>
-            <div className="text-sm text-gray-500">Temperature:</div>
-            <div className={`font-medium ${getTemperatureColor(battery.cell_temperature)}`}>{battery.cell_temperature}°C</div>
-          </div>
-          <div>
-            <div className="text-sm text-gray-500">Voltage:</div>
-            <div className="font-medium text-gray-700">{battery.voltage}V</div>
-          </div>
-          <div>
-            <div className="text-sm text-gray-500">Health:</div>
-            <div className={`font-medium ${getHealthColor(battery.health)}`}>{battery.health}%</div>
-          </div>
-          {/* <div>
-            <div className="text-sm text-gray-500">Cycles:</div>
-            <div className="font-medium text-gray-700">{battery.cycleCount}</div>
-          </div> */}
-        </div>
+      </div>
 
-        <div className="mt-4 flex justify-between items-center">
-          {/* <button 
-            onClick={(e) => onToggleCharging(battery.esp_id, e)}
-            className="flex items-center text-gray-600 hover:text-gray-900"
-          >
-            {battery.isCharging ? (
-              <>
-                <ToggleRight size={18} className="text-green-500 mr-1" />
-                <span className="text-sm">Charging</span>
-              </>
-            ) : (
-              <>
-                <ToggleLeft size={18} className="text-gray-400 mr-1" />
-                <span className="text-sm">Not Charging</span>
-              </>
-            )}
-          </button> */}
-          <button
-            onClick={() => onViewDetails(battery)}
-            className="flex items-center text-blue-600 hover:text-blue-800"
-          >
-            <span className="text-sm mr-1">Details</span>
-            <ExternalLink size={16} />
-          </button>
-          <button
-            onClick={() => onViewTwin(battery)}
-            className="flex items-center text-blue-600 hover:text-blue-800"
-          >
-            <span className="text-sm mr-1">Digital Twin</span>
-            <ExternalLink size={16} />
-          </button>
+      <div className="grid grid-cols-2 gap-2 mb-3">
+        <div className="bg-gray-50 p-2 rounded">
+          <p className="text-xs text-gray-600">temperature</p>
+          <p className="text-sm font-semibold">{battery.ambient_temperature}°C</p>
+        </div>
+        <div className="bg-gray-50 p-2 rounded">
+          <p className="text-xs text-gray-600">Voltage</p>
+          <p className="text-sm font-semibold">{battery.voltage}V</p>
+        </div>
+      </div>
+
+      <div className="space-y-2">
+        <div className="flex justify-between items-center">
+          <h3 className="text-sm font-medium text-gray-700">Connected Batteries</h3>
+          <span className="text-xs text-gray-500">
+            {battery.children?.length || 0} units
+          </span>
+        </div>
+        <div className={`space-y-2 ${battery.children && battery.children.length > 3 ? 'max-h-[200px] overflow-y-auto pr-1 custom-scrollbar' : ''}`}>
+          {battery.children?.map((childBattery) => (
+            <div 
+              onClick={() => viewBatteryDetails(childBattery)}
+              key={childBattery.esp_id}
+              className="block p-2 bg-gray-50 rounded hover:bg-gray-100 transition-colors"
+            >
+              <div className="flex justify-between items-center">
+                <div>
+                  <h4 className="text-sm font-medium">{childBattery.esp_id}</h4>
+                  <div className="flex items-center gap-2 mt-0.5">
+                    <span className="text-xs text-gray-600">
+                      {childBattery.ambient_temperature}°C
+                    </span>
+                    <span className="text-xs text-gray-600">
+                      {childBattery.voltage}V
+                    </span>
+                  </div>
+                </div>
+                <span className={`px-1.5 py-0.5 rounded-full text-xs font-medium ${getStatusColor(childBattery.status)}`}>
+                  {childBattery.status}
+                </span>
+              </div>
+            </div>
+          ))}
         </div>
       </div>
     </div>

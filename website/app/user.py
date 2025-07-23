@@ -1,16 +1,10 @@
 # users.py
-import os
-import string
-import random
 from uuid import uuid4
-
 from flask import Blueprint, request, jsonify
 from flask_security import SQLAlchemyUserDatastore, UserMixin, RoleMixin, login_user, login_required, logout_user
 from flask_security.utils import hash_password
-from wtforms import PasswordField
 from flask_login import current_user
-
-from db import DB
+from app.db import DB
 
 # Blueprint setup
 user_bp = Blueprint('user_bp', __name__, url_prefix='/api/users')
@@ -55,7 +49,11 @@ def api_login():
     user = user_datastore.find_user(email=email)
     if user and user.verify_and_update_password(password):
         login_user(user)
-        return jsonify({'success': True}), 200
+        return jsonify({
+            'loggedIn': True,
+            'email': user.email,
+            'roles': [role.name for role in user.roles]  # if using roles
+        })
     return jsonify({'success': False}), 401
 
 @user_bp.route('/check-auth', methods=['GET'])
@@ -140,40 +138,3 @@ def edit_user(user_id):
     user.roles = Role.query.filter(Role.id.in_(role_ids)).all()
     DB.session.commit()
     return jsonify({"message": "User updated successfully"})
-
-# DB init helper
-def build_sample_db(app):
-    with app.app_context():
-        DB.drop_all()
-        DB.create_all()
-
-        user_role = Role(name='user')
-        super_user_role = Role(name='superuser')
-        DB.session.add(user_role)
-        DB.session.add(super_user_role)
-        DB.session.commit()
-
-        user = os.getenv("AZURE_MYSQL_USER", "user")
-        password = os.getenv("AZURE_MYSQL_PASSWORD", "password")
-        user_datastore.create_user(
-            first_name=user,
-            email=f'{user}@admin.dev',
-            password=hash_password(password),
-            roles=[user_role, super_user_role]
-        )
-
-        first_names = ['Harry', 'Amelia', 'Oliver', 'Jack', 'Isabella']
-        last_names = ['Brown', 'Smith', 'Patel', 'Jones', 'Williams']
-
-        for i in range(len(first_names)):
-            tmp_email = f"{first_names[i].lower()}.{last_names[i].lower()}@example.com"
-            tmp_pass = ''.join(random.choice(string.ascii_lowercase + string.digits) for _ in range(10))
-            user_datastore.create_user(
-                first_name=first_names[i],
-                last_name=last_names[i],
-                email=tmp_email,
-                password=hash_password(tmp_pass),
-                roles=[user_role]
-            )
-
-        DB.session.commit()

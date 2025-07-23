@@ -6,6 +6,7 @@ logger = logging.getLogger(__name__)
 from flask import Blueprint, render_template, request, jsonify
 from flask_login import login_required
 from flask_sqlalchemy import SQLAlchemy
+from flask_security import roles_required
 
 import mysql.connector
 import datetime
@@ -86,8 +87,9 @@ def query():
     return render_template("db/query.html")
 
 @db_bp.route("/execute_sql", methods=["POST"])
-@login_required
+@roles_required('superuser')
 def execute_sql():
+
     data = request.get_json()
     query = data.get("query")
 
