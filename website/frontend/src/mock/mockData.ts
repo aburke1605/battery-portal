@@ -194,6 +194,7 @@ export const initialBatteries: BatteryData[] = [
     cell3_charge: 50,
     cell4_charge: 50,
     OTC_threshold: 550,
+    last_updated_time: '2025-04-02T10:00:00Z'
   },
   {
     esp_id: 'B-002',
@@ -230,6 +231,7 @@ export const initialBatteries: BatteryData[] = [
     cell3_charge: 50,
     cell4_charge: 50,
     OTC_threshold: 550,
+    last_updated_time: '2025-04-02T10:00:00Z'
   },
   {
     esp_id: 'B-003',
@@ -266,6 +268,7 @@ export const initialBatteries: BatteryData[] = [
     cell3_charge: 50,
     cell4_charge: 50,
     OTC_threshold: 550,
+    last_updated_time: '2025-04-02T10:00:00Z'
   },
   {
     esp_id: 'B-004',
@@ -302,6 +305,7 @@ export const initialBatteries: BatteryData[] = [
     cell3_charge: 50,
     cell4_charge: 50,
     OTC_threshold: 550,
+    last_updated_time: '2025-04-02T10:00:00Z'
   },
   {
     esp_id: 'B-005',
@@ -338,6 +342,7 @@ export const initialBatteries: BatteryData[] = [
     cell3_charge: 50,
     cell4_charge: 50,
     OTC_threshold: 550,
+    last_updated_time: '2025-04-02T10:00:00Z'
   },
   {
     esp_id: 'B-006',
@@ -374,6 +379,7 @@ export const initialBatteries: BatteryData[] = [
     cell3_charge: 50,
     cell4_charge: 50,
     OTC_threshold: 550,
+    last_updated_time: '2025-04-02T10:00:00Z'
   },
   {
     esp_id: 'B-007',
@@ -410,6 +416,7 @@ export const initialBatteries: BatteryData[] = [
     cell3_charge: 50,
     cell4_charge: 50,
     OTC_threshold: 550,
+    last_updated_time: '2025-04-02T10:00:00Z'
   },
   {
     esp_id: 'B-008',
@@ -446,6 +453,7 @@ export const initialBatteries: BatteryData[] = [
     cell3_charge: 50,
     cell4_charge: 50,
     OTC_threshold: 550,
+    last_updated_time: '2025-04-02T10:00:00Z'
   },
   {
     esp_id: 'B-009',
@@ -482,6 +490,7 @@ export const initialBatteries: BatteryData[] = [
     cell3_charge: 50,
     cell4_charge: 50,
     OTC_threshold: 550,
+    last_updated_time: '2025-04-02T10:00:00Z'
   }
 ];
 

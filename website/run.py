@@ -1,8 +1,26 @@
 #!venv/bin/python
-import os
 import sys
-
 import logging
+from flask import Flask, send_from_directory
+from flask_security import Security
+from app.battery_ws import sock
+from app.db import db_bp, DB
+from app.user import user_bp, user_datastore
+import flask_admin
+from dotenv import load_dotenv
+from flask_migrate import Migrate
+from app.seed import seed_data
+# Import user model for migrations
+from app.user import User, Role
+from app.battery_http import battery_bp
+from app.battery_ws import check_online
+from apscheduler.schedulers.background import BackgroundScheduler
+
+
+# Load environment variables from .env file will not overwrite system env vars
+load_dotenv()
+
+# Set up logging
 logging.basicConfig(
     level=logging.DEBUG,
     format="%(asctime)s [%(levelname)s] %(name)s: %(message)s",
@@ -10,30 +28,18 @@ logging.basicConfig(
         logging.StreamHandler(sys.stdout)
     ]
 )
-
 annoying_logs = ["werkzeug", "passlib"]
 for log in annoying_logs:
     logging.getLogger(log).setLevel(logging.WARNING)
-
 logger = logging.getLogger(__name__)
-
-from flask import Flask, send_from_directory
-from flask_security import login_required, Security
-
-from ws import sock
-from db import db_bp
-from user import user_bp, user_datastore
-from db import DB
-from user import build_sample_db
-import flask_admin
 
 # Create Flask application
 app = Flask(__name__)
 app.config.from_pyfile('config.py')
-app.config['SQLALCHEMY_ECHO'] = False
 # Register blueprints
 app.register_blueprint(db_bp)
 app.register_blueprint(user_bp)
+app.register_blueprint(battery_bp)
 # Register websocket
 sock.init_app(app)
 # Db setup
@@ -42,6 +48,8 @@ DB.init_app(app)
 security = Security(app, user_datastore)
 # Create flask-admin
 admin = flask_admin.Admin(app)
+# Setup flask-migrate
+migrate = Migrate(app, DB)
 # Basic route for the home page and React app, static files
 @app.route('/')
 def index():
@@ -55,14 +63,12 @@ def admin():
 def serve_react_static(path):
     return send_from_directory("frontend/dist", path)
 
-# Init the table, only in dev env TODO
-app_dir = os.path.realpath(os.path.dirname(__file__))
-database_path = os.path.join(app_dir, app.config['DATABASE_FILE'])
-if not os.path.exists(database_path):
-    logger.info("Database file not found. Creating tables and populating with sample data.")
-    build_sample_db(app)
-
-
+# Create seed data
+seed_data(app)
+# Start the background scheduler to check online status
+scheduler = BackgroundScheduler()
+scheduler.add_job(check_online, 'interval', seconds=30, args=[app]) 
+scheduler.start()
 
 if __name__ == '__main__':
-    app.run(debug=True, ssl_context=("local_cert.pem", "local_key.pem"), host="0.0.0.0")
+    app.run(debug=True, ssl_context=("./cert/local_cert.pem", "./cert/local_key.pem"), host="0.0.0.0")
