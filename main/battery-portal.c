@@ -91,9 +91,8 @@ void app_main(void) {
     TaskParams dns_server_params = {.stack_size = 2600, .task_name = "dns_server_task"};
     xTaskCreate(&dns_server_task, dns_server_params.task_name, dns_server_params.stack_size, &dns_server_params, 2, NULL);
 
-    ws_queue = xQueueCreate(WS_QUEUE_SIZE, WS_MESSAGE_MAX_LEN);
-    /// ws_queue = xQueueCreate(WS_QUEUE_SIZE, sizeof(ws_payload));
-    TaskParams message_queue_params = {.stack_size = 3200, .task_name = "message_queue_task"};
+    ws_queue = xQueueCreate(WS_QUEUE_SIZE, sizeof(char*));
+    TaskParams message_queue_params = {.stack_size = 3900, .task_name = "message_queue_task"};
     xTaskCreate(&message_queue_task, message_queue_params.task_name, message_queue_params.stack_size, &message_queue_params, 5, NULL);
 
     esp_log_level_set("wifi", ESP_LOG_ERROR);
@@ -116,7 +115,6 @@ void app_main(void) {
             TaskParams connect_to_root_params = {.stack_size = 2500, .task_name = "connect_to_root_task"};
             xTaskCreate(&connect_to_root_task, connect_to_root_params.task_name, connect_to_root_params.stack_size, &connect_to_root_params, 4, NULL);
 
-            // ws_queue = xQueueCreate(WS_QUEUE_SIZE, WS_MESSAGE_MAX_LEN);
             TaskParams mesh_websocket_params = {.stack_size = 3100, .task_name = "mesh_websocket_task"};
             xTaskCreate(&mesh_websocket_task, mesh_websocket_params.task_name, mesh_websocket_params.stack_size, &mesh_websocket_params, 3, &mesh_websocket_task_handle);
         } else {
