@@ -163,7 +163,7 @@ esp_err_t client_handler(httpd_req_t *req) {
 esp_err_t perform_request(cJSON *message, cJSON *response) {
     // construct response message
     cJSON_AddStringToObject(response, "type", "response");
-    char* esp_id = esp_id_string(); 
+    char* esp_id = esp_id_string();
     cJSON_AddStringToObject(response, "id", esp_id);
     free(esp_id);
     cJSON *response_content = cJSON_CreateObject();
@@ -207,11 +207,8 @@ esp_err_t perform_request(cJSON *message, cJSON *response) {
                 for (size_t i=0; i<new_id_length; i++)
                     new_id_data[1 + i] = new_id[i];
                 write_data_flash(address, sizeof(address), new_id_data, sizeof(new_id_data));
-                char new_name[new_id_length]; // enough for "bms_255\0"
-                strncpy(new_name, (char *)&new_id_data[1], new_id_length);
-                new_name[new_id_length] = '\0';
-                ESP_ID = atoi(&new_name[4]);
 
+                change_esp_id(new_id);
                 free(name);
             }
 
