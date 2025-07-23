@@ -9,7 +9,7 @@
 extern esp_netif_t *ap_netif;
 extern bool is_root;
 extern int num_connected_clients;
-extern char ESP_ID[UTILS_ID_LENGTH + 1];
+extern uint8_t ESP_ID;
 extern httpd_handle_t server;
 extern bool connected_to_WiFi;
 extern bool connected_to_root;

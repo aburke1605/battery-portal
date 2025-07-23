@@ -147,7 +147,9 @@ void mesh_websocket_task(void *pvParameters) {
                 ws_client = NULL;
             } else {
                 char message[WS_MESSAGE_MAX_LEN];
-                snprintf(message, sizeof(message), "{\"type\":\"data\",\"id\":\"%s\",\"content\":%s}", ESP_ID, data_string);
+                char* esp_id = esp_id_string();
+                snprintf(message, sizeof(message), "{\"type\":\"data\",\"id\":\"%s\",\"content\":%s}", esp_id, data_string);
+                free(esp_id);
                 esp_websocket_client_send_text(ws_client, message, strlen(message), portMAX_DELAY);
             }
         }

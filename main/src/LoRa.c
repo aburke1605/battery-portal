@@ -500,7 +500,9 @@ void lora_task(void *pvParameters) {
 
                 // get own data first
                 char *data_string = get_data(false);
-                snprintf(TX_individual_message, sizeof(TX_individual_message), "{\"type\":\"data\",\"id\":\"%s\",\"content\":%s}", ESP_ID, data_string);
+                char* esp_id = esp_id_string();
+                snprintf(TX_individual_message, sizeof(TX_individual_message), "{\"type\":\"data\",\"id\":\"%s\",\"content\":%s}", esp_id, data_string);
+                free(esp_id);
                 // add to radio payload
                 radio_payload* payload;
                 payload = convert_to_binary(TX_individual_message);

@@ -17,7 +17,7 @@
 esp_netif_t *ap_netif;
 bool is_root = false;
 int num_connected_clients = 0;
-char ESP_ID[UTILS_ID_LENGTH + 1] = "unknown";
+uint8_t ESP_ID = 0;
 httpd_handle_t server = NULL;
 bool connected_to_WiFi = false;
 bool connected_to_root = false;
@@ -74,9 +74,8 @@ void app_main(void) {
         convert_uint_to_n_bytes(I2C_DEVICE_NAME_ADDR, address, sizeof(address), true);
         uint8_t data_flash[UTILS_ID_LENGTH + 1] = {0}; // S21 data type
         read_data_flash(address, sizeof(address), data_flash, sizeof(data_flash));
-        uint8_t name_length = MIN(data_flash[0], UTILS_ID_LENGTH);
-        if (strcmp((char *)data_flash, "") != 0) strncpy(ESP_ID, (char *)&data_flash[1], name_length);
-        ESP_ID[name_length] = '\0';
+        if (strcmp((char *)data_flash, "") != 0)
+            change_esp_id((char*)&data_flash[1]);
     }
 
     wifi_init();

@@ -163,7 +163,9 @@ esp_err_t client_handler(httpd_req_t *req) {
 esp_err_t perform_request(cJSON *message, cJSON *response) {
     // construct response message
     cJSON_AddStringToObject(response, "type", "response");
-    cJSON_AddStringToObject(response, "id", ESP_ID);
+    char* esp_id = esp_id_string(); 
+    cJSON_AddStringToObject(response, "id", esp_id);
+    free(esp_id);
     cJSON *response_content = cJSON_CreateObject();
 
     cJSON *type = cJSON_GetObjectItem(message, "type");
@@ -191,7 +193,8 @@ esp_err_t perform_request(cJSON *message, cJSON *response) {
             gpio_set_level(I2C_LED_GPIO_PIN, 1);
 
             cJSON *esp_id = cJSON_GetObjectItem(data, "new_esp_id");
-            if (esp_id && strcmp(esp_id->valuestring, "") != 0 && esp_id->valuestring != ESP_ID) {
+            char* name = esp_id_string();
+            if (esp_id && strcmp(esp_id->valuestring, "") != 0 && esp_id->valuestring != name) {
                 ESP_LOGI(TAG, "Changing device name...");
 
                 uint8_t address[2] = {0};
@@ -204,8 +207,12 @@ esp_err_t perform_request(cJSON *message, cJSON *response) {
                 for (size_t i=0; i<new_id_length; i++)
                     new_id_data[1 + i] = new_id[i];
                 write_data_flash(address, sizeof(address), new_id_data, sizeof(new_id_data));
-                strncpy(ESP_ID, (char *)&new_id_data[1], new_id_length);
-                ESP_ID[new_id_length] = '\0';
+                char new_name[new_id_length]; // enough for "bms_255\0"
+                strncpy(new_name, (char *)&new_id_data[1], new_id_length);
+                new_name[new_id_length] = '\0';
+                ESP_ID = atoi(&new_name[4]);
+
+                free(name);
             }
 
             int OTC_threshold = cJSON_GetObjectItem(data, "OTC_threshold")->valueint;
@@ -476,7 +483,9 @@ void websocket_task(void *pvParameters) {
                         char *message = malloc(WS_MESSAGE_MAX_LEN);
                         if (!message) ESP_LOGE(TAG, "Couldn't allocate memory in websocket_task!");
                         else {
-                            snprintf(message, WS_MESSAGE_MAX_LEN, "{\"type\":\"data\",\"id\":\"%s\",\"content\":%s}", ESP_ID, data_string);
+                            char* esp_id = esp_id_string();
+                            snprintf(message, WS_MESSAGE_MAX_LEN, "{\"type\":\"data\",\"id\":\"%s\",\"content\":%s}", esp_id, data_string);
+                            free(esp_id);
                             send_message(message);
                             free(message);
                         }
