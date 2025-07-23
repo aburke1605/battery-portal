@@ -116,10 +116,12 @@ void app_main(void) {
         }
     }
 
-    lora_init();
+    if (LORA_IS_RECEIVER || is_root) {
+        lora_init();
 
-    TaskParams lora_params = {.stack_size = 8700, .task_name = "lora_task"};
-    xTaskCreate(lora_task, lora_params.task_name, lora_params.stack_size, &lora_params, 1, NULL);
+        TaskParams lora_params = {.stack_size = 8700, .task_name = "lora_task"};
+        xTaskCreate(lora_task, lora_params.task_name, lora_params.stack_size, &lora_params, 1, NULL);
+    }
 
     while (true) {
         if (VERBOSE) ESP_LOGI("main", "%ld bytes available in heap", esp_get_free_heap_size());
