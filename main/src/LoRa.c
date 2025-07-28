@@ -271,11 +271,43 @@ size_t json_to_binary(uint8_t* binary_message, cJSON* json_array) {
             if (obj) packet->OTC_threshold = (int16_t)obj->valueint;
 
 
-            // now copy the packet into the returned binary binary_message which will be broadcasted
+            // now copy the packet into the returned binary_message which will be broadcasted
             memcpy(&binary_message[packet_start], packet, sizeof(radio_data_packet));
             // and shift the position along for the next iteration
             packet_start += sizeof(radio_data_packet);
         }
+
+
+        else if (strcmp(type->valuestring, "query") == 0) {
+            radio_query_packet* packet = malloc(sizeof(radio_query_packet));
+            if (packet == NULL) {
+                ESP_LOGE(TAG, "Failed to allocate packet memory\n");
+                return 0;
+            }
+            memset(packet, 0, sizeof(radio_query_packet));
+            packet->type = QUERY;
+
+            cJSON* esp_id = cJSON_GetObjectItem(item, "esp_id");
+            if (!esp_id) {
+                ESP_LOGE(TAG, "No \"esp_id\" key in cJSON array item");
+                return 0;
+            }
+            packet->esp_id = atoi(&esp_id->valuestring[4]);
+
+            cJSON* content = cJSON_GetObjectItem(item, "content");
+            if (!content) {
+                ESP_LOGE(TAG, "No \"content\" key in cJSON array item");
+                return 0;
+            }
+            if (strcmp(content->valuestring, "are you still there?") == 0) packet->query = 1;
+
+
+            // now copy the packet into the returned binary_message which will be broadcasted
+            memcpy(&binary_message[packet_start], packet, sizeof(radio_query_packet));
+            // and shift the position along for the next iteration
+            packet_start += sizeof(radio_query_packet);
+        }
+
 
         else if (strcmp(type->valuestring, "request") == 0) {
             radio_request_packet* packet = malloc(sizeof(radio_request_packet));
@@ -344,12 +376,11 @@ size_t json_to_binary(uint8_t* binary_message, cJSON* json_array) {
             else if (strcmp(summary->valuestring, "unseal-bms") == 0) packet->request = UNSEAL_BMS;
 
 
-            // now copy the packet into the returned binary binary_message which will be broadcasted
+            // now copy the packet into the returned binary_message which will be broadcasted
             memcpy(&binary_message[packet_start], packet, sizeof(radio_request_packet));
             // and shift the position along for the next iteration
             packet_start += sizeof(radio_request_packet);
         }
-
 
 
         n_devices++;
@@ -487,7 +518,7 @@ void binary_to_json(uint8_t* binary_message, cJSON* json_array) {
             snprintf(id_str, sizeof(id_str), "bms_%u", packet->esp_id);
             cJSON_AddStringToObject(message, "id", id_str);
 
-            if (packet->query == -1) cJSON_AddStringToObject(message, "content", "are you still there?");
+            if (packet->query == 1) cJSON_AddStringToObject(message, "content", "are you still there?");
 
             cJSON_AddItemToArray(json_array, message);
 
