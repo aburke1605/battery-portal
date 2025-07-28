@@ -328,8 +328,18 @@ esp_err_t perform_request(cJSON *message, cJSON *response) {
 }
 
 void send_message(const char *message) {
-    if (xQueueSend(ws_queue, &message, pdMS_TO_TICKS(100)) != pdPASS) {
+    // make a deep copy in heap so the message isn't freed
+    // by the time it gets to `message_queue_task`
+    char *message_copy = malloc(strlen(message) + 1);
+    if (!message_copy) {
+        ESP_LOGE(TAG, "Failed to allocate memory for message");
+        return;
+    }
+    strcpy(message_copy, message);
+
+    if (xQueueSend(ws_queue, &message_copy, pdMS_TO_TICKS(100)) != pdPASS) {
         ESP_LOGE(TAG, "WebSocket queue full! Dropping message: %s", message);
+        free(message_copy);
     }
 }
 
@@ -344,6 +354,7 @@ void message_queue_task(void *pvParameters) {
             } else {
                 ESP_LOGW(TAG, "WebSocket not connected, dropping message: %s", message);
             }
+            free(message);
         }
 
         vTaskDelay(pdMS_TO_TICKS(1000));
