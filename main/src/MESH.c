@@ -22,7 +22,7 @@ void connect_to_root_task(void *pvParameters) {
         if (esp_wifi_sta_get_ap_info(&ap_info) != ESP_OK) { // if no wifi connection
             bool reconnected = false;
             
-            // initial scan for other root APs
+            // initial scan for other ROOT APs
             ESP_ERROR_CHECK(esp_wifi_stop());
             ESP_ERROR_CHECK(esp_wifi_set_mode(WIFI_MODE_STA));
             ESP_ERROR_CHECK(esp_wifi_start());
@@ -33,7 +33,7 @@ void connect_to_root_task(void *pvParameters) {
             ESP_ERROR_CHECK(esp_wifi_start());
 
             if (ap_info) {
-                // try to connect to root AP
+                // try to connect to ROOT AP
                 wifi_config_t *wifi_sta_config = malloc(sizeof(wifi_config_t));
                 memset(wifi_sta_config, 0, sizeof(wifi_config_t));
 
@@ -66,7 +66,7 @@ void connect_to_root_task(void *pvParameters) {
                 connected_to_root = false;
                 vTaskSuspend(mesh_websocket_task_handle);
 
-                // scan to double check there really is no existing root AP
+                // scan to double check there really is no existing ROOT AP
                 ESP_ERROR_CHECK(esp_wifi_stop());
                 ESP_ERROR_CHECK(esp_wifi_set_mode(WIFI_MODE_STA));
                 ESP_ERROR_CHECK(esp_wifi_start());
@@ -85,11 +85,11 @@ void connect_to_root_task(void *pvParameters) {
                     ESP_LOGI(TAG, "delaying for %d ms...", time_delay);
                     vTaskDelay(pdMS_TO_TICKS(time_delay));
                     ESP_LOGI(TAG, "trying for last time... ");
-                    // try to connect to new root AP which has possibly restarted earlier than this
+                    // try to connect to new ROOT AP which has possibly restarted earlier than this
                     ap_info = wifi_scan();
                     if (!ap_info) {
                         ESP_LOGI(TAG, "fail, restarting");
-                        // hopefully become now the only root AP
+                        // hopefully become now the only ROOT AP
                         esp_restart();
                     }
                 }
@@ -114,8 +114,8 @@ void mesh_websocket_task(void *pvParameters) {
         char *data_string = get_data(false);
 
         if (connected_to_root && data_string != NULL && strcmp(mesh_ws_auth_token, "") != 0) {
-            char uri[40+UTILS_AUTH_TOKEN_LENGTH];
-            snprintf(uri, sizeof(uri), "ws://192.168.4.1:80/mesh_ws?auth_token=%s", mesh_ws_auth_token);
+            char uri[40+UTILS_AUTH_TOKEN_LENGTH+11];
+            snprintf(uri, sizeof(uri), "ws://192.168.4.1:80/mesh_ws?auth_token=%s&esp_id=%03u", mesh_ws_auth_token, ESP_ID);
             const esp_websocket_client_config_t websocket_cfg = {
                 .uri = uri,
                 .reconnect_timeout_ms = 10000,
@@ -147,7 +147,9 @@ void mesh_websocket_task(void *pvParameters) {
                 ws_client = NULL;
             } else {
                 char message[WS_MESSAGE_MAX_LEN];
-                snprintf(message, sizeof(message), "{\"type\":\"data\",\"id\":\"%s\",\"content\":%s}", ESP_ID, data_string);
+                char* esp_id = esp_id_string();
+                snprintf(message, sizeof(message), "{\"type\":\"data\",\"id\":\"%s\",\"content\":%s}", esp_id, data_string);
+                free(esp_id);
                 esp_websocket_client_send_text(ws_client, message, strlen(message), portMAX_DELAY);
             }
         }
@@ -191,7 +193,7 @@ esp_err_t ap_n_client_comparison_handler(esp_http_client_event_t *evt) {
                     if (ext_num_object) {
                         int ext_num = ext_num_object->valueint;
                         if (ext_num - 1 >= num_connected_clients) {
-                            // -1 to account for the connection of this ESP32 to the other root AP
+                            // -1 to account for the connection of this ESP32 to the other ROOT AP
                             ESP_LOGI(TAG, "I will restart!");
                             esp_restart();
                         } else {
@@ -230,7 +232,7 @@ void merge_root_task(void *pvParameters) {
 
         wifi_ap_record_t * ap_info = wifi_scan();
         if (ap_info) {
-            ESP_LOGW(TAG, "Another root AP found!!\n SSID: %s", ap_info->ssid);
+            ESP_LOGW(TAG, "Another ROOT AP found!!\n SSID: %s", ap_info->ssid);
 
             int my_int = compare_mac(my_mac, ap_info->bssid);
 
@@ -261,7 +263,7 @@ void merge_root_task(void *pvParameters) {
             free(wifi_sta_config);
 
             if (connected) {
-                // change to another IP so we can communicate with other root AP on it's default IP
+                // change to another IP so we can communicate with other ROOT AP on it's default IP
                 esp_netif_ip_info_t ip_info;
                 if (my_int < 0) {
                     IP4_ADDR(&ip_info.ip, 192, 168, 10, 1);

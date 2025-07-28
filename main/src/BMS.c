@@ -103,7 +103,6 @@ void full_access() {
     // delay to allow full access to complete
     vTaskDelay(pdMS_TO_TICKS(I2C_DELAY));
 
-    printf("%d\n", get_sealed_status());
     if (get_sealed_status() == 2)
         ESP_LOGI(TAG, "Full access command sent successfully.");
 
@@ -184,7 +183,9 @@ char* get_data(bool local) {
         // only needed for local clients
         cJSON_AddBoolToObject(data, "connected_to_WiFi", connected_to_WiFi);
         cJSON *full_data = cJSON_CreateObject();
-        cJSON_AddItemToObject(full_data, ESP_ID, data);
+        char* esp_id = esp_id_string();
+        cJSON_AddItemToObject(full_data, esp_id, data);
+        free(esp_id);
 
         char *full_data_string = cJSON_PrintUnformatted(full_data);
         cJSON_Delete(full_data);
