@@ -703,151 +703,25 @@ void receive(size_t* full_message_length, bool* chunked) {
     }
 }
 
-void lora_task(void *pvParameters) {
-    // receiver variables
-    size_t full_message_length = 0;
-    bool chunked = false;
-
-
-    // transmitter variables
-    char TX_individual_message[LORA_MAX_PACKET_LEN];
-    uint8_t TX_n_devices = 1; // the transmitter, at least
-    int64_t TX_delay_transmission_until = 0; // microseconds
-
-
-    // setup
-    lora_write_register(REG_FIFO_RX_BASE_ADDR, 0x00);
-    lora_write_register(REG_FIFO_TX_BASE_ADDR, 0x00);
-    lora_write_register(REG_FIFO_ADDR_PTR, 0x00);
-    // clear IRQ flags
-    lora_write_register(REG_IRQ_FLAGS, 0b11111111);
-
-
-    // task loop
-    while(true) {
-        /*
-            -------------
-            RECEIVER CODE
-            -------------
-        */
-        // enter continuous RX mode
-        lora_write_register(REG_OP_MODE, 0b10000101); // LoRa + RX mode
-        receive(&full_message_length, &chunked);
-
-
-        /*
-            ----------------
-            TRANSMITTER CODE
-            ----------------
-        */
-        if (esp_timer_get_time() > TX_delay_transmission_until) {
-            if (LORA_IS_RECEIVER) {
-                if (strcmp(forwarded_message, "") != 0) {
-                    // forward requests made on the webserver
-                    // to all master nodes out there
-                    if (VERBOSE) {
-                        ESP_LOGI(TAG, "Now forwarding:");
-                        ESP_LOGI(TAG, "%s", forwarded_message);
-                        ESP_LOGI(TAG, "by radio transmission");
-                    }
-                    cJSON *json_array = cJSON_Parse(forwarded_message);
-                    if (json_array) {
-                        uint8_t binary_message[5 * LORA_MAX_PACKET_LEN]; // this length likely needs to be changed
-                        size_t binary_message_length = json_to_binary(binary_message, json_array);
-                        if (binary_message_length > 0) {
-                            uint8_t encoded_forwarded_message[binary_message_length];
-                            size_t full_len = encode_frame(binary_message, binary_message_length, encoded_forwarded_message);
-                            // size_t full_len = encode_frame(test, sizeof(test), encoded_forwarded_message);
-
-                            lora_write_register(REG_OP_MODE, 0b10000001); // LoRa + standby
-
-                            // set DIO0 = TxDone
-                            lora_write_register(REG_DIO_MAPPING_1, 0b01000000); // bits 7-6 for DIO0
-
-                            lora_write_register(REG_FIFO_ADDR_PTR, 0x00); // reset FIFO pointer to base address
-
-                            // write payload to FIFO
-                            for (int i = 0; i < full_len; i++)
-                                lora_write_register(REG_FIFO, encoded_forwarded_message[i]);
-
-                            lora_write_register(REG_PAYLOAD_LENGTH, full_len);
-
-                            lora_write_register(REG_IRQ_FLAGS, 0b11111111); // clear all IRQ flags
-
-                            lora_write_register(REG_OP_MODE, 0b10000011); // LoRa + TX mode
-
-                            // wait for TX done (DIO0 goes high)
-                            while (gpio_get_level(PIN_NUM_DIO0) == 0)
-                                vTaskDelay(pdMS_TO_TICKS(1));
-
-                            lora_write_register(REG_IRQ_FLAGS, 0b00001000);  // clear TxDone
-
-                            int transmission_delay = calculate_transmission_delay(LORA_SF, LORA_BW, 8, full_len, LORA_CR, LORA_HEADER, LORA_LDRO);
-                            ESP_LOGI(TAG, "Radio packet sent. Delaying for %d ms", transmission_delay);
-
-                            TX_delay_transmission_until = (int64_t)(transmission_delay * 1000) + esp_timer_get_time();
-
-                            // set DIO0 = RxDone again
-                            lora_write_register(REG_DIO_MAPPING_1, 0b00000000); // bits 7-6 for DIO0
-                        }
-                    }
-                    strcpy(forwarded_message, "\0");
-                }
-            } else {
-                // now form the LoRa message out of non-empty messages and transmit
-                for (int i=0; i<MESH_SIZE; i++) {
-                    if (strcmp(all_messages[i].id, "") != 0)
-                        TX_n_devices++;
-                }
-
-                cJSON* json_array = cJSON_CreateArray();
-                if (json_array == NULL) {
-                    ESP_LOGE(TAG, "Failed to create JSON array");
-                    return;
-                }
-
-                // get own data first
-                char *data_string = get_data(false);
-                char* esp_id = esp_id_string();
-                snprintf(TX_individual_message, sizeof(TX_individual_message), "{\"type\":\"data\",\"id\":\"%s\",\"content\":%s}", esp_id, data_string);
-                free(esp_id);
-                cJSON *item = cJSON_Parse(TX_individual_message);
-                cJSON_AddItemToArray(json_array, item);
-
-                // now add the data of other devices in mesh to payload
-                TX_n_devices = 1;
-                for (int i=0; i<MESH_SIZE; i++) {
-                    if (strcmp(all_messages[i].id, "") != 0) {
-                        TX_n_devices++;
-
-                        item = cJSON_Parse(all_messages[i].message);
-                        cJSON_AddItemToArray(json_array, item);
-
-                        // clear the message slot again in case of disconnect
-                        strcpy(all_messages[i].id, "");
-                        all_messages[i].id[0] = '\0';
-                        strcpy(all_messages[i].message, "");
-                        all_messages[i].message[0] = '\0';
-                    }
-                }
-                TX_n_devices = 1; // reset
-
+void transmit(int64_t* delay_transmission_until) {
+    if (esp_timer_get_time() > *delay_transmission_until) {
+        if (LORA_IS_RECEIVER) {
+            if (strcmp(forwarded_message, "") != 0) {
+                // forward requests made on the webserver
+                // to all master nodes out there
                 if (VERBOSE) {
-                    ESP_LOGI(TAG, "ROOT: now transmitting:");
-                    ESP_LOGI(TAG, "%s", cJSON_PrintUnformatted(json_array));
-                    ESP_LOGI(TAG, "to receiver");
+                    ESP_LOGI(TAG, "Now forwarding:");
+                    ESP_LOGI(TAG, "%s", forwarded_message);
+                    ESP_LOGI(TAG, "by radio transmission");
                 }
-
-                uint8_t binary_message[5 * LORA_MAX_PACKET_LEN]; // this length likely needs to be changed
-                size_t binary_message_length = json_to_binary(binary_message, json_array);
-                if (binary_message_length > 0) {
-
-                    uint8_t encoded_combined_payload[binary_message_length];
-                    size_t full_len = encode_frame(binary_message, binary_message_length, encoded_combined_payload);
-                    uint8_t chunk[LORA_MAX_PACKET_LEN] = {0};
-                    for (int offset = 0; offset < full_len; offset += LORA_MAX_PACKET_LEN) {
-                        int chunk_len = MIN(LORA_MAX_PACKET_LEN, full_len - offset);
-                        memcpy(chunk, encoded_combined_payload + offset, chunk_len);
+                cJSON *json_array = cJSON_Parse(forwarded_message);
+                if (json_array) {
+                    uint8_t binary_message[5 * LORA_MAX_PACKET_LEN]; // this length likely needs to be changed
+                    size_t binary_message_length = json_to_binary(binary_message, json_array);
+                    if (binary_message_length > 0) {
+                        uint8_t encoded_forwarded_message[binary_message_length];
+                        size_t full_len = encode_frame(binary_message, binary_message_length, encoded_forwarded_message);
+                        // size_t full_len = encode_frame(test, sizeof(test), encoded_forwarded_message);
 
                         lora_write_register(REG_OP_MODE, 0b10000001); // LoRa + standby
 
@@ -857,10 +731,10 @@ void lora_task(void *pvParameters) {
                         lora_write_register(REG_FIFO_ADDR_PTR, 0x00); // reset FIFO pointer to base address
 
                         // write payload to FIFO
-                        for (int i = 0; i < chunk_len; i++)
-                            lora_write_register(REG_FIFO, chunk[i]);
+                        for (int i = 0; i < full_len; i++)
+                            lora_write_register(REG_FIFO, encoded_forwarded_message[i]);
 
-                        lora_write_register(REG_PAYLOAD_LENGTH, chunk_len);
+                        lora_write_register(REG_PAYLOAD_LENGTH, full_len);
 
                         lora_write_register(REG_IRQ_FLAGS, 0b11111111); // clear all IRQ flags
 
@@ -872,19 +746,137 @@ void lora_task(void *pvParameters) {
 
                         lora_write_register(REG_IRQ_FLAGS, 0b00001000);  // clear TxDone
 
-                        vTaskDelay(pdMS_TO_TICKS(50)); // brief delay between chunks
+                        int transmission_delay = calculate_transmission_delay(LORA_SF, LORA_BW, 8, full_len, LORA_CR, LORA_HEADER, LORA_LDRO);
+                        ESP_LOGI(TAG, "Radio packet sent. Delaying for %d ms", transmission_delay);
+
+                        *delay_transmission_until = (int64_t)(transmission_delay * 1000) + esp_timer_get_time();
+
+                        // set DIO0 = RxDone again
+                        lora_write_register(REG_DIO_MAPPING_1, 0b00000000); // bits 7-6 for DIO0
                     }
-                    int transmission_delay = calculate_transmission_delay(LORA_SF, LORA_BW, 8, full_len, LORA_CR, LORA_HEADER, LORA_LDRO);
-                    ESP_LOGI(TAG, "Radio packet sent. Delaying for %d ms", transmission_delay);
-
-                    TX_delay_transmission_until = (int64_t)(transmission_delay * 1000) + esp_timer_get_time();
-
-                    // set DIO0 = RxDone again
-                    lora_write_register(REG_DIO_MAPPING_1, 0b00000000); // bits 7-6 for DIO0
                 }
-                cJSON_Delete(json_array);
+                strcpy(forwarded_message, "\0");
             }
+        } else {
+            char individual_message[LORA_MAX_PACKET_LEN];
+            uint8_t n_devices = 1; // the transmitter, at least
+
+            // now form the LoRa message out of non-empty messages and transmit
+            for (int i=0; i<MESH_SIZE; i++) {
+                if (strcmp(all_messages[i].id, "") != 0)
+                    n_devices++;
+            }
+
+            cJSON* json_array = cJSON_CreateArray();
+            if (json_array == NULL) {
+                ESP_LOGE(TAG, "Failed to create JSON array");
+                return;
+            }
+
+            // get own data first
+            char *data_string = get_data(false);
+            char* esp_id = esp_id_string();
+            snprintf(individual_message, sizeof(individual_message), "{\"type\":\"data\",\"id\":\"%s\",\"content\":%s}", esp_id, data_string);
+            free(esp_id);
+            cJSON *item = cJSON_Parse(individual_message);
+            cJSON_AddItemToArray(json_array, item);
+
+            // now add the data of other devices in mesh to payload
+            n_devices = 1;
+            for (int i=0; i<MESH_SIZE; i++) {
+                if (strcmp(all_messages[i].id, "") != 0) {
+                    n_devices++;
+
+                    item = cJSON_Parse(all_messages[i].message);
+                    cJSON_AddItemToArray(json_array, item);
+
+                    // clear the message slot again in case of disconnect
+                    strcpy(all_messages[i].id, "");
+                    all_messages[i].id[0] = '\0';
+                    strcpy(all_messages[i].message, "");
+                    all_messages[i].message[0] = '\0';
+                }
+            }
+            n_devices = 1; // reset
+
+            if (VERBOSE) {
+                ESP_LOGI(TAG, "ROOT: now transmitting:");
+                ESP_LOGI(TAG, "%s", cJSON_PrintUnformatted(json_array));
+                ESP_LOGI(TAG, "to receiver");
+            }
+
+            uint8_t binary_message[5 * LORA_MAX_PACKET_LEN]; // this length likely needs to be changed
+            size_t binary_message_length = json_to_binary(binary_message, json_array);
+            if (binary_message_length > 0) {
+
+                uint8_t encoded_combined_payload[binary_message_length];
+                size_t full_len = encode_frame(binary_message, binary_message_length, encoded_combined_payload);
+                uint8_t chunk[LORA_MAX_PACKET_LEN] = {0};
+                for (int offset = 0; offset < full_len; offset += LORA_MAX_PACKET_LEN) {
+                    int chunk_len = MIN(LORA_MAX_PACKET_LEN, full_len - offset);
+                    memcpy(chunk, encoded_combined_payload + offset, chunk_len);
+
+                    lora_write_register(REG_OP_MODE, 0b10000001); // LoRa + standby
+
+                    // set DIO0 = TxDone
+                    lora_write_register(REG_DIO_MAPPING_1, 0b01000000); // bits 7-6 for DIO0
+
+                    lora_write_register(REG_FIFO_ADDR_PTR, 0x00); // reset FIFO pointer to base address
+
+                    // write payload to FIFO
+                    for (int i = 0; i < chunk_len; i++)
+                        lora_write_register(REG_FIFO, chunk[i]);
+
+                    lora_write_register(REG_PAYLOAD_LENGTH, chunk_len);
+
+                    lora_write_register(REG_IRQ_FLAGS, 0b11111111); // clear all IRQ flags
+
+                    lora_write_register(REG_OP_MODE, 0b10000011); // LoRa + TX mode
+
+                    // wait for TX done (DIO0 goes high)
+                    while (gpio_get_level(PIN_NUM_DIO0) == 0)
+                        vTaskDelay(pdMS_TO_TICKS(1));
+
+                    lora_write_register(REG_IRQ_FLAGS, 0b00001000);  // clear TxDone
+
+                    vTaskDelay(pdMS_TO_TICKS(50)); // brief delay between chunks
+                }
+                int transmission_delay = calculate_transmission_delay(LORA_SF, LORA_BW, 8, full_len, LORA_CR, LORA_HEADER, LORA_LDRO);
+                ESP_LOGI(TAG, "Radio packet sent. Delaying for %d ms", transmission_delay);
+
+                *delay_transmission_until = (int64_t)(transmission_delay * 1000) + esp_timer_get_time();
+
+                // set DIO0 = RxDone again
+                lora_write_register(REG_DIO_MAPPING_1, 0b00000000); // bits 7-6 for DIO0
+            }
+            cJSON_Delete(json_array);
         }
+    }
+}
+
+void lora_task(void *pvParameters) {
+    // persisted receiver variables
+    size_t full_message_length = 0;
+    bool chunked = false;
+
+    // persisted transmitter variables
+    int64_t delay_transmission_until = 0; // microseconds
+
+    // setup
+    lora_write_register(REG_FIFO_RX_BASE_ADDR, 0x00);
+    lora_write_register(REG_FIFO_TX_BASE_ADDR, 0x00);
+    lora_write_register(REG_FIFO_ADDR_PTR, 0x00);
+    // clear IRQ flags
+    lora_write_register(REG_IRQ_FLAGS, 0b11111111);
+
+    // task loop
+    while(true) {
+        // enter continuous RX mode
+        lora_write_register(REG_OP_MODE, 0b10000101); // LoRa + RX mode
+        receive(&full_message_length, &chunked);
+
+        transmit(&delay_transmission_until);
+        // contains a delay within, default is still RX mode
 
         vTaskDelay(pdMS_TO_TICKS(10));
     }

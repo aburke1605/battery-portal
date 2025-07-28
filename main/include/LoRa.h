@@ -90,6 +90,8 @@ void binary_to_json(uint8_t* binary_message, cJSON* json_array);
 
 void receive(size_t* full_message_length, bool* chunked);
 
+void transmit(int64_t* delay_transmission_until);
+
 void lora_task(void *pvParameters);
 
 #endif // LORA_H
