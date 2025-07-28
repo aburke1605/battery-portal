@@ -5,7 +5,6 @@
 #include "include/WS.h"
 #include "include/utils.h"
 
-#include <cJSON.h>
 #include <driver/spi_master.h>
 #include <driver/gpio.h>
 #include <esp_err.h>
@@ -145,116 +144,219 @@ void lora_configure_defaults() {
     ESP_LOGI(TAG, "SX127x configured to RadioHead defaults");
 }
 
-radio_payload* convert_to_binary(char* message) {
-    radio_payload* payload = malloc(sizeof(radio_payload));
-    if (payload == NULL) {
-        ESP_LOGE(TAG, "Failed to allocate memory\n");
-        return NULL;
+size_t json_to_binary(uint8_t* binary_message, cJSON* json_array) {
+    // build binary_message from json_array
+    uint8_t n_devices = 0;
+    size_t packet_start = 1; // after first byte n_devices
+    cJSON* item = NULL;
+    cJSON_ArrayForEach(item, json_array) {
+        if (!cJSON_IsObject(item)) return 0;
+
+        cJSON* type = cJSON_GetObjectItem(item, "type");
+        if (!type) {
+            ESP_LOGE(TAG, "No \"type\" key in cJSON array item");
+            return 0;
+        }
+
+        cJSON* content = cJSON_GetObjectItem(item, "content");
+        if (!content) {
+            ESP_LOGE(TAG, "No \"content\" key in cJSON array item");
+            return 0;
+        }
+
+
+        if (strcmp(type->valuestring, "request") == 0) {
+            radio_request_packet* packet = malloc(sizeof(radio_request_packet));
+            if (packet == NULL) {
+                ESP_LOGE(TAG, "Failed to allocate packet memory\n");
+                return 0;
+            }
+            memset(packet, 0, sizeof(radio_request_packet));
+            packet->type = REQUEST;
+
+            cJSON* esp_id = cJSON_GetObjectItem(item, "esp_id");
+            if (!esp_id) {
+                ESP_LOGE(TAG, "No \"esp_id\" key in cJSON array item");
+                return 0;
+            }
+            packet->esp_id = atoi(&esp_id->valuestring[4]);
+
+
+            cJSON* summary = cJSON_GetObjectItem(content, "summary");
+            if (!summary) {
+                ESP_LOGE(TAG, "No \"summary\" key in cJSON array item");
+                return 0;
+            }
+            if (strcmp(summary->valuestring, "change-settings") == 0) {
+                cJSON* data = cJSON_GetObjectItem(content, "data");
+                if (!data) {
+                    ESP_LOGE(TAG, "No \"data\" key in cJSON array item");
+                    return 0;
+                }
+                packet->request = CHANGE_SETTINGS;
+
+                cJSON* new_esp_id = cJSON_GetObjectItem(data, "new_esp_id");
+                if (new_esp_id) packet->new_esp_id = new_esp_id->valueint;
+
+                cJSON* OTC_threshold = cJSON_GetObjectItem(data, "OTC_threshold");
+                if (OTC_threshold) packet->OTC_threshold = OTC_threshold->valueint;
+            }
+            else if (strcmp(summary->valuestring, "connect-wifi") == 0) {
+                cJSON* data = cJSON_GetObjectItem(content, "data");
+                if (!data) {
+                    ESP_LOGE(TAG, "No \"data\" key in cJSON array item");
+                    return 0;
+                }
+                packet->request = CONNECT_WIFI;
+
+                cJSON* eduroam = cJSON_GetObjectItem(data, "eduroam");
+                if (!eduroam) {
+                    ESP_LOGE(TAG, "No \"eduroam\" key in cJSON array item");
+                    return 0;
+                }
+                cJSON* username = cJSON_GetObjectItem(data, "username");
+                if (!username) {
+                    ESP_LOGE(TAG, "No \"username\" key in cJSON array item");
+                    return 0;
+                }
+                cJSON* password = cJSON_GetObjectItem(data, "password");
+                if (!password) {
+                    ESP_LOGE(TAG, "No \"password\" key in cJSON array item");
+                    return 0;
+                }
+                packet->eduroam = (bool)eduroam->valueint;
+                for (size_t i=0; i<sizeof(packet->username); i++) packet->username[i] = (uint8_t)username->valuestring[i];
+                for (size_t i=0; i<sizeof(packet->password); i++) packet->password[i] = (uint8_t)password->valuestring[i];
+            }
+            else if (strcmp(summary->valuestring, "reset-bms") == 0) packet->request = RESET_BMS;
+            else if (strcmp(summary->valuestring, "unseal-bms") == 0) packet->request = UNSEAL_BMS;
+
+
+            // now copy the packet into the returned binary binary_message which will be broadcasted
+            memcpy(&binary_message[packet_start], packet, sizeof(radio_request_packet));
+            // and shift the position along for the next iteration
+            packet_start += sizeof(radio_request_packet);
+        }
+
+
+        else if (strcmp(type->valuestring, "data") == 0) {
+            radio_data_packet* packet = malloc(sizeof(radio_data_packet));
+            if (packet == NULL) {
+                ESP_LOGE(TAG, "Failed to allocate packet memory\n");
+                return 0;
+            }
+            memset(packet, 0, sizeof(radio_data_packet));
+            packet->type = DATA;
+
+            cJSON *id = cJSON_GetObjectItem(item, "id");
+            if (!id) {
+                ESP_LOGE(TAG, "No \"id\" key in cJSON array item");
+                return 0;
+            }
+
+            if (strcmp(id->valuestring, "unknown") == 0)
+                packet->esp_id = 0;
+            else {
+                char esp_id_number[3];
+                strcpy(esp_id_number, &id->valuestring[4]);
+                packet->esp_id = atoi(esp_id_number);
+            }
+
+            cJSON *content = cJSON_GetObjectItem(item, "content");
+            if (!content) {
+                ESP_LOGE(TAG, "No \"content\" key in cJSON array item");
+                return 0;
+            }
+            cJSON *obj;
+
+            obj = cJSON_GetObjectItem(content, "Q");
+            if (obj) packet->Q = (uint8_t)obj->valueint;
+            obj = NULL;
+
+            obj = cJSON_GetObjectItem(content, "H");
+            if (obj) packet->H = (uint8_t)obj->valueint;
+            obj = NULL;
+
+            obj = cJSON_GetObjectItem(content, "V");
+            if (obj) packet->V = (uint8_t)obj->valueint;
+            obj = NULL;
+
+            obj = cJSON_GetObjectItem(content, "V1");
+            if (obj) packet->V1 = (uint16_t)obj->valueint;
+            obj = NULL;
+
+            obj = cJSON_GetObjectItem(content, "V2");
+            if (obj) packet->V2 = (uint16_t)obj->valueint;
+            obj = NULL;
+
+            obj = cJSON_GetObjectItem(content, "V3");
+            if (obj) packet->V3 = (uint16_t)obj->valueint;
+            obj = NULL;
+
+            obj = cJSON_GetObjectItem(content, "V4");
+            if (obj) packet->V4 = (uint16_t)obj->valueint;
+            obj = NULL;
+
+            obj = cJSON_GetObjectItem(content, "I");
+            if (obj) packet->I = (int8_t)obj->valueint;
+            obj = NULL;
+
+            obj = cJSON_GetObjectItem(content, "I1");
+            if (obj) packet->I1 = (int16_t)obj->valueint;
+            obj = NULL;
+
+            obj = cJSON_GetObjectItem(content, "I2");
+            if (obj) packet->I2 = (int16_t)obj->valueint;
+            obj = NULL;
+
+            obj = cJSON_GetObjectItem(content, "I3");
+            if (obj) packet->I3 = (int16_t)obj->valueint;
+            obj = NULL;
+
+            obj = cJSON_GetObjectItem(content, "I4");
+            if (obj) packet->I4 = (int16_t)obj->valueint;
+            obj = NULL;
+
+            obj = cJSON_GetObjectItem(content, "aT");
+            if (obj) packet->aT = (int16_t)obj->valueint;
+            obj = NULL;
+
+            obj = cJSON_GetObjectItem(content, "cT");
+            if (obj) packet->cT = (int16_t)obj->valueint;
+            obj = NULL;
+
+            obj = cJSON_GetObjectItem(content, "T1");
+            if (obj) packet->T1 = (int16_t)obj->valueint;
+            obj = NULL;
+
+            obj = cJSON_GetObjectItem(content, "T2");
+            if (obj) packet->T2 = (int16_t)obj->valueint;
+            obj = NULL;
+
+            obj = cJSON_GetObjectItem(content, "T3");
+            if (obj) packet->T3 = (int16_t)obj->valueint;
+            obj = NULL;
+
+            obj = cJSON_GetObjectItem(content, "T4");
+            if (obj) packet->T4 = (int16_t)obj->valueint;
+            obj = NULL;
+
+            obj = cJSON_GetObjectItem(content, "OTC_threshold");
+            if (obj) packet->OTC_threshold = (int16_t)obj->valueint;
+
+
+            // now copy the packet into the returned binary binary_message which will be broadcasted
+            memcpy(&binary_message[packet_start], packet, sizeof(radio_data_packet));
+            // and shift the position along for the next iteration
+            packet_start += sizeof(radio_data_packet);
+        }
+
+        n_devices++;
     }
-    payload->type = 1;
 
-    cJSON *json = cJSON_Parse(message);
-    if (!json) {
-        ESP_LOGE(TAG, "Failed to parse JSON");
-        return NULL;
-    }
+    binary_message[0] = n_devices;
 
-    cJSON *id = cJSON_GetObjectItem(json, "id");
-    if (!id) {
-        ESP_LOGE(TAG, "Failed to parse JSON: no id");
-        return NULL;
-    }
-    if (strcmp(id->valuestring, "unknown") == 0)
-        payload->esp_id = 0;
-    else {
-        char esp_id_number[3];
-        strcpy(esp_id_number, &id->valuestring[4]);
-        payload->esp_id = atoi(esp_id_number);
-    }
-
-    cJSON *content = cJSON_GetObjectItem(json, "content");
-    if (!content) {
-        ESP_LOGE(TAG, "Failed to parse JSON: no content");
-        return NULL;
-    }
-    cJSON *obj;
-
-    obj = cJSON_GetObjectItem(content, "Q");
-    if (obj) payload->Q = (uint8_t)obj->valueint;
-    obj = NULL;
-
-    obj = cJSON_GetObjectItem(content, "H");
-    if (obj) payload->H = (uint8_t)obj->valueint;
-    obj = NULL;
-
-    obj = cJSON_GetObjectItem(content, "V");
-    if (obj) payload->V = (uint8_t)obj->valueint;
-    obj = NULL;
-
-    obj = cJSON_GetObjectItem(content, "V1");
-    if (obj) payload->V1 = (uint16_t)obj->valueint;
-    obj = NULL;
-
-    obj = cJSON_GetObjectItem(content, "V2");
-    if (obj) payload->V2 = (uint16_t)obj->valueint;
-    obj = NULL;
-
-    obj = cJSON_GetObjectItem(content, "V3");
-    if (obj) payload->V3 = (uint16_t)obj->valueint;
-    obj = NULL;
-
-    obj = cJSON_GetObjectItem(content, "V4");
-    if (obj) payload->V4 = (uint16_t)obj->valueint;
-    obj = NULL;
-
-    obj = cJSON_GetObjectItem(content, "I");
-    if (obj) payload->I = (int8_t)obj->valueint;
-    obj = NULL;
-
-    obj = cJSON_GetObjectItem(content, "I1");
-    if (obj) payload->I1 = (int16_t)obj->valueint;
-    obj = NULL;
-
-    obj = cJSON_GetObjectItem(content, "I2");
-    if (obj) payload->I2 = (int16_t)obj->valueint;
-    obj = NULL;
-
-    obj = cJSON_GetObjectItem(content, "I3");
-    if (obj) payload->I3 = (int16_t)obj->valueint;
-    obj = NULL;
-
-    obj = cJSON_GetObjectItem(content, "I4");
-    if (obj) payload->I4 = (int16_t)obj->valueint;
-    obj = NULL;
-
-    obj = cJSON_GetObjectItem(content, "aT");
-    if (obj) payload->aT = (int16_t)obj->valueint;
-    obj = NULL;
-
-    obj = cJSON_GetObjectItem(content, "cT");
-    if (obj) payload->cT = (int16_t)obj->valueint;
-    obj = NULL;
-
-    obj = cJSON_GetObjectItem(content, "T1");
-    if (obj) payload->T1 = (int16_t)obj->valueint;
-    obj = NULL;
-
-    obj = cJSON_GetObjectItem(content, "T2");
-    if (obj) payload->T2 = (int16_t)obj->valueint;
-    obj = NULL;
-
-    obj = cJSON_GetObjectItem(content, "T3");
-    if (obj) payload->T3 = (int16_t)obj->valueint;
-    obj = NULL;
-
-    obj = cJSON_GetObjectItem(content, "T4");
-    if (obj) payload->T4 = (int16_t)obj->valueint;
-    obj = NULL;
-
-    obj = cJSON_GetObjectItem(content, "OTC_threshold");
-    if (obj) payload->OTC_threshold = (int16_t)obj->valueint;
-
-    return payload;
+    return packet_start;
 }
 
 size_t encode_frame(const uint8_t* input, size_t input_len, uint8_t* output) {
@@ -321,69 +423,129 @@ size_t decode_frame(const uint8_t* input, size_t input_len, uint8_t* output) {
     return out_len;
 }
 
-void convert_from_binary(uint8_t* decoded_message) {
-    uint8_t n_devices = decoded_message[0];
-    cJSON* json_array = cJSON_CreateArray();
-    if (json_array == NULL) {
-        ESP_LOGE(TAG, "Failed to create JSON array");
-        return;
-    }
-
+void binary_to_json(uint8_t* binary_message, cJSON* json_array) {
+    // build json_array from binary_message
+    uint8_t n_devices = binary_message[0];
+    size_t packet_start = 1; // after first byte n_devices
     for (uint8_t i=0; i<n_devices; i++) {
-        radio_payload* payload = (radio_payload*)&decoded_message[1+i*sizeof(radio_payload)];
+        uint8_t type = binary_message[packet_start];
         cJSON* message = cJSON_CreateObject();
         if (message == NULL) {
             ESP_LOGE(TAG, "Failed to create JSON object");
             cJSON_Delete(json_array);
             return;
         }
-        cJSON* content = cJSON_CreateObject();
-        if (content == NULL) {
-            ESP_LOGE(TAG, "Failed to create content object");
-            cJSON_Delete(message);
-            cJSON_Delete(json_array);
-            return;
-        }
-
-        cJSON_AddNumberToObject(content, "Q", payload->Q);
-        cJSON_AddNumberToObject(content, "H", payload->H);
-        cJSON_AddNumberToObject(content, "V", payload->V);
-        cJSON_AddNumberToObject(content, "V1", payload->V1);
-        cJSON_AddNumberToObject(content, "V2", payload->V2);
-        cJSON_AddNumberToObject(content, "V3", payload->V3);
-        cJSON_AddNumberToObject(content, "V4", payload->V4);
-        cJSON_AddNumberToObject(content, "I", payload->I);
-        cJSON_AddNumberToObject(content, "I1", payload->I1);
-        cJSON_AddNumberToObject(content, "I2", payload->I2);
-        cJSON_AddNumberToObject(content, "I3", payload->I3);
-        cJSON_AddNumberToObject(content, "I4", payload->I4);
-        cJSON_AddNumberToObject(content, "aT", payload->aT);
-        cJSON_AddNumberToObject(content, "cT", payload->cT);
-        cJSON_AddNumberToObject(content, "T1", payload->T1);
-        cJSON_AddNumberToObject(content, "T2", payload->T2);
-        cJSON_AddNumberToObject(content, "T3", payload->T3);
-        cJSON_AddNumberToObject(content, "T4", payload->T4);
-        cJSON_AddNumberToObject(content, "OTC_threshold", payload->OTC_threshold);
-
-        if (payload->type == 1) cJSON_AddStringToObject(message, "type", "data");
 
         char id_str[8]; // enough to hold "bms_255\0"
-        snprintf(id_str, sizeof(id_str), "bms_%u", payload->esp_id);
-        cJSON_AddStringToObject(message, "id", id_str);
 
-        cJSON_AddItemToObject(message, "content", content);
+        if (type == DATA) {
+            radio_data_packet* packet = (radio_data_packet*)&binary_message[packet_start];
+            cJSON_AddStringToObject(message, "type", "data");
 
-        cJSON_AddItemToArray(json_array, message);
-    }
+            cJSON* content = cJSON_CreateObject();
+            if (content == NULL) {
+                ESP_LOGE(TAG, "Failed to create content object");
+                cJSON_Delete(message);
+                cJSON_Delete(json_array);
+                return;
+            }
+            cJSON_AddNumberToObject(content, "Q", packet->Q);
+            cJSON_AddNumberToObject(content, "H", packet->H);
+            cJSON_AddNumberToObject(content, "V", packet->V);
+            cJSON_AddNumberToObject(content, "V1", packet->V1);
+            cJSON_AddNumberToObject(content, "V2", packet->V2);
+            cJSON_AddNumberToObject(content, "V3", packet->V3);
+            cJSON_AddNumberToObject(content, "V4", packet->V4);
+            cJSON_AddNumberToObject(content, "I", packet->I);
+            cJSON_AddNumberToObject(content, "I1", packet->I1);
+            cJSON_AddNumberToObject(content, "I2", packet->I2);
+            cJSON_AddNumberToObject(content, "I3", packet->I3);
+            cJSON_AddNumberToObject(content, "I4", packet->I4);
+            cJSON_AddNumberToObject(content, "aT", packet->aT);
+            cJSON_AddNumberToObject(content, "cT", packet->cT);
+            cJSON_AddNumberToObject(content, "T1", packet->T1);
+            cJSON_AddNumberToObject(content, "T2", packet->T2);
+            cJSON_AddNumberToObject(content, "T3", packet->T3);
+            cJSON_AddNumberToObject(content, "T4", packet->T4);
+            cJSON_AddNumberToObject(content, "OTC_threshold", packet->OTC_threshold);
 
-    char* message_string = cJSON_PrintUnformatted(json_array);
-    cJSON_Delete(json_array);
-    if (message_string == NULL) {
-        ESP_LOGE(TAG, "Failed to print cJSON to string\n");
-        return;
-    } else {
-        send_message(message_string);
-        free(message_string);
+            snprintf(id_str, sizeof(id_str), "bms_%u", packet->esp_id);
+            cJSON_AddStringToObject(message, "id", id_str);
+
+            cJSON_AddItemToObject(message, "content", content);
+
+            cJSON_AddItemToArray(json_array, message);
+
+            packet_start += sizeof(radio_data_packet);
+        }
+
+        else if(type == QUERY) {
+            radio_query_packet* packet = (radio_query_packet*)&binary_message[packet_start];
+            cJSON_AddStringToObject(message, "type", "query");
+
+            snprintf(id_str, sizeof(id_str), "bms_%u", packet->esp_id);
+            cJSON_AddStringToObject(message, "id", id_str);
+
+            if (packet->query == -1) cJSON_AddStringToObject(message, "content", "are you still there?");
+
+            cJSON_AddItemToArray(json_array, message);
+
+            packet_start += sizeof(radio_query_packet);
+        }
+
+        else if(type == REQUEST) {
+            radio_request_packet* packet = (radio_request_packet*)&binary_message[packet_start];
+            cJSON_AddStringToObject(message, "type", "request");
+
+            snprintf(id_str, sizeof(id_str), "bms_%03d", packet->esp_id);
+            cJSON_AddStringToObject(message, "id", id_str);
+
+            cJSON* content = cJSON_CreateObject();
+            if (content == NULL) {
+                ESP_LOGE(TAG, "Failed to create content object");
+                cJSON_Delete(message);
+                cJSON_Delete(json_array);
+                return;
+            }
+            cJSON* data = cJSON_CreateObject();
+            if (data == NULL) {
+                ESP_LOGE(TAG, "Failed to create data object");
+                cJSON_Delete(message);
+                cJSON_Delete(content);
+                cJSON_Delete(json_array);
+                return;
+            }
+
+            if (packet->request == CHANGE_SETTINGS) {
+                cJSON_AddStringToObject(content, "summary", "change-settings");
+
+                char new_id_str[8]; // enough to hold "bms_255\0"
+                snprintf(new_id_str, sizeof(new_id_str), "bms_%03u", packet->new_esp_id);
+                cJSON_AddStringToObject(data, "new_esp_id", new_id_str);
+
+                cJSON_AddNumberToObject(data, "OTC_threshold", packet->OTC_threshold);
+
+                cJSON_AddItemToObject(content, "data", data);
+            }
+            else if (packet->request == CONNECT_WIFI) {
+                cJSON_AddStringToObject(content, "summary", "connect-wifi");
+
+                cJSON_AddBoolToObject(data, "eduroam", packet->eduroam);
+
+                cJSON_AddStringToObject(data, "username", (char*)packet->username);
+                cJSON_AddStringToObject(data, "password", (char*)packet->password);
+
+                cJSON_AddItemToObject(content, "data", data);
+            }
+            else if (packet->request == RESET_BMS) cJSON_AddStringToObject(content, "summary", "reset-bms");
+            else if (packet->request == UNSEAL_BMS) cJSON_AddStringToObject(content, "summary", "unseal-bms");
+
+            cJSON_AddItemToObject(message, "content", content);
+
+            cJSON_AddItemToArray(json_array, message);
+
+            packet_start += sizeof(radio_request_packet);
+        }
     }
 }
 

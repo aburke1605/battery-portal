@@ -4,6 +4,7 @@
 #include "include/config.h"
 
 #include <string.h>
+#include <cJSON.h>
 
 #include <esp_err.h>
 
@@ -79,13 +80,13 @@ esp_err_t lora_init();
 
 void lora_configure_defaults();
 
-radio_payload* convert_to_binary(char* message);
+size_t json_to_binary(uint8_t* binary_message, cJSON* json_array);
 
 size_t encode_frame(const uint8_t* input, size_t input_len, uint8_t* output);
 
 size_t decode_frame(const uint8_t* input, size_t input_len, uint8_t* output);
 
-void convert_from_binary(uint8_t* decoded_message);
+void binary_to_json(uint8_t* binary_message, cJSON* json_array);
 
 void lora_task(void *pvParameters);
 
