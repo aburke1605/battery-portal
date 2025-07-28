@@ -703,6 +703,34 @@ void receive(size_t* full_message_length, bool* chunked) {
     }
 }
 
+void execute_transmission(uint8_t* message, size_t n_bytes) {
+    lora_write_register(REG_OP_MODE, 0b10000001); // LoRa + standby
+
+    // set DIO0 = TxDone
+    lora_write_register(REG_DIO_MAPPING_1, 0b01000000); // bits 7-6 for DIO0
+
+    lora_write_register(REG_FIFO_ADDR_PTR, 0x00); // reset FIFO pointer to base address
+
+    // write payload to FIFO
+    for (int i = 0; i < n_bytes; i++)
+        lora_write_register(REG_FIFO, message[i]);
+
+    lora_write_register(REG_PAYLOAD_LENGTH, n_bytes);
+
+    lora_write_register(REG_IRQ_FLAGS, 0b11111111); // clear all IRQ flags
+
+    lora_write_register(REG_OP_MODE, 0b10000011); // LoRa + TX mode
+
+    // wait for TX done (DIO0 goes high)
+    while (gpio_get_level(PIN_NUM_DIO0) == 0)
+        vTaskDelay(pdMS_TO_TICKS(1));
+
+    lora_write_register(REG_IRQ_FLAGS, 0b00001000);  // clear TxDone
+
+    // set DIO0 = RxDone again
+    lora_write_register(REG_DIO_MAPPING_1, 0b00000000); // bits 7-6 for DIO0
+}
+
 void transmit(int64_t* delay_transmission_until) {
     if (esp_timer_get_time() > *delay_transmission_until) {
         if (LORA_IS_RECEIVER) {
@@ -721,33 +749,8 @@ void transmit(int64_t* delay_transmission_until) {
                     if (binary_message_length > 0) {
                         uint8_t encoded_forwarded_message[binary_message_length];
                         size_t full_len = encode_frame(binary_message, binary_message_length, encoded_forwarded_message);
-                        // size_t full_len = encode_frame(test, sizeof(test), encoded_forwarded_message);
 
-                        lora_write_register(REG_OP_MODE, 0b10000001); // LoRa + standby
-
-                        // set DIO0 = TxDone
-                        lora_write_register(REG_DIO_MAPPING_1, 0b01000000); // bits 7-6 for DIO0
-
-                        lora_write_register(REG_FIFO_ADDR_PTR, 0x00); // reset FIFO pointer to base address
-
-                        // write payload to FIFO
-                        for (int i = 0; i < full_len; i++)
-                            lora_write_register(REG_FIFO, encoded_forwarded_message[i]);
-
-                        lora_write_register(REG_PAYLOAD_LENGTH, full_len);
-
-                        lora_write_register(REG_IRQ_FLAGS, 0b11111111); // clear all IRQ flags
-
-                        lora_write_register(REG_OP_MODE, 0b10000011); // LoRa + TX mode
-
-                        // wait for TX done (DIO0 goes high)
-                        while (gpio_get_level(PIN_NUM_DIO0) == 0)
-                            vTaskDelay(pdMS_TO_TICKS(1));
-
-                        lora_write_register(REG_IRQ_FLAGS, 0b00001000);  // clear TxDone
-
-                        // set DIO0 = RxDone again
-                        lora_write_register(REG_DIO_MAPPING_1, 0b00000000); // bits 7-6 for DIO0
+                        execute_transmission(encoded_forwarded_message, full_len);
 
                         int transmission_delay = calculate_transmission_delay(LORA_SF, LORA_BW, 8, full_len, LORA_CR, LORA_HEADER, LORA_LDRO);
                         ESP_LOGI(TAG, "Radio packet sent. Delaying for %d ms", transmission_delay);
@@ -816,31 +819,7 @@ void transmit(int64_t* delay_transmission_until) {
                     int chunk_len = MIN(LORA_MAX_PACKET_LEN, full_len - offset);
                     memcpy(chunk, encoded_combined_payload + offset, chunk_len);
 
-                    lora_write_register(REG_OP_MODE, 0b10000001); // LoRa + standby
-
-                    // set DIO0 = TxDone
-                    lora_write_register(REG_DIO_MAPPING_1, 0b01000000); // bits 7-6 for DIO0
-
-                    lora_write_register(REG_FIFO_ADDR_PTR, 0x00); // reset FIFO pointer to base address
-
-                    // write payload to FIFO
-                    for (int i = 0; i < chunk_len; i++)
-                        lora_write_register(REG_FIFO, chunk[i]);
-
-                    lora_write_register(REG_PAYLOAD_LENGTH, chunk_len);
-
-                    lora_write_register(REG_IRQ_FLAGS, 0b11111111); // clear all IRQ flags
-
-                    lora_write_register(REG_OP_MODE, 0b10000011); // LoRa + TX mode
-
-                    // wait for TX done (DIO0 goes high)
-                    while (gpio_get_level(PIN_NUM_DIO0) == 0)
-                        vTaskDelay(pdMS_TO_TICKS(1));
-
-                    lora_write_register(REG_IRQ_FLAGS, 0b00001000);  // clear TxDone
-
-                    // set DIO0 = RxDone again
-                    lora_write_register(REG_DIO_MAPPING_1, 0b00000000); // bits 7-6 for DIO0
+                    execute_transmission(chunk, chunk_len);
 
                     vTaskDelay(pdMS_TO_TICKS(50)); // brief delay between chunks
                 }
