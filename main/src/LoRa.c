@@ -746,13 +746,13 @@ void transmit(int64_t* delay_transmission_until) {
 
                         lora_write_register(REG_IRQ_FLAGS, 0b00001000);  // clear TxDone
 
+                        // set DIO0 = RxDone again
+                        lora_write_register(REG_DIO_MAPPING_1, 0b00000000); // bits 7-6 for DIO0
+
                         int transmission_delay = calculate_transmission_delay(LORA_SF, LORA_BW, 8, full_len, LORA_CR, LORA_HEADER, LORA_LDRO);
                         ESP_LOGI(TAG, "Radio packet sent. Delaying for %d ms", transmission_delay);
 
                         *delay_transmission_until = (int64_t)(transmission_delay * 1000) + esp_timer_get_time();
-
-                        // set DIO0 = RxDone again
-                        lora_write_register(REG_DIO_MAPPING_1, 0b00000000); // bits 7-6 for DIO0
                     }
                 }
                 strcpy(forwarded_message, "\0");
@@ -839,6 +839,9 @@ void transmit(int64_t* delay_transmission_until) {
 
                     lora_write_register(REG_IRQ_FLAGS, 0b00001000);  // clear TxDone
 
+                    // set DIO0 = RxDone again
+                    lora_write_register(REG_DIO_MAPPING_1, 0b00000000); // bits 7-6 for DIO0
+
                     vTaskDelay(pdMS_TO_TICKS(50)); // brief delay between chunks
                 }
                 int transmission_delay = calculate_transmission_delay(LORA_SF, LORA_BW, 8, full_len, LORA_CR, LORA_HEADER, LORA_LDRO);
@@ -846,8 +849,6 @@ void transmit(int64_t* delay_transmission_until) {
 
                 *delay_transmission_until = (int64_t)(transmission_delay * 1000) + esp_timer_get_time();
 
-                // set DIO0 = RxDone again
-                lora_write_register(REG_DIO_MAPPING_1, 0b00000000); // bits 7-6 for DIO0
             }
             cJSON_Delete(json_array);
         }
