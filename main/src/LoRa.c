@@ -529,7 +529,7 @@ void binary_to_json(uint8_t* binary_message, cJSON* json_array) {
             radio_request_packet* packet = (radio_request_packet*)&binary_message[packet_start];
             cJSON_AddStringToObject(message, "type", "request");
 
-            snprintf(id_str, sizeof(id_str), "bms_%03d", packet->esp_id);
+            snprintf(id_str, sizeof(id_str), "bms_%03u", packet->esp_id);
             cJSON_AddStringToObject(message, "id", id_str);
 
             cJSON* content = cJSON_CreateObject();

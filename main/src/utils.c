@@ -17,7 +17,7 @@ char* esp_id_string() {
         ESP_LOGE("utils", "Couldn't allocate memory for esp_id string!");
         return NULL;
     }
-    snprintf(esp_id, n_bytes, "bms_%03d", ESP_ID);
+    snprintf(esp_id, n_bytes, "bms_%03u", ESP_ID);
     esp_id[n_bytes - 1] = '\0';
     return esp_id;
 }
