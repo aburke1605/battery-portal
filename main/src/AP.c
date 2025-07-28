@@ -375,6 +375,7 @@ httpd_handle_t start_webserver(void) {
         client_sockets[i].descriptor = -1;
         client_sockets[i].auth_token[0] = '\0';
         client_sockets[i].is_browser_not_mesh = true;
+        client_sockets[i].esp_id = 0;
     }
 
     httpd_config_t config = HTTPD_DEFAULT_CONFIG();

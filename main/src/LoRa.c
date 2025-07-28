@@ -619,15 +619,82 @@ void lora_task(void *pvParameters) {
                     RX_full_len = 0;
 
                     ESP_LOGI(TAG, "Received radio message with RSSI: %d dBm", rssi_dbm);
-                    if (LORA_IS_RECEIVER) convert_from_binary(decoded_payload);
-                    //
-                    //
-                    // else {
-                    //      is a master node, so figure out
-                    //      which mode the request is for then
-                    //      perform_request(); etc.
-                    // }
-                    //
+                    cJSON* json_array = cJSON_CreateArray();
+                    if (json_array == NULL) {
+                        ESP_LOGE(TAG, "Failed to create JSON array");
+                        return;
+                    }
+                    binary_to_json(decoded_payload, json_array);
+                    char* message_string = malloc(WS_MESSAGE_MAX_LEN);
+                    snprintf(message_string, WS_MESSAGE_MAX_LEN, "%s", cJSON_PrintUnformatted(json_array));
+                    if (message_string == NULL) {
+                        ESP_LOGE(TAG, "Failed to print cJSON to string\n");
+                        return;
+                    } else {
+                        if (LORA_IS_RECEIVER) {
+                            if (VERBOSE) {
+                                ESP_LOGI(TAG, "Forwarding message:");
+                                ESP_LOGI(TAG, "%s", message_string);
+                                ESP_LOGI(TAG, "on to web server");
+                            }
+                            send_message(message_string);
+                        } else {
+                            if (VERBOSE) {
+                                ESP_LOGI(TAG, "Processing messaged received from web server:");
+                                ESP_LOGI(TAG, "%s", message_string);
+                            }
+                            cJSON* message = NULL;
+                            cJSON_ArrayForEach(message, json_array) {
+                                if (!cJSON_IsObject(message)) continue;
+
+                                // pop the "id" key
+                                cJSON* esp_id = cJSON_DetachItemFromObject(message, "id");
+                                if (esp_id) {
+                                    uint8_t id_int = atoi(&esp_id->valuestring[4]);
+                                    if (id_int == ESP_ID) {
+                                        if (VERBOSE) ESP_LOGI(TAG, "This request is for me, the mesh ROOT");
+                                        cJSON *response = cJSON_CreateObject();
+                                        perform_request(message, response);
+                                    } else {
+                                        if (VERBOSE) ESP_LOGI(TAG, "This request is for mesh client %s:", esp_id->valuestring);
+                                        char* remainder_string = cJSON_PrintUnformatted(message);
+                                        if (remainder_string != NULL) {
+                                            if (VERBOSE) ESP_LOGI(TAG, "%s", remainder_string);
+                                            // send to correct WebSocket client
+                                            for (int i = 0; i < WS_CONFIG_MAX_CLIENTS; i++) {
+                                                if (!client_sockets[i].is_browser_not_mesh && client_sockets[i].descriptor >= 0 && client_sockets[i].esp_id == id_int) {
+                                                    httpd_ws_frame_t ws_pkt = {
+                                                        .payload = (uint8_t *)remainder_string,
+                                                        .len = strlen(remainder_string),
+                                                        .type = HTTPD_WS_TYPE_TEXT,
+                                                    };
+
+                                                    int tries = 0;
+                                                    int max_tries = 5;
+                                                    esp_err_t err;
+                                                    while (tries < max_tries) {
+                                                        err = httpd_ws_send_frame_async(server, client_sockets[i].descriptor, &ws_pkt);
+                                                        if (err == ESP_OK) break;
+                                                        vTaskDelay(pdMS_TO_TICKS(1000));
+                                                        tries++;
+                                                    }
+
+                                                    if (err != ESP_OK) {
+                                                        ESP_LOGE(TAG, "Failed to send frame to client %d: %s", client_sockets[i].descriptor, esp_err_to_name(err));
+                                                        remove_client(client_sockets[i].descriptor);  // Clean up disconnected clients
+                                                    }
+                                                }
+                                            }
+                                            free(remainder_string);
+                                        }
+                                    }
+                                    cJSON_Delete(esp_id);
+                                }
+                            }
+                        }
+                        free(message_string);
+                    }
+                    cJSON_Delete(json_array);
                 }
             }
 

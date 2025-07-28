@@ -5,6 +5,7 @@
 #include "sdkconfig.h"
 
 #include <stdbool.h>
+#include <stdint.h>
 
 #ifdef CONFIG_VERBOSE
     #define VERBOSE true
@@ -189,6 +190,7 @@ typedef struct {
     int descriptor;
     char auth_token[UTILS_AUTH_TOKEN_LENGTH];
     bool is_browser_not_mesh;
+    uint8_t esp_id; // just the number following "bms_", only relevent for mesh ws clients
 } client_socket;
 
 typedef struct {

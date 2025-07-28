@@ -8,7 +8,7 @@
 #include <esp_err.h>
 #include <esp_http_server.h>
 
-void add_client(int fd, const char* tkn, bool browser);
+void add_client(int fd, const char* tkn, bool browser, uint8_t esp_id);
 
 void remove_client(int fd);
 

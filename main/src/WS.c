@@ -20,7 +20,7 @@ static esp_websocket_client_handle_t ws_client = NULL;
 
 static const char* TAG = "WS";
 
-void add_client(int fd, const char* tkn, bool browser) {
+void add_client(int fd, const char* tkn, bool browser, uint8_t esp_id) {
     for (int i = 0; i < WS_CONFIG_MAX_CLIENTS; i++) {
         if (client_sockets[i].descriptor == fd) {
             return;
@@ -29,6 +29,7 @@ void add_client(int fd, const char* tkn, bool browser) {
             strncpy(client_sockets[i].auth_token, tkn, UTILS_AUTH_TOKEN_LENGTH);
             client_sockets[i].auth_token[UTILS_AUTH_TOKEN_LENGTH - 1] = '\0';
             client_sockets[i].is_browser_not_mesh = browser;
+            client_sockets[i].esp_id = browser ? 0 : esp_id;
             ESP_LOGI(TAG, "Client %d added", fd);
             return;
         }
@@ -42,6 +43,7 @@ void remove_client(int fd) {
             client_sockets[i].descriptor = -1;
             client_sockets[i].auth_token[0] = '\0';
             client_sockets[i].is_browser_not_mesh = true;
+            client_sockets[i].esp_id = 0;
             ESP_LOGI(TAG, "Client %d removed", fd);
             return;
         }
@@ -59,14 +61,23 @@ esp_err_t client_handler(httpd_req_t *req) {
         if (check_new_browser_session || check_new_mesh_session) {
             if (!check_new_browser_session && check_new_mesh_session) is_browser_not_mesh = false;
             char auth_token[UTILS_AUTH_TOKEN_LENGTH] = {0};
+            int esp_id = 0;
             if (is_browser_not_mesh) {
                 sscanf(check_new_browser_session, "/browser_ws?auth_token=%50s", auth_token);
             } else {
-                sscanf(check_new_mesh_session, "/mesh_ws?auth_token=%50s", auth_token);
+                sscanf(check_new_mesh_session, "/mesh_ws?auth_token=%50[^&]", auth_token);
+                char *check_esp_id = strstr(req->uri, "esp_id=");
+                if (!check_esp_id) {
+                    ESP_LOGE(TAG, "No `esp_id` passed during attempted client WebSocket connection to mesh!");
+                    return ESP_FAIL;
+                }
+                char esp_id_string[3] = {0};
+                sscanf(check_esp_id, "esp_id=%3s", esp_id_string);
+                esp_id = atoi(esp_id_string);
             }
             auth_token[UTILS_AUTH_TOKEN_LENGTH - 1] = '\0';
             if (auth_token[0] != '\0' && strcmp(auth_token, current_auth_token) == 0) {
-                add_client(fd, auth_token, is_browser_not_mesh);
+                add_client(fd, auth_token, is_browser_not_mesh, esp_id);
                 current_auth_token[0] = '\0';
                 ESP_LOGI(TAG, "WebSocket handshake complete for client %d", fd);
                 return ESP_OK; // WebSocket handshake happens here
@@ -357,23 +368,48 @@ void websocket_event_handler(void *arg, esp_event_base_t event_base, int32_t eve
 
             cJSON *message = cJSON_Parse((char *)ws_event_data->data_ptr);
             if (!message) {
-                ESP_LOGE(TAG, "invalid json: %s", (char *)ws_event_data->data_ptr);
+                ESP_LOGE(TAG, "invalid json: \"%s\"", (char *)ws_event_data->data_ptr);
                 cJSON_Delete(message);
                 break;
             }
 
-            // this case should never be triggered by the mesh ws
-            // event handling, so just continue with the code below
-            // for browser ws events and use this handler universally
-            // for both mesh and browser ws clients
+            if (LORA_IS_RECEIVER) {
+                cJSON* type = cJSON_GetObjectItem(message, "type");
+                cJSON* content = cJSON_GetObjectItem(message, "content");
+                if (type && content) {
+                    if (strcmp(type->valuestring, "response") == 0 && strcmp(content->valuestring, "Ok") == 0) {
+                        if (VERBOSE) ESP_LOGI(TAG, "Receiver: ignorning acknowledgement response message from web server");
+                        break;
+                    }
+                } else {
+                    char* message_string = cJSON_PrintUnformatted(message);
+                    if (message_string) {
+                        if (VERBOSE) {
+                            ESP_LOGI(TAG, "Receiver: received message from web server:");
+                            ESP_LOGI(TAG, "%s", message_string);
+                            ESP_LOGI(TAG, "adding to outgoing forwarded radio transmissions...");
+                        }
+                        strncpy(forwarded_message, message_string, strlen(message_string));
+                        free(message_string);
+                    }
+                }
+            } else {
+                if (VERBOSE) {
+                    char* message_string = cJSON_PrintUnformatted(message);
+                    if (message_string) {
+                        ESP_LOGI(TAG, "Mesh client: received message from ROOT:");
+                        ESP_LOGI(TAG, "%s", message_string);
+                    }
+                }
 
-            cJSON *response = cJSON_CreateObject();
-            esp_err_t err = perform_request(message, response);
+                cJSON *response = cJSON_CreateObject();
+                esp_err_t err = perform_request(message, response);
 
-            char *response_str = cJSON_PrintUnformatted(response);
-            cJSON_Delete(response);
-            if (err == ESP_OK) send_message(response_str);
-            free(response_str);
+                char *response_str = cJSON_PrintUnformatted(response);
+                cJSON_Delete(response);
+                if (err == ESP_OK) send_message(response_str);
+                free(response_str);
+            }
             cJSON_Delete(message);
 
             break;
