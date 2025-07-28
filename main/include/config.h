@@ -105,7 +105,7 @@
 #define WS_CONFIG_MAX_CLIENTS 3
 
 #define MESH_MAX_HTTP_RECV_BUFFER 128
-#define MESH_SIZE 10
+#define MESH_SIZE 5
 
 
 // LoRa:

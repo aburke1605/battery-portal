@@ -103,7 +103,6 @@ void full_access() {
     // delay to allow full access to complete
     vTaskDelay(pdMS_TO_TICKS(I2C_DELAY));
 
-    printf("%d\n", get_sealed_status());
     if (get_sealed_status() == 2)
         ESP_LOGI(TAG, "Full access command sent successfully.");
 
