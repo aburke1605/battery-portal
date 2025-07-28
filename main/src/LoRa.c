@@ -581,12 +581,132 @@ void binary_to_json(uint8_t* binary_message, cJSON* json_array) {
     }
 }
 
+void receive(size_t* full_message_length, bool* chunked) {
+    uint8_t buffer[5 * LORA_MAX_PACKET_LEN]; // this length likely needs to be changed
+    uint8_t encoded_buffer[5 * LORA_MAX_PACKET_LEN]; // this length likely needs to be changed
+
+    // wait for RX done (DIO0 goes high)
+    if (gpio_get_level(PIN_NUM_DIO0) == 1) {
+        uint8_t irq_flags = lora_read_register(REG_IRQ_FLAGS);
+        if (irq_flags & 0x40) {  // RX_DONE
+            uint8_t len = lora_read_register(0x13);  // RX bytes
+            uint8_t fifo_rx_current = lora_read_register(0x10);
+            lora_write_register(REG_FIFO_ADDR_PTR, fifo_rx_current);
+
+            for (int i = 0; i < len; i++)
+                buffer[i] = lora_read_register(0x00); // 0x00 = REG_FIFO ?
+
+
+            if (!*chunked) {
+                if (buffer[0] == FRAME_END) {
+                    if (buffer[len - 1] != FRAME_END) *chunked = true;
+                }
+                else {
+                    // bogus message received
+                    lora_write_register(REG_IRQ_FLAGS, 0b11111111);
+                    return;
+                }
+            } else if (*chunked && buffer[len - 1] == FRAME_END) *chunked = false;
+            memcpy(&encoded_buffer[*full_message_length], buffer, len);
+            *full_message_length += len;
+
+            if (!*chunked) {
+                uint8_t rssi_raw = lora_read_register(0x1A);
+                int rssi_dbm = -157 + rssi_raw;
+
+                uint8_t decoded_payload[*full_message_length];
+                size_t decoded_len = decode_frame(encoded_buffer, *full_message_length, decoded_payload);
+                *full_message_length = 0;
+
+                ESP_LOGI(TAG, "Received radio message with RSSI: %d dBm", rssi_dbm);
+                cJSON* json_array = cJSON_CreateArray();
+                if (json_array == NULL) {
+                    ESP_LOGE(TAG, "Failed to create JSON array");
+                    return;
+                }
+                binary_to_json(decoded_payload, json_array);
+                char* message_string = malloc(WS_MESSAGE_MAX_LEN);
+                snprintf(message_string, WS_MESSAGE_MAX_LEN, "%s", cJSON_PrintUnformatted(json_array));
+                if (message_string == NULL) {
+                    ESP_LOGE(TAG, "Failed to print cJSON to string\n");
+                    return;
+                } else {
+                    if (LORA_IS_RECEIVER) {
+                        if (VERBOSE) {
+                            ESP_LOGI(TAG, "Forwarding message:");
+                            ESP_LOGI(TAG, "%s", message_string);
+                            ESP_LOGI(TAG, "on to web server");
+                        }
+                        send_message(message_string);
+                    } else {
+                        if (VERBOSE) {
+                            ESP_LOGI(TAG, "Processing messaged received from web server:");
+                            ESP_LOGI(TAG, "%s", message_string);
+                        }
+                        cJSON* message = NULL;
+                        cJSON_ArrayForEach(message, json_array) {
+                            if (!cJSON_IsObject(message)) return;
+
+                            // pop the "id" key
+                            cJSON* esp_id = cJSON_DetachItemFromObject(message, "id");
+                            if (esp_id) {
+                                uint8_t id_int = atoi(&esp_id->valuestring[4]);
+                                if (id_int == ESP_ID) {
+                                    if (VERBOSE) ESP_LOGI(TAG, "This request is for me, the mesh ROOT");
+                                    cJSON *response = cJSON_CreateObject();
+                                    perform_request(message, response);
+                                } else {
+                                    if (VERBOSE) ESP_LOGI(TAG, "This request is for mesh client %s:", esp_id->valuestring);
+                                    char* remainder_string = cJSON_PrintUnformatted(message);
+                                    if (remainder_string != NULL) {
+                                        if (VERBOSE) ESP_LOGI(TAG, "%s", remainder_string);
+                                        // send to correct WebSocket client
+                                        for (int i = 0; i < WS_CONFIG_MAX_CLIENTS; i++) {
+                                            if (!client_sockets[i].is_browser_not_mesh && client_sockets[i].descriptor >= 0 && client_sockets[i].esp_id == id_int) {
+                                                httpd_ws_frame_t ws_pkt = {
+                                                    .payload = (uint8_t *)remainder_string,
+                                                    .len = strlen(remainder_string),
+                                                    .type = HTTPD_WS_TYPE_TEXT,
+                                                };
+
+                                                int tries = 0;
+                                                int max_tries = 5;
+                                                esp_err_t err;
+                                                while (tries < max_tries) {
+                                                    err = httpd_ws_send_frame_async(server, client_sockets[i].descriptor, &ws_pkt);
+                                                    if (err == ESP_OK) break;
+                                                    vTaskDelay(pdMS_TO_TICKS(1000));
+                                                    tries++;
+                                                }
+
+                                                if (err != ESP_OK) {
+                                                    ESP_LOGE(TAG, "Failed to send frame to client %d: %s", client_sockets[i].descriptor, esp_err_to_name(err));
+                                                    remove_client(client_sockets[i].descriptor);  // Clean up disconnected clients
+                                                }
+                                            }
+                                        }
+                                        free(remainder_string);
+                                    }
+                                }
+                                cJSON_Delete(esp_id);
+                            }
+                        }
+                    }
+                    free(message_string);
+                }
+                cJSON_Delete(json_array);
+            }
+        }
+
+        // Clear IRQ flags again
+        lora_write_register(REG_IRQ_FLAGS, 0b11111111);
+    }
+}
+
 void lora_task(void *pvParameters) {
     // receiver variables
-    uint8_t RX_buffer[5 * LORA_MAX_PACKET_LEN]; // this length likely needs to be changed
-    uint8_t RX_encoded_payload[5 * LORA_MAX_PACKET_LEN]; // this length likely needs to be changed
-    size_t RX_full_len = 0;
-    bool RX_chunked = false;
+    size_t full_message_length = 0;
+    bool chunked = false;
 
 
     // transmitter variables
@@ -612,122 +732,7 @@ void lora_task(void *pvParameters) {
         */
         // enter continuous RX mode
         lora_write_register(REG_OP_MODE, 0b10000101); // LoRa + RX mode
-        // wait for RX done (DIO0 goes high)
-        if (gpio_get_level(PIN_NUM_DIO0) == 1) {
-            uint8_t irq_flags = lora_read_register(REG_IRQ_FLAGS);
-            if (irq_flags & 0x40) {  // RX_DONE
-                uint8_t len = lora_read_register(0x13);  // RX bytes
-                uint8_t fifo_rx_current = lora_read_register(0x10);
-                lora_write_register(REG_FIFO_ADDR_PTR, fifo_rx_current);
-
-                for (int i = 0; i < len; i++)
-                    RX_buffer[i] = lora_read_register(0x00); // 0x00 = REG_FIFO ?
-
-
-                if (!RX_chunked) {
-                    if (RX_buffer[0] == FRAME_END) {
-                        if (RX_buffer[len - 1] != FRAME_END) RX_chunked = true;
-                    }
-                    else {
-                        // bogus message received
-                        lora_write_register(REG_IRQ_FLAGS, 0b11111111);
-                        continue;
-                    }
-                } else if (RX_chunked && RX_buffer[len - 1] == FRAME_END) RX_chunked = false;
-                memcpy(&RX_encoded_payload[RX_full_len], RX_buffer, len);
-                RX_full_len += len;
-
-                if (!RX_chunked) {
-                    uint8_t rssi_raw = lora_read_register(0x1A);
-                    int rssi_dbm = -157 + rssi_raw;
-
-                    uint8_t decoded_payload[RX_full_len];
-                    size_t decoded_len = decode_frame(RX_encoded_payload, RX_full_len, decoded_payload);
-                    RX_full_len = 0;
-
-                    ESP_LOGI(TAG, "Received radio message with RSSI: %d dBm", rssi_dbm);
-                    cJSON* json_array = cJSON_CreateArray();
-                    if (json_array == NULL) {
-                        ESP_LOGE(TAG, "Failed to create JSON array");
-                        return;
-                    }
-                    binary_to_json(decoded_payload, json_array);
-                    char* message_string = malloc(WS_MESSAGE_MAX_LEN);
-                    snprintf(message_string, WS_MESSAGE_MAX_LEN, "%s", cJSON_PrintUnformatted(json_array));
-                    if (message_string == NULL) {
-                        ESP_LOGE(TAG, "Failed to print cJSON to string\n");
-                        return;
-                    } else {
-                        if (LORA_IS_RECEIVER) {
-                            if (VERBOSE) {
-                                ESP_LOGI(TAG, "Forwarding message:");
-                                ESP_LOGI(TAG, "%s", message_string);
-                                ESP_LOGI(TAG, "on to web server");
-                            }
-                            send_message(message_string);
-                        } else {
-                            if (VERBOSE) {
-                                ESP_LOGI(TAG, "Processing messaged received from web server:");
-                                ESP_LOGI(TAG, "%s", message_string);
-                            }
-                            cJSON* message = NULL;
-                            cJSON_ArrayForEach(message, json_array) {
-                                if (!cJSON_IsObject(message)) continue;
-
-                                // pop the "id" key
-                                cJSON* esp_id = cJSON_DetachItemFromObject(message, "id");
-                                if (esp_id) {
-                                    uint8_t id_int = atoi(&esp_id->valuestring[4]);
-                                    if (id_int == ESP_ID) {
-                                        if (VERBOSE) ESP_LOGI(TAG, "This request is for me, the mesh ROOT");
-                                        cJSON *response = cJSON_CreateObject();
-                                        perform_request(message, response);
-                                    } else {
-                                        if (VERBOSE) ESP_LOGI(TAG, "This request is for mesh client %s:", esp_id->valuestring);
-                                        char* remainder_string = cJSON_PrintUnformatted(message);
-                                        if (remainder_string != NULL) {
-                                            if (VERBOSE) ESP_LOGI(TAG, "%s", remainder_string);
-                                            // send to correct WebSocket client
-                                            for (int i = 0; i < WS_CONFIG_MAX_CLIENTS; i++) {
-                                                if (!client_sockets[i].is_browser_not_mesh && client_sockets[i].descriptor >= 0 && client_sockets[i].esp_id == id_int) {
-                                                    httpd_ws_frame_t ws_pkt = {
-                                                        .payload = (uint8_t *)remainder_string,
-                                                        .len = strlen(remainder_string),
-                                                        .type = HTTPD_WS_TYPE_TEXT,
-                                                    };
-
-                                                    int tries = 0;
-                                                    int max_tries = 5;
-                                                    esp_err_t err;
-                                                    while (tries < max_tries) {
-                                                        err = httpd_ws_send_frame_async(server, client_sockets[i].descriptor, &ws_pkt);
-                                                        if (err == ESP_OK) break;
-                                                        vTaskDelay(pdMS_TO_TICKS(1000));
-                                                        tries++;
-                                                    }
-
-                                                    if (err != ESP_OK) {
-                                                        ESP_LOGE(TAG, "Failed to send frame to client %d: %s", client_sockets[i].descriptor, esp_err_to_name(err));
-                                                        remove_client(client_sockets[i].descriptor);  // Clean up disconnected clients
-                                                    }
-                                                }
-                                            }
-                                            free(remainder_string);
-                                        }
-                                    }
-                                    cJSON_Delete(esp_id);
-                                }
-                            }
-                        }
-                        free(message_string);
-                    }
-                    cJSON_Delete(json_array);
-                }
-            }
-
-            // Clear IRQ flags again
-            lora_write_register(REG_IRQ_FLAGS, 0b11111111);
-        }
+        receive(&full_message_length, &chunked);
 
 
         /*
