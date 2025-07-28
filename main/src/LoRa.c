@@ -165,81 +165,7 @@ size_t json_to_binary(uint8_t* binary_message, cJSON* json_array) {
         }
 
 
-        if (strcmp(type->valuestring, "request") == 0) {
-            radio_request_packet* packet = malloc(sizeof(radio_request_packet));
-            if (packet == NULL) {
-                ESP_LOGE(TAG, "Failed to allocate packet memory\n");
-                return 0;
-            }
-            memset(packet, 0, sizeof(radio_request_packet));
-            packet->type = REQUEST;
-
-            cJSON* esp_id = cJSON_GetObjectItem(item, "esp_id");
-            if (!esp_id) {
-                ESP_LOGE(TAG, "No \"esp_id\" key in cJSON array item");
-                return 0;
-            }
-            packet->esp_id = atoi(&esp_id->valuestring[4]);
-
-
-            cJSON* summary = cJSON_GetObjectItem(content, "summary");
-            if (!summary) {
-                ESP_LOGE(TAG, "No \"summary\" key in cJSON array item");
-                return 0;
-            }
-            if (strcmp(summary->valuestring, "change-settings") == 0) {
-                cJSON* data = cJSON_GetObjectItem(content, "data");
-                if (!data) {
-                    ESP_LOGE(TAG, "No \"data\" key in cJSON array item");
-                    return 0;
-                }
-                packet->request = CHANGE_SETTINGS;
-
-                cJSON* new_esp_id = cJSON_GetObjectItem(data, "new_esp_id");
-                if (new_esp_id) packet->new_esp_id = new_esp_id->valueint;
-
-                cJSON* OTC_threshold = cJSON_GetObjectItem(data, "OTC_threshold");
-                if (OTC_threshold) packet->OTC_threshold = OTC_threshold->valueint;
-            }
-            else if (strcmp(summary->valuestring, "connect-wifi") == 0) {
-                cJSON* data = cJSON_GetObjectItem(content, "data");
-                if (!data) {
-                    ESP_LOGE(TAG, "No \"data\" key in cJSON array item");
-                    return 0;
-                }
-                packet->request = CONNECT_WIFI;
-
-                cJSON* eduroam = cJSON_GetObjectItem(data, "eduroam");
-                if (!eduroam) {
-                    ESP_LOGE(TAG, "No \"eduroam\" key in cJSON array item");
-                    return 0;
-                }
-                cJSON* username = cJSON_GetObjectItem(data, "username");
-                if (!username) {
-                    ESP_LOGE(TAG, "No \"username\" key in cJSON array item");
-                    return 0;
-                }
-                cJSON* password = cJSON_GetObjectItem(data, "password");
-                if (!password) {
-                    ESP_LOGE(TAG, "No \"password\" key in cJSON array item");
-                    return 0;
-                }
-                packet->eduroam = (bool)eduroam->valueint;
-                for (size_t i=0; i<sizeof(packet->username); i++) packet->username[i] = (uint8_t)username->valuestring[i];
-                for (size_t i=0; i<sizeof(packet->password); i++) packet->password[i] = (uint8_t)password->valuestring[i];
-            }
-            else if (strcmp(summary->valuestring, "reset-bms") == 0) packet->request = RESET_BMS;
-            else if (strcmp(summary->valuestring, "unseal-bms") == 0) packet->request = UNSEAL_BMS;
-
-
-            // now copy the packet into the returned binary binary_message which will be broadcasted
-            memcpy(&binary_message[packet_start], packet, sizeof(radio_request_packet));
-            // and shift the position along for the next iteration
-            packet_start += sizeof(radio_request_packet);
-        }
-
-
-        else if (strcmp(type->valuestring, "data") == 0) {
+        if (strcmp(type->valuestring, "data") == 0) {
             radio_data_packet* packet = malloc(sizeof(radio_data_packet));
             if (packet == NULL) {
                 ESP_LOGE(TAG, "Failed to allocate packet memory\n");
@@ -350,6 +276,81 @@ size_t json_to_binary(uint8_t* binary_message, cJSON* json_array) {
             // and shift the position along for the next iteration
             packet_start += sizeof(radio_data_packet);
         }
+
+        else if (strcmp(type->valuestring, "request") == 0) {
+            radio_request_packet* packet = malloc(sizeof(radio_request_packet));
+            if (packet == NULL) {
+                ESP_LOGE(TAG, "Failed to allocate packet memory\n");
+                return 0;
+            }
+            memset(packet, 0, sizeof(radio_request_packet));
+            packet->type = REQUEST;
+
+            cJSON* esp_id = cJSON_GetObjectItem(item, "esp_id");
+            if (!esp_id) {
+                ESP_LOGE(TAG, "No \"esp_id\" key in cJSON array item");
+                return 0;
+            }
+            packet->esp_id = atoi(&esp_id->valuestring[4]);
+
+
+            cJSON* summary = cJSON_GetObjectItem(content, "summary");
+            if (!summary) {
+                ESP_LOGE(TAG, "No \"summary\" key in cJSON array item");
+                return 0;
+            }
+            if (strcmp(summary->valuestring, "change-settings") == 0) {
+                cJSON* data = cJSON_GetObjectItem(content, "data");
+                if (!data) {
+                    ESP_LOGE(TAG, "No \"data\" key in cJSON array item");
+                    return 0;
+                }
+                packet->request = CHANGE_SETTINGS;
+
+                cJSON* new_esp_id = cJSON_GetObjectItem(data, "new_esp_id");
+                if (new_esp_id) packet->new_esp_id = new_esp_id->valueint;
+
+                cJSON* OTC_threshold = cJSON_GetObjectItem(data, "OTC_threshold");
+                if (OTC_threshold) packet->OTC_threshold = OTC_threshold->valueint;
+            }
+            else if (strcmp(summary->valuestring, "connect-wifi") == 0) {
+                cJSON* data = cJSON_GetObjectItem(content, "data");
+                if (!data) {
+                    ESP_LOGE(TAG, "No \"data\" key in cJSON array item");
+                    return 0;
+                }
+                packet->request = CONNECT_WIFI;
+
+                cJSON* eduroam = cJSON_GetObjectItem(data, "eduroam");
+                if (!eduroam) {
+                    ESP_LOGE(TAG, "No \"eduroam\" key in cJSON array item");
+                    return 0;
+                }
+                cJSON* username = cJSON_GetObjectItem(data, "username");
+                if (!username) {
+                    ESP_LOGE(TAG, "No \"username\" key in cJSON array item");
+                    return 0;
+                }
+                cJSON* password = cJSON_GetObjectItem(data, "password");
+                if (!password) {
+                    ESP_LOGE(TAG, "No \"password\" key in cJSON array item");
+                    return 0;
+                }
+                packet->eduroam = (bool)eduroam->valueint;
+                for (size_t i=0; i<sizeof(packet->username); i++) packet->username[i] = (uint8_t)username->valuestring[i];
+                for (size_t i=0; i<sizeof(packet->password); i++) packet->password[i] = (uint8_t)password->valuestring[i];
+            }
+            else if (strcmp(summary->valuestring, "reset-bms") == 0) packet->request = RESET_BMS;
+            else if (strcmp(summary->valuestring, "unseal-bms") == 0) packet->request = UNSEAL_BMS;
+
+
+            // now copy the packet into the returned binary binary_message which will be broadcasted
+            memcpy(&binary_message[packet_start], packet, sizeof(radio_request_packet));
+            // and shift the position along for the next iteration
+            packet_start += sizeof(radio_request_packet);
+        }
+
+
 
         n_devices++;
     }
