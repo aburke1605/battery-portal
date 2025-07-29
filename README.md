@@ -12,6 +12,7 @@ The diagram below illustrates the components of each individual battery module, 
 
 ![information_exchange.png](img/information_exchange.png)
 
+
 ### BMS and LoRa
 Shown in the zoomed bubble is a breakdown of one battery module unit.
 The battery itself is wired to a battery management system (BMS).
@@ -20,9 +21,10 @@ The BMS is then managed by the ESP32 through SMBus communication.
 The ESP32 can also simultaneously communicate with the radio LoRa transceiver through a separate SPI connection.
 The ESP32 comes pre-loaded with Wi-Fi and Bluetooth capabilities.
 
+
 #### BMS
-Communication with the BMS is achieved using the I<sup>2</sup>C drivers provided by ESP-IDF.
-We have defined four core functions:
+Communication with the BMS is achieved using the I<sup>2</sup>C driver, provided by ESP-IDF.
+Defined from this are four core functions:
   * `read_SBS_data` and `write_word`: These read and write small quantites of data (usually one or two bytes) to and from specific addresses within the BMS.
   * `read_data_flash` and `write_data_flash`: These deal with larger exchanges of information stored in the Data Flash on the BMS (up to 32 bytes). The specific address is first transmitted to the BMS to select the information in question, before a read or write command is executed at the Data Flash address.
 
@@ -31,7 +33,16 @@ These include the `seal`, `unseal` and `full_access` functions as well as `reset
 Battery and individual cell data are obtained from the BMS within the `get_data` function.
 This function is called regularly as the ESP32 transmits telemetry data to its WebSocket clients and/or the web server (see section on <b>Networking</b>).
 
+
 #### LoRA
+Communication with the LoRa transceiver is achieved using the SPI driver, provided by ESP-IDF.
+Defined from this are two core functions:
+  * `lora_read_register` and `lora_write_register`: These read and write singular bytes to and from specific addresses within the LoRa transceiver.
+
+Building on these are functions designed to initialise the LoRa transceiver (see `lora_init` and `lora_configure_defaults`), and transmit/receive radio packets (see `lora_task`, `transmit` and `receive`).
+
+
+#### GPS
 
 
 ## Webserver backend
