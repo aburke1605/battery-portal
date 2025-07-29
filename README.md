@@ -43,8 +43,19 @@ Building on these are functions designed to initialise the LoRa transceiver (see
 
 
 #### GPS
+<placeholder>
+
+
 
 ### Networking
+This package makes use of the Wi-Fi capabilities of the ESP32 in multiple ways.
+These are detailed below, in order of their chronological implementation in the project.
+
+#### Local HTTP Server
+The best way to display telemetry data obtained from the BMS to users is via HTTP pages that can be served to any smartphone or other web-capable device.
+This can be achieved by configuring the ESP32 to act as a Wi-Fi access point (AP) to which devices can connect, while simultaneously running a HTTP server.
+By adding a DNS server, devices are automatically directed to the IP address of the ESP32 http server, mimicking the captive portals you find when connecting to public Wi-Fi hotspots.
+
 
 ## Webserver backend
 <placeholder>
