@@ -13,7 +13,7 @@ The diagram below illustrates the components of each individual battery module, 
 ![information_exchange.png](img/information_exchange.png)
 
 
-### BMS and LoRa
+### BMS, LoRa and GPS
 Shown in the zoomed bubble is a breakdown of one battery module unit.
 The battery itself is wired to a battery management system (BMS).
 At this point we are working with a four-series-cell lithium-ion battery and a [BQ40Z50-R1](https://www.ti.com/product/BQ40Z50) BMS.
@@ -44,6 +44,7 @@ Building on these are functions designed to initialise the LoRa transceiver (see
 
 #### GPS
 
+### Networking
 
 ## Webserver backend
 <placeholder>
