@@ -10,6 +10,8 @@ In scenarios where the module is not within range of a network connection, Wi-Fi
 
 The diagram below details all possible forms of information exchange.
 
+![information_exchange.png](img/information_exchange.png)
+
 ## Webserver backend
 <placeholder>
 
