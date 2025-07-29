@@ -1,4 +1,4 @@
-# Documentation
+# Remote Monitoring and Optimisation of Energy Storage Systems
 
 ## ESP32
 Each battery module is interfaced, through a BMS, to an ESP32 microcontroller.
@@ -13,10 +13,23 @@ The diagram below illustrates the components of each individual battery module, 
 ![information_exchange.png](img/information_exchange.png)
 
 ### BMS and LoRa
-Shown in the zoomed bubble is a breakdown of one battery module unit. The battery itself is wired to a battery management system (BMS). At this point we are working with a four-series-cell lithium-ion battery and a [BQ40Z50-R1](https://www.ti.com/product/BQ40Z50) BMS. The BMS is then managed by the ESP32 through I<sup>2</sup>C communication. The ESP32 can simultaneously communicate with the radio LoRa transceiver through a separate SPI connection. The ESP32 comes pre-loaded with Wi-Fi and Bluetooth capabilities.
+Shown in the zoomed bubble is a breakdown of one battery module unit.
+The battery itself is wired to a battery management system (BMS).
+At this point we are working with a four-series-cell lithium-ion battery and a [BQ40Z50-R1](https://www.ti.com/product/BQ40Z50) BMS.
+The BMS is then managed by the ESP32 through SMBus communication.
+The ESP32 can also simultaneously communicate with the radio LoRa transceiver through a separate SPI connection.
+The ESP32 comes pre-loaded with Wi-Fi and Bluetooth capabilities.
 
 #### BMS
+Communication with the BMS is achieved using the I<sup>2</sup>C drivers provided by ESP-IDF.
+We have defined four core functions:
+  * `read_SBS_data` and `write_word`: These read and write small quantites of data (usually one or two bytes) to and from specific addresses within the BMS.
+  * `read_data_flash` and `write_data_flash`: These deal with larger exchanges of information stored in the Data Flash on the BMS (up to 32 bytes). The specific address is first transmitted to the BMS to select the information in question, before a read or write command is executed at the Data Flash address.
 
+Building on these are BMS-specific functions designed to make use of the BMS capabilities.
+These include the `seal`, `unseal` and `full_access` functions as well as `reset` which alter the state of the BMS.
+Battery and individual cell data are obtained from the BMS within the `get_data` function.
+This function is called regularly as the ESP32 transmits telemetry data to its WebSocket clients and/or the web server (see section on <b>Networking</b>).
 
 #### LoRA
 
