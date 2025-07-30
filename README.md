@@ -59,6 +59,7 @@ From here HTTP clients are upgraded to WS clients, following a security check, s
 
 The AP is configured by calling the `wifi_init` function.
 Here the Wi-Fi mode is set to '`APSTA`', a combination of AP and station (STA) modes, to allow the ESP32 to simultaneously connect to other networks while devices connect to it.
+At this point it is worth noting that while the ESP32 has its own WS clients, it can also register as a WS client of the web server when connected via Wi-Fi.
 The name of the AP depends on various factors including the existence of other ESP32 APs with similar names, so the function first performs a scan for nearby APs.
 
 Following this, the HTTP server is created in the `start_webserver` function, close to the default configuration provided by ESP-IDF.
@@ -70,6 +71,11 @@ These include;
 `login_handler`, which parses json log-in requests after a device connects to the AP, before either generating a new authentication token in memory or checking if a returning users token already exists;
 `client_handler`, which registers new WS clients should they attempt a connection with an authentication token matching one of those in memory, before listening for incoming WS messages from existing clients;
 and other simpler handlers to trigger various functions on the ESP32 by sending a HTTP request to the appropriate endpoint.
+
+At this point, the set-up of the local HTTP server has been completed.
+What remains is to register [FreeRTOS](https://docs.espressif.com/projects/esp-idf/en/stable/esp32/api-reference/system/freertos.html) tasks, or functions, which run continuously on the ESP32.
+The first of these is `dns_server_task`, which simply responds to all DNS requests made on the HTTP server with the IP address of the ESP32.
+Next is `message_queue_task`, which is again relatively simple. At various points throughout the code, WS messages to be sent from the ESP32 to the web server are added to a queue by calling the `send_message` function. The job of `message_queue_task` is therefore to dequeue and either send or drop the message, depending on whether or not the ESP32 is connected to the internet (STA).
 
 
 ## Webserver backend
