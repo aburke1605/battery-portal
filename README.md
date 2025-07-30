@@ -83,6 +83,33 @@ It established a WS connection with the web server if the ESP32 is connected to 
 To handle incoming WS messages from the web server, another function named `websocket_event_handler` is registered as the ESP32 establishes a WS connection with the web server.
 As already mentioned, incoming WS messages from the ESP32s own WS clients are processed similarly in `client_handler`.
 
+#### MESH Network
+For reasons discussed later (see section on <b>Radio Communication</b>), it is useful to form a local Wi-Fi network of battery units which are within communication range of each other.
+This network is referred to as a 'MESH', with the following logic:
+  * Each MESH consists of one and only one 'ROOT', to which the other ESP32s (known as nodes) make WS connections to.
+    A string `"ROOT"` is prepended to the SSID of the ROOT ESP32 AP to signify to other ESP32s its existence.
+    A scan for any AP containing the string in its SSID is defined in a function named `wifi_scan`, which is called within the already discussed AP set-up `wifi_init` function.
+    If a ROOT is found, the string is omitted and the ESP32 behaves as a node.
+  * The logic of connecting nodes to a ROOT is defined in a FreeRTOS function named `connect_to_root_task`.
+    It consists of an initial ROOT scan, which should be positive given that the ESP32 has booted as a node, and connection attempt.
+    If the connection fails, another ROOT scan is performed to check if the ROOT still exists, this repeating until a successful connection is made.
+    If the ROOT is instead not found, the node delays for a random period* of at least five seconds before performing one last scan.
+    If the ROOT is still not found, the node restarts so that it will become a ROOT on its next boot (assuming the set-up scan still does not find another ROOT).
+  * In a scenario where two separate MESHs are brought together, the two ROOT ESP32s deterministically nominate one as the sole ROOT moving forward while the other restarts.
+    In this way, the rebooted ROOT and each of its previous nodes will be forced to scan and connect to the persisting ROOT, forming a singular MESH.
+    The code which acheives this is defined in the `merge_root_task` FreeRTOS function.
+    Since both ROOTs have the same default IP address, one of the two is changed (to `192.168.10.1`, ROOT B) while the other remains unchanged (`192.168.4.1`, ROOT A) to allow them to communicate with one another when connected.
+    This happens simultaneously on both ROOTs by comparing MAC addresses, which are unique to each, such that each deterministically knows whether or not to change IP address.
+    Next, ROOT B sends a HTTP request to an API endpoint registered on the local server of ROOT A (`http://192.168.4.1/api_num_clients`), which returns its current number of nodes.
+    This is compared with its own number and that with fewer restarts.
+    If ROOT B has fewer, the restart is simple.
+    If ROOT A has fewer, ROOT B sends a HTTP request to another API endpoint (`http://192.168.4.1/no_you_restart`) to instruct it to restart instead.
+  * If a MESHs ROOT unexpectedly dies, the remaining nodes will naturally nominate a new ROOT given the logic already described in `connect_to_root_task`.
+  * Lastly, the `mesh_websocket_task` FreeRTOS function does a very similar job to `websocket_task`: forming and sending telemetry WS messages from nodes to ROOT, again using `websocket_event_handler` to handle incoming WS messages from the ROOT.
+
+    <h6>*The reason for random periods is such that each node in a given MESH delays for a different length of time. Therefore, one node will restart earlier than the others and become the ROOT, which the others will then detect and connect to.</h6>
+
+
 
 ## Webserver backend
 <placeholder>
