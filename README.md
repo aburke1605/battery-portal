@@ -31,7 +31,7 @@ Defined from this are four core functions:
 Building on these are BMS-specific functions designed to make use of the BMS capabilities.
 These include the `seal`, `unseal` and `full_access` functions as well as `reset` which alter the state of the BMS.
 Battery and individual cell data are obtained from the BMS within the `get_data` function.
-This function is called regularly as the ESP32 transmits telemetry data to its WebSocket clients and/or the web server (see section on <b>Networking</b>).
+This function is called regularly as the ESP32 transmits telemetry data to its WebSocket (WS) clients and/or the web server (see section on <b>Networking</b>).
 
 
 #### LoRA
@@ -55,10 +55,20 @@ These are detailed below, in order of their chronological implementation in the 
 The best way to display to users the telemetry data obtained from the BMS is via HTTP pages that can be served to any smartphone or other web-capable device.
 This can be achieved by configuring the ESP32 to act as a Wi-Fi access point (AP) to which devices can connect, while simultaneously running a HTTP server.
 By adding a DNS server, devices are automatically directed to the IP address of the ESP32 http server, mimicking the captive portals you find when connecting to public Wi-Fi hotspots.
-From here HTTP clients are upgraded to WebSocket clients, following a security check, such that the telemetry data is live-updated rather than once per page refresh.
+From here HTTP clients are upgraded to WS clients, following a security check, such that the telemetry data is live-updated rather than once per page refresh.
 
 The AP is configured by calling the `wifi_init` function.
 Here the Wi-Fi mode is set to '`APSTA`', a combination of AP and station (STA) modes, to allow the ESP32 to simultaneously connect to other networks while devices connect to it.
+The name of the AP depends on various factors including the existence of other ESP32 APs with similar names, so the function first performs a scan for nearby APs.
+
+Following this, the HTTP server is created in the `start_webserver` function, close to the default configuration provided by ESP-IDF.
+The main purpose of the function is to register URI endpoints to one of the custom handler functions such that the server can respond to incoming requests at that endpoint.
+Most URIs make use of the `file_serve_handler` function which can serve the most common types of files, including `.html`, `.css`, `.js`, `.png` and `.jpeg` files.
+However, there are also additional special use functions.
+These include;
+`login_handler`, which parses json log-in requests after a device connects to the AP, before either generating a new authentication token in memory or checking if a returning users token already exists;
+`client_handler`, which registers new WS clients should they attempt a connection with an authentication token matching one of those in memory, before listening for incoming WS messages from existing clients;
+and other simpler handlers to trigger various functions on the ESP32 by sending a HTTP request to the appropriate endpoint.
 
 
 ## Webserver backend
