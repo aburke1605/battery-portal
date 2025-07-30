@@ -69,13 +69,19 @@ These external files are flashed to the ESP32s [SPIFFS](https://docs.espressif.c
 There are also additional special use handler functions.
 These include;
 `login_handler`, which parses json log-in requests after a device connects to the AP, before either generating a new authentication token in memory or checking if a returning users token already exists;
-`client_handler`, which registers new WS clients should they attempt a connection with an authentication token matching one of those in memory, before listening for incoming WS messages from existing clients;
+`client_handler`, which registers new WS clients should they attempt a connection with an authentication token matching one of those in memory, before listening for incoming WS messages from existing clients, typically containing requests to change BMS settings;
 and other simpler handlers to trigger various functions on the ESP32 by sending a HTTP request to the appropriate endpoint.
 
 At this point, the set-up of the local HTTP server has been completed.
 What remains is to register [FreeRTOS](https://docs.espressif.com/projects/esp-idf/en/stable/esp32/api-reference/system/freertos.html) tasks, or functions, which run continuously on the ESP32.
 The first of these is `dns_server_task`, which simply responds to all DNS requests made on the HTTP server with the IP address of the ESP32.
-Next is `message_queue_task`, which is again relatively simple. At various points throughout the code, WS messages to be sent from the ESP32 to the web server are added to a queue by calling the `send_message` function. The job of `message_queue_task` is therefore to dequeue and either send or drop the message, depending on whether or not the ESP32 is connected to the internet (STA).
+Next is `message_queue_task`, which is again relatively simple.
+At various points throughout the code, WS messages to be sent from the ESP32 to the web server are added to a queue by calling the `send_message` function.
+The job of `message_queue_task` is therefore to dequeue and either send or drop the message, depending on whether or not the ESP32 is connected to the internet (STA).
+Lastly, `websocket_task` performs the main operations as the ESP32 runs.
+It established a WS connection with the web server if the ESP32 is connected to the internet and creates and sends messages, most of the time containing telemetry data, to the server and to each of its own WS clients.
+To handle incoming WS messages from the web server, another function named `websocket_event_handler` is registered as the ESP32 establishes a WS connection with the web server.
+As already mentioned, incoming WS messages from the ESP32s own WS clients are processed similarly in `client_handler`.
 
 
 ## Webserver backend
