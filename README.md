@@ -37,9 +37,9 @@ This function is called regularly as the ESP32 transmits telemetry data to its W
 #### LoRA
 Communication with the LoRa transceiver is achieved using the SPI driver, provided by ESP-IDF.
 Defined from this are two core functions:
-  * `lora_read_register` and `lora_write_register`: These read and write singular bytes to and from specific addresses within the LoRa transceiver.
+  * `spi_read_register` and `spi_write_register`: These read and write singular bytes to and from specific addresses within the LoRa transceiver.
 
-Building on these are functions designed to initialise the LoRa transceiver (see `lora_init` and `lora_configure_defaults`), and transmit/receive radio packets (see `lora_task`, `transmit` and `receive`).
+Building on these are functions designed to initialise the LoRa transceiver (see `spi_init` and `lora_init`), and transmit/receive radio packets (see `lora_task`, `transmit` and `receive`).
 
 
 #### GPS

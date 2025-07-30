@@ -16,7 +16,7 @@ extern QueueHandle_t lora_queue;
 
 static const char* TAG = "LoRa";
 
-void lora_reset() {
+void spi_reset() {
     gpio_set_direction(PIN_NUM_RST, GPIO_MODE_OUTPUT);
     gpio_set_level(PIN_NUM_RST, 0);
     vTaskDelay(pdMS_TO_TICKS(10));
@@ -24,7 +24,7 @@ void lora_reset() {
     vTaskDelay(pdMS_TO_TICKS(10));
 }
 
-uint8_t lora_read_register(uint8_t reg) {
+uint8_t spi_read_register(uint8_t reg) {
     uint8_t rx_data[2];
     uint8_t tx_data[2] = { reg & 0b01111111, 0x00 }; // MSB=0 for read
 
@@ -37,7 +37,7 @@ uint8_t lora_read_register(uint8_t reg) {
     return rx_data[1];
 }
 
-void lora_write_register(uint8_t reg, uint8_t value) {
+void spi_write_register(uint8_t reg, uint8_t value) {
     uint8_t tx_data[2] = { reg | 0b10000000, value }; // MSB=1 for write
 
     spi_transaction_t t = {
@@ -47,7 +47,7 @@ void lora_write_register(uint8_t reg, uint8_t value) {
     spi_device_transmit(lora_spi, &t);
 }
 
-esp_err_t lora_init() {
+esp_err_t spi_init() {
     // SPI bus configuration
     spi_bus_config_t buscfg = {
         .mosi_io_num = PIN_NUM_MOSI,
@@ -67,10 +67,10 @@ esp_err_t lora_init() {
     };
     spi_bus_add_device(LORA_SPI_HOST, &devcfg, &lora_spi);
 
-    lora_reset();
+    spi_reset();
 
     // Read version
-    uint8_t version = lora_read_register(REG_VERSION);
+    uint8_t version = spi_read_register(REG_VERSION);
     ESP_LOGI(TAG, "SX127x version: 0x%02X", version);
     if (version != 0x12) {
         ESP_LOGE(TAG, "SX127x not found");
@@ -79,33 +79,34 @@ esp_err_t lora_init() {
     }
 
     // Enter LoRa + Sleep mode
-    lora_write_register(REG_OP_MODE, MODE_SLEEP | MODE_LORA);
+    spi_write_register(REG_OP_MODE, MODE_SLEEP | MODE_LORA);
     vTaskDelay(pdMS_TO_TICKS(10));
 
     // Enter standby
-    lora_write_register(REG_OP_MODE, MODE_STDBY | MODE_LORA);
+    spi_write_register(REG_OP_MODE, MODE_STDBY | MODE_LORA);
     vTaskDelay(pdMS_TO_TICKS(10));
 
-    ESP_LOGI(TAG, "SX127x initialized");
-
-    lora_configure_defaults();
     gpio_set_direction(PIN_NUM_DIO0, GPIO_MODE_INPUT);
+
+    ESP_LOGI(TAG, "SX127x initialized");
 
     return ESP_OK;
 }
 
-void lora_configure_defaults() {
+void lora_init() {
+    spi_init();
+
     // Set carrier frequency
     uint64_t frf = ((uint64_t)(LORA_FREQ * 1E6) << 19) / 32000000;
-    lora_write_register(REG_FRF_MSB, (uint8_t)(frf >> 16));
-    lora_write_register(REG_FRF_MID, (uint8_t)(frf >> 8));
-    lora_write_register(REG_FRF_LSB, (uint8_t)(frf >> 0));
+    spi_write_register(REG_FRF_MSB, (uint8_t)(frf >> 16));
+    spi_write_register(REG_FRF_MID, (uint8_t)(frf >> 8));
+    spi_write_register(REG_FRF_LSB, (uint8_t)(frf >> 0));
 
     // Set LNA gain to maximum
-    lora_write_register(REG_LNA, 0b00100011);  // LNA_MAX_GAIN | LNA_BOOST
+    spi_write_register(REG_LNA, 0b00100011);  // LNA_MAX_GAIN | LNA_BOOST
 
     // Enable AGC (bit 2 of RegModemConfig3)
-    lora_write_register(REG_MODEM_CONFIG_3,                                                                    // bits:
+    spi_write_register(REG_MODEM_CONFIG_3,                                                                    // bits:
         (0b00001111 & 0)                                                                               << 4 |  //  7-4
         (0b00000001 & (LORA_LDRO | (calculate_symbol_length(LORA_SF, LORA_BW) > 16.0 ? true : false))) << 3 |  //  3
         (0b00000001 & 1)                                                                               << 2 |  //  2    AGC on
@@ -114,13 +115,13 @@ void lora_configure_defaults() {
 
     // Configure modem parameters:
     //  bandwidth, coding rate, header
-    lora_write_register(REG_MODEM_CONFIG_1,  // bits:
+    spi_write_register(REG_MODEM_CONFIG_1,  // bits:
         (0b00001111 & LORA_BW)     << 4 |    //  7-4
         (0b00000111 & LORA_CR)     << 1 |    //  3-1
         (0b00000001 & LORA_HEADER)           //  0
     );
     //  spreading factor, cyclic redundancy check
-    lora_write_register(REG_MODEM_CONFIG_2,     // bits:
+    spi_write_register(REG_MODEM_CONFIG_2,     // bits:
         (0b00001111 & LORA_SF)          << 4 |  //  7-4
         (0b00000001 & LORA_Tx_CONT)     << 3 |  //  3
         (0b00000001 & LORA_Rx_PAYL_CRC) << 2 |  //  2
@@ -128,18 +129,18 @@ void lora_configure_defaults() {
     );  // SF7, TxContinuousMode=0, CRC on
 
     // Preamble length (8 bytes = 0x0008)
-    lora_write_register(REG_PREAMBLE_MSB, 0x00);
-    lora_write_register(REG_PREAMBLE_LSB, 0x08);
+    spi_write_register(REG_PREAMBLE_MSB, 0x00);
+    spi_write_register(REG_PREAMBLE_LSB, 0x08);
 
     // Set output power to 13 dBm using PA_BOOST
-    lora_write_register(REG_PA_CONFIG,           // bits:
+    spi_write_register(REG_PA_CONFIG,           // bits:
         (0b00000001 & 1)                 << 7 |  // 7   PA BOOST
         (0b00000111 & 0x04)              << 4 |  // 6-4
         (0b00001111 & LORA_OUTPUT_POWER)
     );
 
-    if (LORA_POWER_BOOST) lora_write_register(REG_PA_DAC, 0x87);
-    else lora_write_register(REG_PA_DAC, 0x84);
+    if (LORA_POWER_BOOST) spi_write_register(REG_PA_DAC, 0x87);
+    else spi_write_register(REG_PA_DAC, 0x84);
 
     ESP_LOGI(TAG, "SX127x configured to RadioHead defaults");
 }
@@ -587,14 +588,14 @@ void receive(size_t* full_message_length, bool* chunked) {
 
     // wait for RX done (DIO0 goes high)
     if (gpio_get_level(PIN_NUM_DIO0) == 1) {
-        uint8_t irq_flags = lora_read_register(REG_IRQ_FLAGS);
+        uint8_t irq_flags = spi_read_register(REG_IRQ_FLAGS);
         if (irq_flags & 0x40) {  // RX_DONE
-            uint8_t len = lora_read_register(0x13);  // RX bytes
-            uint8_t fifo_rx_current = lora_read_register(0x10);
-            lora_write_register(REG_FIFO_ADDR_PTR, fifo_rx_current);
+            uint8_t len = spi_read_register(0x13);  // RX bytes
+            uint8_t fifo_rx_current = spi_read_register(0x10);
+            spi_write_register(REG_FIFO_ADDR_PTR, fifo_rx_current);
 
             for (int i = 0; i < len; i++)
-                buffer[i] = lora_read_register(0x00); // 0x00 = REG_FIFO ?
+                buffer[i] = spi_read_register(0x00); // 0x00 = REG_FIFO ?
 
 
             if (!*chunked) {
@@ -603,7 +604,7 @@ void receive(size_t* full_message_length, bool* chunked) {
                 }
                 else {
                     // bogus message received
-                    lora_write_register(REG_IRQ_FLAGS, 0b11111111);
+                    spi_write_register(REG_IRQ_FLAGS, 0b11111111);
                     return;
                 }
             } else if (*chunked && buffer[len - 1] == FRAME_END) *chunked = false;
@@ -611,7 +612,7 @@ void receive(size_t* full_message_length, bool* chunked) {
             *full_message_length += len;
 
             if (!*chunked) {
-                uint8_t rssi_raw = lora_read_register(0x1A);
+                uint8_t rssi_raw = spi_read_register(0x1A);
                 int rssi_dbm = -157 + rssi_raw;
 
                 uint8_t decoded_payload[*full_message_length];
@@ -699,36 +700,36 @@ void receive(size_t* full_message_length, bool* chunked) {
         }
 
         // Clear IRQ flags again
-        lora_write_register(REG_IRQ_FLAGS, 0b11111111);
+        spi_write_register(REG_IRQ_FLAGS, 0b11111111);
     }
 }
 
 void execute_transmission(uint8_t* message, size_t n_bytes) {
-    lora_write_register(REG_OP_MODE, 0b10000001); // LoRa + standby
+    spi_write_register(REG_OP_MODE, 0b10000001); // LoRa + standby
 
     // set DIO0 = TxDone
-    lora_write_register(REG_DIO_MAPPING_1, 0b01000000); // bits 7-6 for DIO0
+    spi_write_register(REG_DIO_MAPPING_1, 0b01000000); // bits 7-6 for DIO0
 
-    lora_write_register(REG_FIFO_ADDR_PTR, 0x00); // reset FIFO pointer to base address
+    spi_write_register(REG_FIFO_ADDR_PTR, 0x00); // reset FIFO pointer to base address
 
     // write payload to FIFO
     for (int i = 0; i < n_bytes; i++)
-        lora_write_register(REG_FIFO, message[i]);
+        spi_write_register(REG_FIFO, message[i]);
 
-    lora_write_register(REG_PAYLOAD_LENGTH, n_bytes);
+    spi_write_register(REG_PAYLOAD_LENGTH, n_bytes);
 
-    lora_write_register(REG_IRQ_FLAGS, 0b11111111); // clear all IRQ flags
+    spi_write_register(REG_IRQ_FLAGS, 0b11111111); // clear all IRQ flags
 
-    lora_write_register(REG_OP_MODE, 0b10000011); // LoRa + TX mode
+    spi_write_register(REG_OP_MODE, 0b10000011); // LoRa + TX mode
 
     // wait for TX done (DIO0 goes high)
     while (gpio_get_level(PIN_NUM_DIO0) == 0)
         vTaskDelay(pdMS_TO_TICKS(1));
 
-    lora_write_register(REG_IRQ_FLAGS, 0b00001000);  // clear TxDone
+    spi_write_register(REG_IRQ_FLAGS, 0b00001000);  // clear TxDone
 
     // set DIO0 = RxDone again
-    lora_write_register(REG_DIO_MAPPING_1, 0b00000000); // bits 7-6 for DIO0
+    spi_write_register(REG_DIO_MAPPING_1, 0b00000000); // bits 7-6 for DIO0
 }
 
 void transmit(int64_t* delay_transmission_until) {
@@ -843,16 +844,16 @@ void lora_task(void *pvParameters) {
     int64_t delay_transmission_until = 0; // microseconds
 
     // setup
-    lora_write_register(REG_FIFO_RX_BASE_ADDR, 0x00);
-    lora_write_register(REG_FIFO_TX_BASE_ADDR, 0x00);
-    lora_write_register(REG_FIFO_ADDR_PTR, 0x00);
+    spi_write_register(REG_FIFO_RX_BASE_ADDR, 0x00);
+    spi_write_register(REG_FIFO_TX_BASE_ADDR, 0x00);
+    spi_write_register(REG_FIFO_ADDR_PTR, 0x00);
     // clear IRQ flags
-    lora_write_register(REG_IRQ_FLAGS, 0b11111111);
+    spi_write_register(REG_IRQ_FLAGS, 0b11111111);
 
     // task loop
     while(true) {
         // enter continuous RX mode
-        lora_write_register(REG_OP_MODE, 0b10000101); // LoRa + RX mode
+        spi_write_register(REG_OP_MODE, 0b10000101); // LoRa + RX mode
         receive(&full_message_length, &chunked);
 
         transmit(&delay_transmission_until);
