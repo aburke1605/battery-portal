@@ -64,7 +64,8 @@ The name of the AP depends on various factors including the existence of other E
 Following this, the HTTP server is created in the `start_webserver` function, close to the default configuration provided by ESP-IDF.
 The main purpose of the function is to register URI endpoints to one of the custom handler functions such that the server can respond to incoming requests at that endpoint.
 Most URIs make use of the `file_serve_handler` function which can serve the most common types of files, including `.html`, `.css`, `.js`, `.png` and `.jpeg` files.
-However, there are also additional special use functions.
+These external files are flashed to the ESP32s [SPIFFS](https://docs.espressif.com/projects/esp-idf/en/stable/esp32/api-reference/storage/spiffs.html) file system and mounted right after each boot, where they can later be found at their respective endpoints as requested.
+There are also additional special use handler functions.
 These include;
 `login_handler`, which parses json log-in requests after a device connects to the AP, before either generating a new authentication token in memory or checking if a returning users token already exists;
 `client_handler`, which registers new WS clients should they attempt a connection with an authentication token matching one of those in memory, before listening for incoming WS messages from existing clients;
