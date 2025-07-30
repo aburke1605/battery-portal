@@ -52,9 +52,13 @@ This package makes use of the Wi-Fi capabilities of the ESP32 in multiple ways.
 These are detailed below, in order of their chronological implementation in the project.
 
 #### Local HTTP Server
-The best way to display telemetry data obtained from the BMS to users is via HTTP pages that can be served to any smartphone or other web-capable device.
+The best way to display to users the telemetry data obtained from the BMS is via HTTP pages that can be served to any smartphone or other web-capable device.
 This can be achieved by configuring the ESP32 to act as a Wi-Fi access point (AP) to which devices can connect, while simultaneously running a HTTP server.
 By adding a DNS server, devices are automatically directed to the IP address of the ESP32 http server, mimicking the captive portals you find when connecting to public Wi-Fi hotspots.
+From here HTTP clients are upgraded to WebSocket clients, following a security check, such that the telemetry data is live-updated rather than once per page refresh.
+
+The AP is configured by calling the `wifi_init` function.
+Here the Wi-Fi mode is set to '`APSTA`', a combination of AP and station (STA) modes, to allow the ESP32 to simultaneously connect to other networks while devices connect to it.
 
 
 ## Webserver backend
