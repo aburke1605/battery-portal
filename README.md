@@ -1,7 +1,7 @@
 # Remote Monitoring and Optimisation of Energy Storage Systems
 
 ## ESP32
-Each battery module is interfaced, through a BMS, to an ESP32 microcontroller.
+Each battery module is interfaced, through a battery management system (BMS), to an ESP32 microcontroller.
 The microcontroller is programmed in `C` with the ESP-IDF framework which is provided and maintained by [Espressif](https://docs.espressif.com/projects/esp-idf/en/stable/esp32/index.html).
 The primary aim of each ESP32 is to enable the monitoring and control of each battery module.
 In practice, the microcontroller interacts with the BMS rather than directly with the module.
@@ -15,7 +15,7 @@ The diagram below illustrates the components of each individual battery module, 
 
 ### BMS, LoRa and GPS
 Shown in the zoomed bubble is a breakdown of one battery module unit.
-The battery itself is wired to a battery management system (BMS).
+The battery itself is wired to a BMS.
 At this point we are working with a four-series-cell lithium-ion battery and a [BQ40Z50-R1](https://www.ti.com/product/BQ40Z50) BMS.
 The BMS is then managed by the ESP32 through SMBus communication.
 The ESP32 can also simultaneously communicate with the radio LoRa transceiver through a separate SPI connection.
@@ -47,9 +47,9 @@ Building on these are functions designed to initialise the LoRa transceiver (see
 
 
 
-### Networking
+### Wi-Fi Networking
 This package makes use of the Wi-Fi capabilities of the ESP32 in multiple ways.
-These are detailed below, in order of their chronological implementation in the project.
+These are detailed below.
 
 #### Local HTTP Server
 The best way to display to users the telemetry data obtained from the BMS is via HTTP pages that can be served to any smartphone or other web-capable device.
@@ -72,6 +72,7 @@ These include;
 `client_handler`, which registers new WS clients should they attempt a connection with an authentication token matching one of those in memory, before listening for incoming WS messages from existing clients, typically containing requests to change BMS settings;
 and other simpler handlers to trigger various functions on the ESP32 by sending a HTTP request to the appropriate endpoint.
 
+#### WebSocket Management
 At this point, the set-up of the local HTTP server has been completed.
 What remains is to register [FreeRTOS](https://docs.espressif.com/projects/esp-idf/en/stable/esp32/api-reference/system/freertos.html) tasks, or functions, which run continuously on the ESP32.
 The first of these is `dns_server_task`, which simply responds to all DNS requests made on the HTTP server with the IP address of the ESP32.
