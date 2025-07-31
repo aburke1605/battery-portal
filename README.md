@@ -149,6 +149,24 @@ So that the receiver can identify chunked messages or discard background noise, 
 
 This logic and the reverse is implemented in `encode_frame` and `decode_frame` functions which are called in `transmit` and `receive`, respectively.
 
+An example radio message is as follows:
+```
+byte | data
+-----------
+0    | 0x7E     - FRAME_END
+1    | 0x02     -   total number of binary packets
+2    | 0x00     -   first packet, telemetry data type: 0 == 0x00
+3    | 0x01     -     ESP32 ID: 1 == 0x01
+4    | 0x43     -     battery state of charge: 67% == 0x43
+5    | 0x7D     -     \
+6    | 0x5D     -      battery voltage: 32,000mV == 0x7D00 -> 0x7D5D00
+7    | 0x00     -     /
+8    | 0x02     -   beginning of second packet, request data type: 2 == 0x02
+9    | 0x02     -     ESP32 ID: 2 == 0x02
+10   | 0x03     -     request type: ENUM(reset BMS) -> 3 == 0x03
+11   | 0x7E     - FRAME_END
+```
+
 
 ## Web Server Backend
 <placeholder>
