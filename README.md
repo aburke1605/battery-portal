@@ -142,6 +142,12 @@ A radio transmission containing $N$ individual messages therefore can not be tri
 To remove this ambiguity between transmitter and receiver, the first byte of each kind of binary packet defines the packet `type`.
 With knowledge of this, the receiver can deduce the number of bytes within the message that constitute the current packet, as well as the packet type.
 As a fail-safe, the first byte of the message is set to the total number of packets contained within the message.
+So that the receiver can identify chunked messages or discard background noise, each message is encoded as follows:
+  * The message is 'framed' by adding `FRAME_END` (`0x7E`) bytes to the beginning and end.
+  * Any naturally occuring `0x7E` bytes in the binary packet are 'escaped' by the `FRAME_ESC` (`0x7D`) and `ESC_END` (`0x5E`) bytes: `0x7E -> 0x7D 0x5E`
+  * Any naturally occuring `0x7D` bytes in the binary packet are 'escaped' again by `FRAME_ESC` but with the `ESC_ESC` (`0x5D`) byte instead: `0x7D -> 0x7D 0x5D`
+
+This logic and the reverse is implemented in `encode_frame` and `decode_frame` functions which are called in `transmit` and `receive`, respectively.
 
 
 ## Web Server Backend
