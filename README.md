@@ -14,7 +14,6 @@ The diagram below illustrates the components of each individual battery module, 
 
 
 ### BMS, LoRa and GPS
-Shown in the zoomed bubble is a breakdown of one battery module unit.
 The battery itself is wired to a BMS.
 At this point we are working with a four-series-cell lithium-ion battery and a [BQ40Z50-R1](https://www.ti.com/product/BQ40Z50) BMS.
 The BMS is then managed by the ESP32 through SMBus communication.
@@ -149,7 +148,7 @@ So that the receiver can identify chunked messages or discard background noise, 
 
 This logic and the reverse is implemented in `encode_frame` and `decode_frame` functions which are called in `transmit` and `receive`, respectively.
 
-An example radio message is as follows:
+A simplified example radio message is as follows:
 ```
 byte | data
 -----------
