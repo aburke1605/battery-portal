@@ -112,8 +112,37 @@ This network is referred to as a 'MESH', with the following logic:
 
 
 
-## Webserver backend
+### Radio Communication
+When an ESP32 is not connected to the internet, it can still communicate with the web server via radio transmission.
+To achieve this, a dedicated ESP32 known as the 'HUB' must be permanently situated somewhere it can receive and transmit radio messages whilst maintaining an internet connection to communicate with the web server.
+As alluded to in the previous section, MESH networks of battery units that are without internet connection are the ESP32s on the other end of radio communication with the HUB.
+Specifically, since all nodes in a MESH already share their telemetry data with the ROOT, radio communication is solely between the HUB and ROOTs.
+There are two core radio functions, `receive` and `transmit`, whose functionalities differ depending on whether the ESP32 is configured as the HUB or a ROOT.
+
+The `receive` function waits for an incoming radio transmission at the configured frequency (868 MHz), where a bit flip on the LoRa transceiver module is detected on the ESP32 through SPI communication.
+The number of bytes in the radio message may be longer than the maximum number per payload, hence the function allows for message 'chunks' to be received consecutively and will combine these to reconstruct the original message.
+On the HUB, a received message will originate from a ROOT transmission containing telemetry data.
+The HUB therefore simply forwards the received message to the web server via its WS connection, using `send_message`.
+On ROOTs, received messages originate from the HUB and will contain requests made by users of the web portal online.
+The ROOT therefore parses the request, determining which member of the MESH it is for (if any), then either executing the request if it is for the ROOT itself or forwarding it to the correct node via WS message.
+
+The logic of the `transmit` function follows suit.
+If the HUB receives a WS message from the web server, this is forwarded to all in-range ROOTs via radio transmission.
+The design of the online portal (see sections on <b>Web Server Backend</b> and <b>UI Frontend</b>) ensures that when a user sends a request to a given battery module, this goes either directly to the ESP32 if it is connected to the internet, or to the HUB where it is then forwarded by radio if not.
+The HUB itself is not visible or mentioned on the portal.
+ROOTs instead transmit the telemetry data of their own battery unit as well as that of each node in its MESH which it has received via WS messages.
+As in the `receive` function, the `transmit` function deals with long messages by dividing them into chunks and transmitting consecutively.
+
+Both `receive` and `transmit` are called within a FreeRTOS function named `lora_task`.
+Since there are duty cycle laws in most countries around the fair usage of public radio frequencies, time delays sepearate consecutive radio transmissions, the length of which a function of the number of bytes in the transmitted message.
+Calling `receive` is therefore the default action of `lora_task`.
+Only once the previous delay has been served is `transmit` called again.
+
+
+
+
+## Web Server Backend
 <placeholder>
 
-## UI frontend
+## UI Frontend
 <placeholder>
