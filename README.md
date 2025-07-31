@@ -130,15 +130,18 @@ The logic of the `transmit` function follows suit.
 If the HUB receives a WS message from the web server, this is forwarded to all in-range ROOTs via radio transmission.
 The design of the online portal (see sections on <b>Web Server Backend</b> and <b>UI Frontend</b>) ensures that when a user sends a request to a given battery module, this goes either directly to the ESP32 if it is connected to the internet, or to the HUB where it is then forwarded by radio if not.
 The HUB itself is not visible or mentioned on the portal.
-ROOTs instead transmit the telemetry data of their own battery unit as well as that of each node in its MESH which it has received via WS messages.
+ROOTs transmit the telemetry data of their own battery unit as well as that of each node in its MESH which it has received via WS messages.
 As in the `receive` function, the `transmit` function deals with long messages by dividing them into chunks and transmitting consecutively.
 
 Both `receive` and `transmit` are called within a FreeRTOS function named `lora_task`.
 Since there are duty cycle laws in most countries around the fair usage of public radio frequencies, time delays sepearate consecutive radio transmissions, the length of which a function of the number of bytes in the transmitted message.
-Calling `receive` is therefore the default action of `lora_task`.
-Only once the previous delay has been served is `transmit` called again.
-
-
+Calling `receive` is therefore the default action of `lora_task`, and only once the previous delay has elapsed is `transmit` called again.
+To minimise this necessary delay between consecutive messages, the json format used to exchange WS messages between server and client is converted to and from custom-defined binary packets, using functions named `json_to_binary` and `binary_to_json`.
+Different packets are defined for different types of message, e.g. telemetry data in `radio_data_packet` or a request in `radio_request_packet`.
+A radio transmission containing $N$ individual messages therefore can not be trivially divided into $N$ equal binary packets, since packet types are generally of unequal length.
+To remove this ambiguity between transmitter and receiver, the first byte of each kind of binary packet defines the packet `type`.
+With knowledge of this, the receiver can deduce the number of bytes within the message that constitute the current packet, as well as the packet type.
+As a fail-safe, the first byte of the message is set to the total number of packets contained within the message.
 
 
 ## Web Server Backend
