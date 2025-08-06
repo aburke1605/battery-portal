@@ -102,8 +102,10 @@ GPRMC* get_gps() {
                         strncpy(line, &((char*)buff)[i], length);
                         line[length] = '\0';
                         
-                        if (!validate_nmea_checksum(line))
+                        if (!validate_nmea_checksum(line)) {
                             ESP_LOGE(TAG, "Error in checksum!");
+                            return NULL;
+                        }
 
                         char type[6];
                         strncpy(type, &line[1], sizeof(type) - 1);
