@@ -137,10 +137,3 @@ GPRMC* get_gps() {
 
     return NULL;
 }
-
-void gps_task(void *pvParameters) {
-    while (true) {
-        get_gps();
-        vTaskDelay(pdMS_TO_TICKS(1000));
-    }
-}

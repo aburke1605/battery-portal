@@ -26,6 +26,4 @@ GPRMC* parse_gprmc(char* gprmc);
 
 GPRMC* get_gps();
 
-void gps_task(void *pvParameters);
-
 #endif
