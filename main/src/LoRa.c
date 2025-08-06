@@ -195,6 +195,22 @@ size_t json_to_binary(uint8_t* binary_message, cJSON* json_array) {
             }
             cJSON *obj;
 
+            obj = cJSON_GetObjectItem(content, "t");
+            if (obj) packet->t = (uint8_t)obj->valuedouble;
+            obj = NULL;
+
+            obj = cJSON_GetObjectItem(content, "d");
+            if (obj) packet->d = (uint8_t)obj->valueint;
+            obj = NULL;
+
+            obj = cJSON_GetObjectItem(content, "lat");
+            if (obj) packet->lat = (uint8_t)obj->valuedouble;
+            obj = NULL;
+
+            obj = cJSON_GetObjectItem(content, "lon");
+            if (obj) packet->lon = (uint8_t)obj->valuedouble;
+            obj = NULL;
+
             obj = cJSON_GetObjectItem(content, "Q");
             if (obj) packet->Q = (uint8_t)obj->valueint;
             obj = NULL;
@@ -481,6 +497,10 @@ void binary_to_json(uint8_t* binary_message, cJSON* json_array) {
                 cJSON_Delete(json_array);
                 return;
             }
+            cJSON_AddNumberToObject(content, "t", packet->t);
+            cJSON_AddNumberToObject(content, "d", packet->d);
+            cJSON_AddNumberToObject(content, "lat", packet->lat);
+            cJSON_AddNumberToObject(content, "lon", packet->lon);
             cJSON_AddNumberToObject(content, "Q", packet->Q);
             cJSON_AddNumberToObject(content, "H", packet->H);
             cJSON_AddNumberToObject(content, "V", packet->V);
