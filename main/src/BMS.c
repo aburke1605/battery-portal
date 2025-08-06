@@ -139,13 +139,13 @@ char* get_data(bool local) {
         cJSON_AddNumberToObject(data, "t", gprmc->time);
         cJSON_AddNumberToObject(data, "d", gprmc->date);
         cJSON_AddNumberToObject(data, "lat", gprmc->latitude);
-        cJSON_AddNumberToObject(data, "long", gprmc->longitude);
+        cJSON_AddNumberToObject(data, "lon", gprmc->longitude);
         free(gprmc);
     } else {
         cJSON_AddNumberToObject(data, "t", 0);
         cJSON_AddNumberToObject(data, "d", 0);
         cJSON_AddNumberToObject(data, "lat", 0);
-        cJSON_AddNumberToObject(data, "long", 0);
+        cJSON_AddNumberToObject(data, "lon", 0);
     }
 
     uint8_t data_SBS[2] = {0};
