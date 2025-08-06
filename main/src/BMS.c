@@ -3,6 +3,7 @@
 #include "include/config.h"
 #include "include/global.h"
 #include "include/I2C.h"
+#include "include/GPS.h"
 #include "include/utils.h"
 
 #include <esp_log.h>
@@ -132,6 +133,20 @@ int8_t get_sealed_status() {
 char* get_data(bool local) {
     // create JSON object with sensor data
     cJSON *data = cJSON_CreateObject();
+
+    GPRMC* gprmc = get_gps();
+    if (gprmc) {
+        cJSON_AddNumberToObject(data, "t", gprmc->time);
+        cJSON_AddNumberToObject(data, "d", gprmc->date);
+        cJSON_AddNumberToObject(data, "lat", gprmc->latitude);
+        cJSON_AddNumberToObject(data, "long", gprmc->longitude);
+        free(gprmc);
+    } else {
+        cJSON_AddNumberToObject(data, "t", 0);
+        cJSON_AddNumberToObject(data, "d", 0);
+        cJSON_AddNumberToObject(data, "lat", 0);
+        cJSON_AddNumberToObject(data, "long", 0);
+    }
 
     uint8_t data_SBS[2] = {0};
     uint8_t address[2] = {0};
