@@ -80,6 +80,7 @@
 
 #define GPS_UART_NUM UART_NUM_1
 #define GPS_BUFF_SIZE (1024)
+#define GPS_GPIO_NUM_32 32
 #define GPS_GPIO_NUM_33 33
 
 #define UTILS_ID_LENGTH 20
