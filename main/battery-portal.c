@@ -55,6 +55,7 @@ void app_main(void) {
     if (SCAN_I2C) device_scan();
 
     uart_init();
+    gps_reset();
 
     if (!LORA_IS_RECEIVER) {
         // do a BMS reset on boot
