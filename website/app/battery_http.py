@@ -100,16 +100,17 @@ def update_database(data_list):
         # Dynamic create battery data table
         data_table = create_battery_data_table(esp_id)
         try:
-            stmt = insert(data_table).values(
-                timestamp=datetime.now(),
-                soc=data['Q'],
-                temperature=data['aT']/10,
-                voltage=data['V']/10,
-                current=data['I']/10
-            )
-            DB.session.execute(stmt)
-            DB.session.commit()
-            print(f"Inserted new battery_data with ID: {esp_id}")
+            if data['I'] != 0:
+                stmt = insert(data_table).values(
+                    timestamp=datetime.now(),
+                    soc=data['Q'],
+                    temperature=data['aT']/10,
+                    voltage=data['V']/10,
+                    current=data['I']/10
+                )
+                DB.session.execute(stmt)
+                DB.session.commit()
+                print(f"Inserted new battery_data with ID: {esp_id}")
         except Exception as e:
             DB.session.rollback()
             print(f"Error processing battery_data ID {esp_id}: {e}")
