@@ -144,8 +144,8 @@ char* get_data(bool local) {
     } else {
         cJSON_AddNumberToObject(data, "t", 0);
         cJSON_AddNumberToObject(data, "d", 0);
-        cJSON_AddNumberToObject(data, "lat", 0);
-        cJSON_AddNumberToObject(data, "lon", 0);
+        cJSON_AddNumberToObject(data, "lat", 53.40680302139558);
+        cJSON_AddNumberToObject(data, "lon", -2.968465812849439);
     }
 
     uint8_t data_SBS[2] = {0};
