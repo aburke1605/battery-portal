@@ -16,9 +16,17 @@ void uart_init() {
         .flow_ctrl = UART_HW_FLOWCTRL_DISABLE
     };
 
-    ESP_ERROR_CHECK(uart_driver_install(GPS_UART_NUM, GPS_BUFF_SIZE * 2, 0, 0, NULL, 0));
+    ESP_ERROR_CHECK(uart_driver_install(GPS_UART_NUM, GPS_BUFF_SIZE, 0, 0, NULL, 0));
     ESP_ERROR_CHECK(uart_param_config(GPS_UART_NUM, &uart_config));
     ESP_ERROR_CHECK(uart_set_pin(GPS_UART_NUM, UART_PIN_NO_CHANGE, GPS_GPIO_NUM_33, UART_PIN_NO_CHANGE, UART_PIN_NO_CHANGE)); // TX, RX
+}
+
+void gps_reset() {
+    const char *cold_start_cmd = "$PMTK104*37\r\n";
+    uart_write_bytes(GPS_UART_NUM, cold_start_cmd, strlen(cold_start_cmd));
+    printf("sent reset\n");
+    vTaskDelay(pdMS_TO_TICKS(30000));
+    printf("time up!\n");
 }
 
 bool validate_nmea_checksum(const char *sentence) {
