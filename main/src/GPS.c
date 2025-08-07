@@ -19,14 +19,15 @@ void uart_init() {
     ESP_ERROR_CHECK(uart_driver_install(GPS_UART_NUM, GPS_BUFF_SIZE, 0, 0, NULL, 0));
     ESP_ERROR_CHECK(uart_param_config(GPS_UART_NUM, &uart_config));
     ESP_ERROR_CHECK(uart_set_pin(GPS_UART_NUM, GPS_GPIO_NUM_32, GPS_GPIO_NUM_33, UART_PIN_NO_CHANGE, UART_PIN_NO_CHANGE)); // TX, RX
+
+    gps_reset();
 }
 
 void gps_reset() {
     const char *cold_start_cmd = "$PMTK104*37\r\n";
     uart_write_bytes(GPS_UART_NUM, cold_start_cmd, strlen(cold_start_cmd));
-    printf("sent reset\n");
-    vTaskDelay(pdMS_TO_TICKS(30000));
-    printf("time up!\n");
+    if (VERBOSE) ESP_LOGI(TAG, "Sent GPS reset");
+    vTaskDelay(pdMS_TO_TICKS(2500));
 }
 
 bool validate_nmea_checksum(const char *sentence) {
