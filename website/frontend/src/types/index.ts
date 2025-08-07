@@ -30,6 +30,10 @@ export interface BatteryData {
   cell4_charge: number;
   last_updated_time: string;
   children?: BatteryData[];
+  t: number;
+  d: number;
+  lat: number;
+  lon: number;
 }
 
 export const parseBatteryData = (
@@ -66,6 +70,10 @@ export const parseBatteryData = (
   cell3_charge: raw?.Q3 || 0,
   cell4_charge: raw?.Q4 || 0,
   last_updated_time: raw?.last_updated_time,
+  t: raw?.t || 0,
+  d: raw?.d || 0,
+  lat: raw?.lat || 0,
+  lon: raw?.lon || 0,
 });
 
 // Alert Data Types
