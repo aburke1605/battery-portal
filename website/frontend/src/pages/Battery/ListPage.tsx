@@ -17,32 +17,6 @@ import { useNavigate } from 'react-router-dom';
 //   }
 // }
 
-/*
-// Add this interface for map markers
-interface MapMarker {
-  id: string
-  position: {
-    lat: number
-    lng: number
-  }
-  title: string
-  status: string
-}
-
-// Update the map markers to be more spread across the UK
-const mapMarkers: MapMarker[] = [
-  {
-    id: 'bms_002',
-    position: {
-      lat: 53.40680302139558,
-      lng: -2.968465812849439
-    },
-    title: 'bms_02',
-    status: 'active'
-  },
-]
-*/
-
 export default function BatteryPage() {
   const itemsPerPage = 4
   const [currentPage, setCurrentPage] = useState(1)
@@ -124,7 +98,6 @@ export default function BatteryPage() {
   }
 
   const addMarkers = (map: google.maps.Map) => {
-    // const newMarkers = mapMarkers.map(marker => {
     const newMarkers = currentBatteries.map((battery: BatteryData) => {
       const battery_position = {
         lat: battery.lat,
