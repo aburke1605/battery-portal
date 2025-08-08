@@ -88,7 +88,9 @@ def update_database(data_list):
                     name=esp_id,
                     temperature=data['aT']/10,
                     voltage=data['V']/10,
-                    last_updated_time = datetime.now()
+                    last_updated_time = datetime.now(),
+                    lat=data['lat'],
+                    lon=data['lon'],
                 )
                 DB.session.add(battery)
                 print(f"Inserted new battery with ID: {esp_id}")
@@ -106,7 +108,9 @@ def update_database(data_list):
                     soc=data['Q'],
                     temperature=data['aT']/10,
                     voltage=data['V']/10,
-                    current=data['I']/10
+                    current=data['I']/10,
+                    lat=data['lat'],
+                    lon=data['lon'],
                 )
                 DB.session.execute(stmt)
                 DB.session.commit()
@@ -133,6 +137,8 @@ def create_battery_data_table(esp_id, metadata=None):
             Column('temperature', Float, nullable=False),
             Column('voltage', Float, nullable=False),
             Column('current', Float, nullable=False),
+            Column('lat', Float, nullable=False),
+            Column('lon', Float, nullable=False),
         )
         data_table.create(bind=DB.engine)
         print(f"Created table: {table_name}")
