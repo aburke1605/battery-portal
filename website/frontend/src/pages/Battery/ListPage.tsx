@@ -119,15 +119,16 @@ export default function BatteryPage() {
               <h3 class="font-semibold text-lg">${battery.esp_id}</h3>
               <p class="text-sm text-gray-600 mt-1">Status: ${battery.status}</p>
               <div class="mt-2 text-sm">
-                <p>Capacity: ${battery.esp_id === 'b4' ? '85%' : '90%'}</p>
-                <p>Connected Units: ${battery.esp_id === 'b4' ? '12' : '8'}</p>
-                <p>Last Maintenance: ${battery.esp_id === 'b4' ? '2 days ago' : '1 week ago'}</p>
+                <p>SoC: ${battery.charge} %</p>
+                <p>Health: ${battery.health} %</p>
+                <p>Latitude: ${battery.lat}</p>
+                <p>Longitude: ${battery.lon}</p>
               </div>
               <div class="mt-3 pt-3 border-t border-gray-200">
                 <a 
-                  href="/battery/${battery.esp_id}" 
+                  href="/admin#/battery-detail?esp_id=${battery.esp_id}"
                   class="inline-block w-full text-center px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded hover:bg-blue-700 transition-colors"
-                  onclick="window.location.href='/battery/${battery.esp_id}'; return false;"
+                  onclick="window.location.href='/admin#/battery-detail?esp_id=${battery.esp_id}'; return false;"
                 >
                   View Details
                 </a>

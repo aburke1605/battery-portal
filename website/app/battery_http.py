@@ -20,6 +20,8 @@ class BatteryInfo(DB.Model):
 
     id = DB.Column(DB.String(64), primary_key=True)
     name = DB.Column(DB.String(100), nullable=False)
+    soc = DB.Column(DB.Integer, nullable=True)
+    health = DB.Column(DB.Integer, nullable=True)
     temperature = DB.Column(DB.Float, nullable=True)
     voltage = DB.Column(DB.Float, nullable=True)
     last_updated_time = DB.Column(DB.DateTime, default=datetime.now, onupdate=datetime.now, nullable=False)
@@ -75,6 +77,8 @@ def update_database(data_list):
             if battery:
                 # Update existing record
                 battery.name=esp_id
+                battery.soc=data['Q']
+                battery.health=data['H']
                 battery.temperature=data['aT']/10
                 battery.voltage=data['V']/10
                 battery.parent_id = None if i == 0 else parent_id
@@ -86,6 +90,8 @@ def update_database(data_list):
                 battery = BatteryInfo(
                     id=esp_id,
                     name=esp_id,
+                    soc=data['Q'],
+                    health=data['H'],
                     temperature=data['aT']/10,
                     voltage=data['V']/10,
                     last_updated_time = datetime.now(),
@@ -106,6 +112,7 @@ def update_database(data_list):
                 stmt = insert(data_table).values(
                     timestamp=datetime.now(),
                     soc=data['Q'],
+                    health=data['H'],
                     temperature=data['aT']/10,
                     voltage=data['V']/10,
                     current=data['I']/10,
@@ -134,6 +141,7 @@ def create_battery_data_table(esp_id, metadata=None):
             Column('id', Integer, primary_key=True, autoincrement=True),  # Auto-incremented PK
             Column('timestamp', DateTime, nullable=False, default=datetime.now),
             Column('soc', Integer, nullable=False),
+            Column('health', Integer, nullable=False),
             Column('temperature', Float, nullable=False),
             Column('voltage', Float, nullable=False),
             Column('current', Float, nullable=False),
@@ -163,6 +171,8 @@ def build_battery_tree(batteries):
             'last_updated_time': b.last_updated_time.isoformat(),
             'lat': b.lat,
             'lon': b.lon,
+            'charge': b.soc,
+            'health': b.health,
             'ambient_temperature': b.temperature,
             'voltage': b.voltage,
             'parent_id': b.parent_id,
