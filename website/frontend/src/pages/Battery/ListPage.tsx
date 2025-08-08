@@ -87,7 +87,7 @@ export default function BatteryPage() {
   const getBatteryIcon = (status: string) => {
     const color = getMarkerColor(status)
     return {
-      path: 'M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8zm-1-13h2v6h-2zm0 8h2v2h-2z',
+      path: "M15.67 4H14V2H10V4H8.33C7.6 4 7 4.6 7 5.33v13.33C7 19.4 7.6 20 8.33 20h7.33c.73 0 1.33-.6 1.33-1.33V5.33C17 4.6 16.4 4 15.67 4z",
       fillColor: color,
       fillOpacity: 1,
       strokeColor: '#ffffff',
