@@ -851,12 +851,15 @@ void lora_task(void *pvParameters) {
 
     // task loop
     while(true) {
-        // enter continuous RX mode
-        lora_write_register(REG_OP_MODE, 0b10000101); // LoRa + RX mode
-        receive(&full_message_length, &chunked);
+        // should only run if receiver or ROOT but not connected to Wi-Fi
+        if (LORA_IS_RECEIVER || (is_root && !connected_to_WiFi)) {
+            // enter continuous RX mode
+            lora_write_register(REG_OP_MODE, 0b10000101); // LoRa + RX mode
+            receive(&full_message_length, &chunked);
 
-        transmit(&delay_transmission_until);
-        // contains a delay within, default is still RX mode
+            transmit(&delay_transmission_until);
+            // contains a delay within, default is still RX mode
+        }
 
         vTaskDelay(pdMS_TO_TICKS(10));
     }

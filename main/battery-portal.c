@@ -104,6 +104,15 @@ void app_main(void) {
 
 
     if (!LORA_IS_RECEIVER) {
+        /*
+        TODO:
+            Need something here to turn off or on MESH stuff
+            depending on if the ESP32 is connected to a normal
+            Wi-Fi AP or not
+            If so, LoRa stuff should cease too
+        */
+
+        // MESH stuff
         if (!is_root) {
             TaskParams connect_to_root_params = {.stack_size = 2500, .task_name = "connect_to_root_task"};
             xTaskCreate(&connect_to_root_task, connect_to_root_params.task_name, connect_to_root_params.stack_size, &connect_to_root_params, 4, NULL);
@@ -116,6 +125,7 @@ void app_main(void) {
         }
     }
 
+    // radio stuff
     if (LORA_IS_RECEIVER || is_root) {
         lora_init();
 

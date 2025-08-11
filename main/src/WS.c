@@ -530,8 +530,25 @@ void websocket_task(void *pvParameters) {
                             char* esp_id = esp_id_string();
                             snprintf(message, WS_MESSAGE_MAX_LEN, "{\"type\":\"data\",\"id\":\"%s\",\"content\":%s}", esp_id, data_string);
                             free(esp_id);
-                            send_message(message);
+
+                            cJSON* json_array = cJSON_CreateArray();
+                            if (json_array == NULL) {
+                                ESP_LOGE(TAG, "Failed to create JSON array");
+                                free(message);
+                                return;
+                            }
+                            cJSON *item = cJSON_Parse(message);
+                            if (!item) {
+                                ESP_LOGE(TAG, "Failed to parse JSON");
+                                free(message);
+                                cJSON_Delete(json_array);
+                                return;
+                            }
+                            cJSON_AddItemToArray(json_array, item);
+                            send_message(cJSON_PrintUnformatted(json_array));
+
                             free(message);
+                            cJSON_Delete(json_array);
                         }
                     }
                 }

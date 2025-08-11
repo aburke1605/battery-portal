@@ -98,26 +98,32 @@ def esp_ws(ws):
             message = ws.receive()
             if not message:
                 continue
-            data_list = json.loads(message)
-            # Record Ids for contructing the esp_clitnes
-            if not data_list or len(data_list) == 0:
-                logger.error("Received empty data list from ESP")
-                continue
-            ids = [data["id"] for data in data_list]
-            master_id = ids[0]
-            with lock:
-                esp_clients[master_id] = {'ws': ws, 'ids': ids, 'last_updated': time.time()}
-            # Forward the message to all browser clients
-            for data in data_list:
-                esp_id = data["id"]
-                broadcast(esp_id, data["content"])
-            # Update database
-            with lock:
-                update_database(data_list)
+
             response = {
                 "type": "response",
-                "content": "Ok"
+                "content": "Fail"
             }
+
+            try:
+                data_list = json.loads(message)
+                # Record Ids for contructing the esp_clitnes
+                if not data_list or len(data_list) == 0:
+                    logger.error("Received empty data list from ESP")
+                    continue
+                ids = [data["id"] for data in data_list]
+                master_id = ids[0]
+                with lock:
+                    esp_clients[master_id] = {'ws': ws, 'ids': ids, 'last_updated': time.time()}
+                # Forward the message to all browser clients
+                for data in data_list:
+                    esp_id = data["id"]
+                    broadcast(esp_id, data["content"])
+                # Update database
+                with lock:
+                    update_database(data_list)
+                response["content"] = "Ok"
+            except Exception as e:
+                logger.error(f"ESP WebSocket error in while loop: {e}")
             ws.send(json.dumps(response))
     except Exception as e:
         logger.error(f"ESP WebSocket error: {e}")
