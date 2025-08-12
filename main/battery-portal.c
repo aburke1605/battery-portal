@@ -7,6 +7,7 @@
 #include "include/MESH.h"
 #include "include/LoRa.h"
 #include "include/WS.h"
+#include "include/GPS.h"
 #include "include/utils.h"
 
 #include <esp_log.h>
@@ -52,6 +53,8 @@ void app_main(void) {
     ESP_ERROR_CHECK(i2c_master_init());
     ESP_LOGI("main", "I2C initialized successfully");
     if (SCAN_I2C) device_scan();
+
+    uart_init();
 
     if (!LORA_IS_RECEIVER) {
         // do a BMS reset on boot

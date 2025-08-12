@@ -17,20 +17,6 @@ import { useNavigate } from 'react-router-dom';
 //   }
 // }
 
-// Add this interface for map markers
-interface MapMarker {
-  id: string
-  position: {
-    lat: number
-    lng: number
-  }
-  title: string
-  status: 'active' | 'inactive' | 'maintenance'
-}
-
-// Update the map markers to be more spread across the UK
-const mapMarkers: MapMarker[] = []
-
 export default function BatteryPage() {
   const itemsPerPage = 4
   const [currentPage, setCurrentPage] = useState(1)
@@ -101,7 +87,7 @@ export default function BatteryPage() {
   const getBatteryIcon = (status: string) => {
     const color = getMarkerColor(status)
     return {
-      path: 'M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8zm-1-13h2v6h-2zm0 8h2v2h-2z',
+      path: "M15.67 4H14V2H10V4H8.33C7.6 4 7 4.6 7 5.33v13.33C7 19.4 7.6 20 8.33 20h7.33c.73 0 1.33-.6 1.33-1.33V5.33C17 4.6 16.4 4 15.67 4z",
       fillColor: color,
       fillOpacity: 1,
       strokeColor: '#ffffff',
@@ -112,12 +98,17 @@ export default function BatteryPage() {
   }
 
   const addMarkers = (map: google.maps.Map) => {
-    const newMarkers = mapMarkers.map(marker => {
+    const newMarkers = currentBatteries.map((battery: BatteryData) => {
+      const battery_position = {
+        lat: battery.lat,
+        lng: battery.lon,
+      }
+      console.log(battery_position);
       const markerObj = new google.maps.Marker({
-        position: marker.position,
+        position: battery_position,
         map,
-        title: marker.title,
-        icon: getBatteryIcon(marker.status)
+        title: battery.esp_id,
+        icon: getBatteryIcon(battery.status)
       })
 
       // Add click listener with enhanced info window
@@ -125,18 +116,19 @@ export default function BatteryPage() {
         const infoWindow = new google.maps.InfoWindow({
           content: `
             <div class="p-3 min-w-[200px]">
-              <h3 class="font-semibold text-lg">${marker.title}</h3>
-              <p class="text-sm text-gray-600 mt-1">Status: ${marker.status}</p>
+              <h3 class="font-semibold text-lg">${battery.esp_id}</h3>
+              <p class="text-sm text-gray-600 mt-1">Status: ${battery.status}</p>
               <div class="mt-2 text-sm">
-                <p>Capacity: ${marker.id === 'b4' ? '85%' : '90%'}</p>
-                <p>Connected Units: ${marker.id === 'b4' ? '12' : '8'}</p>
-                <p>Last Maintenance: ${marker.id === 'b4' ? '2 days ago' : '1 week ago'}</p>
+                <p>SoC: ${battery.charge} %</p>
+                <p>Health: ${battery.health} %</p>
+                <p>Latitude: ${battery.lat}</p>
+                <p>Longitude: ${battery.lon}</p>
               </div>
               <div class="mt-3 pt-3 border-t border-gray-200">
                 <a 
-                  href="/battery/${marker.id}" 
+                  href="/admin#/battery-detail?esp_id=${battery.esp_id}"
                   class="inline-block w-full text-center px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded hover:bg-blue-700 transition-colors"
-                  onclick="window.location.href='/battery/${marker.id}'; return false;"
+                  onclick="window.location.href='/admin#/battery-detail?esp_id=${battery.esp_id}'; return false;"
                 >
                   View Details
                 </a>
