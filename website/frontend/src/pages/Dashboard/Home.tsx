@@ -59,6 +59,8 @@ export default function Home() {
       })
       .catch(err => console.error(err));
   }, []);
+  // to set the displayed battery
+  const [selectedID, setSelectedID] = useState("");
 
   return (
     <>
@@ -94,7 +96,29 @@ export default function Home() {
 
         {/* Live Data */}
         <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 mb-6">
-          <h2 className="text-xl font-semibold text-gray-800 mb-4">Live Data</h2>
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-xl font-semibold text-gray-800">Telemetry data</h2>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1 text-right">
+                Select a device
+              </label>
+              <select
+                value={selectedID}
+                onChange={(e) => setSelectedID(e.target.value)}
+                className="rounded-lg border border-gray-300 bg-white px-3 py-2 text-gray-700 shadow-sm focus:border-indigo-500 focus:ring focus:ring-indigo-200 focus:ring-opacity-50"
+              >
+                <option value="" disabled className="text-center">
+                  -- Choose an ID --
+                </option>
+                {IDs.map((id, idx) => (
+                  <option key={idx} value={id} className="text-center">
+                    {id}
+                  </option>
+                ))}
+              </select>
+            </div>
+          </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 gap-20">
             <div className="bg-gray-50 p-4 rounded-lg">
               <div className="text-sm text-gray-500 mb-1">bms_01</div>
