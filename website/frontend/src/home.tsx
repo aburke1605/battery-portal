@@ -1,14 +1,31 @@
-import { StrictMode } from 'react';
+import { StrictMode, useEffect, useState } from 'react';
 import { createRoot } from 'react-dom/client';
 import './index.css';
 import { Settings } from 'lucide-react';
+import DataChart from './components/charts/DataChart';
+import axios from 'axios';
+import apiConfig from './apiConfig';
 
 function App() {
+  // pick a random esp_id from the battery_info table
+  // so we can display a graph beneath
+  const [id, setID] = useState("unavailable!");
+  useEffect(() => {
+    axios.get(apiConfig.DB_INFO_END_POINT)
+      .then(response => {
+        if (response.data != null) {
+          setID(response.data);
+        }
+      })
+      .catch(err => console.error(err));
+  }, []);
+
+
   return (
     <div className="min-h-screen flex flex-col bg-white">
       {/* Simple Hero */}
       <div className="flex flex-col items-center justify-center flex-1 text-center px-4 bg-gradient-to-b from-gray-50 to-white">
-        <h1 className="text-4xl md:text-5xl font-bold text-gray-900 mb-6">
+        <h1 className="text-4xl md:text-5xl font-bold text-blue-600 mb-6">
           Battery Management System Portal
         </h1>
         <p className="text-lg text-gray-600 max-w-xl mb-8">
@@ -16,11 +33,34 @@ function App() {
         </p>
         <a
           href="/admin"
-          className="inline-flex items-center bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg shadow-lg transition-colors duration-200"
+          className="inline-flex items-center bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg shadow-lg transition-colors duration-200 mb-18"
         >
           <Settings className="h-5 w-5 mr-2 animate-pulse" />
           <span className="font-medium">BMS Portal</span>
         </a>
+
+        <div className="bg-blue-600/5 rounded-lg p-6 mb-4">
+          <h1 className="text-xl md:text-2xl font-bold text-gray-900 mb-4">
+            recent telemetry
+          </h1>
+          <div className="mx-auto grid grid-cols-1 gap-4 sm:grid-cols-2 max-w-4xl mb-4">
+            <div className="w-full aspect-[5/3]">
+              <DataChart esp_id={id} column="soc" />
+            </div>
+            <div className="w-full aspect-[5/3]">
+              <DataChart esp_id={id} column="temperature" />
+            </div>
+            <div className="w-full aspect-[5/3]">
+              <DataChart esp_id={id} column="voltage" />
+            </div>
+            <div className="w-full aspect-[5/3]">
+              <DataChart esp_id={id} column="current" />
+            </div>
+          </div>
+          <div className="mx-auto max-w-4xl text-center">
+            <p className="text-lg text-gray-600">{id}</p>
+          </div>
+        </div>
       </div>
 
       {/* Footer */}
