@@ -40,7 +40,7 @@ const DataChart: React.FC<DataChartProps> = ({ esp_id, column }) => {
 
   useEffect(() => {
     const fetchData = () => {
-      axios.get(`${apiConfig.DB_END_POINT}?esp_id=${esp_id}&column=${column}`)
+      axios.get(`${apiConfig.DB_DATA_END_POINT}?esp_id=${esp_id}&column=${column}`)
         .then(response => {
           const processedData = response.data.map((point: DataPoint) => ({
             ...point,

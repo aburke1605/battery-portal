@@ -153,3 +153,25 @@ def data():
         logger.error(err)
 
     return jsonify(data)
+
+@db_bp.route('/info')
+def info():
+    data = None
+    try:
+        DB = mysql.connector.connect(**DB_CONFIG)
+        cursor = DB.cursor()
+
+        cursor.execute(f"""
+                                    SELECT id FROM battery_info;
+        """)
+        rows = cursor.fetchall()
+
+        data = rows[0][0]
+
+        cursor.close()
+        DB.close()
+
+    except mysql.connector.Error as err:
+        logger.error(err)
+
+    return jsonify(data)
