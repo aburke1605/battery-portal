@@ -99,6 +99,7 @@ export default function Home() {
           <div className="flex items-center justify-between mb-4">
             <h2 className="text-xl font-semibold text-gray-800">Telemetry data</h2>
 
+            {/* drop down menu */}
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1 text-right">
                 Select a device
@@ -119,53 +120,12 @@ export default function Home() {
               </select>
             </div>
           </div>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 gap-20">
-            <div className="bg-gray-50 p-4 rounded-lg">
-              <div className="text-sm text-gray-500 mb-1">bms_01</div>
-              <div className="h-64 w-full">
-                <DataChart esp_id="bms_01" column="soc" />
-              </div>
-            </div>
-            <div className="bg-gray-50 p-4 rounded-lg">
-              <div className="text-sm text-gray-500 mb-1">bms_02</div>
-              <div className="h-64 w-full">
-                <DataChart esp_id="bms_02" column="soc" />
-              </div>
-            </div>
-            <div className="bg-gray-50 p-4 rounded-lg">
-              <div className="text-sm text-gray-500 mb-1">bms_01</div>
-              <div className="h-64 w-full">
-                <DataChart esp_id="bms_01" column="temperature" />
-              </div>
-            </div>
-            <div className="bg-gray-50 p-4 rounded-lg">
-              <div className="text-sm text-gray-500 mb-1">bms_02</div>
-              <div className="h-64 w-full">
-                <DataChart esp_id="bms_02" column="temperature" />
-              </div>
-            </div>
-            <div className="bg-gray-50 p-4 rounded-lg">
-              <div className="text-sm text-gray-500 mb-1">bms_01</div>
-              <div className="h-64 w-full">
-                <DataChart esp_id="bms_01" column="voltage" />
-              </div>
-            </div>
-            <div className="bg-gray-50 p-4 rounded-lg">
-              <div className="text-sm text-gray-500 mb-1">bms_02</div>
-              <div className="h-64 w-full">
-                <DataChart esp_id="bms_02" column="voltage" />
-              </div>
-            </div>
-            <div className="bg-gray-50 p-4 rounded-lg">
-              <div className="text-sm text-gray-500 mb-1">bms_01</div>
-              <div className="h-64 w-full">
-                <DataChart esp_id="bms_01" column="current" />
-              </div>
-            </div>
-            <div className="bg-gray-50 p-4 rounded-lg">
-              <div className="text-sm text-gray-500 mb-1">bms_02</div>
-              <div className="h-64 w-full">
-                <DataChart esp_id="bms_02" column="current" />
+
+          {/* chart(s) */}
+          <div className="bg-gray-50 rounded-lg p-6 mb-4">
+            <div className="mx-auto grid grid-cols-1 gap-4 sm:grid-cols-2 max-w-4xl mb-4">
+              <div className="w-full aspect-[5/3]">
+                <DataChart esp_id={selectedID} column="soc" />
               </div>
             </div>
           </div>
