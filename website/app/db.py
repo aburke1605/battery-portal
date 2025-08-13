@@ -110,6 +110,7 @@ def execute_sql():
 @db_bp.route('/data')
 def data():
     esp_id = request.args.get("esp_id")
+    table = f"battery_data_{esp_id}"
     column = request.args.get("column")
 
     data = []
@@ -120,7 +121,7 @@ def data():
         cursor.execute(f"""
                                     SELECT * FROM (
                                         SELECT timestamp, {column}
-                                        FROM {esp_id}
+                                        FROM {table}
                                         ORDER BY timestamp DESC
                                         LIMIT 250
                                     ) sub
