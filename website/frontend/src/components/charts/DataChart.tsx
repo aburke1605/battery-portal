@@ -54,7 +54,7 @@ const DataChart: React.FC<DataChartProps> = ({ esp_id, column }) => {
     fetchData(); // fetch immediately
     const interval = setInterval(fetchData, 5_000); // refresh every five seconds
     return () => clearInterval(interval); // clean-up on unmount
-  }, [column]); // re-fetch if column changes(????)
+  }, [esp_id, column]); // re-fetch if column changes(????) OR ESP_ID!!
 
   return (
     <div className="p-4 bg-white shadow rounded-lg">
