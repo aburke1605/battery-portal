@@ -11,10 +11,10 @@ function App() {
   // so we can display a graph beneath
   const [id, setID] = useState("unavailable!");
   useEffect(() => {
-    axios.get(apiConfig.DB_INFO_END_POINT)
+    axios.get(apiConfig.DB_ID_END_POINT)
       .then(response => {
         if (response.data != null) {
-          setID(response.data);
+          setID(response.data[0]); // just take the first one
         }
       })
       .catch(err => console.error(err));

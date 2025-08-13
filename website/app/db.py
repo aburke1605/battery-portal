@@ -11,6 +11,8 @@ from flask_security import roles_required
 import mysql.connector
 import datetime
 
+import numpy as np
+
 db_bp = Blueprint('db_bp', __name__, url_prefix='/db')
 
 # Create DB instance
@@ -154,9 +156,9 @@ def data():
 
     return jsonify(data)
 
-@db_bp.route('/info')
-def info():
-    data = None
+@db_bp.route('/ids')
+def ids():
+    data = []
     try:
         DB = mysql.connector.connect(**DB_CONFIG)
         cursor = DB.cursor()
@@ -166,7 +168,7 @@ def info():
         """)
         rows = cursor.fetchall()
 
-        data = rows[0][0]
+        data = list(np.ravel(rows))
 
         cursor.close()
         DB.close()
