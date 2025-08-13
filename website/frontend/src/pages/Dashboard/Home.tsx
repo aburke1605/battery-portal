@@ -1,10 +1,12 @@
-import{ useState } from 'react';
+import{ useState, useEffect } from 'react';
 import PageMeta from "../../components/common/PageMeta";
 import { BatteryData, AlertData } from '../..//types';
 import { initialBatteries, initialAlerts } from '../../mock/mockData';
 import { AlertTriangle, Info } from 'lucide-react';
 import { formatDateTime, getAlertTypeColor } from '../../utils/helpers';
 import DataChart from '../../components/charts/DataChart';
+import axios from 'axios';
+import apiConfig from '../../apiConfig';
 
 export default function Home() {
 
@@ -45,6 +47,18 @@ export default function Home() {
       default: return <Info size={20} className="text-blue-600" />;
     }
   };
+
+  // get list of esp32 IDs in battery_info table
+  const [IDs, setIDs] = useState<[]>([]);
+  useEffect(() => {
+    axios.get(apiConfig.DB_ID_END_POINT)
+      .then(response => {
+        if (response.data != null) {
+          setIDs(response.data);
+        }
+      })
+      .catch(err => console.error(err));
+  }, []);
 
   return (
     <>
