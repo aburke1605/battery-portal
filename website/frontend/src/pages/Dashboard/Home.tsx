@@ -62,6 +62,17 @@ export default function Home() {
   // to set the displayed battery
   const [selectedID, setSelectedID] = useState("");
 
+  // tick-box options for charts
+  const chartOptions = ["soc", "temperature", "voltage", "current"];
+  const [selectedCharts, setSelectedCharts] = useState<string[]>([]);
+  const toggleOption = (option: string) => {
+  setSelectedCharts((prev) =>
+    prev.includes(option)
+      ? prev.filter((o) => o !== option)
+      : [...prev, option]
+  );
+};
+
   return (
     <>
       <PageMeta
@@ -98,6 +109,23 @@ export default function Home() {
         <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 mb-6">
           <div className="flex items-center justify-between mb-4">
             <h2 className="text-xl font-semibold text-gray-800">Telemetry data</h2>
+
+            {/* tick box */}
+            <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4 ml-6 mr-6">
+              <div className="flex flex-wrap gap-x-4 gap-y-2">
+                {chartOptions.map((option) => (
+                  <label key={option} className="flex items-center space-x-2">
+                    <input
+                      type="checkbox"
+                      checked={selectedCharts.includes(option)}
+                      onChange={() => toggleOption(option)}
+                      className="h-4 w-4 text-indigo-600 border-gray-300 rounded focus:ring-indigo-500"
+                    />
+                    <span className="text-gray-700">{option}</span>
+                  </label>
+                ))}
+              </div>
+            </div>
 
             {/* drop down menu */}
             <div>
