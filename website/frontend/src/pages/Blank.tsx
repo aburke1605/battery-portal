@@ -5,7 +5,7 @@ export default function Blank() {
   return (
     <div>
       <PageMeta
-        title="React.js Blank Dashboard | TailAdmin - Next.js Admin Dashboard Template"
+        title="Blank Dashboard"
         description="This is React.js Blank Dashboard page for TailAdmin - React.js Tailwind CSS Admin Dashboard Template"
       />
       <PageBreadcrumb pageTitle="Blank Page" />

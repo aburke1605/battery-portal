@@ -76,7 +76,7 @@ export default function BatteryPage({ isFromEsp32 = false }: BatteriesPageProps)
             { 
                 !isFromEsp32 ? 
                 <PageMeta
-                    title="React.js Chart Dashboard | TailAdmin"
+                    title="Battery Dashboard"
                     description="Battery Detail Page"
                 /> : null
             }
