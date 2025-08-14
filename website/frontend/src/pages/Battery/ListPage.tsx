@@ -51,6 +51,8 @@ export default function BatteryPage() {
   const [statusFilter, setStatusFilter] = useState('all');
   const [sortBy, setSortBy] = useState('status');
 
+  // TODO:
+  // make this a FC as its used a few times
   useEffect(() => {
     const fetchBatteryData = async () => {
       try {

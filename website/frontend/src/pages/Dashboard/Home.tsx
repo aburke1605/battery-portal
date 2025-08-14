@@ -11,7 +11,27 @@ import apiConfig from '../../apiConfig';
 export default function Home() {
 
 
-  const [batteries] = useState<BatteryData[]>(initialBatteries);
+  const [batteries, setBatteryData] = useState<BatteryData[]>(initialBatteries);
+  useEffect(() => {
+    const fetchBatteryData = async () => {
+      try {
+        const response = await fetch('/api/battery/list');
+        const data = await response.json();
+        setBatteryData(data);
+      } catch (error) {
+        console.error('Error fetching battery data:', error)
+      } finally {
+        //setLoading(false)
+      }
+    }
+
+    fetchBatteryData()
+    const interval = setInterval(fetchBatteryData, 10000)
+    return () => {
+      clearInterval(interval)
+    }
+  }, [])
+
   const [alerts] = useState<AlertData[]>(initialAlerts);
 
   // Get system health status

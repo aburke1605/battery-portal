@@ -161,6 +161,7 @@ def build_battery_tree(batteries):
             'lon': b.lon,
             'ambient_temperature': b.temperature,
             'voltage': b.voltage,
+            'charge': b.charge,
             'parent_id': b.parent_id,
             'children': []
         }
