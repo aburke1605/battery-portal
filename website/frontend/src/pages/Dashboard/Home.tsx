@@ -83,7 +83,7 @@ export default function Home() {
   const [selectedID, setSelectedID] = useState("");
 
   // tick-box options for charts
-  const chartOptions = ["soc", "temperature", "voltage", "current"];
+  const chartOptions = ["charge", "temperature", "voltage", "current"];
   const [selectedCharts, setSelectedCharts] = useState<string[]>([]);
   const toggleOption = (option: string) => {
   setSelectedCharts((prev) =>

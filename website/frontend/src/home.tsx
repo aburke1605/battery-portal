@@ -45,7 +45,7 @@ function App() {
           </h1>
           <div className="mx-auto grid grid-cols-1 gap-4 sm:grid-cols-2 max-w-4xl mb-4">
             <div className="w-full aspect-[5/3]">
-              <DataChart esp_id={id} column="soc" />
+              <DataChart esp_id={id} column="charge" />
             </div>
             <div className="w-full aspect-[5/3]">
               <DataChart esp_id={id} column="temperature" />

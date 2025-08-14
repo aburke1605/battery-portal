@@ -105,7 +105,7 @@ def update_database(data_list):
         try:
             stmt = insert(data_table).values(
                 timestamp=datetime.now(),
-                soc=data['Q'],
+                charge=data['Q'],
                 temperature=data['aT']/10,
                 voltage=data['V']/10,
                 current=data['I']/10
@@ -131,7 +131,7 @@ def create_battery_data_table(esp_id, metadata=None):
             metadata,
             Column('id', Integer, primary_key=True, autoincrement=True),  # Auto-incremented PK
             Column('timestamp', DateTime, nullable=False, default=datetime.now),
-            Column('soc', Integer, nullable=False),
+            Column('charge', Integer, nullable=False),
             Column('temperature', Float, nullable=False),
             Column('voltage', Float, nullable=False),
             Column('current', Float, nullable=False),
