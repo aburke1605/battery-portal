@@ -77,7 +77,7 @@ function App() {
             {" Projects"}
           </span>
           <div className="flex flex-col md:flex-row items-center text-gray-400 mt-2 md:mt-0 space-y-2 md:space-y-0 md:space-x-6">
-            <span>Contact: <a href="mailto:aodhan.burke@liverpool.ac.uk" className="hover:text-blue-400">aodhan.burke@liverpool.ac.uk</a></span>
+            <span>Contact: <a href="mailto:aodhan.burke@liverpool.ac.uk" className="hover:text-blue-400">aodhan.burke@liverpool.ac.uk</a>, <a href="mailto:yunfeng.zhao@liverpool.ac.uk" className="hover:text-blue-400">yunfeng.zhao@liverpool.ac.uk</a></span>
             <span>&copy; {new Date().getFullYear()} University of Liverpool</span>
           </div>
         </div>
