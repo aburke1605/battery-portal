@@ -22,6 +22,7 @@ class BatteryInfo(DB.Model):
     name = DB.Column(DB.String(100), nullable=False)
     temperature = DB.Column(DB.Float, nullable=True)
     voltage = DB.Column(DB.Float, nullable=True)
+    charge = DB.Column(DB.Float, nullable=True)
     last_updated_time = DB.Column(DB.DateTime, default=datetime.now, onupdate=datetime.now, nullable=False)
     lat = DB.Column(DB.Float, nullable=True)
     lon = DB.Column(DB.Float, nullable=True)
@@ -77,6 +78,7 @@ def update_database(data_list):
                 battery.name=esp_id
                 battery.temperature=data['aT']/10
                 battery.voltage=data['V']/10
+                battery.charge=data['Q']
                 battery.parent_id = None if i == 0 else parent_id
                 battery.last_updated_time = datetime.now()
                 print(f"Updated existing battery with ID: {esp_id}")
@@ -88,6 +90,7 @@ def update_database(data_list):
                     name=esp_id,
                     temperature=data['aT']/10,
                     voltage=data['V']/10,
+                    charge=data['Q'],
                     last_updated_time = datetime.now()
                 )
                 DB.session.add(battery)
