@@ -82,7 +82,7 @@ export default function BatteryPage({ isFromEsp32 = false }: BatteriesPageProps)
             }
             {
                 !isFromEsp32 ? 
-                <PageBreadcrumb pageTitle="Batteries Detail" />
+                <PageBreadcrumb pageTitle="Battery Detail" />
                 : null
             }
             <div className="space-y-6">
