@@ -11,7 +11,7 @@ import { ScrollToTop } from "./components/common/ScrollToTop";
 import { setupMockWebSocket } from './mock/ws';
 import AuthRequire from "./auth/AuthRequire.tsx";
 import {AuthProvider} from "./auth/AuthContext.tsx";
-import SignIn from "./pages/AuthPages/SignIn";
+import SignIn from "./pages/SignIn.tsx";
 
 setupMockWebSocket();
 

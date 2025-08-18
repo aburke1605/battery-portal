@@ -1,6 +1,6 @@
 import { HashRouter as Router, Routes, Route } from "react-router";
-import SignIn from "./pages/AuthPages/SignIn";
-import NotFound from "./pages/OtherPage/NotFound";
+import SignIn from "./pages/SignIn.tsx";
+import NotFound from "./pages/NotFound.tsx";
 import UserProfiles from "./pages/UserProfiles";
 import SystemSettings from "./pages/Settings/SystemSettings";
 import Blank from "./pages/Blank";
