@@ -168,75 +168,70 @@ byte | data
 
 ## Web Server Backend
 
-The backend is implemented in **Python** using the **Flask** framework. It follows a **separate frontend and backend architecture**, enabling independent development, deployment, and scaling.
+The backend is implemented in Python using the Flask framework. It follows a separate frontend and backend architecture, enabling independent development, deployment, and scaling.
 
 ### Admin User Management
-The admin interface provides user and role management functionality. **Flask-Security** is used for authentication, authorization, role management, and password security.
-
-**Database Tables:**
+The admin interface provides user and role management functionality. Flask-Security is used for authentication, authorization, role management, and password security. Database Tables:
 - `role` – Stores available user roles.
 - `roles_users` – Mapping table between users and their assigned roles.
 - `user` – Stores user account details.
 
 ### Battery Management
 The battery management module supports:
-- **Real-time monitoring**
-- **Digital twin capabilities**
-- **Algorithm-based battery diagnostics** (TODO)
+- Mesh group, real-time monitoring
+- Digital twin capabilities 
+- Algorithm-based battery diagnostics (TODO)
 
-**Data Flow & Storage:**
-- **Flask-Sock** manages WebSocket connections to receive real-time battery data.
-- Data is stored in **MySQL** for analysis and visualization.
+#### Data Flow & Storage:
+- Flask-Sock manages WebSocket connections to receive real-time battery data.
+- Data is stored in MySQL for analysis and visualization.
 - Real-time battery status is stored in memory and updated via WebSocket messages.
 
-**Database Tables:**
+#### Database Tables:
 - `battery_info` – Stores basic details of each battery.
 - `battery_data_xx` – Stores time-series measurement data for each battery, where `xx` is the battery name. Data is separated per battery for scalability and efficiency.
 
 ### Non-Functional Features
-1. **Database Migration with Flask-Migrate**  
+- Database Migration with Flask-Migrate 
    Used for managing and version-controlling database schema changes.
    ```bash
    flask db init
    flask db migrate -m "Description of changes"
    flask db upgrade
    ```
-2. **HTTPS Certificates**  
+- HTTPS Certificates
    - Located in the `/cert` folder.
-3. **Deployment**  
+- Deployment
    - Hosted on **Azure Web App** for high availability and scalability.
 
 ---
 
 ## UI Frontend
 
-The frontend is built with **TypeScript**, **React**, **Tailwind CSS**, and **TailAdmin** (free React version). It includes all **UI pages** for:
+The frontend is built with TypeScript, React, Tailwind CSS, and TailAdmin (free React version). It includes all UI pages for:
 - Admin web application
 - ESP32 device interface
 - Project instruction home page
 
-The project uses **Webpack** and React’s **component management** to compile and output each page separately for modular development.
+The project uses Webpack and React’s component management to compile and output each page separately for modular development.
 
 ### Admin Web Application
 Provides system management and monitoring features.
 
-**Pages:**
-- **Dashboard** – Displays key metrics and summaries.
-- **Batteries** – Lists battery packs, mesh network connections, and status.
-- **Users** – User and role management.
-- **Settings** – Configuration options.
-- **List View** – Tabular display of the battery mesh network.
-- **Map View** – Shows the geographic location of each battery pack.
-- **Battery Detail & Digital Twin** – Detailed battery data and digital twin visualization.
+Pages:
+- Dashboard – Displays key metrics and summaries.
+- Batteries – Lists battery packs, mesh network connections, and status.
+- Users – User and role management.
+- Settings – Configuration options.
+- List View – Tabular display of the battery mesh network.
+- Map View – Shows the geographic location of each battery pack.
+- Battery Detail & Digital Twin – Detailed battery data and digital twin visualization.
 
-### ESP32 Device Interface
-Designed for local access when near a battery via **Access Point (AP)**.
-
-- **Entry File**: `esp32.html` – Main HTML file for ESP32 devices.
-- **Features**:
-  - Login component for authentication.
-  - Battery detail page for status display.
-  - Backend implemented in **C** on the ESP32 firmware.
+### ESP32 Device User Interface
+Designed for local access when near a battery via Access Point (AP). Entry File: `esp32.html`.
+- Login component for authentication.
+- Battery detail page for status display.
+- Backend implemented in C on the ESP32 firmware.
 
 ### Project Instruction Home Page
-A standalone page providing an overview of the project, including its purpose, architecture, and main features.
+A standalone page providing an overview of the project, including its purpose, architecture, and main features. Entry File: `home.html`.
