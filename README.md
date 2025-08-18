@@ -168,22 +168,22 @@ byte | data
 
 ## Web Server Backend
 
-The backend is implemented in Python using the Flask framework. It follows a separate frontend and backend architecture, enabling independent development, deployment, and scaling.
+The backend is implemented in Python using the Flask framework (`https://flask.palletsprojects.com`). It follows a separate frontend and backend architecture, enabling independent development, deployment, and scaling.
 
 ### Admin User Management
-The admin interface provides user and role management functionality. Flask-Security is used for authentication, authorization, role management, and password security. Database Tables:
+The admin interface provides user and role management functionality. Flask-Security (`https://flask-security-too.readthedocs.io`) is used for authentication, authorization, role management, and password security. Database Tables:
 - `role` – Stores available user roles.
 - `roles_users` – Mapping table between users and their assigned roles.
 - `user` – Stores user account details.
 
 ### Battery Management
 The battery management module supports:
-- Mesh group, real-time monitoring
+- Mesh group–enabled real-time monitoring
 - Digital twin capabilities 
 - Algorithm-based battery diagnostics (TODO)
 
 #### Data Flow & Storage:
-- Flask-Sock manages WebSocket connections to receive real-time battery data.
+- Flask-Sock (`https://flask-sock.readthedocs.io`) manages WebSocket connections to receive real-time battery data.
 - Data is stored in MySQL for analysis and visualization.
 - Real-time battery status is stored in memory and updated via WebSocket messages.
 
@@ -192,7 +192,7 @@ The battery management module supports:
 - `battery_data_xx` – Stores time-series measurement data for each battery, where `xx` is the battery name. Data is separated per battery for scalability and efficiency.
 
 ### Non-Functional Features
-- Database Migration with Flask-Migrate 
+- Database Migration with Flask-Migrate (`https://flask-migrate.readthedocs.io`)
    Used for managing and version-controlling database schema changes.
    ```bash
    flask db init
@@ -208,7 +208,7 @@ The battery management module supports:
 
 ## UI Frontend
 
-The frontend is built with TypeScript, React, Tailwind CSS, and TailAdmin (free React version). It includes all UI pages for:
+The frontend is built with TypeScript, React, Tailwind CSS, and TailAdmin (free React version `https://tailadmin.com/`). It includes all UI pages for:
 - Admin web application
 - ESP32 device interface
 - Project instruction home page
