@@ -377,12 +377,20 @@ const BatteryDetail: React.FC<BatteryDetailProps> = ({
 
                         {hasChanges && (
                           <div className="flex gap-2 mt-2">
-                            <button onClick={handleSubmit} className="p-2 bg-blue-500 text-white rounded">
-                              Submit Updates
-                            </button>
-                            <button onClick={handleReset} className="p-2 bg-gray-500 text-white rounded">
-                              Reset
-                            </button>
+                            {battery.status=="online" ? (
+                              <>
+                                <button onClick={handleSubmit} className="p-2 bg-blue-500 text-white rounded">
+                                  Submit Updates
+                                </button>
+                                <button onClick={handleReset} className="p-2 bg-gray-500 text-white rounded">
+                                  Reset
+                                </button>
+                              </>
+                            ) : (
+                              <button className="p-2 bg-gray-500 text-white rounded">
+                                OFFLINE
+                              </button>
+                            )}
                           </div>
                         )}
                       </div>
@@ -504,9 +512,15 @@ const BatteryDetail: React.FC<BatteryDetailProps> = ({
 
                         {hasWiFiChanges && (
                           <div className="flex gap-2 mt-2">
-                            <button onClick={handleConnect} className="p-2 bg-blue-500 text-white rounded">
-                              Connect
-                            </button>
+                            {battery.status=="online" ? (
+                              <button onClick={handleConnect} className="p-2 bg-blue-500 text-white rounded">
+                                Connect
+                              </button>
+                            ) : (
+                              <button className="p-2 bg-gray-500 text-white rounded">
+                                OFFLINE
+                              </button>
+                            )}
                           </div>
                         )}
                       </div>
@@ -677,16 +691,16 @@ const BatteryDetail: React.FC<BatteryDetailProps> = ({
                     <BrainCircuit size={16} className="mr-2" /> Digital Twin
                   </button>
                   <button
-                    onClick={() => sendUnseal()}
+                    onClick={() => battery.status == "online" ? sendUnseal() : null}
                     className="w-full flex items-center justify-center px-4 py-2 border border-orange-300 shadow-sm text-sm font-medium rounded-md text-orange-700 bg-orange-50 hover:bg-orange-100 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-orange-500">
                     <LockKeyholeOpen size={16} className="mr-2" />
-                    Unseal BMS
+                    Unseal BMS {battery.status == "offline" ? "- OFFLINE" : ""}
                   </button>
                   <button
-                    onClick={() => sendReset()}
+                    onClick={() => battery.status == "online" ? sendReset() : null}
                     className="w-full flex items-center justify-center px-4 py-2 border border-red-300 shadow-sm text-sm font-medium rounded-md text-red-700 bg-red-50 hover:bg-red-100 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500">
                     <RefreshCw size={16} className="mr-2" />
-                    Reset BMS
+                    Reset BMS {battery.status == "offline" ? "- OFFLINE" : ""}
                   </button>
                   <button className="w-full flex items-center justify-center px-4 py-2 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
                     <FileText size={16} className="mr-2" />
