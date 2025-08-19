@@ -6,7 +6,7 @@ export const Batteries = {
   'B-0012':{
     id: 'B-0012',
     name: 'Battery Pack Alpha',
-    status: 'good',
+    status: 'online',
     charge: 87,
     temperature: 32,
     internal_temperature: 32,
@@ -23,7 +23,7 @@ export const Batteries = {
   'B-002':{
     id: 'B-002',
     name: 'Battery Pack Beta',
-    status: 'good',
+    status: 'online',
     charge: 92,
     temperature: 29,
     internal_temperature: 29,
@@ -40,7 +40,7 @@ export const Batteries = {
   'B-003': {
     id: 'B-003',
     name: 'Battery Pack Gamma',
-    status: 'critical',
+    status: 'offline',
     charge: 65,
     temperature: 58,
     internal_temperature: 58,
@@ -57,7 +57,7 @@ export const Batteries = {
   'B-004': {
     id: 'B-004',
     name: 'Battery Pack Delta',
-    status: 'good',
+    status: 'online',
     charge: 78,
     temperature: 31,
     internal_temperature: 31,
@@ -74,7 +74,7 @@ export const Batteries = {
   'B-005': {
     id: 'B-005',
     name: 'Battery Pack Epsilon',
-    status: 'warning',
+    status: 'offline',
     charge: 45,
     temperature: 42,
     internal_temperature: 42,
@@ -91,7 +91,7 @@ export const Batteries = {
  'B-006': {
     id: 'B-006',
     name: 'Battery Pack Zeta',
-    status: 'good',
+    status: 'online',
     charge: 82,
     temperature: 30,
     internal_temperature: 30,
@@ -108,7 +108,7 @@ export const Batteries = {
   'B-007': {
     id: 'B-007',
     name: 'Battery Pack Eta',
-    status: 'warning',
+    status: 'offline',
     charge: 12,
     temperature: 33,
     internal_temperature: 33,
@@ -125,7 +125,7 @@ export const Batteries = {
   'B-008': {
     id: 'B-008',
     name: 'Battery Pack Theta',
-    status: 'good',
+    status: 'online',
     charge: 90,
     temperature: 28,
     internal_temperature: 28,
@@ -142,7 +142,7 @@ export const Batteries = {
   'B-009': {
     id: 'B-009',
     name: 'Battery Pack Iota',
-    status: 'good',
+    status: 'online',
     charge: 85,
     temperature: 31,
     internal_temperature: 31,
@@ -162,7 +162,7 @@ export const initialBatteries: BatteryData[] = [
   {
     esp_id: 'B-0012',
     new_esp_id: 'B-0012',
-    status: 'good',
+    status: 'online',
     charge: 87,
     ambient_temperature: 32,
     cell_temperature: 32,
@@ -199,7 +199,7 @@ export const initialBatteries: BatteryData[] = [
   {
     esp_id: 'B-002',
     new_esp_id: 'B-002',
-    status: 'good',
+    status: 'online',
     charge: 92,
     ambient_temperature: 29,
     cell_temperature: 29,
@@ -236,7 +236,7 @@ export const initialBatteries: BatteryData[] = [
   {
     esp_id: 'B-003',
     new_esp_id: 'B-003',
-    status: 'critical',
+    status: 'offline',
     charge: 65,
     ambient_temperature: 58,
     cell_temperature: 58,
@@ -273,7 +273,7 @@ export const initialBatteries: BatteryData[] = [
   {
     esp_id: 'B-004',
     new_esp_id: 'B-004',
-    status: 'good',
+    status: 'online',
     charge: 78,
     ambient_temperature: 31,
     cell_temperature: 31,
@@ -310,7 +310,7 @@ export const initialBatteries: BatteryData[] = [
   {
     esp_id: 'B-005',
     new_esp_id: 'B-005',
-    status: 'warning',
+    status: 'offline',
     charge: 45,
     ambient_temperature: 42,
     cell_temperature: 42,
@@ -347,7 +347,7 @@ export const initialBatteries: BatteryData[] = [
   {
     esp_id: 'B-006',
     new_esp_id: 'B-006',
-    status: 'good',
+    status: 'online',
     charge: 82,
     ambient_temperature: 30,
     cell_temperature: 30,
@@ -384,7 +384,7 @@ export const initialBatteries: BatteryData[] = [
   {
     esp_id: 'B-007',
     new_esp_id: 'B-007',
-    status: 'warning',
+    status: 'offline',
     charge: 12,
     ambient_temperature: 33,
     cell_temperature: 33,
@@ -421,7 +421,7 @@ export const initialBatteries: BatteryData[] = [
   {
     esp_id: 'B-008',
     new_esp_id: 'B-008',
-    status: 'good',
+    status: 'online',
     charge: 90,
     ambient_temperature: 28,
     cell_temperature: 28,
@@ -458,7 +458,7 @@ export const initialBatteries: BatteryData[] = [
   {
     esp_id: 'B-009',
     new_esp_id: 'B-009',
-    status: 'good',
+    status: 'online',
     charge: 85,
     ambient_temperature: 31,
     cell_temperature: 31,

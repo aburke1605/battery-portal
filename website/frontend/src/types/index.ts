@@ -2,7 +2,7 @@
 export interface BatteryData {
   esp_id: string;
   new_esp_id: string;
-  status: 'online' | 'offline' | 'good' | 'warning' | 'critical' | 'maintenance';
+  status: 'online' | 'offline';
   charge: number;
   ambient_temperature: number;
   cell_temperature: number;
@@ -47,7 +47,7 @@ export const parseBatteryData = (
   cell_temperature: raw?.cT / 10 || 0,
   OTC_threshold: raw?.OTC_threshold || 0,
   isConnected: isFromEsp32 ? !!raw?.connected_to_WiFi : !!raw,
-  status: "good",
+  status: raw ? "online" : "offline",
   timestamp: Date.now(),
   cell1_current: raw?.I1 / 100 || 0,
   cell2_current: raw?.I2 / 100 || 0,

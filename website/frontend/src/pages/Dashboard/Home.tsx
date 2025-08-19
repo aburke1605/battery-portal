@@ -34,24 +34,6 @@ export default function Home() {
 
   const [alerts] = useState<AlertData[]>(initialAlerts);
 
-  // Get system health status
-  const getSystemHealth = () => {
-    const criticalCount = batteries.filter(b => b.status === 'critical').length;
-    const warningCount = batteries.filter(b => b.status === 'warning').length;
-    
-    if (criticalCount > 0) return 'Critical';
-    if (warningCount > 0) return 'Warning';
-    return 'Good';
-  };
-
-   // Get system health color
-   const getSystemHealthColor = () => {
-    const health = getSystemHealth();
-    if (health === 'Critical') return 'text-red-600';
-    if (health === 'Warning') return 'text-amber-600';
-    return 'text-green-600';
-  };
-
   // Get average charge level
   const getAverageChargeLevel = () => {
     const total = batteries.reduce((sum, battery) => sum + battery.charge, 0);
@@ -104,10 +86,6 @@ export default function Home() {
         <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 mb-6">
           <h2 className="text-xl font-semibold text-gray-800 mb-4">System Overview</h2>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-            <div className="bg-gray-50 p-4 rounded-lg">
-              <div className="text-sm text-gray-500 mb-1">System Health</div>
-              <div className={`text-2xl font-bold ${getSystemHealthColor()}`}>{getSystemHealth()}</div>
-            </div>
             <div className="bg-gray-50 p-4 rounded-lg">
               <div className="text-sm text-gray-500 mb-1">Total Batteries</div>
               <div className="text-2xl font-bold text-gray-800">{batteries.length}</div>

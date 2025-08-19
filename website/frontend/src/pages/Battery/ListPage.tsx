@@ -4,19 +4,6 @@ import { BatteryData } from '../../types';
 import BatteryCard from './BatteryCard';
 import { useNavigate } from 'react-router-dom';
 
-// const getStatusColor = (status: BatteryData['status']) => {
-//   switch (status) {
-//     case 'online':
-//       return 'bg-green-100 text-green-800'
-//     case 'offline':
-//       return 'bg-red-100 text-red-800'
-//     case 'maintenance':
-//       return 'bg-yellow-100 text-yellow-800'
-//     default:
-//       return 'bg-gray-100 text-gray-800'
-//   }
-// }
-
 // Add this interface for map markers
 interface MapMarker {
   id: string
@@ -25,7 +12,7 @@ interface MapMarker {
     lng: number
   }
   title: string
-  status: 'active' | 'inactive' | 'maintenance'
+  status: 'online' | 'offline'
 }
 
 // Update the map markers to be more spread across the UK
@@ -157,12 +144,10 @@ export default function BatteryPage() {
 
   const getMarkerColor = (status: string) => {
     switch (status) {
-      case 'active':
+      case 'online':
         return '#10B981' // green-500
-      case 'inactive':
-        return '#EF4444' // red-500
-      case 'maintenance':
-        return '#F59E0B' // yellow-500
+      case 'offline':
+        return '#6B7280' // gray-500
       default:
         return '#6B7280' // gray-500
     }

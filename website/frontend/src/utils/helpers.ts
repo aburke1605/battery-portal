@@ -16,20 +16,15 @@ export const getStatusColor = (status: string) => {
   switch (status) {
     case 'online':
       return 'bg-green-100 text-green-800';
-    case 'maintenance':
-      return 'bg-yellow-100 text-yellow-800';
-    case 'good': return 'bg-green-100 text-green-800';
-    case 'offline': return 'bg-gray-100 text-gray-800';
-    case 'warning': return 'bg-amber-100 text-amber-800';
-    case 'critical': return 'bg-red-100 text-red-800';
-    default: return 'bg-gray-100 text-gray-800';
+    case 'offline':
+      return 'bg-gray-100 text-gray-800';
+    default:
+      return 'bg-gray-100 text-gray-800';
   }
 };
 
 // Get charge level bar color
-export const getChargeLevelColor = (level: number, status: string) => {
-  if (status === 'critical') return 'bg-red-500';
-  if (status === 'warning') return 'bg-amber-500';
+export const getChargeLevelColor = (level: number) => {
   if (level < 20) return 'bg-red-500';
   if (level < 50) return 'bg-amber-500';
   return 'bg-green-500';
