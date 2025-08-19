@@ -1,4 +1,4 @@
-import { useCallback, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import PageBreadcrumb from "../../components/common/PageBreadCrumb";
 import PageMeta from "../../components/common/PageMeta";
 import { BatteryData, parseBatteryData } from '../../types';
@@ -34,7 +34,30 @@ export default function BatteryPage({ isFromEsp32 = false }: BatteriesPageProps)
 
     const sleep = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
 
-    // Get data from Webscocket
+
+    // get fall-back data from DB
+    // TODO:
+    // make this a FC as its used a few times
+    useEffect(() => {
+    const fetchBatteryData = async () => {
+        try {
+        const response = await fetch('/api/battery/data?esp_id='+esp_id);
+        const data = await response.json();
+        const parsed = parseBatteryData(esp_id, data, false);
+        parsed.status = "offline";
+        setSelectedBattery(parsed);
+        } catch (error) {
+        console.error('Error fetching battery data:', error)
+        } finally {
+        //setLoading(false)
+        }
+    }
+
+    fetchBatteryData()
+    }, [])
+
+
+    // get fresh data from WebSocket when it connects
     const handleMessage = useCallback((data: any) => {
         const battery = data[esp_id];
         const parsed = parseBatteryData(esp_id, battery, true);
@@ -63,14 +86,6 @@ export default function BatteryPage({ isFromEsp32 = false }: BatteriesPageProps)
     const sendReset = () =>
         sendMessage(createMessage("reset-bms", {}, esp_id));
 
-    // TODO
-    /* const toggleCharging = (batteryId: string, e?: React.MouseEvent) => {
-        if (e) {
-            e.stopPropagation();
-          }
-        alert(`Charging toggled for battery ${batteryId}`);
-    }; */
-
     return (
         <div>
             { 
@@ -89,7 +104,6 @@ export default function BatteryPage({ isFromEsp32 = false }: BatteriesPageProps)
                 {batteryItem ? (
                     <BatteryDetail 
                         battery={batteryItem}
-                        // onToggleCharging={toggleCharging}
                         voltageThreshold={voltageThreshold}
                         sendBatteryUpdate={sendBatteryUpdate} // pass function to BatteryDetail
                         sendWiFiConnect={sendWiFiConnect}

@@ -1,5 +1,5 @@
-from flask import jsonify, Blueprint
-from sqlalchemy import Table, Column, DateTime, Integer, Float, insert, select, inspect, and_
+from flask import jsonify, request, Blueprint
+from sqlalchemy import Table, Column, DateTime, Integer, Float, insert, select, inspect, desc
 from datetime import datetime
 import enum
 from app.db import DB
@@ -183,3 +183,20 @@ def get_batteries():
     batteries = DB.session.query(BatteryInfo).all()
     battery_tree = build_battery_tree(batteries)
     return jsonify(battery_tree)
+
+@battery_bp.route('/data', methods=['GET'])
+def get_data():
+    esp_id = request.args.get("esp_id")
+    table_name = f"battery_data_{esp_id}"
+    data_table = Table(table_name, DB.metadata, autoload_with=DB.engine)
+
+    # Replace "id" with the actual column (e.g. timestamp, created_at, etc.)
+    stmt = select(data_table).order_by(desc(data_table.c.timestamp)).limit(1)
+
+    with DB.engine.connect() as conn:
+        row = conn.execute(stmt).first()
+
+    if row:
+        return dict(row._mapping)  # convert Row to dict for JSON response
+    else:
+        return {}, 404

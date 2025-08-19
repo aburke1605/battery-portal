@@ -43,7 +43,6 @@ interface BatteryDetailProps {
 
 const BatteryDetail: React.FC<BatteryDetailProps> = ({ 
   battery, 
-  // onToggleCharging, 
   voltageThreshold,
   sendBatteryUpdate, // receive function from BatteryPage
   sendWiFiConnect,
