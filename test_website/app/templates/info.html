@@ -12,15 +12,14 @@
             <div>
                 <p>Q: <span id="Q"></span> %</p>
                 <p>H: <span id="H"></span> %</p>
+                <p><span id="status"></span></p>
             </div>
         </div>
 
         <script>
             document.addEventListener("DOMContentLoaded", function() {
-                // initial data from database fetch through api
-                (async () =>  {
-                    const url = "https://" + location.host + "/api/db/data?esp_id={{ esp_id }}";
-                    console.log(url);
+                async function fetch_api(endpoint)  {
+                    const url = "https://" + location.host + endpoint;
                     try {
                         const response = await fetch(url);
                         if (!response.ok) {
@@ -28,12 +27,51 @@
                         }
 
                         const result = await response.json();
-
-                        document.getElementById("Q").innerHTML = result.Q;
-                        document.getElementById("H").innerHTML = result.H;
+                        return result;
                     } catch (error) {
                         console.error(error.message);
                     }
+                }
+
+                function get_sub_info(info, esp_id) {
+                    /*
+                      to loop through the json returned at /api/db/info,
+                      returning the correct object according to esp_id
+                    */
+                    for (const esp of info) {
+                        if (esp.esp_id === esp_id) {
+                            return esp;
+                        }
+                        if (esp.nodes && esp.nodes.length > 0) {
+                            const found = get_sub_info(esp.nodes, esp_id);
+                            if (found) return found;
+                        }
+                    }
+                    return null;
+                }
+
+                async function set_status()  {
+                    /*
+                      change the displayed status using database info
+                    */
+                    const result = await fetch_api("/api/db/info")
+                    if (!result) return;
+
+                    const esp = get_sub_info(result, "{{ esp_id }}");
+                    if (esp) {
+                        document.getElementById("status").innerHTML = esp.live_websocket ? "online" : "offline";
+                        document.getElementById("status").style.color = esp.live_websocket ? "green" : "red";
+                    } else {
+                        console.warn("esp_id not found:", "{{ esp_id }}");
+                    }
+                }
+
+                // initial data from database fetch through api
+                (async () =>  {
+                    const result = await fetch_api("/api/db/data?esp_id={{ esp_id }}")
+                    document.getElementById("Q").innerHTML = result.Q;
+                    document.getElementById("H").innerHTML = result.H;
+                    await set_status();
                 })();
 
                 // updated data through websocket
@@ -44,10 +82,12 @@
                 socket.onmessage = function(event) {
                     try {
                         let data = JSON.parse(event.data);
-                        console.log(data);
                         if ("{{ esp_id }}" == data.esp_id) {
-                            document.getElementById("Q").innerHTML = data.content.Q;
-                            document.getElementById("H").innerHTML = data.content.H;
+                            if (data.type !== "status_update") {
+                                document.getElementById("Q").innerHTML = data.content.Q;
+                                document.getElementById("H").innerHTML = data.content.H;
+                            }
+                            set_status();
                         }
                     } catch (error) {
                         console.error("Error parsing JSON:", error);

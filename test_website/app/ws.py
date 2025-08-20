@@ -59,6 +59,10 @@ def esp_ws(ws):
                 if info["ws"] == ws:
                     for mesh_id in info["mesh_ids"]:
                         set_live_websocket(mesh_id, False)
+                        broadcast({ # indicate to browser clients that the esp has disconnected
+                            "esp_id": mesh_id,
+                            "type": "status_update",
+                        })
                     del esp_clients[esp_id]
                     print(f"ESP WebSocket with esp_id={esp_id} disconnected")
                     break
