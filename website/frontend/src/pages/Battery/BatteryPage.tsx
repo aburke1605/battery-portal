@@ -39,21 +39,25 @@ export default function BatteryPage({ isFromEsp32 = false }: BatteriesPageProps)
         // TODO:
         // make this a FC as its used a few times
         useEffect(() => {
-        const fetchBatteryData = async () => {
-            try {
-            const response = await fetch('/api/battery/data?esp_id='+esp_id);
-            const data = await response.json();
-            const parsed = parseBatteryData(esp_id, data, false);
-            parsed.status = "offline";
-            setSelectedBattery(parsed);
-            } catch (error) {
-            console.error('Error fetching battery data:', error)
-            } finally {
-            //setLoading(false)
+            const fetchBatteryData = async () => {
+                try {
+                const response = await fetch('/api/battery/data?esp_id='+esp_id);
+                const data = await response.json();
+                const parsed = parseBatteryData(esp_id, data, false);
+                parsed.status = "offline";
+                setSelectedBattery(parsed);
+                } catch (error) {
+                console.error('Error fetching battery data:', error)
+                } finally {
+                //setLoading(false)
+                }
             }
-        }
 
-        fetchBatteryData()
+            fetchBatteryData()
+            const interval = setInterval(fetchBatteryData, 10000)
+            return () => {
+                clearInterval(interval)
+            }
         }, [])
     }
 
