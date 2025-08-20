@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+    <html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title> TEST </title>
+    </head>
+
+    <body>
+        <div>
+            <h2>Home Page</h2>
+            <div id="link-list"></div>
+        </div>
+
+        <script>
+            document.addEventListener("DOMContentLoaded", function() {
+                (async () =>  {
+                    const url = "https://" + location.host + "/api/db/info";
+                    console.log(url);
+                    try {
+                        const response = await fetch(url);
+                        if (!response.ok) {
+                            throw new Error(`Response status: ${response.status}`);
+                        }
+
+                        const result = await response.json();
+
+                        // update html
+                        const container = document.getElementById("link-list");
+                        container.innerHTML = "";
+                        result.forEach(root => {
+                            console.log(root);
+                            // root
+                            const div_r = document.createElement("div");
+                            const a_r = document.createElement("a");
+                            a_r.href = `/info?esp_id=${root.esp_id}`;
+                            a_r.textContent = `Device ${root.esp_id}`;
+                            const span_r = document.createElement("span");
+                            span_r.textContent = root.live_websocket ? " (online)" : " (offline)";
+                            span_r.style.color = root.live_websocket ? "green" : "red";
+                            div_r.appendChild(a_r);
+                            div_r.appendChild(span_r);
+                            container.appendChild(div_r);
+                            
+                            // node list
+                            const p = document.createElement("p");
+                            p.textContent = "nodes:";
+                            container.appendChild(p);
+                            if (root.nodes && root.nodes.length > 0) {
+                                const ul = document.createElement("ul");
+                                root.nodes.forEach(node => {
+                                    const li = document.createElement("li");
+                                    const div_n = document.createElement("div");
+                                    const a_n = document.createElement("a");
+                                    a_n.href = `/info?esp_id=${node.esp_id}`;
+                                    a_n.textContent = `Device ${node.esp_id}`;
+                                    const span_n = document.createElement("span");
+                                    span_n.textContent = node.live_websocket ? " (online)" : " (offline)";
+                                    span_n.style.color = node.live_websocket ? "green" : "red";
+                                    div_n.appendChild(a_n);
+                                    div_n.appendChild(span_n);
+                                    li.appendChild(div_n);
+                                    ul.appendChild(li);
+                                });
+                                container.appendChild(ul);
+                            }
+                        });
+                    } catch (error) {
+                        console.error(error.message);
+                    }
+                })();
+            })
+        </script>
+    </body>
+</html>

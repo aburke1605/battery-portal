@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+    <html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title> TEST </title>
+    </head>
+
+    <body>
+        <div>
+            <h2>Battery Information</h2>
+            <div>
+                <p>Q: <span id="Q"></span> %</p>
+                <p>H: <span id="H"></span> %</p>
+            </div>
+        </div>
+
+        <script>
+            document.addEventListener("DOMContentLoaded", function() {
+                // initial data from database fetch through api
+                (async () =>  {
+                    const url = "https://" + location.host + "/api/db/data?esp_id={{ esp_id }}";
+                    console.log(url);
+                    try {
+                        const response = await fetch(url);
+                        if (!response.ok) {
+                            throw new Error(`Response status: ${response.status}`);
+                        }
+
+                        const result = await response.json();
+
+                        document.getElementById("Q").innerHTML = result.Q;
+                        document.getElementById("H").innerHTML = result.H;
+                    } catch (error) {
+                        console.error(error.message);
+                    }
+                })();
+
+                // updated data through websocket
+                let socket = new WebSocket("wss://" + location.host + "/browser_ws?esp_id={{ esp_id }}");
+                socket.onopen = function() {
+                    console.log("WebSocket connection established");
+                };
+                socket.onmessage = function(event) {
+                    try {
+                        let data = JSON.parse(event.data);
+                        console.log(data);
+                        if ("{{ esp_id }}" == data.esp_id) {
+                            document.getElementById("Q").innerHTML = data.content.Q;
+                            document.getElementById("H").innerHTML = data.content.H;
+                        }
+                    } catch (error) {
+                        console.error("Error parsing JSON:", error);
+                    }
+                };
+                socket.onerror = function(error) {
+                    console.error("WebSocket error:", error);
+                };
+                socket.onclose = function() {
+                    console.log("WebSocket connection closed");
+                };
+            })
+        </script>
+    </body>
+</html>
