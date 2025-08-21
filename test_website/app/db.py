@@ -73,6 +73,9 @@ def update_battery_data(json: list) -> None:
                 t = datetime.now(), # TODO: update this to GPS data
                 Q = content["Q"],
                 H = content["H"],
+                iT = content["iT"],
+                I = content["I"],
+                V = content["V"],
             )
             DB.session.execute(statement)
             DB.session.commit()
@@ -112,6 +115,9 @@ def get_battery_data_table(esp_id: str) -> Table:
             Column("t", DateTime, nullable=False, default=datetime.now, primary_key=True),
             Column("Q", Integer, nullable=False),
             Column("H", Integer, nullable=False),
+            Column("iT", Integer, nullable=False),
+            Column("I", Integer, nullable=False),
+            Column("V", Integer, nullable=False),
         )
         table.create(bind=DB.engine)
         print(f"created new table: {name}")

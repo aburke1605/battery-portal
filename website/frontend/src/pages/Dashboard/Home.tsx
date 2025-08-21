@@ -53,7 +53,7 @@ export default function Home() {
   // get list of esp32 IDs in battery_info table
   const [IDs, setIDs] = useState<[]>([]);
   useEffect(() => {
-    axios.get(apiConfig.DB_ID_END_POINT)
+    axios.get(apiConfig.DB_ESP_ID_API)
       .then(response => {
         if (response.data != null) {
           setIDs(response.data);
