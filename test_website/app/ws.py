@@ -50,6 +50,7 @@ def esp_ws(ws):
             except Exception as e:
                 print(f"ESP WebSocket error in while loop: {e}")
 
+            broadcast() # indicate to browser clients that (at least one) esp has connected / sent an update
             ws.send(json.dumps({"type": "response", "content": "OK"}))
     except Exception as e:
         print(f"ESP WebSocket error: {e}")
@@ -59,21 +60,25 @@ def esp_ws(ws):
                 if info["ws"] == ws:
                     for mesh_id in info["mesh_ids"]:
                         set_live_websocket(mesh_id, False)
-                        broadcast({ # indicate to browser clients that the esp has disconnected
-                            "esp_id": mesh_id,
-                            "type": "status_update",
-                        })
                     del esp_clients[esp_id]
                     print(f"ESP WebSocket with esp_id={esp_id} disconnected")
                     break
+            broadcast() # indicate to browser clients that the esp has disconnected
 
 
-def broadcast(data: dict):
-    esp_id = data["esp_id"]
-    if esp_id in browser_clients:
+def broadcast(data: dict | None = None) -> None:
+    if data is not None:
+        # default use case
+        messages = [(data["esp_id"], data)]
+    else:
+        # if no data is passed, just send a status update instruction to all browser clients
+        messages = [(esp_id, {"esp_id": esp_id, "type": "status_update"}) for esp_id in browser_clients.keys()]
+
+    for esp_id, message in messages:
+        ws = browser_clients.get(esp_id)
+        if not ws: continue
         try:
-            ws = browser_clients[esp_id]
-            ws.send(json.dumps(data))
+            ws.send(json.dumps(message))
         except Exception as e:
             print(f"Browser WebSocket broadcast error: {e}")
             del browser_clients[esp_id]
