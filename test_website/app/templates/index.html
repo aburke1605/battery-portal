@@ -14,9 +14,8 @@
 
         <script>
             document.addEventListener("DOMContentLoaded", function() {
-                (async () =>  {
+                async function set_status() {
                     const url = "https://" + location.host + "/api/db/info";
-                    console.log(url);
                     try {
                         const response = await fetch(url);
                         if (!response.ok) {
@@ -29,7 +28,6 @@
                         const container = document.getElementById("link-list");
                         container.innerHTML = "";
                         result.forEach(root => {
-                            console.log(root);
                             // root
                             const div_r = document.createElement("div");
                             const a_r = document.createElement("a");
@@ -68,7 +66,46 @@
                     } catch (error) {
                         console.error(error.message);
                     }
+                };
+
+                function generate_random_string(length) {
+                    const characters = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
+                    let result = "";
+                    for (let i = 0; i < length; i++) {
+                        result += characters.charAt(Math.floor(Math.random() * characters.length));
+                    }
+                    return result;
+                }
+
+                // initial read
+                (async () =>  {
+                    await set_status();
                 })();
+
+                // also triggered through websocket
+                const websocket_session_dummy_esp_id = generate_random_string(32); // random esp_id for home page (no selected esp_id)
+                let socket = new WebSocket("wss://" + location.host + "/browser_ws?esp_id=" + websocket_session_dummy_esp_id);
+                socket.onopen = function() {
+                    console.log("WebSocket connection established");
+                };
+                socket.onmessage = function(event) {
+                    try {
+                        let data = JSON.parse(event.data);
+                        if (websocket_session_dummy_esp_id === data.esp_id) {
+                            if (data.type === "status_update") {
+                                set_status();
+                            }
+                        }
+                    } catch (error) {
+                        console.error("Error parsing JSON:", error);
+                    }
+                };
+                socket.onerror = function(error) {
+                    console.error("WebSocket error:", error);
+                };
+                socket.onclose = function() {
+                    console.log("WebSocket connection closed");
+                };
             })
         </script>
     </body>

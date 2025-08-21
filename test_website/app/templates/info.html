@@ -82,7 +82,7 @@
                 socket.onmessage = function(event) {
                     try {
                         let data = JSON.parse(event.data);
-                        if ("{{ esp_id }}" == data.esp_id) {
+                        if ("{{ esp_id }}" === data.esp_id) {
                             if (data.type !== "status_update") {
                                 document.getElementById("Q").innerHTML = data.content.Q;
                                 document.getElementById("H").innerHTML = data.content.H;
