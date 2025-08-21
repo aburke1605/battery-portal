@@ -34,15 +34,40 @@ def browser_ws(ws):
         while True:
             message = ws.receive()
             if not message: continue
-            """
-            TODO: forward_to_esp32 code
-            """
+            data = json.loads(message)
+            forward_to_esp(data)
     except Exception as e:
         print(f"Browser WebSocket error: {e}")
     finally:
         with lock:
             del browser_clients[esp_id]
             print("Browser WebSocket disconnected")
+
+
+def forward_to_esp(data: dict) -> None:
+    """
+    Used to send WebSocket messages to esp clients which contain requests made by browser clients.
+    Request messages look like:
+        { "type":"request", "content":{"summary":"change-settings", "data":{"esp_id":"bms_001", "OTC_threshold":550, ...}} }
+    Root and node esp_ids are appended to this for the case where the request is for a mesh node.
+    """
+
+    node_id = data["content"]["data"]["esp_id"]
+    if not node_id:
+        print("ESP32 WebSocket forward error: could not determine node esp_id for request")
+        return
+
+    for root_id, info in esp_clients.items():
+        if node_id in info["mesh_ids"]:
+            try:
+                # append root and node ids for mesh groups
+                data["root_id"] = root_id
+                data["node_id"] = node_id
+                # send as json array
+                info["ws"].send(json.dumps([data]))
+                return
+            except Exception as e:
+                print(f"ESP32 WebSocket forward error: {e}")
 
 
 esp_clients = {}
@@ -74,12 +99,12 @@ def esp_ws(ws):
                     }
                     update_battery_data(data_list) # updates database
                 for data in data_list:
-                    broadcast(data) # updates browsers currently viewing `data["esp_id"]` detail page
+                    forward_to_browser(data) # updates browsers currently viewing `data["esp_id"]` detail page
                 response["content"] = "OK"
             except Exception as e:
                 print(f"ESP WebSocket error in while loop: {e}")
 
-            broadcast() # indicate to all browser clients that (at least one) esp has connected / sent an update
+            forward_to_browser() # indicate to all browser clients that (at least one) esp has connected / sent an update
             ws.send(json.dumps(response))
     except Exception as e:
         print(f"ESP WebSocket error: {e}")
@@ -92,10 +117,10 @@ def esp_ws(ws):
                     del esp_clients[esp_id]
                     print(f"ESP WebSocket with esp_id={esp_id} disconnected")
                     break
-            broadcast() # indicate to all browser clients that the esp has disconnected
+            forward_to_browser() # indicate to all browser clients that the esp has disconnected
 
 
-def broadcast(data: dict | None = None) -> None:
+def forward_to_browser(data: dict | None = None) -> None:
     """
     Used to send WebSocket messages to browser clients when any ESP32 WebSocket client updates.
     The message can either be a simple forwarding of telemetry data, or a trigger to update the status of a battery unit.
@@ -113,5 +138,5 @@ def broadcast(data: dict | None = None) -> None:
         try:
             ws.send(json.dumps(message))
         except Exception as e:
-            print(f"Browser WebSocket broadcast error: {e}")
+            print(f"Browser WebSocket forward error: {e}")
             del browser_clients[esp_id]
