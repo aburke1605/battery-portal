@@ -10,16 +10,17 @@ db = Blueprint("db", __name__, url_prefix="/api/db")
 DB = SQLAlchemy()
 class battery_info(DB.Model):
     """
-    must first create the database manually in mysql command prompt:
-        $ mysql -u root -p
-        mysql> create database battery_data;
-    then initiate with flask:
-        $ flask db init
-        $ flask db migrate -m "initiate"
-        $ flask db upgrade
-    further changes made to the class here are then propagated with:
-        $ flask db migrate -m "add/remove ___ column"
-        $ flask db upgrade
+        Defines the structure of the battery_info table, which manages the individual battery_data tables.
+        Must first create the database manually in mysql command prompt:
+            $ mysql -u root -p
+            mysql> create database battery_data;
+        Then initiate with flask:
+            $ flask db init
+            $ flask db migrate -m "initiate"
+            $ flask db upgrade
+        Further changes made to the class here are then propagated with:
+            $ flask db migrate -m "add/remove ___ column"
+            $ flask db upgrade
     """
     __tablename__ = "battery_info"
 
@@ -30,6 +31,10 @@ class battery_info(DB.Model):
 
 
 def update_battery_data(json: list) -> None:
+    """
+        Is called when new telemetry data is received from an ESP32 WebSocket client.
+        Creates new / updates the battery_data_<esp_id> table and corresponding row in the battery_info table.
+    """
     # first grab the esp_id of the root for later use
     root_id = json[0]["esp_id"]
 
@@ -51,11 +56,12 @@ def update_battery_data(json: list) -> None:
                 )
                 DB.session.add(battery)
                 print(f"inserted new battery_info row with esp_id: {esp_id}")
+            # update the entry info
             battery.esp_id = esp_id
             battery.root_id = None if i==0 else root_id
             battery.last_updated_time = datetime.now()
             DB.session.commit()
-            set_live_websocket(esp_id, True) # this function is only ever called from the /esp_ws handler so must be True
+            set_live_websocket(esp_id, True) # this function (`update_battery_data`) is only ever called from the /esp_ws handler, so must be True
         except Exception as e:
             DB.session.rollback()
             print(f"DB error processing WebSocket message from {esp_id}: {e}")
@@ -64,7 +70,7 @@ def update_battery_data(json: list) -> None:
         battery_data_table = get_battery_data_table(esp_id)
         try:
             statement = insert(battery_data_table).values(
-                t = datetime.now(),
+                t = datetime.now(), # TODO: update this to GPS data
                 Q = content["Q"],
                 H = content["H"],
             )
@@ -76,6 +82,9 @@ def update_battery_data(json: list) -> None:
 
 
 def set_live_websocket(esp_id: str, live: bool) -> None:
+    """
+        Simple utility function to change the live_websocket value for a given battery unit in the battery_info table.
+    """
     try:
         battery = DB.session.get(battery_info, esp_id)
         battery.live_websocket = live
@@ -86,6 +95,10 @@ def set_live_websocket(esp_id: str, live: bool) -> None:
 
 
 def get_battery_data_table(esp_id: str) -> Table:
+    """
+        Returns a handle to a specified battery_data_<esp_id> table in the database.
+        A new table is created if one does not yet exist.
+    """
     name = f"battery_data_{esp_id}"
 
     # check if the table already exists
@@ -113,6 +126,9 @@ def index():
 
 @db.route("/info")
 def info():
+    """
+        API used by frontend to fetch live_websocket statuses and mesh structure from battery_info table.
+    """
     esp_dict = defaultdict()
     nodes_dict = defaultdict(list)
     batteries = DB.session.query(battery_info).all()
@@ -139,6 +155,9 @@ def info():
 
 @db.route("/data")
 def data():
+    """
+        API used by frontend to fetch most recent row in battery_data_<esp_id> table.
+    """
     esp_id = request.args.get("esp_id")
     table_name = f"battery_data_{esp_id}"
     data_table = Table(table_name, DB.metadata, autoload_with=DB.engine)

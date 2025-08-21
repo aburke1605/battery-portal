@@ -76,7 +76,7 @@ def esp_ws(ws):
     """
         Handles server WebSocket connections which are initiated by ESP32 clients, and subsequent client messages.
         Incoming messages always have the following format:
-            [ {"esp_id":"bms_001", "content":{"Q": 1,"H": 1}}, {"esp_id":"bms_002","content":{"Q": 2,"H": 2}}, ... ]
+            [ {"esp_id":"bms_001","content":{"Q": 1,"H": 1}}, {"esp_id":"bms_002","content":{"Q": 2,"H": 2}}, ... ]
         The database is updated according to new telemetry data before each list element is parsed in turn,
         updating the browser clients currently viewing the detail page for the `esp_id` battery unit.
     """
