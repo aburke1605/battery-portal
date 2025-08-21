@@ -1,8 +1,8 @@
 from flask import Blueprint, request, jsonify
 from flask_sqlalchemy import SQLAlchemy
-from sqlalchemy import Table, Column, inspect, insert, select, desc, DateTime, Integer
+from sqlalchemy import Table, Column, inspect, insert, select, asc, desc, DateTime, Integer
 
-from datetime import datetime
+from datetime import datetime, timedelta
 from collections import defaultdict
 
 db = Blueprint("db", __name__, url_prefix="/api/db")
@@ -169,5 +169,58 @@ def data():
 
     if row:
         return dict(row._mapping)
+    else:
+        return {}, 404
+
+
+@db.route("/esp_ids")
+def esp_ids():
+    """
+        API used by frontend to fetch all esp_ids from battery_info table.
+    """
+    batteries = DB.session.query(battery_info).all()
+    return jsonify([battery.esp_id for battery in batteries])
+
+
+@db.route("/chart_data")
+def chart_data():
+    """
+        API used by frontend to fetch 250 entries from battery_data_<esp_id> table for chart display.
+    """
+    esp_id = request.args.get("esp_id")
+    if esp_id == "unavailable!":
+        return {}, 404
+
+    table_name = f"battery_data_{esp_id}"
+    data_table = Table(table_name, DB.metadata, autoload_with=DB.engine)
+    column = request.args.get("column")
+
+    sub_query = (select(data_table.c.t, data_table.c[column]).order_by(desc(data_table.c.t)).limit(250).subquery()) # get the 250 most recent (time-wise) entries
+    statement = select(sub_query)#TODO.order_by(asc(sub_query.c.t)) # reorder chronologically
+
+    with DB.engine.connect() as conn:
+        rows = conn.execute(statement)
+
+    if rows:
+        rows = rows.fetchall()
+
+        previous = None
+        data = []
+        for row in rows:#TODO[::-1]: # work from end
+
+            # take only data from most recent date
+            if row[0].date() != rows[-1][0].date():
+                continue
+
+            if previous is not None:
+                if previous - row[0] > timedelta(minutes = 5):
+                    break
+            previous = row[0]
+
+            data.append({"timestamp": row[0], column: row[1]})
+
+        # reorder chronologically
+        data = data[::-1]
+        return jsonify(data)
     else:
         return {}, 404
