@@ -6,6 +6,7 @@ import BatteryDetail from './BatteryDetail';
 import apiConfig from '../../apiConfig';
 import { useAuth } from '../../auth/AuthContext';
 import { createMessage, useWebSocket } from '../../hooks/useWebSocket';
+import axios from 'axios';
 
 interface BatteriesPageProps {
     isFromEsp32?: boolean;
@@ -41,19 +42,18 @@ export default function BatteryPage({ isFromEsp32 = false }: BatteriesPageProps)
         useEffect(() => {
             const fetchBatteryData = async () => {
                 try {
-                const response = await fetch('/api/battery/data?esp_id='+esp_id);
-                const data = await response.json();
-                const parsed = parseBatteryData(esp_id, data, false);
-                parsed.status = "offline";
-                setSelectedBattery(parsed);
+                    const response = await axios.get(`${apiConfig.DB_DATA_API}?esp_id=${esp_id}`);
+                    const parsed = parseBatteryData(esp_id, response.data, false);
+                    parsed.status = "offline";
+                    setSelectedBattery(parsed);
                 } catch (error) {
-                console.error('Error fetching battery data:', error)
+                    console.error('Error fetching battery data:', error);
                 } finally {
-                //setLoading(false)
+                    // setLoading(false);
                 }
             }
 
-            fetchBatteryData()
+            fetchBatteryData();
             const interval = setInterval(fetchBatteryData, 10000)
             return () => {
                 clearInterval(interval)
