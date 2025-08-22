@@ -1,6 +1,7 @@
 from flask import Blueprint, request, jsonify
 from flask_sqlalchemy import SQLAlchemy
-from sqlalchemy import Table, Column, inspect, insert, select, asc, desc, DateTime, Integer
+from flask_security import roles_required
+from sqlalchemy import Table, Column, inspect, insert, select, asc, desc, text, DateTime, Integer
 
 from datetime import datetime, timedelta
 from collections import defaultdict
@@ -128,6 +129,44 @@ def get_battery_data_table(esp_id: str) -> Table:
 @db.route("/")
 def index():
     return "<p>Hello from DB!</p>"
+
+
+@db.route("/execute_sql", methods=["POST"])
+@roles_required("superuser")
+def execute_sql():
+    data = request.get_json()
+    query = data.get("query")
+
+    if not query:
+        return jsonify({"error": "No query provided"}), 400
+
+    verified = True if query[:6] == "ADMIN " else False
+    dangerous_statements = ["drop", "delete", "update", "alter", "truncate"]
+    if any(word in query.lower() for word in dangerous_statements):
+        if not verified:
+            return jsonify({"confirm": "Please re-enter the query to confirm execution."}), 403
+        else:
+            query = query[5:]
+
+    result, status = execute_query(query)
+    return jsonify(result), status
+
+
+def execute_query(query: str):
+    try:
+        result = DB.session.execute(text(query))
+        if result.returns_rows:
+            # SELECT or anything returning rows
+            rows = [dict(row._mapping) for row in result]
+            return {"rows": rows}, 200
+        else:
+            # it's DML (INSERT/UPDATE/DELETE)
+            DB.session.commit()
+            return {"rows_affected": result.rowcount}, 200
+
+    except Exception as e:
+        DB.session.rollback()
+        return {"error": str(e)}, 400
 
 
 @db.route("/info")

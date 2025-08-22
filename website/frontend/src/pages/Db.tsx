@@ -1,6 +1,8 @@
 import React, { useState } from 'react';
 import PageMeta from "../components/common/PageMeta";
 import PageBreadcrumb from "../components/common/PageBreadCrumb";
+import axios from 'axios';
+import apiConfig from '../apiConfig';
 
 interface QueryResult {
   [key: string]: string | number | null;
@@ -18,23 +20,10 @@ const SqlQueryPage: React.FC = () => {
     setResults([]);
 
     try {
-      const res = await fetch('/db/execute_sql', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ query }),
-      });
-
-      const data = await res.json();
-
-      if (!res.ok) {
-        throw new Error(data.error || 'Unknown error');
-      }
-
-      setResults(data);
+      const response = await axios.post(apiConfig.DB_EXECUTE_SQL_API, { query });
+      if (response.data.rows) setResults(response.data.rows);
     } catch (err: any) {
-      setError(err.message);
+      setError(err.response?.data?.error || err.message);
     } finally {
       setLoading(false);
     }
