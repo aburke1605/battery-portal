@@ -1,10 +1,12 @@
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect, useRef, useCallback } from 'react'
 import { ChevronDown } from 'lucide-react';
 import { BatteryData } from '../../types';
 import BatteryCard from './BatteryCard';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import apiConfig from '../../apiConfig';
+import { generate_random_string } from '../../utils/helpers';
+import { useWebSocket } from '../../hooks/useWebSocket';
 
 // Add this interface for map markers
 interface MapMarker {
@@ -42,24 +44,37 @@ export default function BatteryPage() {
 
   // TODO:
   // make this a FC as its used a few times
-  useEffect(() => {
-    const fetchBatteryData = async () => {
-      try {
-        const response = await axios.get(`${apiConfig.DB_INFO_API}`);
-        setBatteryData(response.data);
-      } catch(error) {
-        console.error("Error fetching battery data:", error);
-      } finally {
-        // setLoading(false);
-      }
-    };
-
-    fetchBatteryData()
-    const interval = setInterval(fetchBatteryData, 10000)
-    return () => {
-      clearInterval(interval)
+  const fetchBatteryData = useCallback(async () => {
+    try {
+      const response = await axios.get(`${apiConfig.DB_INFO_API}`);
+      setBatteryData(response.data);
+    } catch(error) {
+      console.error("Error fetching battery data:", error);
+    } finally {
+      // setLoading(false);
     }
-  }, [])
+  }, []);
+
+  // initial fetch
+  useEffect(() => {
+    fetchBatteryData();
+  }, [fetchBatteryData])
+
+  // get status updates from backend through websocket
+  const ws_session_browser_id = useRef(generate_random_string(32));
+  const ws_url = `${apiConfig.WEBSOCKET_BROWSER}?browser_id=${ws_session_browser_id.current}&esp_id=NONE`;
+  // fetch from database on message receipt
+  const handleMessage = useCallback((data: any) => {
+    if (data.esp_id === "NONE" && data.browser_id === ws_session_browser_id.current) {
+      if (data.type === "status_update"){
+        fetchBatteryData();
+      }
+    }
+  }, [fetchBatteryData]);
+  useWebSocket({
+      url: ws_url,
+      onMessage: handleMessage,
+  });
 
 
   // Initialize Google Maps

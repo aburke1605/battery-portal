@@ -53,3 +53,13 @@ export const getAlertTypeColor = (type: string) => {
     default: return 'bg-gray-100 text-gray-800';
   }
 };
+
+
+export function generate_random_string( length: number): string {
+    const characters = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
+    let result = "";
+    for (let i = 0; i < length; i++) {
+        result += characters.charAt(Math.floor(Math.random() * characters.length));
+    }
+    return result;
+}
