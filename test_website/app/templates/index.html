@@ -83,15 +83,15 @@
                 })();
 
                 // also triggered through websocket
-                const websocket_session_dummy_esp_id = generate_random_string(32); // random esp_id for home page (no selected esp_id)
-                let socket = new WebSocket("wss://" + location.host + "/browser_ws?esp_id=" + websocket_session_dummy_esp_id);
+                const websocket_session_browser_id = generate_random_string(32);
+                let socket = new WebSocket("wss://" + location.host + "/browser_ws?browser_id=" + websocket_session_browser_id + "&esp_id=NONE");
                 socket.onopen = function() {
                     console.log("WebSocket connection established");
                 };
                 socket.onmessage = function(event) {
                     try {
                         let data = JSON.parse(event.data);
-                        if (websocket_session_dummy_esp_id === data.esp_id) {
+                        if ("NONE" === data.esp_id && websocket_session_browser_id === data.browser_id) {
                             if (data.type === "status_update") {
                                 set_status();
                             }

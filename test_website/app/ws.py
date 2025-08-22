@@ -20,14 +20,13 @@ def browser_ws(ws):
             * on the battery list page, a random 32-byte id string is used to imitate a unique '`esp_id`' for each browser client.
     """
 
+    browser_id = request.args.get("browser_id")
     esp_id = request.args.get("esp_id")
-    """
-    TODO: what if two browsers are viewing the same battery?
-          the second will overwrite the dict entry of the first,
-          meaning the first will not receive websocket updates
-    """
     with lock:
-        browser_clients[esp_id] = ws
+        browser_clients[browser_id] = {
+            "ws": ws,
+            "esp_id": esp_id
+        }
     print("New Browser WebSocket client")
     try:
         # listen for client messages
@@ -40,7 +39,7 @@ def browser_ws(ws):
         print(f"Browser WebSocket error: {e}")
     finally:
         with lock:
-            del browser_clients[esp_id]
+            del browser_clients[browser_id]
             print("Browser WebSocket disconnected")
 
 
@@ -125,18 +124,23 @@ def forward_to_browser(data: dict | None = None) -> None:
     Used to send WebSocket messages to browser clients when any ESP32 WebSocket client updates.
     The message can either be a simple forwarding of telemetry data, or a trigger to update the status of a battery unit.
     """
+    esp_id = None
     if data is not None:
         # default use case
-        messages = [(data["esp_id"], data)]
+        message = data
+        esp_id = data["esp_id"]
     else:
         # if no data is passed, just send a status update instruction to all browser clients
-        messages = [(esp_id, {"esp_id": esp_id, "type": "status_update"}) for esp_id in browser_clients.keys()]
+        message = {"type": "status_update"}
 
-    for esp_id, message in messages:
-        ws = browser_clients.get(esp_id)
-        if not ws: continue
-        try:
-            ws.send(json.dumps(message))
-        except Exception as e:
-            print(f"Browser WebSocket forward error: {e}")
-            del browser_clients[esp_id]
+    for browser_id, info in browser_clients.items():
+        if esp_id == info["esp_id"] or message.get("type") == "status_update":
+            ws = info.get("ws")
+            if not ws: continue
+            try:
+                message["browser_id"] = browser_id
+                message["esp_id"] = info["esp_id"]
+                ws.send(json.dumps(message))
+            except Exception as e:
+                print(f"Browser WebSocket forward error: {e}")
+                del browser_clients[browser_id]

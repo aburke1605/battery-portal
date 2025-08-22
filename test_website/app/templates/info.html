@@ -66,6 +66,15 @@
                     }
                 }
 
+                function generate_random_string(length) {
+                    const characters = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
+                    let result = "";
+                    for (let i = 0; i < length; i++) {
+                        result += characters.charAt(Math.floor(Math.random() * characters.length));
+                    }
+                    return result;
+                }
+
                 // initial data from database fetch through api
                 (async () =>  {
                     const result = await fetch_api("/api/db/data?esp_id={{ esp_id }}")
@@ -75,19 +84,21 @@
                 })();
 
                 // updated data through websocket
-                let socket = new WebSocket("wss://" + location.host + "/browser_ws?esp_id={{ esp_id }}");
+                const websocket_session_browser_id = generate_random_string(32);
+                let socket = new WebSocket("wss://" + location.host + "/browser_ws?browser_id=" + websocket_session_browser_id + "&esp_id={{ esp_id }}");
                 socket.onopen = function() {
                     console.log("WebSocket connection established");
                 };
                 socket.onmessage = function(event) {
                     try {
                         let data = JSON.parse(event.data);
-                        if ("{{ esp_id }}" === data.esp_id) {
+                        if ("{{ esp_id }}" === data.esp_id && websocket_session_browser_id === data.browser_id) {
                             if (data.type !== "status_update") {
                                 document.getElementById("Q").innerHTML = data.content.Q;
                                 document.getElementById("H").innerHTML = data.content.H;
+                            } else {
+                                set_status();
                             }
-                            set_status();
                         }
                     } catch (error) {
                         console.error("Error parsing JSON:", error);
