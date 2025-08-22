@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef, useCallback } from 'react'
 import { ChevronDown } from 'lucide-react';
-import { BatteryData } from '../../types';
+import { BatteryInfoData, BatteryDataNew } from '../../types';
 import BatteryCard from './BatteryCard';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
@@ -30,7 +30,7 @@ export default function BatteryPage() {
   const [map, setMap] = useState<google.maps.Map | null>(null)
   const [markers, setMarkers] = useState<google.maps.Marker[]>([])
   
-  const [batteryData, setBatteryData] = useState<BatteryData[]>([])
+  const [batteryData, setBatteryData] = useState<BatteryDataNew[]>([])
   const totalItems = batteryData.length
   const startIndex = (currentPage - 1) * itemsPerPage
   const endIndex = Math.min(startIndex + itemsPerPage, totalItems)
@@ -42,12 +42,38 @@ export default function BatteryPage() {
   const [statusFilter, setStatusFilter] = useState('all');
   const [sortBy, setSortBy] = useState('status');
 
+  const parseBatteryInfoMESHs = useCallback(async (data: BatteryInfoData[]): Promise<BatteryDataNew[]> => {
+    const batteries: BatteryDataNew[] = [];
+  
+    data.forEach((root: BatteryInfoData) => {
+      // root
+      const root_battery: BatteryDataNew = {
+        esp_id: root.esp_id,
+        root_id: root.root_id,
+        last_updated_time: root.last_updated_time,
+        live_websocket: root.live_websocket,
+        nodes: root.nodes,
+
+        t: 0,
+        Q: 0,
+        H: 0,
+        iT: 0,
+        V: 0,
+        I: 0,
+      }
+      batteries.push(root_battery);
+    });
+
+    return batteries;
+  }, []);
+
   // TODO:
   // make this a FC as its used a few times
   const fetchBatteryData = useCallback(async () => {
     try {
       const response = await axios.get(`${apiConfig.DB_INFO_API}`);
-      setBatteryData(response.data);
+      const batteries = await parseBatteryInfoMESHs(response.data);
+      setBatteryData(batteries);
     } catch(error) {
       console.error("Error fetching battery data:", error);
     } finally {
@@ -183,7 +209,7 @@ export default function BatteryPage() {
 
   const navigate = useNavigate();
   // View battery details
-  const viewBatteryDetails = (battery: BatteryData) => {
+  const viewBatteryDetails = (battery: BatteryInfoData) => {
     navigate(`/battery-detail?esp_id=${battery.esp_id}`);
   };
   
@@ -281,10 +307,10 @@ export default function BatteryPage() {
 
       {viewMode === 'grid' ? (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 xl:grid-cols-3 gap-6">
-          {currentBatteries.map((battery: BatteryData) => (
+          {currentBatteries.map((battery: BatteryDataNew) => (
             <BatteryCard
-            battery={battery}
-            viewBatteryDetails={viewBatteryDetails}
+              battery={battery}
+              viewBatteryDetails={viewBatteryDetails}
             />
           ))}
         </div>

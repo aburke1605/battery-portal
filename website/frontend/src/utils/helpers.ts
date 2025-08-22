@@ -12,11 +12,11 @@ export const formatDateTime = (dateTimeString: string) => {
 };
 
 // Get status color
-export const getStatusColor = (status: string) => {
+export const getStatusColor = (status: boolean) => {
   switch (status) {
-    case 'online':
+    case true:
       return 'bg-green-100 text-green-800';
-    case 'offline':
+    case false:
       return 'bg-gray-100 text-gray-800';
     default:
       return 'bg-gray-100 text-gray-800';

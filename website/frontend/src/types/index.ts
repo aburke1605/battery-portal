@@ -1,4 +1,21 @@
 // Battery Data Types
+export interface BatteryInfoData {
+  esp_id: string;
+  root_id: string|null;
+  last_updated_time: string;
+  live_websocket: boolean;
+  nodes?: BatteryInfoData[];
+}
+
+export interface BatteryDataNew extends BatteryInfoData {
+  t: number;
+  Q: number
+  H: number;
+  iT: number;
+  I: number;
+  V: number;
+}
+
 export interface BatteryData {
   esp_id: string;
   new_esp_id: string;

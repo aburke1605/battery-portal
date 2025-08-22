@@ -15,7 +15,7 @@ def create_app():
     Migrate(app, DB)
 
     with app.app_context():
-        # reset the status of all websockets existing in database
+        # reset the status of all websockets existing in database on startup
         DB.session.query(battery_info).filter_by(live_websocket=True).update({battery_info.live_websocket: False})
         DB.session.commit()
     sock.init_app(app)
