@@ -39,16 +39,19 @@ const DataChart: React.FC<DataChartProps> = ({ esp_id, column }) => {
   const [data, setData] = useState<DataPoint[]>([]);
 
   useEffect(() => {
-    const fetchData = () => {
-      axios.get(`${apiConfig.DB_CHART_DATA_API}?esp_id=${esp_id}&column=${column}`)
-        .then(response => {
-          const processedData = response.data.map((point: DataPoint) => ({
-            ...point,
-            timeMs: new Date(point.timestamp).getTime()
-          }));
-          setData(processedData);
-        })
-        .catch(error => console.error("Error fetching data:", error));
+    const fetchData = async () => {
+      try {
+        const response = await axios.get(`${apiConfig.DB_CHART_DATA_API}?esp_id=${esp_id}&column=${column}`);
+        const processedData = response.data.map((point: DataPoint) => ({
+          ...point,
+          timeMs: new Date(point.timestamp).getTime()
+        }));
+        setData(processedData);
+      } catch(error) {
+        console.error("Error fetching data:", error);
+      } finally {
+
+      }
     };
 
     fetchData(); // fetch immediately

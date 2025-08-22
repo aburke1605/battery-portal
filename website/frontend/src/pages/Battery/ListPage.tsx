@@ -3,6 +3,8 @@ import { ChevronDown } from 'lucide-react';
 import { BatteryData } from '../../types';
 import BatteryCard from './BatteryCard';
 import { useNavigate } from 'react-router-dom';
+import axios from 'axios';
+import apiConfig from '../../apiConfig';
 
 // Add this interface for map markers
 interface MapMarker {
@@ -43,15 +45,14 @@ export default function BatteryPage() {
   useEffect(() => {
     const fetchBatteryData = async () => {
       try {
-        const response = await fetch('/api/battery/list');
-        const data = await response.json();
-        setBatteryData(data);
-      } catch (error) {
-        console.error('Error fetching battery data:', error)
+        const response = await axios.get(`${apiConfig.DB_INFO_API}`);
+        setBatteryData(response.data);
+      } catch(error) {
+        console.error("Error fetching battery data:", error);
       } finally {
-        //setLoading(false)
+        // setLoading(false);
       }
-    }
+    };
 
     fetchBatteryData()
     const interval = setInterval(fetchBatteryData, 10000)

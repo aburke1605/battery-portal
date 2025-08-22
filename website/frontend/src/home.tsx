@@ -11,13 +11,17 @@ function App() {
   // so we can display a graph beneath
   const [id, setID] = useState("unavailable!");
   useEffect(() => {
-    axios.get(apiConfig.DB_ESP_ID_API)
-      .then(response => {
+    const fetchRandomBattery = async () => {
+      try {
+        const response = await axios.get(apiConfig.DB_ESP_ID_API);
         if (response.data != null) {
           setID(response.data[0]); // just take the first one
         }
-      })
-      .catch(err => console.error(err));
+      } catch(err) {
+        console.error(err);
+      }
+    };
+    fetchRandomBattery();
   }, []);
 
 

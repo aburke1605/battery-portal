@@ -15,15 +15,14 @@ export default function Home() {
   useEffect(() => {
     const fetchBatteryData = async () => {
       try {
-        const response = await fetch('/api/battery/list');
-        const data = await response.json();
-        setBatteryData(data);
-      } catch (error) {
-        console.error('Error fetching battery data:', error)
+        const response = await axios.get(`${apiConfig.DB_INFO_API}`);
+        setBatteryData(response.data);
+      } catch(error) {
+        console.error("Error fetching battery data:", error);
       } finally {
-        //setLoading(false)
+        // setLoading(false);
       }
-    }
+    };
 
     fetchBatteryData()
     const interval = setInterval(fetchBatteryData, 10000)
@@ -53,19 +52,23 @@ export default function Home() {
   // get list of esp32 IDs in battery_info table
   const [IDs, setIDs] = useState<[]>([]);
   useEffect(() => {
-    axios.get(apiConfig.DB_ESP_ID_API)
-      .then(response => {
+    const getIDs = async () => {
+      try {
+        const response = await axios.get(apiConfig.DB_ESP_ID_API);
         if (response.data != null) {
           setIDs(response.data);
         }
-      })
-      .catch(err => console.error(err));
+      } catch(err) {
+        console.error(err);
+      }
+    }
+    getIDs();
   }, []);
   // to set the displayed battery
   const [selectedID, setSelectedID] = useState("");
 
   // tick-box options for charts
-  const chartOptions = ["charge", "temperature", "voltage", "current"];
+  const chartOptions = ["Q", "iT", "V", "I"];
   const [selectedCharts, setSelectedCharts] = useState<string[]>([]);
   const toggleOption = (option: string) => {
   setSelectedCharts((prev) =>
