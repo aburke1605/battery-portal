@@ -42,38 +42,43 @@ export default function BatteryPage() {
   const [statusFilter, setStatusFilter] = useState('all');
   const [sortBy, setSortBy] = useState('status');
 
-  const parseBatteryInfoMESHs = useCallback(async (data: BatteryInfoData[]): Promise<BatteryDataNew[]> => {
-    const batteries: BatteryDataNew[] = [];
-  
-    data.forEach((root: BatteryInfoData) => {
-      // root
-      const root_battery: BatteryDataNew = {
-        esp_id: root.esp_id,
-        root_id: root.root_id,
-        last_updated_time: root.last_updated_time,
-        live_websocket: root.live_websocket,
-        nodes: root.nodes,
+  const parseBatteryInfoMESHs = (data: BatteryInfoData[]): BatteryDataNew[] => {
+    return data.map((root) => ({
+      esp_id: root.esp_id,
+      root_id: root.root_id,
+      last_updated_time: root.last_updated_time,
+      live_websocket: root.live_websocket,
+      nodes: root.nodes,
 
-        t: 0,
-        Q: 0,
-        H: 0,
-        iT: 0,
-        V: 0,
-        I: 0,
-      }
-      batteries.push(root_battery);
-    });
-
-    return batteries;
-  }, []);
+      // fetch these from api in fetchBatteryInfo later:
+      t: 0,
+      Q: 0,
+      H: 0,
+      iT: 0,
+      V: 0,
+      I: 0,
+    }));
+  };
 
   // TODO:
   // make this a FC as its used a few times
-  const fetchBatteryData = useCallback(async () => {
+  const fetchBatteryInfo = useCallback(async () => {
     try {
       const response = await axios.get(`${apiConfig.DB_INFO_API}`);
-      const batteries = await parseBatteryInfoMESHs(response.data);
-      setBatteryData(batteries);
+      const batteries = parseBatteryInfoMESHs(response.data);
+
+      // add telemetry data to battery info
+      const detailed = await Promise.all(
+        batteries.map(async (b) => {
+          try {
+            const res = await axios.get(`${apiConfig.DB_DATA_API}?esp_id=${b.esp_id}`);
+            return { ...b, ...res.data }; // merge battery data
+          } catch {
+            return b; // fallback if fetch fails
+          }
+        })
+      );
+      setBatteryData(detailed);
     } catch(error) {
       console.error("Error fetching battery data:", error);
     } finally {
@@ -83,8 +88,8 @@ export default function BatteryPage() {
 
   // initial fetch
   useEffect(() => {
-    fetchBatteryData();
-  }, [fetchBatteryData])
+    fetchBatteryInfo();
+  }, [fetchBatteryInfo])
 
   // get status updates from backend through websocket
   const ws_session_browser_id = useRef(generate_random_string(32));
@@ -93,10 +98,10 @@ export default function BatteryPage() {
   const handleMessage = useCallback((data: any) => {
     if (data.esp_id === "NONE" && data.browser_id === ws_session_browser_id.current) {
       if (data.type === "status_update"){
-        fetchBatteryData();
+        fetchBatteryInfo();
       }
     }
-  }, [fetchBatteryData]);
+  }, [fetchBatteryInfo]);
   useWebSocket({
       url: ws_url,
       onMessage: handleMessage,
