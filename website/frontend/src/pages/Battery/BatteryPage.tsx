@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import PageBreadcrumb from "../../components/common/PageBreadCrumb";
 import PageMeta from "../../components/common/PageMeta";
-import { BatteryData, parseBatteryData } from '../../types';
+import { BatteryDataNew, parseBatteryDataNew } from '../../types';
 import BatteryDetail from './BatteryDetail';
 import apiConfig from '../../apiConfig';
 import { useAuth } from '../../auth/AuthContext';
@@ -30,7 +30,7 @@ export default function BatteryPage({ isFromEsp32 = false }: BatteriesPageProps)
 
     ws_url = isFromEsp32 ? ws_url += "?auth_token=" + getAuthToken() : ws_url += "?esp_id=" + esp_id;
 
-    const [batteryItem, setSelectedBattery] = useState<BatteryData | null>(null);
+    const [batteryItem, setSelectedBattery] = useState<BatteryDataNew | null>(null);
     const [voltageThreshold] = useState(46.5);
 
     const sleep = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
@@ -43,8 +43,7 @@ export default function BatteryPage({ isFromEsp32 = false }: BatteriesPageProps)
             const fetchBatteryData = async () => {
                 try {
                     const response = await axios.get(`${apiConfig.DB_DATA_API}?esp_id=${esp_id}`);
-                    const parsed = parseBatteryData(esp_id, response.data, false);
-                    parsed.status = "offline";
+                    const parsed = parseBatteryDataNew(response.data);
                     setSelectedBattery(parsed);
                 } catch (error) {
                     console.error('Error fetching battery data:', error);
@@ -73,7 +72,7 @@ export default function BatteryPage({ isFromEsp32 = false }: BatteriesPageProps)
         onMessage: handleMessage,
     });
 
-    const sendBatteryUpdate = async (updates: Partial<BatteryData>) => {
+    const sendBatteryUpdate = async (updates: Partial<BatteryDataNew>) => {
         sendMessage(createMessage("change-settings", updates, esp_id));
         if (updates.new_esp_id && updates.new_esp_id !== esp_id) {
             await sleep(5000);

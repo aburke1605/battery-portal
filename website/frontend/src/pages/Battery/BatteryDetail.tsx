@@ -1,5 +1,5 @@
 import React, {useEffect, useState} from 'react';
-import { BatteryData } from '../../types';
+import { BatteryDataNew } from '../../types';
 import { 
   Share2, 
   Download, 
@@ -32,10 +32,10 @@ import { getStatusColor } from '../../utils/helpers';
 import { useNavigate } from 'react-router-dom';
 
 interface BatteryDetailProps {
-  battery: BatteryData;
+  battery: BatteryDataNew;
   // onToggleCharging: (batteryId: string) => void;
   voltageThreshold: number;
-  sendBatteryUpdate: (updatedValues: Partial<BatteryData>) => void;
+  sendBatteryUpdate: (updatedValues: Partial<BatteryDataNew>) => void;
   sendWiFiConnect: (username: string, password: string, eduroam: boolean) => void;
   sendUnseal: () => void;
   sendReset: () => void;
@@ -65,7 +65,7 @@ const BatteryDetail: React.FC<BatteryDetailProps> = ({
   const OTC_threshold_min = 450;
   const OTC_threshold_max = 650;
   // initialise
-  const [values, setValues] = useState<Partial<BatteryData>>({
+  const [values, setValues] = useState<Partial<BatteryDataNew>>({
     esp_id: battery.esp_id,
     OTC_threshold: battery.OTC_threshold
   });
@@ -86,7 +86,7 @@ const BatteryDetail: React.FC<BatteryDetailProps> = ({
     setValues((prevValues) => {
       const updatedValues = { ...prevValues, [key]: newValue };
       // check if any slider has moved
-      const hasAnyChange = (Object.keys(values) as Array<keyof BatteryData>).some((k) => values[k] !== battery[k as keyof BatteryData]);
+      const hasAnyChange = (Object.keys(values) as Array<keyof BatteryDataNew>).some((k) => values[k] !== battery[k as keyof BatteryDataNew]);
       setHasChanges(hasAnyChange);
       setIsEditing(true);
       return updatedValues;
@@ -754,7 +754,7 @@ const BatteryDetail: React.FC<BatteryDetailProps> = ({
 
   const navigate = useNavigate();
 
-  const viewDigitalTwin = (battery: BatteryData) => {
+  const viewDigitalTwin = (battery: BatteryDataNew) => {
     navigate(`/digital-twin?esp_id=${battery.esp_id}`);
   };
 

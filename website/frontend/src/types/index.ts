@@ -14,7 +14,30 @@ export interface BatteryDataNew extends BatteryInfoData {
   iT: number;
   I: number;
   V: number;
+  new_esp_id: string;
+  OTC_threshold: number;
+  // is_connected: boolean;
 }
+
+export const parseBatteryDataNew = (
+  raw: any,
+  // isFromEsp32 = false
+): BatteryDataNew => ({
+  esp_id: raw?.esp_id || 0,
+  root_id: raw?.root_id || 0,
+  last_updated_time: raw?.last_updated_time || 0,
+  live_websocket: raw?.live_websocket || 0,
+  t: Date.now(),
+  Q: raw?.Q || 0,
+  H: raw?.H || 0,
+  iT: raw?.iT / 10 || 0,
+  V: raw?.V / 10 || 0,
+  I: raw?.I / 10 || 0,
+  new_esp_id: "",
+  OTC_threshold: raw?.OTC_threshold || 0,
+  // is_connected: isFromEsp32 ? !!raw?.is_connected : !!raw,
+});
+
 
 export interface BatteryData {
   esp_id: string;

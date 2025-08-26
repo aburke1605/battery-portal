@@ -57,6 +57,8 @@ export default function BatteryPage() {
       iT: 0,
       V: 0,
       I: 0,
+      new_esp_id: "",
+      OTC_threshold: 0
     }));
   };
 
