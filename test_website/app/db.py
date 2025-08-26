@@ -1,7 +1,7 @@
 from flask import Blueprint, request, jsonify
 from flask_sqlalchemy import SQLAlchemy
 from flask_security import roles_required
-from sqlalchemy import Table, Column, inspect, insert, select, asc, desc, text, DateTime, Integer, Float
+from sqlalchemy import Table, Column, inspect, insert, select, asc, desc, text, DateTime, Integer, Float, Boolean
 
 from datetime import datetime, timedelta
 from collections import defaultdict
@@ -77,6 +77,8 @@ def update_battery_data(json: list) -> None:
                 iT = content["iT"] / 10,
                 I = content["I"] / 10,
                 V = content["V"] / 10,
+                OTC = content["OTC"],
+                wifi = content["wifi"],
             )
             DB.session.execute(statement)
             DB.session.commit()
@@ -119,6 +121,8 @@ def get_battery_data_table(esp_id: str) -> Table:
             Column("iT", Float, nullable=False),
             Column("I", Float, nullable=False),
             Column("V", Float, nullable=False),
+            Column("OTC", Integer, nullable=False),
+            Column("wifi", Boolean, nullable=False),
         )
         table.create(bind=DB.engine)
         print(f"created new table: {name}")

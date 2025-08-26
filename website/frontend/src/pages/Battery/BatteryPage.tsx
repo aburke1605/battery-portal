@@ -39,21 +39,22 @@ export default function BatteryPage({ isFromEsp32 = false }: BatteriesPageProps)
 
     const parseBatteryInfoMESHs = (data: BatteryInfoData[]): BatteryDataNew[] => {
         return data.map((root) => ({
-        esp_id: root.esp_id,
-        root_id: root.root_id,
-        last_updated_time: root.last_updated_time,
-        live_websocket: root.live_websocket,
-        nodes: root.nodes,
+            esp_id: root.esp_id,
+            root_id: root.root_id,
+            last_updated_time: root.last_updated_time,
+            live_websocket: root.live_websocket,
+            nodes: root.nodes,
 
-        // fetch these from api in fetchBatteryInfo later:
-        t: 0,
-        Q: 0,
-        H: 0,
-        iT: 0,
-        V: 0,
-        I: 0,
-        new_esp_id: "",
-        OTC_threshold: 0
+            // fetch these from api in fetchBatteryInfo later:
+            t: 0,
+            Q: 0,
+            H: 0,
+            iT: 0,
+            V: 0,
+            I: 0,
+            new_esp_id: "",
+            OTC: 0,
+            wifi: false
         }));
     };
 

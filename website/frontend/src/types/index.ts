@@ -15,13 +15,13 @@ export interface BatteryDataNew extends BatteryInfoData {
   I: number;
   V: number;
   new_esp_id: string;
-  OTC_threshold: number;
-  // is_connected: boolean;
+  OTC: number;
+  wifi: boolean;
 }
 
 export const parseBatteryDataNew = (
   raw: any,
-  // isFromEsp32 = false
+  isFromEsp32 = false
 ): BatteryDataNew => ({
   esp_id: raw?.esp_id || 0,
   root_id: raw?.root_id || 0,
@@ -34,8 +34,8 @@ export const parseBatteryDataNew = (
   V: raw?.V / 10 || 0,
   I: raw?.I / 10 || 0,
   new_esp_id: "",
-  OTC_threshold: raw?.OTC_threshold || 0,
-  // is_connected: isFromEsp32 ? !!raw?.is_connected : !!raw,
+  OTC: raw?.OTC || 0,
+  wifi: isFromEsp32 ? !!raw?.wifi : !!raw,
 });
 
 

@@ -67,18 +67,18 @@ const BatteryDetail: React.FC<BatteryDetailProps> = ({
   // initialise
   const [values, setValues] = useState<Partial<BatteryDataNew>>({
     esp_id: battery.esp_id,
-    OTC_threshold: battery.OTC_threshold
+    OTC: battery.OTC
   });
   // websocket update
   useEffect(() => {
     if (!isEditing) {
       setValues({
         esp_id: battery.esp_id,
-        OTC_threshold: battery.OTC_threshold
+        OTC: battery.OTC
       });
       setHasChanges(false);
     }
-  }, [battery.esp_id, battery.OTC_threshold, isEditing]);
+  }, [battery.esp_id, battery.OTC, isEditing]);
   // slider update
   const handleSliderChange = (key: string) => (e: React.ChangeEvent<HTMLInputElement>) => {
     const { value, type } = e.target;
@@ -101,7 +101,7 @@ const BatteryDetail: React.FC<BatteryDetailProps> = ({
   // reset sliders
   const handleReset = () => {
     setValues({
-      OTC_threshold: battery.OTC_threshold
+      OTC: battery.OTC
     });
     setIsEditing(false);
     setHasChanges(false);
@@ -361,14 +361,14 @@ const BatteryDetail: React.FC<BatteryDetailProps> = ({
                           onChange={handleSliderChange("new_esp_id")}
                         />
 
-                        <label className="block text-sm font-medium text-gray-700">OCT threshold: {values.OTC_threshold} [0.1 °C]</label>
+                        <label className="block text-sm font-medium text-gray-700">OCT threshold: {values.OTC} [0.1 °C]</label>
                         <input
                           type="range"
                           className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer mt-2"
                           min={OTC_threshold_min}
                           max={OTC_threshold_max}
-                          value={values.OTC_threshold}
-                          onChange={handleSliderChange("OTC_threshold")}
+                          value={values.OTC}
+                          onChange={handleSliderChange("OTC")}
                         />
                         <div className="flex justify-between text-xs text-gray-500 mt-1">
                           <span>{OTC_threshold_min} [0.1 °C]</span>
@@ -867,7 +867,7 @@ const BatteryDetail: React.FC<BatteryDetailProps> = ({
               <Wifi size={16} className="mr-1" /> Wi-Fi
             </h3>
             <div className="flex items-end space-x-2">
-              <span className="text-3xl font-bold text-purple-700">{battery.isConnected? "Connected":"!! no connection"}</span>
+              <span className="text-3xl font-bold text-purple-700">{battery.wifi? "Connected":"!! no connection"}</span>
             </div>
           </div>
         </div>
