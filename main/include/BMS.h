@@ -15,6 +15,6 @@ void full_access();
 
 int8_t get_sealed_status();
 
-char* get_data(bool local);
+char* get_data();
 
 #endif // BMS_H

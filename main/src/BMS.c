@@ -129,7 +129,7 @@ int8_t get_sealed_status() {
         return -1; // error
 }
 
-char* get_data(bool local) {
+char* get_data() {
     // create JSON object with sensor data
     cJSON *data = cJSON_CreateObject();
 
@@ -177,24 +177,19 @@ char* get_data(bool local) {
     // configurable data too
     convert_uint_to_n_bytes(I2C_OTC_THRESHOLD_ADDR, address, sizeof(address), true);
     read_data_flash(address, sizeof(address), data_flash, sizeof(data_flash));
-    cJSON_AddNumberToObject(data, "OTC_threshold", round_to_dp((float)(data_flash[1] << 8 | data_flash[0]) / 10.0, 1));
+    cJSON_AddNumberToObject(data, "OTC", round_to_dp((float)(data_flash[1] << 8 | data_flash[0]) / 10.0, 1));
 
-    if (local) {
-        // only needed for local clients
-        cJSON_AddBoolToObject(data, "connected_to_WiFi", connected_to_WiFi);
-        cJSON *full_data = cJSON_CreateObject();
-        char* esp_id = esp_id_string();
-        cJSON_AddItemToObject(full_data, esp_id, data);
-        free(esp_id);
+    // wifi connection status
+    cJSON_AddBoolToObject(data, "wifi", connected_to_WiFi);
 
-        char *full_data_string = cJSON_PrintUnformatted(full_data);
-        cJSON_Delete(full_data);
+    char* esp_id = esp_id_string();
+    cJSON *message = cJSON_CreateObject();
+    cJSON_AddStringToObject(message, "esp_id", esp_id);
+    free(esp_id);
+    cJSON_AddItemToObject(message, "content", data);
 
-        return full_data_string;
-    }
-
-    char *data_string = cJSON_PrintUnformatted(data);
-    cJSON_Delete(data);
+    char *data_string = cJSON_PrintUnformatted(message);
+    cJSON_Delete(message);
 
     return data_string;
 }

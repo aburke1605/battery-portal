@@ -134,7 +134,7 @@ export default function BatteryPage({ isFromEsp32 = false }: BatteriesPageProps)
 
     // get fresh data from WebSocket when it connects
     const handleMessage = useCallback((data: any) => {
-        if (data.esp_id === esp_id && data.browser_id === ws_session_browser_id.current) {
+        if (isFromEsp32 || (data.esp_id === esp_id && data.browser_id === ws_session_browser_id.current)) {
             if (data.type === "status_update") {
                 fetchBatteryInfo();
             } else if (data.content) {
