@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import PageBreadcrumb from "../../components/common/PageBreadCrumb";
 import PageMeta from "../../components/common/PageMeta";
-import { BatteryDataNew, parseBatteryDataNew } from '../../types';
+import { BatteryDataNew, BatteryInfoData, parseBatteryDataNew } from '../../types';
 import BatteryDetail from './BatteryDetail';
 import apiConfig from '../../apiConfig';
 import { useAuth } from '../../auth/AuthContext';
@@ -37,29 +37,78 @@ export default function BatteryPage({ isFromEsp32 = false }: BatteriesPageProps)
 
     const sleep = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
 
+    const parseBatteryInfoMESHs = (data: BatteryInfoData[]): BatteryDataNew[] => {
+        return data.map((root) => ({
+        esp_id: root.esp_id,
+        root_id: root.root_id,
+        last_updated_time: root.last_updated_time,
+        live_websocket: root.live_websocket,
+        nodes: root.nodes,
+
+        // fetch these from api in fetchBatteryInfo later:
+        t: 0,
+        Q: 0,
+        H: 0,
+        iT: 0,
+        V: 0,
+        I: 0,
+        new_esp_id: "",
+        OTC_threshold: 0
+        }));
+    };
+
+    const get_sub_info = (info: BatteryDataNew[]|BatteryInfoData[], esp_id: string): any => {
+        /*
+            to loop through the json returned at /api/db/info,
+            returning the correct object according to esp_id
+        */
+        for (const esp of info) {
+            if (esp.esp_id === esp_id) {
+                return esp;
+            }
+            if (esp.nodes && esp.nodes.length > 0) {
+                const found = get_sub_info(esp.nodes, esp_id);
+                if (found) return found;
+            }
+        }
+        return null;
+    }
+
+    // TODO:
+    // make this a FC as its used a few times
+    const fetchBatteryInfo = useCallback(async () => {
+        try {
+            const response = await axios.get(`${apiConfig.DB_INFO_API}`);
+            const batteries = parseBatteryInfoMESHs(response.data);
+
+            // add telemetry data to battery info
+            const detailed = await Promise.all(
+                batteries.map(async (b) => {
+                try {
+                    const res = await axios.get(`${apiConfig.DB_DATA_API}?esp_id=${b.esp_id}`);
+                    return { ...b, ...res.data }; // merge battery data
+                } catch {
+                    return b; // fallback if fetch fails
+                }
+                })
+            );
+
+            // extract only one battery data item
+            const esp = get_sub_info(detailed, esp_id);
+            if (esp !== null) setSelectedBattery(esp);
+
+        } catch(error) {
+            console.error("Error fetching battery data:", error);
+        } finally {
+            // setLoading(false);
+        }
+    }, []);
+
     if (!isFromEsp32) {
         // get fall-back data from DB
-        // TODO:
-        // make this a FC as its used a few times
         useEffect(() => {
-            const fetchBatteryData = async () => {
-                try {
-                    const response = await axios.get(`${apiConfig.DB_DATA_API}?esp_id=${esp_id}`);
-                    const parsed = parseBatteryDataNew(response.data);
-                    setSelectedBattery(parsed);
-                } catch (error) {
-                    console.error('Error fetching battery data:', error);
-                } finally {
-                    // setLoading(false);
-                }
-            }
-
-            fetchBatteryData();
-            const interval = setInterval(fetchBatteryData, 10000)
-            return () => {
-                clearInterval(interval)
-            }
-        }, [])
+            fetchBatteryInfo();
+        }, [fetchBatteryInfo])
     }
 
 
@@ -67,13 +116,13 @@ export default function BatteryPage({ isFromEsp32 = false }: BatteriesPageProps)
     const handleMessage = useCallback((data: any) => {
         if (data.esp_id === esp_id && data.browser_id === ws_session_browser_id.current) {
             if (data.type === "status_update") {
-                // fetchBatteryData(); // TODO
+                fetchBatteryInfo();
             } else if (data.content) {
                 const parsed = parseBatteryDataNew(data.content);
                 setSelectedBattery(parsed);
             }
         }
-    }, [esp_id]);
+    }, [esp_id, fetchBatteryInfo]);
     const { sendMessage } = useWebSocket({
         url: ws_url,
         onMessage: handleMessage,
