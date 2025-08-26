@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import PageBreadcrumb from "../../components/common/PageBreadCrumb";
 import PageMeta from "../../components/common/PageMeta";
 import { BatteryDataNew, parseBatteryDataNew } from '../../types';
@@ -7,6 +7,7 @@ import apiConfig from '../../apiConfig';
 import { useAuth } from '../../auth/AuthContext';
 import { createMessage, useWebSocket } from '../../hooks/useWebSocket';
 import axios from 'axios';
+import { generate_random_string } from '../../utils/helpers';
 
 interface BatteriesPageProps {
     isFromEsp32?: boolean;
@@ -28,7 +29,8 @@ export default function BatteryPage({ isFromEsp32 = false }: BatteriesPageProps)
     let esp_id = urlParams.get('esp_id');
     if (esp_id == null) esp_id = "empty";
 
-    ws_url = isFromEsp32 ? ws_url += "?auth_token=" + getAuthToken() : ws_url += "?esp_id=" + esp_id;
+    const ws_session_browser_id = useRef(generate_random_string(32));
+    ws_url = isFromEsp32 ? ws_url += "?auth_token=" + getAuthToken() : ws_url += "?browser_id=" + ws_session_browser_id.current + "&esp_id=" + esp_id;
 
     const [batteryItem, setSelectedBattery] = useState<BatteryDataNew | null>(null);
     const [voltageThreshold] = useState(46.5);
@@ -63,9 +65,14 @@ export default function BatteryPage({ isFromEsp32 = false }: BatteriesPageProps)
 
     // get fresh data from WebSocket when it connects
     const handleMessage = useCallback((data: any) => {
-        const battery = data[esp_id];
-        const parsed = parseBatteryData(esp_id, battery, true);
-        setSelectedBattery(parsed);
+        if (data.esp_id === esp_id && data.browser_id === ws_session_browser_id.current) {
+            if (data.type === "status_update") {
+                // fetchBatteryData(); // TODO
+            } else if (data.content) {
+                const parsed = parseBatteryDataNew(data.content);
+                setSelectedBattery(parsed);
+            }
+        }
     }, [esp_id]);
     const { sendMessage } = useWebSocket({
         url: ws_url,

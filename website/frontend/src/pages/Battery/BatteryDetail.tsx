@@ -377,7 +377,7 @@ const BatteryDetail: React.FC<BatteryDetailProps> = ({
 
                         {hasChanges && (
                           <div className="flex gap-2 mt-2">
-                            {battery.status=="online" ? (
+                            {battery.live_websocket ? (
                               <>
                                 <button onClick={handleSubmit} className="p-2 bg-blue-500 text-white rounded">
                                   Submit Updates
@@ -512,7 +512,7 @@ const BatteryDetail: React.FC<BatteryDetailProps> = ({
 
                         {hasWiFiChanges && (
                           <div className="flex gap-2 mt-2">
-                            {battery.status=="online" ? (
+                            {battery.live_websocket ? (
                               <button onClick={handleConnect} className="p-2 bg-blue-500 text-white rounded">
                                 Connect
                               </button>
@@ -547,9 +547,9 @@ const BatteryDetail: React.FC<BatteryDetailProps> = ({
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
                     <div>
                       <h4 className="text-sm font-medium text-gray-500 mb-2">Voltage</h4>
-                      <p className="text-2xl font-semibold text-gray-900">{battery.voltage} V</p>
+                      <p className="text-2xl font-semibold text-gray-900">{battery.V} V</p>
                       <div className="mt-1 text-sm text-gray-500">
-                        {battery.voltage < voltageThreshold ? (
+                        {battery.V < voltageThreshold ? (
                           <span className="text-amber-600">Below threshold ({voltageThreshold}V)</span>
                         ) : (
                           <span className="text-green-600">Normal operating range</span>
@@ -558,7 +558,7 @@ const BatteryDetail: React.FC<BatteryDetailProps> = ({
                     </div>
                     <div>
                       <h4 className="text-sm font-medium text-gray-500 mb-2">Current</h4>
-                      <p className="text-2xl font-semibold text-gray-900">{battery.current} A</p>
+                      <p className="text-2xl font-semibold text-gray-900">{battery.I} A</p>
                       <div className="mt-1 text-sm text-gray-500">
                         {/* {battery.isCharging ? (
                           <span className="text-blue-600">Charging current</span>
@@ -569,27 +569,27 @@ const BatteryDetail: React.FC<BatteryDetailProps> = ({
                     </div>
                     <div>
                       <h4 className="text-sm font-medium text-gray-500 mb-2">Cell 1</h4>
-                      <p className="text-2xl font-semibold text-gray-900">{battery.cell1_current} A </p>
-                      <p className="text-2xl font-semibold text-gray-900">{battery.cell1_temperature} °C</p>
-                      <p className="text-2xl font-semibold text-gray-900">{battery.cell1_voltage} V</p>
+                      <p className="text-2xl font-semibold text-gray-900">{battery.I} A </p>
+                      <p className="text-2xl font-semibold text-gray-900">{battery.iT} °C</p>
+                      <p className="text-2xl font-semibold text-gray-900">{battery.V} V</p>
                     </div>
                     <div>
                       <h4 className="text-sm font-medium text-gray-500 mb-2">Cell 2</h4>
-                      <p className="text-2xl font-semibold text-gray-900">{battery.cell2_current} A</p>
-                      <p className="text-2xl font-semibold text-gray-900">{battery.cell2_temperature} °C</p>
-                      <p className="text-2xl font-semibold text-gray-900">{battery.cell2_voltage} V</p>
+                      <p className="text-2xl font-semibold text-gray-900">{battery.I} A</p>
+                      <p className="text-2xl font-semibold text-gray-900">{battery.iT} °C</p>
+                      <p className="text-2xl font-semibold text-gray-900">{battery.V} V</p>
                     </div>
                     <div>
                       <h4 className="text-sm font-medium text-gray-500 mb-2">Cell 3</h4>
-                      <p className="text-2xl font-semibold text-gray-900">{battery.cell3_current} A</p>
-                      <p className="text-2xl font-semibold text-gray-900">{battery.cell3_temperature} °C</p>
-                      <p className="text-2xl font-semibold text-gray-900">{battery.cell3_voltage} V</p>
+                      <p className="text-2xl font-semibold text-gray-900">{battery.I} A</p>
+                      <p className="text-2xl font-semibold text-gray-900">{battery.iT} °C</p>
+                      <p className="text-2xl font-semibold text-gray-900">{battery.V} V</p>
                     </div>
                     <div>
                       <h4 className="text-sm font-medium text-gray-500 mb-2">Cell 4</h4>
-                      <p className="text-2xl font-semibold text-gray-900">{battery.cell4_current} A</p>
-                      <p className="text-2xl font-semibold text-gray-900">{battery.cell4_temperature} °C</p>
-                      <p className="text-2xl font-semibold text-gray-900">{battery.cell4_voltage} V</p>
+                      <p className="text-2xl font-semibold text-gray-900">{battery.I} A</p>
+                      <p className="text-2xl font-semibold text-gray-900">{battery.iT} °C</p>
+                      <p className="text-2xl font-semibold text-gray-900">{battery.V} V</p>
                     </div>
                     {/* <div>
                       <h4 className="text-sm font-medium text-gray-500 mb-2">Capacity</h4>
@@ -691,16 +691,16 @@ const BatteryDetail: React.FC<BatteryDetailProps> = ({
                     <BrainCircuit size={16} className="mr-2" /> Digital Twin
                   </button>
                   <button
-                    onClick={() => battery.status == "online" ? sendUnseal() : null}
+                    onClick={() => battery.live_websocket ? sendUnseal() : null}
                     className="w-full flex items-center justify-center px-4 py-2 border border-orange-300 shadow-sm text-sm font-medium rounded-md text-orange-700 bg-orange-50 hover:bg-orange-100 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-orange-500">
                     <LockKeyholeOpen size={16} className="mr-2" />
-                    Unseal BMS {battery.status == "offline" ? "- OFFLINE" : ""}
+                    Unseal BMS {!battery.live_websocket ? "- OFFLINE" : ""}
                   </button>
                   <button
-                    onClick={() => battery.status == "online" ? sendReset() : null}
+                    onClick={() => battery.live_websocket ? sendReset() : null}
                     className="w-full flex items-center justify-center px-4 py-2 border border-red-300 shadow-sm text-sm font-medium rounded-md text-red-700 bg-red-50 hover:bg-red-100 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500">
                     <RefreshCw size={16} className="mr-2" />
-                    Reset BMS {battery.status == "offline" ? "- OFFLINE" : ""}
+                    Reset BMS {!battery.live_websocket ? "- OFFLINE" : ""}
                   </button>
                   <button className="w-full flex items-center justify-center px-4 py-2 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
                     <FileText size={16} className="mr-2" />
@@ -799,12 +799,12 @@ const BatteryDetail: React.FC<BatteryDetailProps> = ({
           <div className="bg-blue-50 p-4 rounded-lg">
             <div className="flex items-center justify-between mb-2">
               <h3 className="text-sm font-medium text-blue-700 flex items-center">
-                {battery.charge > 90 ? (
+                {battery.Q > 90 ? (
                     <>
                       <BatteryFull size={16} className="mr-1" />
                     </>
                   ) : (
-                    battery.charge > 35 ? (
+                    battery.Q > 35 ? (
                       <>
                         <BatteryMedium size={16} className="mr-1" />
                       </>
@@ -817,17 +817,17 @@ const BatteryDetail: React.FC<BatteryDetailProps> = ({
                 } Charge Level
               </h3>
               {/* {battery.isCharging && ( */}
-              {battery.current > 0 && (
+              {battery.I > 0 && (
                 <span className="bg-yellow-100 text-yellow-800 text-xs px-2 py-1 rounded-full flex items-center">
                   <Zap size={12} className="mr-1" /> Charging
                 </span>
               )}
             </div>
-            <div className="text-3xl font-bold text-blue-700">{battery.charge}%</div>
+            <div className="text-3xl font-bold text-blue-700">{battery.Q}%</div>
             <div className="mt-2 bg-blue-200 rounded-full h-2.5">
               <div 
                 className="h-2.5 rounded-full bg-blue-600" 
-                style={{ width: `${Math.min(battery.charge, 100)}%` }}
+                style={{ width: `${Math.min(battery.Q, 100)}%` }}
               ></div>
             </div>
           </div>
@@ -837,14 +837,14 @@ const BatteryDetail: React.FC<BatteryDetailProps> = ({
               <ThermometerSun size={16} className="mr-1" /> Temperature
             </h3>
             <div className="flex items-end space-x-2">
-              <span className="text-3xl font-bold text-orange-700">Ambient: {battery.ambient_temperature}°C</span>
-              {battery.ambient_temperature > 35 && (
+              <span className="text-3xl font-bold text-orange-700">Ambient: {battery.iT}°C</span>
+              {battery.iT > 35 && (
                 <span className="text-red-500 text-sm">Above normal</span>
               )}
             </div>
             <div className="flex items-end space-x-2">
-              <span className="text-3xl font-bold text-orange-700">Cell: {battery.cell_temperature}°C</span>
-              {battery.cell_temperature > 35 && (
+              <span className="text-3xl font-bold text-orange-700">Cell: {battery.iT}°C</span>
+              {battery.iT > 35 && (
                 <span className="text-red-500 text-sm">Above normal</span>
               )}
             </div>
@@ -855,8 +855,8 @@ const BatteryDetail: React.FC<BatteryDetailProps> = ({
               <Info size={16} className="mr-1" /> Battery Health
             </h3>
             <div className="flex items-end space-x-2">
-              <span className="text-3xl font-bold text-green-700">{battery.health}%</span>
-              {battery.health < 70 && (
+              <span className="text-3xl font-bold text-green-700">{battery.H}%</span>
+              {battery.H < 70 && (
                 <span className="text-amber-500 text-sm">Degraded</span>
               )}
             </div>
