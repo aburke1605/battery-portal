@@ -74,6 +74,34 @@ export default function BatteryPage({ isFromEsp32 = false }: BatteriesPageProps)
         return null;
     }
 
+    // recursive helper
+    const addBatteryDataToInfo = async (battery: any): Promise<any> => {
+        /*
+            to loop through the json returned at /api/db/data,
+            merging data defined in BatteryData to the already existing data defined in BatteryInfo
+        */
+        try {
+            const res = await axios.get(`${apiConfig.DB_DATA_API}?esp_id=${battery.esp_id}`);
+            // merge root battery with fetched telemetry
+            const merged = { ...battery, ...res.data };
+
+            // recurse on children if any
+            if (battery.nodes && battery.nodes.length > 0) {
+                const mergedNodes = await Promise.all(battery.nodes.map(addBatteryDataToInfo));
+                return { ...merged, nodes: mergedNodes };
+            }
+
+            return merged;
+        } catch {
+            // fallback if fetch fails
+            if (battery.nodes && battery.nodes.length > 0) {
+                const mergedNodes = await Promise.all(battery.nodes.map(addBatteryDataToInfo));
+                return { ...battery, nodes: mergedNodes };
+            }
+            return battery;
+        }
+    };
+
     // TODO:
     // make this a FC as its used a few times
     const fetchBatteryInfo = useCallback(async () => {
@@ -81,17 +109,8 @@ export default function BatteryPage({ isFromEsp32 = false }: BatteriesPageProps)
             const response = await axios.get(`${apiConfig.DB_INFO_API}`);
             const batteries = parseBatteryInfoMESHs(response.data);
 
-            // add telemetry data to battery info
-            const detailed = await Promise.all(
-                batteries.map(async (b) => {
-                try {
-                    const res = await axios.get(`${apiConfig.DB_DATA_API}?esp_id=${b.esp_id}`);
-                    return { ...b, ...res.data }; // merge battery data
-                } catch {
-                    return b; // fallback if fetch fails
-                }
-                })
-            );
+            // add telemetry data (recusively) to battery info
+            const detailed = await Promise.all(batteries.map(addBatteryDataToInfo));
 
             // extract only one battery data item
             const esp = get_sub_info(detailed, esp_id);
