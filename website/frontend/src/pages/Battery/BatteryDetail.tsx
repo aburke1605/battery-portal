@@ -774,8 +774,8 @@ const BatteryDetail: React.FC<BatteryDetailProps> = ({
             </div>
           </div>
           <div className="flex items-center space-x-3">
-            <span className={`px-3 py-1 rounded-full text-sm font-medium ${getStatusColor(battery.status)}`}>
-              {battery.status.charAt(0).toUpperCase() + battery.status.slice(1)}
+            <span className={`px-3 py-1 rounded-full text-sm font-medium ${getStatusColor(battery.live_websocket)}`}>
+              { battery.live_websocket?"online":"offline" }
             </span>
             <div className="flex space-x-2">
               <button className="p-2 text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded-full">
