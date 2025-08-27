@@ -5,7 +5,7 @@ from flask_admin import Admin
 
 from app.ws import sock
 from app.db import db, DB, BatteryInfo
-from app.user import user, user_datastore
+from app.user import user, users
 
 def create_app():
     
@@ -18,7 +18,7 @@ def create_app():
     Migrate(app, DB)
 
     app.register_blueprint(user)
-    Security(app, user_datastore)
+    Security(app, users)
     Admin(app)
 
     with app.app_context():

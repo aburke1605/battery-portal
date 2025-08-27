@@ -1,5 +1,5 @@
 from flask import Blueprint, request, jsonify
-from flask_security import SQLAlchemyUserDatastore, UserMixin, RoleMixin, login_user, login_required, logout_user
+from flask_security import UserMixin, RoleMixin, SQLAlchemyUserDatastore, login_user, login_required, logout_user
 from flask_security.utils import hash_password
 from flask_login import current_user
 
@@ -41,7 +41,7 @@ class Users(DB.Model, UserMixin):
     roles = DB.relationship("Roles", secondary=roles_users,
                             backref=DB.backref("users", lazy="dynamic"))
 
-user_datastore = SQLAlchemyUserDatastore(DB, Users, Roles)
+users = SQLAlchemyUserDatastore(DB, Users, Roles)
 
 @user.route("/login", methods=["POST"])
 def api_login():
@@ -49,7 +49,7 @@ def api_login():
     email = data.get("email")
     password = data.get("password")
 
-    u = user_datastore.find_user(email=email)
+    u = users.find_user(email=email)
     if u and u.verify_and_update_password(password):
         login_user(u)
         return jsonify({
@@ -118,7 +118,7 @@ def add_user():
 
     roles = Roles.query.filter(Roles.id.in_(role_ids)).all()
 
-    user_datastore.create_user(
+    users.create_user(
         first_name=first_name,
         last_name=last_name,
         email=email,
