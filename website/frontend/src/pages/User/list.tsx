@@ -24,7 +24,7 @@ const UserList = () => {
   const fetchUsers = async (page = 1) => {
     setLoading(true);
     try {
-      const response = await axios.get(`/api/users/list?page=${page}&per_page=10`);
+      const response = await axios.get(`/api/user/list?page=${page}&per_page=10`);
       setUsers(response.data.users);
       setCurrentPage(response.data.current_page);
       setPages(response.data.pages);
@@ -72,7 +72,7 @@ const UserList = () => {
     };
 
     try {
-      const res = await fetch('/api/users/add', {
+      const res = await fetch('/api/user/add', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload)
