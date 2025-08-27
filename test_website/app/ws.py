@@ -98,12 +98,12 @@ def esp_ws(ws):
                     }
                     update_battery_data(data_list) # updates database
                 for data in data_list:
-                    forward_to_browser({"type": "status_update", "esp_id": data["esp_id"]}) # updates browsers currently viewing `data["esp_id"]` detail page
+                    update_browsers(data["esp_id"]) # updates browsers currently viewing `data["esp_id"]` detail page
                 response["content"] = "OK"
             except Exception as e:
                 print(f"ESP WebSocket error in while loop: {e}")
 
-            forward_to_browser({"type": "status_update", "esp_id": "LIST"}) # indicate to browser clients on ListPage that (at least one) esp has connected / sent an update
+            update_browsers("LIST") # indicate to browser clients on ListPage that (at least one) esp has connected / sent an update
             ws.send(json.dumps(response))
     except Exception as e:
         print(f"ESP WebSocket error: {e}")
@@ -113,34 +113,27 @@ def esp_ws(ws):
                 if info["ws"] == ws:
                     for mesh_id in info["mesh_ids"]:
                         set_live_websocket(mesh_id, False)
-                        forward_to_browser({"type": "status_update", "esp_id": mesh_id})
+                        update_browsers(mesh_id)
                     del esp_clients[esp_id]
                     print(f"ESP WebSocket with esp_id={esp_id} disconnected")
                     break
-            forward_to_browser({"type": "status_update", "esp_id": "LIST"}) # indicate to browser clients on ListPage that the esp has disconnected
+            update_browsers("LIST") # indicate to browser clients on ListPage that the esp has disconnected
 
 
-def forward_to_browser(data: dict | None = None) -> None:
+def update_browsers(esp_id: str) -> None:
     """
     Used to send WebSocket messages to browser clients when any ESP32 WebSocket client updates.
-    The message can either be a simple forwarding of telemetry data, or a trigger to update the status of a battery unit.
+    The message triggers the frontend to fetch data from the database through an api.
     """
-    esp_id = None
-    if data is not None:
-        # default use case
-        message = data
-        esp_id = data["esp_id"]
-    else:
-        # if no data is passed, just send a status update instruction to all browser clients
-        message = {"type": "status_update"}
+    message = {"type": "status_update"}
 
     for browser_id, info in browser_clients.items():
-        if esp_id == info["esp_id"] or message.get("type") == "status_update":
+        if info["esp_id"] == esp_id:
             ws = info.get("ws")
             if not ws: continue
             try:
                 message["browser_id"] = browser_id
-                message["esp_id"] = info["esp_id"]
+                message["esp_id"] = esp_id
                 ws.send(json.dumps(message))
             except Exception as e:
                 print(f"Browser WebSocket forward error: {e}")
