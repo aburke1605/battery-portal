@@ -267,8 +267,11 @@ size_t json_to_binary(uint8_t* binary_message, cJSON* json_array) {
             if (obj) packet->T4 = (int16_t)obj->valueint;
             obj = NULL;
 
-            obj = cJSON_GetObjectItem(content, "OTC_threshold");
-            if (obj) packet->OTC_threshold = (int16_t)obj->valueint;
+            obj = cJSON_GetObjectItem(content, "OTC");
+            if (obj) packet->OTC = (int16_t)obj->valueint;
+
+            obj = cJSON_GetObjectItem(content, "wifi");
+            if (obj) packet->wifi = (bool)obj->valueint;
 
 
             // now copy the packet into the returned binary_message which will be broadcasted
@@ -342,8 +345,8 @@ size_t json_to_binary(uint8_t* binary_message, cJSON* json_array) {
                 cJSON* new_esp_id = cJSON_GetObjectItem(data, "new_esp_id");
                 if (new_esp_id) packet->new_esp_id = new_esp_id->valueint;
 
-                cJSON* OTC_threshold = cJSON_GetObjectItem(data, "OTC_threshold");
-                if (OTC_threshold) packet->OTC_threshold = OTC_threshold->valueint;
+                cJSON* OTC = cJSON_GetObjectItem(data, "OTC");
+                if (OTC) packet->OTC = OTC->valueint;
             }
             else if (strcmp(summary->valuestring, "connect-wifi") == 0) {
                 cJSON* data = cJSON_GetObjectItem(content, "data");
@@ -499,7 +502,8 @@ void binary_to_json(uint8_t* binary_message, cJSON* json_array) {
             cJSON_AddNumberToObject(content, "T2", packet->T2);
             cJSON_AddNumberToObject(content, "T3", packet->T3);
             cJSON_AddNumberToObject(content, "T4", packet->T4);
-            cJSON_AddNumberToObject(content, "OTC_threshold", packet->OTC_threshold);
+            cJSON_AddNumberToObject(content, "OTC", packet->OTC);
+            cJSON_AddBoolToObject(content, "wifi", packet->wifi);
 
             snprintf(id_str, sizeof(id_str), "bms_%u", packet->esp_id);
             cJSON_AddStringToObject(message, "esp_id", id_str);
@@ -555,7 +559,7 @@ void binary_to_json(uint8_t* binary_message, cJSON* json_array) {
                 snprintf(new_id_str, sizeof(new_id_str), "bms_%03u", packet->new_esp_id);
                 cJSON_AddStringToObject(data, "new_esp_id", new_id_str);
 
-                cJSON_AddNumberToObject(data, "OTC_threshold", packet->OTC_threshold);
+                cJSON_AddNumberToObject(data, "OTC", packet->OTC);
 
                 cJSON_AddItemToObject(content, "data", data);
             }

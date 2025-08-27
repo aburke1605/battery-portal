@@ -223,15 +223,15 @@ esp_err_t perform_request(cJSON *message, cJSON *response) {
                 free(name);
             }
 
-            int OTC_threshold = cJSON_GetObjectItem(data, "OTC_threshold")->valueint;
+            int OTC = cJSON_GetObjectItem(data, "OTC")->valueint;
 
             uint8_t address[2] = {0};
             convert_uint_to_n_bytes(I2C_OTC_THRESHOLD_ADDR, address, sizeof(address), true);
             uint8_t data_flash[2] = {0};
             read_data_flash(address, sizeof(address), data_flash, sizeof(data_flash));
-            if (OTC_threshold != (data_flash[1] << 8 | data_flash[0])) {
+            if (OTC != (data_flash[1] << 8 | data_flash[0])) {
                 ESP_LOGI(TAG, "Changing OTC threshold...");
-                convert_uint_to_n_bytes(OTC_threshold, data_flash, sizeof(data_flash), false);
+                convert_uint_to_n_bytes(OTC, data_flash, sizeof(data_flash), false);
                 write_data_flash(address, sizeof(address), data_flash, sizeof(data_flash));
             }
 
