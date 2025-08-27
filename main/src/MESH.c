@@ -111,7 +111,7 @@ void connect_to_root_task(void *pvParameters) {
 
 void mesh_websocket_task(void *pvParameters) {
     while (true) {
-        char *data_string = get_data(false);
+        char *data_string = get_data();
 
         if (connected_to_root && data_string != NULL && strcmp(mesh_ws_auth_token, "") != 0) {
             char uri[40+UTILS_AUTH_TOKEN_LENGTH+11];
@@ -146,11 +146,7 @@ void mesh_websocket_task(void *pvParameters) {
                 esp_websocket_client_destroy(ws_client);
                 ws_client = NULL;
             } else {
-                char message[WS_MESSAGE_MAX_LEN];
-                char* esp_id = esp_id_string();
-                snprintf(message, sizeof(message), "{\"type\":\"data\",\"id\":\"%s\",\"content\":%s}", esp_id, data_string);
-                free(esp_id);
-                esp_websocket_client_send_text(ws_client, message, strlen(message), portMAX_DELAY);
+                esp_websocket_client_send_text(ws_client, data_string, strlen(data_string), portMAX_DELAY);
             }
         }
 

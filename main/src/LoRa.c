@@ -174,17 +174,17 @@ size_t json_to_binary(uint8_t* binary_message, cJSON* json_array) {
             memset(packet, 0, sizeof(radio_data_packet));
             packet->type = DATA;
 
-            cJSON *id = cJSON_GetObjectItem(item, "id");
-            if (!id) {
-                ESP_LOGE(TAG, "No \"id\" key in cJSON array item");
+            cJSON *esp_id = cJSON_GetObjectItem(item, "esp_id");
+            if (!esp_id) {
+                ESP_LOGE(TAG, "No \"esp_id\" key in cJSON array item");
                 return 0;
             }
 
-            if (strcmp(id->valuestring, "unknown") == 0)
+            if (strcmp(esp_id->valuestring, "unknown") == 0)
                 packet->esp_id = 0;
             else {
                 char esp_id_number[3];
-                strcpy(esp_id_number, &id->valuestring[4]);
+                strcpy(esp_id_number, &esp_id->valuestring[4]);
                 packet->esp_id = atoi(esp_id_number);
             }
 
@@ -502,7 +502,7 @@ void binary_to_json(uint8_t* binary_message, cJSON* json_array) {
             cJSON_AddNumberToObject(content, "OTC_threshold", packet->OTC_threshold);
 
             snprintf(id_str, sizeof(id_str), "bms_%u", packet->esp_id);
-            cJSON_AddStringToObject(message, "id", id_str);
+            cJSON_AddStringToObject(message, "esp_id", id_str);
 
             cJSON_AddItemToObject(message, "content", content);
 
@@ -516,7 +516,7 @@ void binary_to_json(uint8_t* binary_message, cJSON* json_array) {
             cJSON_AddStringToObject(message, "type", "query");
 
             snprintf(id_str, sizeof(id_str), "bms_%u", packet->esp_id);
-            cJSON_AddStringToObject(message, "id", id_str);
+            cJSON_AddStringToObject(message, "esp_id", id_str);
 
             if (packet->query == 1) cJSON_AddStringToObject(message, "content", "are you still there?");
 
@@ -530,7 +530,7 @@ void binary_to_json(uint8_t* binary_message, cJSON* json_array) {
             cJSON_AddStringToObject(message, "type", "request");
 
             snprintf(id_str, sizeof(id_str), "bms_%03u", packet->esp_id);
-            cJSON_AddStringToObject(message, "id", id_str);
+            cJSON_AddStringToObject(message, "esp_id", id_str);
 
             cJSON* content = cJSON_CreateObject();
             if (content == NULL) {
@@ -647,8 +647,8 @@ void receive(size_t* full_message_length, bool* chunked) {
                         cJSON_ArrayForEach(message, json_array) {
                             if (!cJSON_IsObject(message)) return;
 
-                            // pop the "id" key
-                            cJSON* esp_id = cJSON_DetachItemFromObject(message, "id");
+                            // pop the "esp_id" key
+                            cJSON* esp_id = cJSON_DetachItemFromObject(message, "esp_id");
                             if (esp_id) {
                                 uint8_t id_int = atoi(&esp_id->valuestring[4]);
                                 if (id_int == ESP_ID) {
@@ -761,12 +761,11 @@ void transmit(int64_t* delay_transmission_until) {
                 strcpy(forwarded_message, "\0");
             }
         } else {
-            char individual_message[LORA_MAX_PACKET_LEN];
             uint8_t n_devices = 1; // the transmitter, at least
 
             // now form the LoRa message out of non-empty messages and transmit
             for (int i=0; i<MESH_SIZE; i++) {
-                if (strcmp(all_messages[i].id, "") != 0)
+                if (strcmp(all_messages[i].esp_id, "") != 0)
                     n_devices++;
             }
 
@@ -777,25 +776,22 @@ void transmit(int64_t* delay_transmission_until) {
             }
 
             // get own data first
-            char *data_string = get_data(false);
-            char* esp_id = esp_id_string();
-            snprintf(individual_message, sizeof(individual_message), "{\"type\":\"data\",\"id\":\"%s\",\"content\":%s}", esp_id, data_string);
-            free(esp_id);
-            cJSON *item = cJSON_Parse(individual_message);
+            char *data_string = get_data();
+            cJSON *item = cJSON_Parse(data_string);
             cJSON_AddItemToArray(json_array, item);
 
             // now add the data of other devices in mesh to payload
             n_devices = 1;
             for (int i=0; i<MESH_SIZE; i++) {
-                if (strcmp(all_messages[i].id, "") != 0) {
+                if (strcmp(all_messages[i].esp_id, "") != 0) {
                     n_devices++;
 
                     item = cJSON_Parse(all_messages[i].message);
                     cJSON_AddItemToArray(json_array, item);
 
                     // clear the message slot again in case of disconnect
-                    strcpy(all_messages[i].id, "");
-                    all_messages[i].id[0] = '\0';
+                    strcpy(all_messages[i].esp_id, "");
+                    all_messages[i].esp_id[0] = '\0';
                     strcpy(all_messages[i].message, "");
                     all_messages[i].message[0] = '\0';
                 }

@@ -182,10 +182,16 @@ char* get_data() {
     // wifi connection status
     cJSON_AddBoolToObject(data, "wifi", connected_to_WiFi);
 
-    char* esp_id = esp_id_string();
+
+    // construct full message
     cJSON *message = cJSON_CreateObject();
+
+    char* esp_id = esp_id_string();
     cJSON_AddStringToObject(message, "esp_id", esp_id);
     free(esp_id);
+
+    cJSON_AddStringToObject(message, "type", "data");
+
     cJSON_AddItemToObject(message, "content", data);
 
     char *data_string = cJSON_PrintUnformatted(message);
