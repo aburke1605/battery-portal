@@ -134,13 +134,13 @@ export default function BatteryPage({ isFromEsp32 = false }: BatteriesPageProps)
 
     // get fresh data from WebSocket when it connects
     const handleMessage = useCallback((data: any) => {
-        if (isFromEsp32 || (data.esp_id === esp_id && data.browser_id === ws_session_browser_id.current)) {
+        if (data.esp_id === esp_id && data.browser_id === ws_session_browser_id.current) {
             if (data.type === "status_update") {
                 fetchBatteryInfo();
-            } else if (data.content) {
-                const parsed = parseBatteryDataNew(data.content);
-                setSelectedBattery(parsed);
             }
+        } else if (isFromEsp32 && data.content) {
+            const parsed = parseBatteryDataNew(data.content);
+            setSelectedBattery(parsed);
         }
     }, [esp_id, fetchBatteryInfo]);
     const { sendMessage } = useWebSocket({
@@ -189,6 +189,7 @@ export default function BatteryPage({ isFromEsp32 = false }: BatteriesPageProps)
                         sendWiFiConnect={sendWiFiConnect}
                         sendUnseal={sendUnseal}
                         sendReset={sendReset}
+                        isFromESP32={isFromEsp32}
                     />
                 ) : (
                     <p> Connecting to battery... </p> // fallback UI

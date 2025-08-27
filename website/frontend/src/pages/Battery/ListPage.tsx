@@ -96,10 +96,10 @@ export default function BatteryPage() {
 
   // get status updates from backend through websocket
   const ws_session_browser_id = useRef(generate_random_string(32));
-  const ws_url = `${apiConfig.WEBSOCKET_BROWSER}?browser_id=${ws_session_browser_id.current}&esp_id=NONE`;
+  const ws_url = `${apiConfig.WEBSOCKET_BROWSER}?browser_id=${ws_session_browser_id.current}&esp_id=LIST`;
   // fetch from database on message receipt
   const handleMessage = useCallback((data: any) => {
-    if (data.esp_id === "NONE" && data.browser_id === ws_session_browser_id.current) {
+    if (data.esp_id === "LIST" && data.browser_id === ws_session_browser_id.current) {
       if (data.type === "status_update"){
         fetchBatteryInfo();
       }

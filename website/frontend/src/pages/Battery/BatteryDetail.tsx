@@ -39,6 +39,7 @@ interface BatteryDetailProps {
   sendWiFiConnect: (username: string, password: string, eduroam: boolean) => void;
   sendUnseal: () => void;
   sendReset: () => void;
+  isFromESP32: boolean;
 }
 
 const BatteryDetail: React.FC<BatteryDetailProps> = ({ 
@@ -48,6 +49,7 @@ const BatteryDetail: React.FC<BatteryDetailProps> = ({
   sendWiFiConnect,
   sendUnseal,
   sendReset,
+  isFromESP32,
 }) => {
   
   const [activeTab, setActiveTab] = useState('overview');
@@ -377,7 +379,7 @@ const BatteryDetail: React.FC<BatteryDetailProps> = ({
 
                         {hasChanges && (
                           <div className="flex gap-2 mt-2">
-                            {battery.live_websocket ? (
+                            {(isFromESP32 || battery.live_websocket) ? (
                               <>
                                 <button onClick={handleSubmit} className="p-2 bg-blue-500 text-white rounded">
                                   Submit Updates
@@ -512,7 +514,7 @@ const BatteryDetail: React.FC<BatteryDetailProps> = ({
 
                         {hasWiFiChanges && (
                           <div className="flex gap-2 mt-2">
-                            {battery.live_websocket ? (
+                            {(isFromESP32 || battery.live_websocket) ? (
                               <button onClick={handleConnect} className="p-2 bg-blue-500 text-white rounded">
                                 Connect
                               </button>
@@ -691,16 +693,16 @@ const BatteryDetail: React.FC<BatteryDetailProps> = ({
                     <BrainCircuit size={16} className="mr-2" /> Digital Twin
                   </button>
                   <button
-                    onClick={() => battery.live_websocket ? sendUnseal() : null}
+                    onClick={() => (isFromESP32 || battery.live_websocket) ? sendUnseal() : null}
                     className="w-full flex items-center justify-center px-4 py-2 border border-orange-300 shadow-sm text-sm font-medium rounded-md text-orange-700 bg-orange-50 hover:bg-orange-100 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-orange-500">
                     <LockKeyholeOpen size={16} className="mr-2" />
-                    Unseal BMS {!battery.live_websocket ? "- OFFLINE" : ""}
+                    Unseal BMS {(!isFromESP32 && !battery.live_websocket) ? "- OFFLINE" : ""}
                   </button>
                   <button
-                    onClick={() => battery.live_websocket ? sendReset() : null}
+                    onClick={() => (isFromESP32 || battery.live_websocket) ? sendReset() : null}
                     className="w-full flex items-center justify-center px-4 py-2 border border-red-300 shadow-sm text-sm font-medium rounded-md text-red-700 bg-red-50 hover:bg-red-100 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500">
                     <RefreshCw size={16} className="mr-2" />
-                    Reset BMS {!battery.live_websocket ? "- OFFLINE" : ""}
+                    Reset BMS {(!isFromESP32 && !battery.live_websocket) ? "- OFFLINE" : ""}
                   </button>
                   <button className="w-full flex items-center justify-center px-4 py-2 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
                     <FileText size={16} className="mr-2" />
@@ -774,8 +776,8 @@ const BatteryDetail: React.FC<BatteryDetailProps> = ({
             </div>
           </div>
           <div className="flex items-center space-x-3">
-            <span className={`px-3 py-1 rounded-full text-sm font-medium ${getStatusColor(battery.live_websocket)}`}>
-              { battery.live_websocket?"online":"offline" }
+            <span className={`px-3 py-1 rounded-full text-sm font-medium ${getStatusColor(isFromESP32 ? true : battery.live_websocket)}`}>
+              { (isFromESP32 || battery.live_websocket) ? "online" : "offline" }
             </span>
             <div className="flex space-x-2">
               <button className="p-2 text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded-full">

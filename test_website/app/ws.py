@@ -98,12 +98,12 @@ def esp_ws(ws):
                     }
                     update_battery_data(data_list) # updates database
                 for data in data_list:
-                    forward_to_browser(data) # updates browsers currently viewing `data["esp_id"]` detail page
+                    forward_to_browser({"type": "status_update", "esp_id": data["esp_id"]}) # updates browsers currently viewing `data["esp_id"]` detail page
                 response["content"] = "OK"
             except Exception as e:
                 print(f"ESP WebSocket error in while loop: {e}")
 
-            forward_to_browser() # indicate to all browser clients that (at least one) esp has connected / sent an update
+            forward_to_browser({"type": "status_update", "esp_id": "LIST"}) # indicate to browser clients on ListPage that (at least one) esp has connected / sent an update
             ws.send(json.dumps(response))
     except Exception as e:
         print(f"ESP WebSocket error: {e}")
@@ -113,10 +113,11 @@ def esp_ws(ws):
                 if info["ws"] == ws:
                     for mesh_id in info["mesh_ids"]:
                         set_live_websocket(mesh_id, False)
+                        forward_to_browser({"type": "status_update", "esp_id": mesh_id})
                     del esp_clients[esp_id]
                     print(f"ESP WebSocket with esp_id={esp_id} disconnected")
                     break
-            forward_to_browser() # indicate to all browser clients that the esp has disconnected
+            forward_to_browser({"type": "status_update", "esp_id": "LIST"}) # indicate to browser clients on ListPage that the esp has disconnected
 
 
 def forward_to_browser(data: dict | None = None) -> None:
