@@ -137,6 +137,10 @@ def index():
 @db.route("/execute_sql", methods=["POST"])
 @roles_required("superuser")
 def execute_sql():
+    """
+        API used by frontend to enable manual sql execution on database.
+        Requires login as admin.
+    """
     data = request.get_json()
     query = data.get("query")
 

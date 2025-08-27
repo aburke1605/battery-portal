@@ -43,8 +43,12 @@ class Users(DB.Model, UserMixin):
 
 users = SQLAlchemyUserDatastore(DB, Users, Roles)
 
+
 @user.route("/login", methods=["POST"])
-def api_login():
+def login():
+    """
+        API to verify user login requests, works in conjunction with AuthContext.tsx.
+    """
     data = request.get_json()
     email = data.get("email")
     password = data.get("password")
@@ -55,33 +59,43 @@ def api_login():
         return jsonify({
             "loggedIn": True,
             "email": u.email,
-            "roles": [role.name for role in u.roles]  # if using roles
+            "roles": [role.name for role in u.roles]
         })
     return jsonify({"success": False}), 401
 
+
 @user.route("/check-auth", methods=["GET"])
 @login_required
-def auth_status():
+def check_auth():
+    """
+        API to check for already logged-in users, works in conjunction with AuthContext.tsx.
+    """
     return jsonify({
         "loggedIn": True,
         "email": current_user.email,
-        "roles": [role.name for role in current_user.roles]  # if using roles
+        "roles": [role.name for role in current_user.roles]
     })
+
 
 @user.route("/logout", methods=["POST"])
 @login_required
 def logout():
+    """
+        API to perform user logout requests, works in conjunction with AuthContext.tsx.
+    """
     logout_user()
     return jsonify({"message": "Logged out"}), 200
 
+
 @user.route("/list")
 @login_required
-def list_users():
-    # Get pagination parameters from query string
+def list():
+    """
+        API to list users already existing in the database, works in conjunction with list.tsx.
+    """
     page = request.args.get("page", default=1, type=int)
     per_page = request.args.get("per_page", default=10, type=int)
 
-    # Paginate query
     pagination = Users.query.paginate(page=page, per_page=per_page, error_out=False)
     users = pagination.items
 
@@ -106,9 +120,13 @@ def list_users():
         "has_prev": pagination.has_prev
     })
 
+
 @user.route("/add", methods=["POST"])
 @login_required
-def add_user():
+def add():
+    """
+        API to add new user to the database, works in conjunction with list.tsx
+    """
     data = request.get_json()
     first_name = data.get("first_name")
     last_name = data.get("last_name")
@@ -128,9 +146,14 @@ def add_user():
     DB.session.commit()
     return jsonify({"message": "User added successfully"}), 201
 
+
 @user.route("/edit/<int:user_id>", methods=["POST"])
 @login_required
 def edit_user(user_id):
+    """
+        TODO: implement me!
+        API ...
+    """
     u = Users.query.get_or_404(user_id)
     data = request.get_json()
 
