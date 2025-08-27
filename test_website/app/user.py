@@ -1,8 +1,10 @@
 from flask import Blueprint, request, jsonify
+from flask_migrate import upgrade
 from flask_security import UserMixin, RoleMixin, SQLAlchemyUserDatastore, login_user, login_required, logout_user
 from flask_security.utils import hash_password
 from flask_login import current_user
 
+import os
 from uuid import uuid4
 
 user = Blueprint("user", __name__, url_prefix="/api/user")
@@ -42,6 +44,45 @@ class Users(DB.Model, UserMixin):
                             backref=DB.backref("users", lazy="dynamic"))
 
 users = SQLAlchemyUserDatastore(DB, Users, Roles)
+
+
+def create_admin(app):
+    """
+        Builds initial role data in the database and creates the admin user for basic functionality.
+    """
+    with app.app_context():
+        # run migration to latest database state
+        upgrade()
+
+        admin_name = os.getenv("ADMIN_NAME", "admin")
+        admin_email = os.getenv("ADMIN_EMAIL", "user@admin.dev")
+        admin_password = os.getenv("ADMIN_PASSWORD", "password")
+
+
+        # first ensure basic roles exist
+        role_names = ["user", "superuser"]
+        roles = {}
+        for role_name in role_names:
+            role = Roles.query.filter_by(name=role_name).first()
+            if not role:
+                role = Roles(name=role_name)
+                DB.session.add(role)
+                print(f"creating new role \"{role_name}\"")
+            roles[role_name] = role
+        DB.session.commit()
+
+        # then ensure the admin user exists
+        if Users.query.filter_by(email=admin_email).first() is not None:
+            return
+        users.create_user(
+            first_name=admin_name,
+            email=admin_email,
+            password=hash_password(admin_password),
+            roles=[roles["user"], roles["superuser"]]
+            # are the other columns of Users therefore not needed?
+        )
+        print(f"creating admin user \"{admin_email}\"")
+        DB.session.commit()
 
 
 @user.route("/login", methods=["POST"])

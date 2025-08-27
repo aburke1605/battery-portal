@@ -5,7 +5,7 @@ from flask_admin import Admin
 
 from app.ws import sock
 from app.db import db, DB, BatteryInfo
-from app.user import user, users
+from app.user import user, users, create_admin
 
 def create_app():
     
@@ -20,6 +20,7 @@ def create_app():
     app.register_blueprint(user)
     Security(app, users)
     Admin(app)
+    create_admin(app)
 
     with app.app_context():
         # reset the status of all websockets existing in database on startup
