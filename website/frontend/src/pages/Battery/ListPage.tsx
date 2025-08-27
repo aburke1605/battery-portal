@@ -54,7 +54,7 @@ export default function BatteryPage() {
       t: 0,
       Q: 0,
       H: 0,
-      iT: 0,
+      cT: 0,
       V: 0,
       I: 0,
       new_esp_id: "",

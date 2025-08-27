@@ -570,25 +570,25 @@ const BatteryDetail: React.FC<BatteryDetailProps> = ({
                     <div>
                       <h4 className="text-sm font-medium text-gray-500 mb-2">Cell 1</h4>
                       <p className="text-2xl font-semibold text-gray-900">{battery.I} A </p>
-                      <p className="text-2xl font-semibold text-gray-900">{battery.iT} °C</p>
+                      <p className="text-2xl font-semibold text-gray-900">{battery.cT} °C</p>
                       <p className="text-2xl font-semibold text-gray-900">{battery.V} V</p>
                     </div>
                     <div>
                       <h4 className="text-sm font-medium text-gray-500 mb-2">Cell 2</h4>
                       <p className="text-2xl font-semibold text-gray-900">{battery.I} A</p>
-                      <p className="text-2xl font-semibold text-gray-900">{battery.iT} °C</p>
+                      <p className="text-2xl font-semibold text-gray-900">{battery.cT} °C</p>
                       <p className="text-2xl font-semibold text-gray-900">{battery.V} V</p>
                     </div>
                     <div>
                       <h4 className="text-sm font-medium text-gray-500 mb-2">Cell 3</h4>
                       <p className="text-2xl font-semibold text-gray-900">{battery.I} A</p>
-                      <p className="text-2xl font-semibold text-gray-900">{battery.iT} °C</p>
+                      <p className="text-2xl font-semibold text-gray-900">{battery.cT} °C</p>
                       <p className="text-2xl font-semibold text-gray-900">{battery.V} V</p>
                     </div>
                     <div>
                       <h4 className="text-sm font-medium text-gray-500 mb-2">Cell 4</h4>
                       <p className="text-2xl font-semibold text-gray-900">{battery.I} A</p>
-                      <p className="text-2xl font-semibold text-gray-900">{battery.iT} °C</p>
+                      <p className="text-2xl font-semibold text-gray-900">{battery.cT} °C</p>
                       <p className="text-2xl font-semibold text-gray-900">{battery.V} V</p>
                     </div>
                     {/* <div>
@@ -837,14 +837,14 @@ const BatteryDetail: React.FC<BatteryDetailProps> = ({
               <ThermometerSun size={16} className="mr-1" /> Temperature
             </h3>
             <div className="flex items-end space-x-2">
-              <span className="text-3xl font-bold text-orange-700">Ambient: {battery.iT}°C</span>
-              {battery.iT > 35 && (
+              <span className="text-3xl font-bold text-orange-700">Ambient: {battery.cT}°C</span>
+              {battery.cT > 35 && (
                 <span className="text-red-500 text-sm">Above normal</span>
               )}
             </div>
             <div className="flex items-end space-x-2">
-              <span className="text-3xl font-bold text-orange-700">Cell: {battery.iT}°C</span>
-              {battery.iT > 35 && (
+              <span className="text-3xl font-bold text-orange-700">Cell: {battery.cT}°C</span>
+              {battery.cT > 35 && (
                 <span className="text-red-500 text-sm">Above normal</span>
               )}
             </div>

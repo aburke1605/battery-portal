@@ -68,7 +68,7 @@ export default function Home() {
   const [selectedID, setSelectedID] = useState("");
 
   // tick-box options for charts
-  const chartOptions = ["Q", "iT", "V", "I"];
+  const chartOptions = ["Q", "H", "cT", "V", "I"];
   const [selectedCharts, setSelectedCharts] = useState<string[]>([]);
   const toggleOption = (option: string) => {
   setSelectedCharts((prev) =>

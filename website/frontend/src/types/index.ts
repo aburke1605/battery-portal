@@ -11,7 +11,7 @@ export interface BatteryDataNew extends BatteryInfoData {
   t: number;
   Q: number
   H: number;
-  iT: number;
+  cT: number;
   I: number;
   V: number;
   new_esp_id: string;
@@ -30,7 +30,7 @@ export const parseBatteryDataNew = (
   t: Date.now(),
   Q: raw?.Q || 0,
   H: raw?.H || 0,
-  iT: raw?.iT / 10 || 0,
+  cT: raw?.cT / 10 || 0,
   V: raw?.V / 10 || 0,
   I: raw?.I / 10 || 0,
   new_esp_id: "",

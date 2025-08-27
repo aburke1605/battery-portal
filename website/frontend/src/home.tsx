@@ -52,7 +52,7 @@ function App() {
               <DataChart esp_id={id} column="Q" />
             </div>
             <div className="w-full aspect-[5/3]">
-              <DataChart esp_id={id} column="iT" />
+              <DataChart esp_id={id} column="cT" />
             </div>
             <div className="w-full aspect-[5/3]">
               <DataChart esp_id={id} column="V" />

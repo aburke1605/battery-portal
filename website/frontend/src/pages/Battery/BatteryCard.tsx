@@ -38,7 +38,7 @@ const BatteryCard: React.FC<BatteryCardProps> = ({ battery, viewBatteryDetails }
       <div className="grid grid-cols-2 gap-2 mb-3">
         <div className="bg-gray-50 p-2 rounded">
           <p className="text-xs text-gray-600">temperature</p>
-          <p className="text-sm font-semibold">{battery.iT}°C</p>
+          <p className="text-sm font-semibold">{battery.cT}°C</p>
         </div>
         <div className="bg-gray-50 p-2 rounded">
           <p className="text-xs text-gray-600">Voltage</p>
@@ -65,7 +65,7 @@ const BatteryCard: React.FC<BatteryCardProps> = ({ battery, viewBatteryDetails }
                   <h4 className="text-sm font-medium">{childBattery.esp_id}</h4>
                   {/* <div className="flex items-center gap-2 mt-0.5">
                     <span className="text-xs text-gray-600">
-                      {childBattery.iT}°C
+                      {childBattery.cT}°C
                     </span>
                     <span className="text-xs text-gray-600">
                       {childBattery.V}V

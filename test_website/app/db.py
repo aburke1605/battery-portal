@@ -74,7 +74,7 @@ def update_battery_data(json: list) -> None:
                 t = datetime.now(), # TODO: update this to GPS data
                 Q = content["Q"],
                 H = content["H"],
-                iT = content["iT"] / 10,
+                cT = content["cT"] / 10,
                 I = content["I"] / 10,
                 V = content["V"] / 10,
                 OTC = content["OTC"],
@@ -118,7 +118,7 @@ def get_battery_data_table(esp_id: str) -> Table:
             Column("t", DateTime, nullable=False, default=datetime.now, primary_key=True),
             Column("Q", Integer, nullable=False),
             Column("H", Integer, nullable=False),
-            Column("iT", Float, nullable=False),
+            Column("cT", Float, nullable=False),
             Column("I", Float, nullable=False),
             Column("V", Float, nullable=False),
             Column("OTC", Integer, nullable=False),
