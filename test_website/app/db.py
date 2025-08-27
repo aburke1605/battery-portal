@@ -1,7 +1,7 @@
 from flask import Blueprint, request, jsonify
 from flask_sqlalchemy import SQLAlchemy
 from flask_security import roles_required
-from sqlalchemy import Table, Column, inspect, insert, select, asc, desc, text, DateTime, Integer, Float, Boolean
+from sqlalchemy import inspect, insert, select, desc, text
 
 from datetime import datetime, timedelta
 from collections import defaultdict
@@ -9,7 +9,7 @@ from collections import defaultdict
 db = Blueprint("db", __name__, url_prefix="/api/db")
 
 DB = SQLAlchemy()
-class battery_info(DB.Model):
+class BatteryInfo(DB.Model):
     """
         Defines the structure of the battery_info table, which manages the individual battery_data tables.
         Must first create the database manually in mysql command prompt:
@@ -46,10 +46,10 @@ def update_battery_data(json: list) -> None:
         # first update battery_info table
         try:
             # check if the entry already exists
-            battery = DB.session.get(battery_info, esp_id)
+            battery = DB.session.get(BatteryInfo, esp_id)
             if not battery:
                 # create default one if not
-                battery = battery_info(
+                battery = BatteryInfo(
                     esp_id = "",
                     root_id = None,
                     last_updated_time = datetime.now(),
@@ -92,7 +92,7 @@ def set_live_websocket(esp_id: str, live: bool) -> None:
         Simple utility function to change the live_websocket value for a given battery unit in the battery_info table.
     """
     try:
-        battery = DB.session.get(battery_info, esp_id)
+        battery = DB.session.get(BatteryInfo, esp_id)
         battery.live_websocket = live
         DB.session.commit()
     except Exception as e:
@@ -110,21 +110,20 @@ def get_battery_data_table(esp_id: str) -> Table:
     # check if the table already exists
     inspector = inspect(DB.engine)
     if inspector.has_table(name):
-        table = Table(name, DB.metadata, autoload_with=DB.engine)
+        table = DB.Table(name, autoload_with=DB.engine)
     
     # create one if not
     else:
-        table = Table(name, DB.metadata,
-            Column("t", DateTime, nullable=False, default=datetime.now, primary_key=True),
-            Column("Q", Integer, nullable=False),
-            Column("H", Integer, nullable=False),
-            Column("cT", Float, nullable=False),
-            Column("I", Float, nullable=False),
-            Column("V", Float, nullable=False),
-            Column("OTC", Integer, nullable=False),
-            Column("wifi", Boolean, nullable=False),
+        table = DB.Table(name,
+            DB.Column("t", DB.DateTime, nullable=False, default=datetime.now, primary_key=True),
+            DB.Column("Q", DB.Integer, nullable=False),
+            DB.Column("H", DB.Integer, nullable=False),
+            DB.Column("cT", DB.Float, nullable=False),
+            DB.Column("I", DB.Float, nullable=False),
+            DB.Column("V", DB.Float, nullable=False),
+            DB.Column("OTC", DB.Integer, nullable=False),
+            DB.Column("wifi", DB.Boolean, nullable=False),
         )
-        table.create(bind=DB.engine)
         print(f"created new table: {name}")
 
     return table
@@ -180,7 +179,7 @@ def info():
     """
     esp_dict = defaultdict()
     nodes_dict = defaultdict(list)
-    batteries = DB.session.query(battery_info).all()
+    batteries = DB.session.query(BatteryInfo).all()
     for battery in batteries:
         esp_dict[battery.esp_id] = {
             "esp_id": battery.esp_id,
@@ -209,7 +208,7 @@ def data():
     """
     esp_id = request.args.get("esp_id")
     table_name = f"battery_data_{esp_id}"
-    data_table = Table(table_name, DB.metadata, autoload_with=DB.engine)
+    data_table = DB.Table(table_name, autoload_with=DB.engine)
 
     statement = select(data_table).order_by(desc(data_table.c.t)).limit(1)
 
@@ -227,7 +226,7 @@ def esp_ids():
     """
         API used by frontend to fetch all esp_ids from battery_info table.
     """
-    batteries = DB.session.query(battery_info).all()
+    batteries = DB.session.query(BatteryInfo).all()
     return jsonify([battery.esp_id for battery in batteries])
 
 
@@ -241,11 +240,11 @@ def chart_data():
         return {}, 404
 
     table_name = f"battery_data_{esp_id}"
-    data_table = Table(table_name, DB.metadata, autoload_with=DB.engine)
+    data_table = DB.Table(table_name, autoload_with=DB.engine)
     column = request.args.get("column")
 
     sub_query = (select(data_table.c.t, data_table.c[column]).order_by(desc(data_table.c.t)).limit(250).subquery()) # get the 250 most recent (time-wise) entries
-    statement = select(sub_query)#TODO.order_by(asc(sub_query.c.t)) # reorder chronologically
+    statement = select(sub_query)
 
     with DB.engine.connect() as conn:
         rows = conn.execute(statement)
@@ -255,7 +254,7 @@ def chart_data():
 
         previous = None
         data = []
-        for row in rows:#TODO[::-1]: # work from end
+        for row in rows:
 
             # take only data from most recent date
             if row[0].date() != rows[-1][0].date():

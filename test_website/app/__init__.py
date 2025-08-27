@@ -3,8 +3,8 @@ from flask_migrate import Migrate
 from flask_security import Security
 from flask_admin import Admin
 
-from app.db import db, DB, battery_info
 from app.ws import sock
+from app.db import db, DB, BatteryInfo
 from app.user import user, user_datastore
 
 def create_app():
@@ -23,7 +23,7 @@ def create_app():
 
     with app.app_context():
         # reset the status of all websockets existing in database on startup
-        DB.session.query(battery_info).filter_by(live_websocket=True).update({battery_info.live_websocket: False})
+        DB.session.query(BatteryInfo).filter_by(live_websocket=True).update({BatteryInfo.live_websocket: False})
         DB.session.commit()
     sock.init_app(app)
 
