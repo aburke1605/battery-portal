@@ -1,3 +1,6 @@
+import sys
+import logging
+
 from flask import Flask
 from flask_migrate import Migrate
 from flask_security import Security
@@ -8,6 +11,12 @@ from app.db import db, DB, BatteryInfo
 from app.user import user, users, create_admin
 
 def create_app():
+    if not logging.getLogger().handlers: # only configure if root logger has no handlers (avoids duplicate setup under Gunicorn)
+        logging.basicConfig(
+            level=logging.INFO,
+            format="%(asctime)s [%(levelname)s] %(name)s: %(message)s",
+            handlers=[logging.StreamHandler(sys.stdout)],
+        )
     
     app = Flask(__name__)
 

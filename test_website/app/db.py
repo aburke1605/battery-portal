@@ -1,3 +1,6 @@
+import logging
+logger = logging.getLogger(__name__)
+
 from flask import Blueprint, request, jsonify
 from flask_sqlalchemy import SQLAlchemy
 from flask_security import roles_required

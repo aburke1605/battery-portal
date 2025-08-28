@@ -1,10 +1,11 @@
-from flask import request
-from flask_sock import Sock
-
+import logging
+logger = logging.getLogger(__name__)
 from threading import Lock
 import json
 
 from app.db import update_battery_data, set_live_websocket
+from flask import request
+from flask_sock import Sock
 
 sock = Sock()
 lock = Lock()
