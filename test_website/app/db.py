@@ -113,7 +113,7 @@ def get_battery_data_table(esp_id: str) -> Table:
     # check if the table already exists
     inspector = inspect(DB.engine)
     if inspector.has_table(name):
-        table = DB.Table(name, autoload_with=DB.engine)
+        table = DB.Table(name, DB.metadata, autoload_with=DB.engine)
     
     # create one if not
     else:
@@ -127,6 +127,7 @@ def get_battery_data_table(esp_id: str) -> Table:
             DB.Column("OTC", DB.Integer, nullable=False),
             DB.Column("wifi", DB.Boolean, nullable=False),
         )
+        table.create(bind=DB.engine, checkfirst=True)
         print(f"created new table: {name}")
 
     return table
@@ -215,7 +216,7 @@ def data():
     """
     esp_id = request.args.get("esp_id")
     table_name = f"battery_data_{esp_id}"
-    data_table = DB.Table(table_name, autoload_with=DB.engine)
+    data_table = DB.Table(table_name, DB.metadata, autoload_with=DB.engine)
 
     statement = select(data_table).order_by(desc(data_table.c.t)).limit(1)
 
