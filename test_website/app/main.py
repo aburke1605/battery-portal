@@ -1,12 +1,15 @@
-from flask import Blueprint, render_template, request
+from flask import Blueprint, send_from_directory
 
 main = Blueprint("main", __name__, url_prefix="/")
 
-@main.route("/")
-def index():
-    return render_template("index.html")
+@main.route("/", methods=["GET"])
+def home():
+    return send_from_directory("../../website/frontend/dist/", "home.html")
 
-@main.route("/info")
-def info():
-    esp_id = request.args.get("esp_id")
-    return render_template("info.html", esp_id=esp_id)
+@main.route("/admin", methods=["GET"])
+def admin():
+    return send_from_directory("../../website/frontend/dist", "index.html")
+
+@main.route("/<path:path>", methods=["GET"])
+def serve_react_static(path):
+    return send_from_directory("../../website/frontend/dist", path)
