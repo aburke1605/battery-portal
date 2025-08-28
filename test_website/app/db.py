@@ -248,7 +248,7 @@ def chart_data():
         return {}, 404
 
     table_name = f"battery_data_{esp_id}"
-    data_table = DB.Table(table_name, autoload_with=DB.engine)
+    data_table = DB.Table(table_name, DB.metadata, autoload_with=DB.engine)
     column = request.args.get("column")
 
     sub_query = (select(data_table.c.t, data_table.c[column]).order_by(desc(data_table.c.t)).limit(250).subquery()) # get the 250 most recent (time-wise) entries
