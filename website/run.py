@@ -64,7 +64,7 @@ def serve_react_static(path):
     return send_from_directory("frontend/dist", path)
 
 # Create seed data
-seed_data(app)
+# seed_data(app)
 # Start the background scheduler to check online status
 scheduler = BackgroundScheduler()
 scheduler.add_job(check_online, 'interval', seconds=30, args=[app]) 

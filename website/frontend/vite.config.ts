@@ -11,7 +11,14 @@ const __dirname = path.dirname(__filename);
 export default defineConfig(() => ({
   server: {
     host: true,  // or '0.0.0.0'
-    port: 5173
+    port: 5173,
+    proxy: {
+      '/api': {
+        target: 'http://localhost:5000', // Change this to your backend server URL
+        changeOrigin: true,
+        secure: false,
+      },
+    },
   },
   plugins: [
     react(),

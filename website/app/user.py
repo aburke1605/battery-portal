@@ -111,30 +111,85 @@ def add_user():
     last_name = data.get('last_name')
     email = data.get('email')
     password = data.get('password')
-    role_ids = data.get('roles', [])
+    
+    # Check if email already exists
+    existing_user = User.query.filter_by(email=email).first()
+    if existing_user:
+        return jsonify({"error": "Email already exists. Please use a different email address."}), 400
+    
+    # role_ids = data.get('roles', [])
+    # Only can add normal role users for now
+    role_ids = [1]
 
     roles = Role.query.filter(Role.id.in_(role_ids)).all()
 
-    user_datastore.create_user(
-        first_name=first_name,
-        last_name=last_name,
-        email=email,
-        password=hash_password(password),
-        roles=roles
-    )
-    DB.session.commit()
-    return jsonify({"message": "User added successfully"}), 201
+    try:
+        user_datastore.create_user(
+            first_name=first_name,
+            last_name=last_name,
+            email=email,
+            password=hash_password(password),
+            roles=roles
+        )
+        DB.session.commit()
+        return jsonify({"message": "User added successfully"}), 201
+    except Exception as e:
+        DB.session.rollback()
+        return jsonify({"error": "Failed to create user. Please try again."}), 500
 
-@user_bp.route('/edit/<int:user_id>', methods=['POST'])
+@user_bp.route('/<int:user_id>', methods=['PUT'])
 @login_required
 def edit_user(user_id):
     user = User.query.get_or_404(user_id)
     data = request.get_json()
+    
+    new_email = data.get('email', user.email)
+    
+    # Check if email is being changed and if the new email already exists
+    if new_email != user.email:
+        existing_user = User.query.filter_by(email=new_email).first()
+        if existing_user:
+            return jsonify({"error": "Email already exists. Please use a different email address."}), 400
+    
+    try:
+        user.first_name = data.get('first_name', user.first_name)
+        user.last_name = data.get('last_name', user.last_name)
+        user.email = new_email
+        
+        # Update password if provided
+        new_password = data.get('password')
+        if new_password and new_password.strip():
+            user.password = hash_password(new_password)
+        
+        DB.session.commit()
+        return jsonify({"message": "User updated successfully"}), 200
+    except Exception as e:
+        DB.session.rollback()
+        return jsonify({"error": "Failed to update user. Please try again."}), 500
 
-    user.first_name = data.get('first_name', user.first_name)
-    user.last_name = data.get('last_name', user.last_name)
-    user.email = data.get('email', user.email)
-    role_ids = data.get('roles', [])
-    user.roles = Role.query.filter(Role.id.in_(role_ids)).all()
-    DB.session.commit()
-    return jsonify({"message": "User updated successfully"})
+@user_bp.route('/<int:user_id>', methods=['DELETE'])
+@login_required
+def delete_user(user_id):
+    # Prevent users from deleting themselves
+    if current_user.id == user_id:
+        return jsonify({"error": "You cannot delete your own account."}), 400
+    
+    user = User.query.get_or_404(user_id)
+    
+    try:
+        # Store user info for response
+        user_email = user.email
+        user_name = f"{user.first_name} {user.last_name}"
+        
+        DB.session.delete(user)
+        DB.session.commit()
+        
+        return jsonify({
+            "message": f"User {user_name} ({user_email}) has been deleted successfully."
+        }), 200
+    except Exception as e:
+        DB.session.rollback()
+        return jsonify({"error": "Failed to delete user. Please try again."}), 500
+
+
+    
