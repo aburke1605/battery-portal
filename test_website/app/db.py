@@ -180,7 +180,7 @@ def execute_query(query: str):
         return {"error": str(e)}, 400
 
 
-@db.route("/info")
+@db.route("/info", methods=["GET"])
 def info():
     """
         API used by frontend to fetch live_websocket statuses and mesh structure from battery_info table.
@@ -209,7 +209,7 @@ def info():
     return jsonify([esp for esp in esp_dict.values() if esp["root_id"] is None])
 
 
-@db.route("/data")
+@db.route("/data", methods=["GET"])
 def data():
     """
         API used by frontend to fetch most recent row in battery_data_<esp_id> table.
@@ -229,7 +229,7 @@ def data():
         return {}, 404
 
 
-@db.route("/esp_ids")
+@db.route("/esp_ids", methods=["GET"])
 def esp_ids():
     """
         API used by frontend to fetch all esp_ids from battery_info table.
@@ -238,7 +238,7 @@ def esp_ids():
     return jsonify([battery.esp_id for battery in batteries])
 
 
-@db.route("/chart_data")
+@db.route("/chart_data", methods=["GET"])
 def chart_data():
     """
         API used by frontend to fetch 250 entries from battery_data_<esp_id> table for chart display.

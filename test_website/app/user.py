@@ -126,7 +126,7 @@ def logout():
     return jsonify({"message": "Logged out"}), 200
 
 
-@user.route("/list")
+@user.route("/list", methods=["GET"])
 @login_required
 def list():
     """
