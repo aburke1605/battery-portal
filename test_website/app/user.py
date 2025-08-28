@@ -54,7 +54,7 @@ def create_admin(app: Flask):
     """
     with app.app_context():
         inspector = inspect(DB.engine)
-        if not inspector.has_table(Roles.__name__):
+        if not inspector.has_table(Roles.__tablename__):
             return  # roles table not yet created
 
         admin_name = os.getenv("ADMIN_NAME", "admin")

@@ -38,8 +38,8 @@ def create_app():
 
     with app.app_context():
         inspector = inspect(DB.engine)
-        if inspector.has_table(BatteryInfo.__name__):
-            columns = [col["name"] for col in inspector.get_columns(BatteryInfo.__name__)]
+        if inspector.has_table(BatteryInfo.__tablename__):
+            columns = [col["name"] for col in inspector.get_columns(BatteryInfo.__tablename__)]
             if "live_websocket" in columns:
                 # reset the status of all websockets existing in database on startup
                 DB.session.query(BatteryInfo).filter_by(live_websocket=True).update({BatteryInfo.live_websocket: False})
