@@ -11,13 +11,17 @@ function App() {
   // so we can display a graph beneath
   const [id, setID] = useState("unavailable!");
   useEffect(() => {
-    axios.get(apiConfig.DB_ID_END_POINT)
-      .then(response => {
+    const fetchRandomBattery = async () => {
+      try {
+        const response = await axios.get(apiConfig.DB_ESP_ID_API);
         if (response.data != null) {
           setID(response.data[0]); // just take the first one
         }
-      })
-      .catch(err => console.error(err));
+      } catch(err) {
+        console.error(err);
+      }
+    };
+    fetchRandomBattery();
   }, []);
 
 
@@ -45,16 +49,16 @@ function App() {
           </h1>
           <div className="mx-auto grid grid-cols-1 gap-4 sm:grid-cols-2 max-w-4xl mb-4">
             <div className="w-full aspect-[5/3]">
-              <DataChart esp_id={id} column="charge" />
+              <DataChart esp_id={id} column="Q" />
             </div>
             <div className="w-full aspect-[5/3]">
-              <DataChart esp_id={id} column="temperature" />
+              <DataChart esp_id={id} column="cT" />
             </div>
             <div className="w-full aspect-[5/3]">
-              <DataChart esp_id={id} column="voltage" />
+              <DataChart esp_id={id} column="V" />
             </div>
             <div className="w-full aspect-[5/3]">
-              <DataChart esp_id={id} column="current" />
+              <DataChart esp_id={id} column="I" />
             </div>
           </div>
           <div className="mx-auto max-w-4xl text-center">

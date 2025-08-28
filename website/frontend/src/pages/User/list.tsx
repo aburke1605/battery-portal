@@ -6,6 +6,7 @@ import { Modal } from "../../components/ui/modal";
 import Button from "../../components/ui/button/Button";
 import Input from "../../components/form/input/InputField";
 import Label from "../../components/form/Label";
+import axios from 'axios';
 
 const UserList = () => {
   const [users, setUsers] = useState<User[]>([]);
@@ -23,11 +24,10 @@ const UserList = () => {
   const fetchUsers = async (page = 1) => {
     setLoading(true);
     try {
-      const res = await fetch(`/api/users/list?page=${page}&per_page=10`);
-      const data = await res.json();
-      setUsers(data.users);
-      setCurrentPage(data.current_page);
-      setPages(data.pages);
+      const response = await axios.get(`/api/user/list?page=${page}&per_page=10`);
+      setUsers(response.data.users);
+      setCurrentPage(response.data.current_page);
+      setPages(response.data.pages);
     } catch (err) {
       console.error('Failed to fetch users:', err);
     }
@@ -72,7 +72,7 @@ const UserList = () => {
     };
 
     try {
-      const res = await fetch('/api/users/add', {
+      const res = await fetch('/api/user/add', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload)

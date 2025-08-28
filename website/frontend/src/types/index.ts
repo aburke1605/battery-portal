@@ -1,4 +1,44 @@
 // Battery Data Types
+export interface BatteryInfoData {
+  esp_id: string;
+  root_id: string|null;
+  last_updated_time: string;
+  live_websocket: boolean;
+  nodes?: BatteryInfoData[];
+}
+
+export interface BatteryDataNew extends BatteryInfoData {
+  t: number;
+  Q: number
+  H: number;
+  cT: number;
+  I: number;
+  V: number;
+  new_esp_id: string;
+  OTC: number;
+  wifi: boolean;
+}
+
+export const parseBatteryDataNew = (
+  raw: any,
+  isFromEsp32 = false
+): BatteryDataNew => ({
+  esp_id: raw?.esp_id || 0,
+  root_id: raw?.root_id || 0,
+  last_updated_time: raw?.last_updated_time || 0,
+  live_websocket: raw?.live_websocket || 0,
+  t: Date.now(),
+  Q: raw?.Q || 0,
+  H: raw?.H || 0,
+  cT: raw?.cT / 10 || 0,
+  V: raw?.V / 10 || 0,
+  I: raw?.I / 10 || 0,
+  new_esp_id: "",
+  OTC: raw?.OTC || 0,
+  wifi: isFromEsp32 ? !!raw?.wifi : !!raw,
+});
+
+
 export interface BatteryData {
   esp_id: string;
   new_esp_id: string;
