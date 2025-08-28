@@ -133,9 +133,6 @@ def get_battery_data_table(esp_id: str) -> Table:
     return table
 
 
-@db.route("/")
-def index():
-    return "<p>Hello from DB!</p>"
 
 
 @db.route("/execute_sql", methods=["POST"])
