@@ -3,7 +3,7 @@ logger = logging.getLogger(__name__)
 
 from flask import Blueprint, request, jsonify
 from flask_sqlalchemy import SQLAlchemy
-from flask_security import roles_required
+from flask_security import roles_required, login_required
 from sqlalchemy import inspect, insert, select, desc, text
 
 from datetime import datetime, timedelta
@@ -181,6 +181,7 @@ def execute_query(query: str):
 
 
 @db.route("/info", methods=["GET"])
+@login_required
 def info():
     """
         API used by frontend to fetch live_websocket statuses and mesh structure from battery_info table.
@@ -210,6 +211,7 @@ def info():
 
 
 @db.route("/data", methods=["GET"])
+@login_required
 def data():
     """
         API used by frontend to fetch most recent row in battery_data_<esp_id> table.
@@ -230,6 +232,7 @@ def data():
 
 
 @db.route("/esp_ids", methods=["GET"])
+# @login_required # can't be used in chart data (see below) otherwise
 def esp_ids():
     """
         API used by frontend to fetch all esp_ids from battery_info table.
@@ -239,6 +242,7 @@ def esp_ids():
 
 
 @db.route("/chart_data", methods=["GET"])
+# @login_required # wouldn't show in homepage otherwise
 def chart_data():
     """
         API used by frontend to fetch 250 entries from battery_data_<esp_id> table for chart display.
