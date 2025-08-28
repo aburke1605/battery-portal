@@ -1,5 +1,5 @@
 import React, {useEffect, useState} from 'react';
-import { BatteryData } from '../../types';
+import { BatteryDataNew } from '../../types';
 import { 
   Share2, 
   Download, 
@@ -32,23 +32,24 @@ import { getStatusColor } from '../../utils/helpers';
 import { useNavigate } from 'react-router-dom';
 
 interface BatteryDetailProps {
-  battery: BatteryData;
+  battery: BatteryDataNew;
   // onToggleCharging: (batteryId: string) => void;
   voltageThreshold: number;
-  sendBatteryUpdate: (updatedValues: Partial<BatteryData>) => void;
+  sendBatteryUpdate: (updatedValues: Partial<BatteryDataNew>) => void;
   sendWiFiConnect: (username: string, password: string, eduroam: boolean) => void;
   sendUnseal: () => void;
   sendReset: () => void;
+  isFromESP32: boolean;
 }
 
 const BatteryDetail: React.FC<BatteryDetailProps> = ({ 
   battery, 
-  // onToggleCharging, 
   voltageThreshold,
   sendBatteryUpdate, // receive function from BatteryPage
   sendWiFiConnect,
   sendUnseal,
   sendReset,
+  isFromESP32,
 }) => {
   
   const [activeTab, setActiveTab] = useState('overview');
@@ -66,20 +67,20 @@ const BatteryDetail: React.FC<BatteryDetailProps> = ({
   const OTC_threshold_min = 450;
   const OTC_threshold_max = 650;
   // initialise
-  const [values, setValues] = useState<Partial<BatteryData>>({
+  const [values, setValues] = useState<Partial<BatteryDataNew>>({
     esp_id: battery.esp_id,
-    OTC_threshold: battery.OTC_threshold
+    OTC: battery.OTC
   });
   // websocket update
   useEffect(() => {
     if (!isEditing) {
       setValues({
         esp_id: battery.esp_id,
-        OTC_threshold: battery.OTC_threshold
+        OTC: battery.OTC
       });
       setHasChanges(false);
     }
-  }, [battery.esp_id, battery.OTC_threshold, isEditing]);
+  }, [battery.esp_id, battery.OTC, isEditing]);
   // slider update
   const handleSliderChange = (key: string) => (e: React.ChangeEvent<HTMLInputElement>) => {
     const { value, type } = e.target;
@@ -87,7 +88,7 @@ const BatteryDetail: React.FC<BatteryDetailProps> = ({
     setValues((prevValues) => {
       const updatedValues = { ...prevValues, [key]: newValue };
       // check if any slider has moved
-      const hasAnyChange = (Object.keys(values) as Array<keyof BatteryData>).some((k) => values[k] !== battery[k as keyof BatteryData]);
+      const hasAnyChange = (Object.keys(values) as Array<keyof BatteryDataNew>).some((k) => values[k] !== battery[k as keyof BatteryDataNew]);
       setHasChanges(hasAnyChange);
       setIsEditing(true);
       return updatedValues;
@@ -102,7 +103,7 @@ const BatteryDetail: React.FC<BatteryDetailProps> = ({
   // reset sliders
   const handleReset = () => {
     setValues({
-      OTC_threshold: battery.OTC_threshold
+      OTC: battery.OTC
     });
     setIsEditing(false);
     setHasChanges(false);
@@ -362,14 +363,14 @@ const BatteryDetail: React.FC<BatteryDetailProps> = ({
                           onChange={handleSliderChange("new_esp_id")}
                         />
 
-                        <label className="block text-sm font-medium text-gray-700">OCT threshold: {values.OTC_threshold} [0.1 °C]</label>
+                        <label className="block text-sm font-medium text-gray-700">OCT threshold: {values.OTC} [0.1 °C]</label>
                         <input
                           type="range"
                           className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer mt-2"
                           min={OTC_threshold_min}
                           max={OTC_threshold_max}
-                          value={values.OTC_threshold}
-                          onChange={handleSliderChange("OTC_threshold")}
+                          value={values.OTC}
+                          onChange={handleSliderChange("OTC")}
                         />
                         <div className="flex justify-between text-xs text-gray-500 mt-1">
                           <span>{OTC_threshold_min} [0.1 °C]</span>
@@ -378,12 +379,20 @@ const BatteryDetail: React.FC<BatteryDetailProps> = ({
 
                         {hasChanges && (
                           <div className="flex gap-2 mt-2">
-                            <button onClick={handleSubmit} className="p-2 bg-blue-500 text-white rounded">
-                              Submit Updates
-                            </button>
-                            <button onClick={handleReset} className="p-2 bg-gray-500 text-white rounded">
-                              Reset
-                            </button>
+                            {(isFromESP32 || battery.live_websocket) ? (
+                              <>
+                                <button onClick={handleSubmit} className="p-2 bg-blue-500 text-white rounded">
+                                  Submit Updates
+                                </button>
+                                <button onClick={handleReset} className="p-2 bg-gray-500 text-white rounded">
+                                  Reset
+                                </button>
+                              </>
+                            ) : (
+                              <button className="p-2 bg-gray-500 text-white rounded">
+                                OFFLINE
+                              </button>
+                            )}
                           </div>
                         )}
                       </div>
@@ -505,9 +514,15 @@ const BatteryDetail: React.FC<BatteryDetailProps> = ({
 
                         {hasWiFiChanges && (
                           <div className="flex gap-2 mt-2">
-                            <button onClick={handleConnect} className="p-2 bg-blue-500 text-white rounded">
-                              Connect
-                            </button>
+                            {(isFromESP32 || battery.live_websocket) ? (
+                              <button onClick={handleConnect} className="p-2 bg-blue-500 text-white rounded">
+                                Connect
+                              </button>
+                            ) : (
+                              <button className="p-2 bg-gray-500 text-white rounded">
+                                OFFLINE
+                              </button>
+                            )}
                           </div>
                         )}
                       </div>
@@ -534,9 +549,9 @@ const BatteryDetail: React.FC<BatteryDetailProps> = ({
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
                     <div>
                       <h4 className="text-sm font-medium text-gray-500 mb-2">Voltage</h4>
-                      <p className="text-2xl font-semibold text-gray-900">{battery.voltage} V</p>
+                      <p className="text-2xl font-semibold text-gray-900">{battery.V} V</p>
                       <div className="mt-1 text-sm text-gray-500">
-                        {battery.voltage < voltageThreshold ? (
+                        {battery.V < voltageThreshold ? (
                           <span className="text-amber-600">Below threshold ({voltageThreshold}V)</span>
                         ) : (
                           <span className="text-green-600">Normal operating range</span>
@@ -545,7 +560,7 @@ const BatteryDetail: React.FC<BatteryDetailProps> = ({
                     </div>
                     <div>
                       <h4 className="text-sm font-medium text-gray-500 mb-2">Current</h4>
-                      <p className="text-2xl font-semibold text-gray-900">{battery.current} A</p>
+                      <p className="text-2xl font-semibold text-gray-900">{battery.I} A</p>
                       <div className="mt-1 text-sm text-gray-500">
                         {/* {battery.isCharging ? (
                           <span className="text-blue-600">Charging current</span>
@@ -556,27 +571,27 @@ const BatteryDetail: React.FC<BatteryDetailProps> = ({
                     </div>
                     <div>
                       <h4 className="text-sm font-medium text-gray-500 mb-2">Cell 1</h4>
-                      <p className="text-2xl font-semibold text-gray-900">{battery.cell1_current} A </p>
-                      <p className="text-2xl font-semibold text-gray-900">{battery.cell1_temperature} °C</p>
-                      <p className="text-2xl font-semibold text-gray-900">{battery.cell1_voltage} V</p>
+                      <p className="text-2xl font-semibold text-gray-900">{battery.I} A </p>
+                      <p className="text-2xl font-semibold text-gray-900">{battery.cT} °C</p>
+                      <p className="text-2xl font-semibold text-gray-900">{battery.V} V</p>
                     </div>
                     <div>
                       <h4 className="text-sm font-medium text-gray-500 mb-2">Cell 2</h4>
-                      <p className="text-2xl font-semibold text-gray-900">{battery.cell2_current} A</p>
-                      <p className="text-2xl font-semibold text-gray-900">{battery.cell2_temperature} °C</p>
-                      <p className="text-2xl font-semibold text-gray-900">{battery.cell2_voltage} V</p>
+                      <p className="text-2xl font-semibold text-gray-900">{battery.I} A</p>
+                      <p className="text-2xl font-semibold text-gray-900">{battery.cT} °C</p>
+                      <p className="text-2xl font-semibold text-gray-900">{battery.V} V</p>
                     </div>
                     <div>
                       <h4 className="text-sm font-medium text-gray-500 mb-2">Cell 3</h4>
-                      <p className="text-2xl font-semibold text-gray-900">{battery.cell3_current} A</p>
-                      <p className="text-2xl font-semibold text-gray-900">{battery.cell3_temperature} °C</p>
-                      <p className="text-2xl font-semibold text-gray-900">{battery.cell3_voltage} V</p>
+                      <p className="text-2xl font-semibold text-gray-900">{battery.I} A</p>
+                      <p className="text-2xl font-semibold text-gray-900">{battery.cT} °C</p>
+                      <p className="text-2xl font-semibold text-gray-900">{battery.V} V</p>
                     </div>
                     <div>
                       <h4 className="text-sm font-medium text-gray-500 mb-2">Cell 4</h4>
-                      <p className="text-2xl font-semibold text-gray-900">{battery.cell4_current} A</p>
-                      <p className="text-2xl font-semibold text-gray-900">{battery.cell4_temperature} °C</p>
-                      <p className="text-2xl font-semibold text-gray-900">{battery.cell4_voltage} V</p>
+                      <p className="text-2xl font-semibold text-gray-900">{battery.I} A</p>
+                      <p className="text-2xl font-semibold text-gray-900">{battery.cT} °C</p>
+                      <p className="text-2xl font-semibold text-gray-900">{battery.V} V</p>
                     </div>
                     {/* <div>
                       <h4 className="text-sm font-medium text-gray-500 mb-2">Capacity</h4>
@@ -678,16 +693,16 @@ const BatteryDetail: React.FC<BatteryDetailProps> = ({
                     <BrainCircuit size={16} className="mr-2" /> Digital Twin
                   </button>
                   <button
-                    onClick={() => sendUnseal()}
+                    onClick={() => (isFromESP32 || battery.live_websocket) ? sendUnseal() : null}
                     className="w-full flex items-center justify-center px-4 py-2 border border-orange-300 shadow-sm text-sm font-medium rounded-md text-orange-700 bg-orange-50 hover:bg-orange-100 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-orange-500">
                     <LockKeyholeOpen size={16} className="mr-2" />
-                    Unseal BMS
+                    Unseal BMS {(!isFromESP32 && !battery.live_websocket) ? "- OFFLINE" : ""}
                   </button>
                   <button
-                    onClick={() => sendReset()}
+                    onClick={() => (isFromESP32 || battery.live_websocket) ? sendReset() : null}
                     className="w-full flex items-center justify-center px-4 py-2 border border-red-300 shadow-sm text-sm font-medium rounded-md text-red-700 bg-red-50 hover:bg-red-100 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500">
                     <RefreshCw size={16} className="mr-2" />
-                    Reset BMS
+                    Reset BMS {(!isFromESP32 && !battery.live_websocket) ? "- OFFLINE" : ""}
                   </button>
                   <button className="w-full flex items-center justify-center px-4 py-2 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
                     <FileText size={16} className="mr-2" />
@@ -741,7 +756,7 @@ const BatteryDetail: React.FC<BatteryDetailProps> = ({
 
   const navigate = useNavigate();
 
-  const viewDigitalTwin = (battery: BatteryData) => {
+  const viewDigitalTwin = (battery: BatteryDataNew) => {
     navigate(`/digital-twin?esp_id=${battery.esp_id}`);
   };
 
@@ -761,8 +776,8 @@ const BatteryDetail: React.FC<BatteryDetailProps> = ({
             </div>
           </div>
           <div className="flex items-center space-x-3">
-            <span className={`px-3 py-1 rounded-full text-sm font-medium ${getStatusColor(battery.status)}`}>
-              {battery.status.charAt(0).toUpperCase() + battery.status.slice(1)}
+            <span className={`px-3 py-1 rounded-full text-sm font-medium ${getStatusColor(isFromESP32 ? true : battery.live_websocket)}`}>
+              { (isFromESP32 || battery.live_websocket) ? "online" : "offline" }
             </span>
             <div className="flex space-x-2">
               <button className="p-2 text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded-full">
@@ -786,12 +801,12 @@ const BatteryDetail: React.FC<BatteryDetailProps> = ({
           <div className="bg-blue-50 p-4 rounded-lg">
             <div className="flex items-center justify-between mb-2">
               <h3 className="text-sm font-medium text-blue-700 flex items-center">
-                {battery.charge > 90 ? (
+                {battery.Q > 90 ? (
                     <>
                       <BatteryFull size={16} className="mr-1" />
                     </>
                   ) : (
-                    battery.charge > 35 ? (
+                    battery.Q > 35 ? (
                       <>
                         <BatteryMedium size={16} className="mr-1" />
                       </>
@@ -804,17 +819,17 @@ const BatteryDetail: React.FC<BatteryDetailProps> = ({
                 } Charge Level
               </h3>
               {/* {battery.isCharging && ( */}
-              {battery.current > 0 && (
+              {battery.I > 0 && (
                 <span className="bg-yellow-100 text-yellow-800 text-xs px-2 py-1 rounded-full flex items-center">
                   <Zap size={12} className="mr-1" /> Charging
                 </span>
               )}
             </div>
-            <div className="text-3xl font-bold text-blue-700">{battery.charge}%</div>
+            <div className="text-3xl font-bold text-blue-700">{battery.Q}%</div>
             <div className="mt-2 bg-blue-200 rounded-full h-2.5">
               <div 
                 className="h-2.5 rounded-full bg-blue-600" 
-                style={{ width: `${Math.min(battery.charge, 100)}%` }}
+                style={{ width: `${Math.min(battery.Q, 100)}%` }}
               ></div>
             </div>
           </div>
@@ -824,14 +839,14 @@ const BatteryDetail: React.FC<BatteryDetailProps> = ({
               <ThermometerSun size={16} className="mr-1" /> Temperature
             </h3>
             <div className="flex items-end space-x-2">
-              <span className="text-3xl font-bold text-orange-700">Ambient: {battery.ambient_temperature}°C</span>
-              {battery.ambient_temperature > 35 && (
+              <span className="text-3xl font-bold text-orange-700">Ambient: {battery.cT}°C</span>
+              {battery.cT > 35 && (
                 <span className="text-red-500 text-sm">Above normal</span>
               )}
             </div>
             <div className="flex items-end space-x-2">
-              <span className="text-3xl font-bold text-orange-700">Cell: {battery.cell_temperature}°C</span>
-              {battery.cell_temperature > 35 && (
+              <span className="text-3xl font-bold text-orange-700">Cell: {battery.cT}°C</span>
+              {battery.cT > 35 && (
                 <span className="text-red-500 text-sm">Above normal</span>
               )}
             </div>
@@ -842,8 +857,8 @@ const BatteryDetail: React.FC<BatteryDetailProps> = ({
               <Info size={16} className="mr-1" /> Battery Health
             </h3>
             <div className="flex items-end space-x-2">
-              <span className="text-3xl font-bold text-green-700">{battery.health}%</span>
-              {battery.health < 70 && (
+              <span className="text-3xl font-bold text-green-700">{battery.H}%</span>
+              {battery.H < 70 && (
                 <span className="text-amber-500 text-sm">Degraded</span>
               )}
             </div>
@@ -854,7 +869,7 @@ const BatteryDetail: React.FC<BatteryDetailProps> = ({
               <Wifi size={16} className="mr-1" /> Wi-Fi
             </h3>
             <div className="flex items-end space-x-2">
-              <span className="text-3xl font-bold text-purple-700">{battery.isConnected? "Connected":"!! no connection"}</span>
+              <span className="text-3xl font-bold text-purple-700">{battery.wifi? "Connected":"!! no connection"}</span>
             </div>
           </div>
         </div>

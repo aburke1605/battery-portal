@@ -39,7 +39,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children, isFromEsp3
   useEffect(() => {
     const checkAuthStatus = async () => {
       try {
-        let url = '/api/users/check-auth';
+        let url = '/api/user/check-auth';
         if (isFromEsp32) {
           const token = getAuthToken();
           url += '?auth_token=' + token;
@@ -68,7 +68,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children, isFromEsp3
 
   const logout = async () => {
     try {
-      await fetch('/api/users/logout', {
+      await fetch('/api/user/logout', {
         method: 'POST',
         credentials: 'include',
       });
@@ -82,7 +82,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children, isFromEsp3
 
   const login = async (email: string, password: string): Promise<boolean> => {
     try {
-      const res = await fetch('/api/users/login', {
+      const res = await fetch('/api/user/login', {
         method: 'POST',
         credentials: 'include',
         headers: {

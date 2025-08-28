@@ -39,22 +39,25 @@ const DataChart: React.FC<DataChartProps> = ({ esp_id, column }) => {
   const [data, setData] = useState<DataPoint[]>([]);
 
   useEffect(() => {
-    const fetchData = () => {
-      axios.get(`${apiConfig.DB_END_POINT}?esp_id=${esp_id}&column=${column}`)
-        .then(response => {
-          const processedData = response.data.map((point: DataPoint) => ({
-            ...point,
-            timeMs: new Date(point.timestamp).getTime()
-          }));
-          setData(processedData);
-        })
-        .catch(error => console.error("Error fetching data:", error));
+    const fetchData = async () => {
+      try {
+        const response = await axios.get(`${apiConfig.DB_CHART_DATA_API}?esp_id=${esp_id}&column=${column}`);
+        const processedData = response.data.map((point: DataPoint) => ({
+          ...point,
+          timeMs: new Date(point.timestamp).getTime()
+        }));
+        setData(processedData);
+      } catch(error) {
+        console.error("Error fetching data:", error);
+      } finally {
+
+      }
     };
 
     fetchData(); // fetch immediately
     const interval = setInterval(fetchData, 5_000); // refresh every five seconds
     return () => clearInterval(interval); // clean-up on unmount
-  }, [column]); // re-fetch if column changes(????)
+  }, [esp_id, column]); // re-fetch if column changes(????) OR ESP_ID!!
 
   return (
     <div className="p-4 bg-white shadow rounded-lg">

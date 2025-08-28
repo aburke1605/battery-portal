@@ -1,21 +1,12 @@
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect, useRef, useCallback } from 'react'
 import { ChevronDown } from 'lucide-react';
-import { BatteryData } from '../../types';
+import { BatteryInfoData, BatteryDataNew } from '../../types';
 import BatteryCard from './BatteryCard';
 import { useNavigate } from 'react-router-dom';
-
-// const getStatusColor = (status: BatteryData['status']) => {
-//   switch (status) {
-//     case 'online':
-//       return 'bg-green-100 text-green-800'
-//     case 'offline':
-//       return 'bg-red-100 text-red-800'
-//     case 'maintenance':
-//       return 'bg-yellow-100 text-yellow-800'
-//     default:
-//       return 'bg-gray-100 text-gray-800'
-//   }
-// }
+import axios from 'axios';
+import apiConfig from '../../apiConfig';
+import { generate_random_string } from '../../utils/helpers';
+import { useWebSocket } from '../../hooks/useWebSocket';
 
 // Add this interface for map markers
 interface MapMarker {
@@ -25,7 +16,7 @@ interface MapMarker {
     lng: number
   }
   title: string
-  status: 'active' | 'inactive' | 'maintenance'
+  status: 'online' | 'offline'
 }
 
 // Update the map markers to be more spread across the UK
@@ -39,7 +30,7 @@ export default function BatteryPage() {
   const [map, setMap] = useState<google.maps.Map | null>(null)
   const [markers, setMarkers] = useState<google.maps.Marker[]>([])
   
-  const [batteryData, setBatteryData] = useState<BatteryData[]>([])
+  const [batteryData, setBatteryData] = useState<BatteryDataNew[]>([])
   const totalItems = batteryData.length
   const startIndex = (currentPage - 1) * itemsPerPage
   const endIndex = Math.min(startIndex + itemsPerPage, totalItems)
@@ -51,25 +42,73 @@ export default function BatteryPage() {
   const [statusFilter, setStatusFilter] = useState('all');
   const [sortBy, setSortBy] = useState('status');
 
+  const parseBatteryInfoMESHs = (data: BatteryInfoData[]): BatteryDataNew[] => {
+    return data.map((root) => ({
+      esp_id: root.esp_id,
+      root_id: root.root_id,
+      last_updated_time: root.last_updated_time,
+      live_websocket: root.live_websocket,
+      nodes: root.nodes,
+
+      // fetch these from api in fetchBatteryInfo later:
+      t: 0,
+      Q: 0,
+      H: 0,
+      cT: 0,
+      V: 0,
+      I: 0,
+      new_esp_id: "",
+      OTC: 0,
+      wifi: false
+    }));
+  };
+
+  // TODO:
+  // make this a FC as its used a few times
+  const fetchBatteryInfo = useCallback(async () => {
+    try {
+      const response = await axios.get(`${apiConfig.DB_INFO_API}`);
+      const batteries = parseBatteryInfoMESHs(response.data);
+
+      // add telemetry data to battery info
+      const detailed = await Promise.all(
+        batteries.map(async (b) => {
+          try {
+            const res = await axios.get(`${apiConfig.DB_DATA_API}?esp_id=${b.esp_id}`);
+            return { ...b, ...res.data }; // merge battery data
+          } catch {
+            return b; // fallback if fetch fails
+          }
+        })
+      );
+      setBatteryData(detailed);
+    } catch(error) {
+      console.error("Error fetching battery data:", error);
+    } finally {
+      // setLoading(false);
+    }
+  }, []);
+
+  // initial fetch
   useEffect(() => {
-    const fetchBatteryData = async () => {
-      try {
-        const response = await fetch('/api/battery/list');
-        const data = await response.json();
-        setBatteryData(data);
-      } catch (error) {
-        console.error('Error fetching battery data:', error)
-      } finally {
-        //setLoading(false)
+    fetchBatteryInfo();
+  }, [fetchBatteryInfo])
+
+  // get status updates from backend through websocket
+  const ws_session_browser_id = useRef(generate_random_string(32));
+  const ws_url = `${apiConfig.WEBSOCKET_BROWSER}?browser_id=${ws_session_browser_id.current}&esp_id=LIST`;
+  // fetch from database on message receipt
+  const handleMessage = useCallback((data: any) => {
+    if (data.esp_id === "LIST" && data.browser_id === ws_session_browser_id.current) {
+      if (data.type === "status_update"){
+        fetchBatteryInfo();
       }
     }
-
-    fetchBatteryData()
-    const interval = setInterval(fetchBatteryData, 10000)
-    return () => {
-      clearInterval(interval)
-    }
-  }, [])
+  }, [fetchBatteryInfo]);
+  useWebSocket({
+      url: ws_url,
+      onMessage: handleMessage,
+  });
 
 
   // Initialize Google Maps
@@ -155,12 +194,10 @@ export default function BatteryPage() {
 
   const getMarkerColor = (status: string) => {
     switch (status) {
-      case 'active':
+      case 'online':
         return '#10B981' // green-500
-      case 'inactive':
-        return '#EF4444' // red-500
-      case 'maintenance':
-        return '#F59E0B' // yellow-500
+      case 'offline':
+        return '#6B7280' // gray-500
       default:
         return '#6B7280' // gray-500
     }
@@ -180,7 +217,7 @@ export default function BatteryPage() {
 
   const navigate = useNavigate();
   // View battery details
-  const viewBatteryDetails = (battery: BatteryData) => {
+  const viewBatteryDetails = (battery: BatteryInfoData) => {
     navigate(`/battery-detail?esp_id=${battery.esp_id}`);
   };
   
@@ -278,10 +315,10 @@ export default function BatteryPage() {
 
       {viewMode === 'grid' ? (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 xl:grid-cols-3 gap-6">
-          {currentBatteries.map((battery: BatteryData) => (
+          {currentBatteries.map((battery: BatteryDataNew) => (
             <BatteryCard
-            battery={battery}
-            viewBatteryDetails={viewBatteryDetails}
+              battery={battery}
+              viewBatteryDetails={viewBatteryDetails}
             />
           ))}
         </div>

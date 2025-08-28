@@ -476,8 +476,8 @@ httpd_handle_t start_webserver(void) {
         };
         httpd_register_uri_handler(server, &js_uri);
 
-        js_uri.uri = "/assets/zap.js";
-        js_uri.user_ctx = "/static/assets/zap.js";
+        js_uri.uri = "/assets/apiConfig.js";
+        js_uri.user_ctx = "/static/assets/apiConfig.js";
         httpd_register_uri_handler(server, &js_uri);
 
         js_uri.uri = "/assets/mock-socket.js";
@@ -485,10 +485,10 @@ httpd_handle_t start_webserver(void) {
         httpd_register_uri_handler(server, &js_uri);
 
         httpd_uri_t css_uri = {
-            .uri      = "/assets/zap.css",
+            .uri      = "/assets/apiConfig.css",
             .method   = HTTP_GET,
             .handler  = file_serve_handler,
-            .user_ctx = "/static/assets/zap.css",
+            .user_ctx = "/static/assets/apiConfig.css",
         };
         httpd_register_uri_handler(server, &css_uri);
 

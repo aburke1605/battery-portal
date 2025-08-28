@@ -1,95 +1,145 @@
-import os
-
 import logging
 logger = logging.getLogger(__name__)
 
-from flask import Blueprint, render_template, request, jsonify
-from flask_login import login_required
+from datetime import datetime, timedelta
+from collections import defaultdict
+
+from flask import Blueprint, request, jsonify
 from flask_sqlalchemy import SQLAlchemy
-from flask_security import roles_required
+from flask_security import roles_required, login_required
+from sqlalchemy import inspect, insert, select, desc, text, Table
 
-import mysql.connector
-import datetime
+db = Blueprint("db", __name__, url_prefix="/api/db")
 
-db_bp = Blueprint('db_bp', __name__, url_prefix='/db')
-
-# Create DB instance
 DB = SQLAlchemy()
+class BatteryInfo(DB.Model):
+    """
+        Defines the structure of the battery_info table, which manages the individual battery_data tables.
+        Must first create the database manually in mysql command prompt:
+            $ mysql -u root -p
+            mysql> create database battery_data;
+        Then initiate with flask:
+            $ flask db init
+            $ flask db migrate -m "initiate"
+            $ flask db upgrade
+        Further changes made to the class here are then propagated with:
+            $ flask db migrate -m "add/remove ___ column"
+            $ flask db upgrade
+    """
+    __tablename__ = "battery_info"
 
-DB_CONFIG = {
-    "host": os.getenv("AZURE_MYSQL_HOST", "localhost"),
-    "user": os.getenv("AZURE_MYSQL_USER", "root"),
-    "password": os.getenv("AZURE_MYSQL_PASSWORD", "password"),
-    "database": os.getenv("AZURE_MYSQL_NAME", "battery_data"),
-    "port": int(os.getenv("AZURE_MYSQL_PORT", 3306)),
-    "ssl_ca": os.getenv("AZURE_MYSQL_SSL_CA", None),
-    "ssl_disabled": os.getenv("AZURE_MYSQL_SSL_DISABLED", "False") == "True",
-}
+    esp_id = DB.Column(DB.String(7), primary_key=True)
+    root_id = DB.Column(DB.String(7), nullable=True)
+    last_updated_time = DB.Column(DB.DateTime, default=datetime.now, onupdate=datetime.now, nullable=False)
+    live_websocket = DB.Column(DB.Boolean, default=False, nullable=False)
 
-def update_db(esp_id, data):
+
+def update_battery_data(json: list) -> None:
+    """
+        Is called when new telemetry data is received from an ESP32 WebSocket client.
+        Creates new / updates the battery_data_<esp_id> table and corresponding row in the battery_info table.
+    """
+    # first grab the esp_id of the root for later use
+    root_id = json[0]["esp_id"]
+
+    for i, data in enumerate(json):
+        esp_id = data["esp_id"]
+        content = data["content"]
+        
+        # first update battery_info table
+        try:
+            # check if the entry already exists
+            battery = DB.session.get(BatteryInfo, esp_id)
+            if not battery:
+                # create default one if not
+                battery = BatteryInfo(
+                    esp_id = "",
+                    root_id = None,
+                    last_updated_time = datetime.now(),
+                    live_websocket = False,
+                )
+                DB.session.add(battery)
+                logger.info(f"inserted new battery_info row with esp_id: {esp_id}")
+            # update the entry info
+            battery.esp_id = esp_id
+            battery.root_id = None if i==0 else root_id
+            battery.last_updated_time = datetime.now()
+            DB.session.commit()
+            set_live_websocket(esp_id, True) # this function (`update_battery_data`) is only ever called from the /esp_ws handler, so must be True
+        except Exception as e:
+            DB.session.rollback()
+            logger.error(f"DB error processing WebSocket message from {esp_id}: {e}")
+
+        # then update/create battery_data_<esp_id> table
+        battery_data_table = get_battery_data_table(esp_id)
+        try:
+            statement = insert(battery_data_table).values(
+                t = datetime.now(), # TODO: update this to GPS data
+                Q = content["Q"],
+                H = content["H"],
+                cT = content["cT"] / 10,
+                I = content["I"] / 10,
+                V = content["V"] / 10,
+                OTC = content["OTC"],
+                wifi = content["wifi"],
+            )
+            DB.session.execute(statement)
+            DB.session.commit()
+        except Exception as e:
+            DB.session.rollback()
+            logger.error(f"DB error inserting data from {esp_id} into table: {e}")
+
+
+def set_live_websocket(esp_id: str, live: bool) -> None:
+    """
+        Simple utility function to change the live_websocket value for a given battery unit in the battery_info table.
+    """
     try:
-        DB = mysql.connector.connect(**DB_CONFIG)
-        cursor = DB.cursor()
-
-        n_rows = 0
-
-        cursor.execute(f"""
-                                    SHOW TABLES LIKE '{esp_id}'
-        """)
-        if not cursor.fetchone():
-            cursor.execute(f"""
-                                    CREATE TABLE {esp_id} (
-                                        timestamp TIMESTAMP PRIMARY KEY,
-                                        soc INT,
-                                        temperature FLOAT,
-                                        voltage FLOAT,
-                                        current FLOAT
-                                    )
-            """)
-            DB.commit()
-            logger.info("table created")
-
-        else:
-            cursor.execute(f"       SELECT COUNT(*) FROM {esp_id}")
-            n_rows = cursor.fetchone()[0]
-
-        if abs(data["I"]) >= 0.1: # and n_rows < 10000:
-            cursor.execute(f"""
-                                    INSERT INTO {esp_id} (timestamp, soc, temperature, voltage, current)
-                                    VALUES ('{datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')}', {data['Q']}, {data['aT']/10}, {data['V']/10}, {data['I']/10})
-            """)
-            DB.commit()
-
-
-    except mysql.connector.Error as err:
-        logger.error(err)
-
-
-def execute_query(query):
-    try:
-        DB = mysql.connector.connect(**DB_CONFIG)
-        cursor = DB.cursor(dictionary=True)
-
-        cursor.execute(query)
-        result = cursor.fetchall()
-
-        cursor.close()
-        DB.close()
-
-        return result
-
+        battery = DB.session.get(BatteryInfo, esp_id)
+        battery.live_websocket = live
+        DB.session.commit()
     except Exception as e:
-        return {"error": str(e)}
+        DB.session.rollback()
+        logger.error(f"DB error resetting WebSocket status for {esp_id}: {e}")
 
-@db_bp.route("/query")
-@login_required
-def query():
-    return render_template("db/query.html")
 
-@db_bp.route("/execute_sql", methods=["POST"])
-@roles_required('superuser')
+def get_battery_data_table(esp_id: str) -> Table:
+    """
+        Returns a handle to a specified battery_data_<esp_id> table in the database.
+        A new table is created if one does not yet exist.
+    """
+    name = f"battery_data_{esp_id}"
+
+    # check if the table already exists
+    inspector = inspect(DB.engine)
+    if inspector.has_table(name):
+        table = DB.Table(name, DB.metadata, autoload_with=DB.engine)
+    
+    # create one if not
+    else:
+        table = DB.Table(name,
+            DB.Column("t", DB.DateTime, nullable=False, default=datetime.now, primary_key=True),
+            DB.Column("Q", DB.Integer, nullable=False),
+            DB.Column("H", DB.Integer, nullable=False),
+            DB.Column("cT", DB.Float, nullable=False),
+            DB.Column("I", DB.Float, nullable=False),
+            DB.Column("V", DB.Float, nullable=False),
+            DB.Column("OTC", DB.Integer, nullable=False),
+            DB.Column("wifi", DB.Boolean, nullable=False),
+        )
+        table.create(bind=DB.engine, checkfirst=True)
+        logger.info(f"created new table: {name}")
+
+    return table
+
+
+@db.route("/execute_sql", methods=["POST"])
+@roles_required("superuser")
 def execute_sql():
-
+    """
+        API used by frontend to enable manual sql execution on database.
+        Requires login as admin.
+    """
     data = request.get_json()
     query = data.get("query")
 
@@ -104,51 +154,128 @@ def execute_sql():
         else:
             query = query[5:]
 
-    result = execute_query(query)
-    return jsonify(result)
+    result, status = execute_query(query)
+    return jsonify(result), status
 
-@db_bp.route('/data')
+
+def execute_query(query: str):
+    try:
+        result = DB.session.execute(text(query))
+        if result.returns_rows:
+            # SELECT or anything returning rows
+            rows = [dict(row._mapping) for row in result]
+            return {"rows": rows}, 200
+        else:
+            # it's DML (INSERT/UPDATE/DELETE)
+            DB.session.commit()
+            return {"rows_affected": result.rowcount}, 200
+
+    except Exception as e:
+        DB.session.rollback()
+        return {"error": str(e)}, 400
+
+
+@db.route("/info", methods=["GET"])
+@login_required
+def info():
+    """
+        API used by frontend to fetch live_websocket statuses and mesh structure from battery_info table.
+    """
+    esp_dict = defaultdict()
+    nodes_dict = defaultdict(list)
+    batteries = DB.session.query(BatteryInfo).all()
+    for battery in batteries:
+        esp_dict[battery.esp_id] = {
+            "esp_id": battery.esp_id,
+            "root_id": battery.root_id,
+            "last_updated_time": battery.last_updated_time,
+            "live_websocket": battery.live_websocket,
+            "nodes": [],
+        }
+        if battery.root_id:
+            nodes_dict[battery.root_id].append(battery.esp_id)
+
+    # add nodes to each root
+    for root_id, node_ids in nodes_dict.items():
+        if root_id in esp_dict:
+            for node_id in node_ids:
+                esp_dict[root_id]["nodes"].append(esp_dict[node_id])
+
+    # return only roots
+    return jsonify([esp for esp in esp_dict.values() if esp["root_id"] is None])
+
+
+@db.route("/data", methods=["GET"])
+@login_required
 def data():
+    """
+        API used by frontend to fetch most recent row in battery_data_<esp_id> table.
+    """
     esp_id = request.args.get("esp_id")
+    table_name = f"battery_data_{esp_id}"
+    data_table = DB.Table(table_name, DB.metadata, autoload_with=DB.engine)
+
+    statement = select(data_table).order_by(desc(data_table.c.t)).limit(1)
+
+    with DB.engine.connect() as conn:
+        row = conn.execute(statement).first()
+
+    if row:
+        return dict(row._mapping)
+    else:
+        return {}, 404
+
+
+@db.route("/esp_ids", methods=["GET"])
+# @login_required # log in not required otherwise can't be used in chart data (see below)
+def esp_ids():
+    """
+        API used by frontend to fetch all esp_ids from battery_info table.
+    """
+    batteries = DB.session.query(BatteryInfo).all()
+    return jsonify([battery.esp_id for battery in batteries])
+
+
+@db.route("/chart_data", methods=["GET"])
+# @login_required # log in not required otherwise wouldn't show in homepage
+def chart_data():
+    """
+        API used by frontend to fetch 250 entries from battery_data_<esp_id> table for chart display.
+    """
+    esp_id = request.args.get("esp_id")
+    if esp_id == "unavailable!":
+        return {}, 404
+
+    table_name = f"battery_data_{esp_id}"
+    data_table = DB.Table(table_name, DB.metadata, autoload_with=DB.engine)
     column = request.args.get("column")
 
-    data = []
-    try:
-        DB = mysql.connector.connect(**DB_CONFIG)
-        cursor = DB.cursor()
+    sub_query = (select(data_table.c.t, data_table.c[column]).order_by(desc(data_table.c.t)).limit(250).subquery()) # get the 250 most recent (time-wise) entries
+    statement = select(sub_query)
 
-        cursor.execute(f"""
-                                    SELECT * FROM (
-                                        SELECT timestamp, {column}
-                                        FROM {esp_id}
-                                        ORDER BY timestamp DESC
-                                        LIMIT 250
-                                    ) sub
-                                    ORDER BY timestamp ASC;
-        """)
-        rows = cursor.fetchall()
+    with DB.engine.connect() as conn:
+        rows = conn.execute(statement)
+
+    if rows:
+        rows = rows.fetchall()
 
         previous = None
-        for row in rows[::-1]: # work from end
+        data = []
+        for row in rows:
 
             # take only data from most recent date
             if row[0].date() != rows[-1][0].date():
                 continue
 
             if previous is not None:
-                if previous - row[0] > datetime.timedelta(minutes = 5):
+                if previous - row[0] > timedelta(minutes = 5):
                     break
             previous = row[0]
 
             data.append({"timestamp": row[0], column: row[1]})
 
-        cursor.close()
-        DB.close()
-
-        # reverse it back
+        # reorder chronologically
         data = data[::-1]
-
-    except mysql.connector.Error as err:
-        logger.error(err)
-
-    return jsonify(data)
+        return jsonify(data)
+    else:
+        return {}, 404
