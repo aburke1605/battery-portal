@@ -1,13 +1,13 @@
 import logging
 logger = logging.getLogger(__name__)
 
+from datetime import datetime, timedelta
+from collections import defaultdict
+
 from flask import Blueprint, request, jsonify
 from flask_sqlalchemy import SQLAlchemy
 from flask_security import roles_required, login_required
 from sqlalchemy import inspect, insert, select, desc, text, Table
-
-from datetime import datetime, timedelta
-from collections import defaultdict
 
 db = Blueprint("db", __name__, url_prefix="/api/db")
 
@@ -131,8 +131,6 @@ def get_battery_data_table(esp_id: str) -> Table:
         logger.info(f"created new table: {name}")
 
     return table
-
-
 
 
 @db.route("/execute_sql", methods=["POST"])
