@@ -3,7 +3,7 @@ logger = logging.getLogger(__name__)
 import os
 from uuid import uuid4
 
-from flask import Blueprint, request, jsonify
+from flask import Flask, Blueprint, request, jsonify
 from flask_security import UserMixin, RoleMixin, SQLAlchemyUserDatastore, login_user, login_required, logout_user
 from flask_security.utils import hash_password
 from flask_login import current_user
@@ -47,7 +47,7 @@ class Users(DB.Model, UserMixin):
 users = SQLAlchemyUserDatastore(DB, Users, Roles)
 
 
-def create_admin(app):
+def create_admin(app: Flask):
     """
         Builds initial role data in the database and creates the admin user for basic functionality.
     """
@@ -188,7 +188,7 @@ def add():
 
 @user.route("/edit/<int:user_id>", methods=["POST"])
 @login_required
-def edit_user(user_id):
+def edit_user(user_id: int):
     """
         TODO: implement me!
         API ...

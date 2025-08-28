@@ -13,7 +13,7 @@ lock = Lock()
 
 browser_clients = {}
 @sock.route("/browser_ws")
-def browser_ws(ws):
+def browser_ws(ws: Sock):
     """
         Handles server WebSocket connections which are initiated by browser clients, and subsequent client messages.
         Connections are requested in the battery list and the individual detail pages of the admin portal:
@@ -72,7 +72,7 @@ def forward_to_esp(data: dict) -> None:
 
 esp_clients = {}
 @sock.route("/esp_ws")
-def esp_ws(ws):
+def esp_ws(ws: Sock):
     """
         Handles server WebSocket connections which are initiated by ESP32 clients, and subsequent client messages.
         Incoming messages always have the following format:

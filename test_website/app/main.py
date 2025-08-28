@@ -11,5 +11,5 @@ def admin():
     return send_from_directory("../../website/frontend/dist", "index.html")
 
 @main.route("/<path:path>", methods=["GET"])
-def serve_react_static(path):
+def serve_react_static(path: str):
     return send_from_directory("../../website/frontend/dist", path)
