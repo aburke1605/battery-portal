@@ -7,6 +7,7 @@ from flask_security import Security
 from flask_admin import Admin
 
 from app.ws import sock
+from app.main import main
 from app.db import db, DB, BatteryInfo
 from app.user import user, users, create_admin
 
@@ -21,6 +22,8 @@ def create_app():
     app = Flask(__name__)
 
     app.config.from_pyfile("config.py")
+
+    app.register_blueprint(main)
 
     app.register_blueprint(db)
     DB.init_app(app)
