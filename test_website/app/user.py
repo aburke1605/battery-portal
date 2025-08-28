@@ -7,6 +7,7 @@ from flask import Flask, Blueprint, request, jsonify
 from flask_security import UserMixin, RoleMixin, SQLAlchemyUserDatastore, login_user, login_required, logout_user
 from flask_security.utils import hash_password
 from flask_login import current_user
+from sqlalchemy import inspect
 
 user = Blueprint("user", __name__, url_prefix="/api/user")
 
@@ -52,6 +53,10 @@ def create_admin(app: Flask):
         Builds initial role data in the database and creates the admin user for basic functionality.
     """
     with app.app_context():
+        inspector = inspect(DB.engine)
+        if not inspector.has_table(Roles.__name__):
+            return  # roles table not yet created
+
         admin_name = os.getenv("ADMIN_NAME", "admin")
         admin_email = os.getenv("ADMIN_EMAIL", "user@admin.dev")
         admin_password = os.getenv("ADMIN_PASSWORD", "password")

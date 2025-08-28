@@ -5,6 +5,7 @@ from flask import Flask
 from flask_migrate import Migrate
 from flask_security import Security
 from flask_admin import Admin
+from sqlalchemy import inspect
 
 from app.main import main
 from app.db import db, DB, BatteryInfo
@@ -36,9 +37,13 @@ def create_app():
     create_admin(app)
 
     with app.app_context():
-        # reset the status of all websockets existing in database on startup
-        DB.session.query(BatteryInfo).filter_by(live_websocket=True).update({BatteryInfo.live_websocket: False})
-        DB.session.commit()
+        inspector = inspect(DB.engine)
+        if inspector.has_table(BatteryInfo.__name__):
+            columns = [col["name"] for col in inspector.get_columns(BatteryInfo.__name__)]
+            if "live_websocket" in columns:
+                # reset the status of all websockets existing in database on startup
+                DB.session.query(BatteryInfo).filter_by(live_websocket=True).update({BatteryInfo.live_websocket: False})
+                DB.session.commit()
     sock.init_app(app)
 
     return app
