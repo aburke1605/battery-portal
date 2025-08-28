@@ -28,7 +28,7 @@ def browser_ws(ws):
             "ws": ws,
             "esp_id": esp_id
         }
-    print("New Browser WebSocket client")
+    logger.info("New Browser WebSocket client")
     try:
         # listen for client messages
         while True:
@@ -37,11 +37,11 @@ def browser_ws(ws):
             data = json.loads(message)
             forward_to_esp(data)
     except Exception as e:
-        print(f"Browser WebSocket error: {e}")
+        logger.error(f"Browser WebSocket error: {e}")
     finally:
         with lock:
             del browser_clients[browser_id]
-            print("Browser WebSocket disconnected")
+            logger.warning("Browser WebSocket disconnected")
 
 
 def forward_to_esp(data: dict) -> None:
@@ -54,7 +54,7 @@ def forward_to_esp(data: dict) -> None:
 
     node_id = data["content"]["data"]["esp_id"]
     if not node_id:
-        print("ESP32 WebSocket forward error: could not determine node esp_id for request")
+        logger.error("ESP32 WebSocket forward error: could not determine node esp_id for request")
         return
 
     for root_id, info in esp_clients.items():
@@ -67,7 +67,7 @@ def forward_to_esp(data: dict) -> None:
                 info["ws"].send(json.dumps([data]))
                 return
             except Exception as e:
-                print(f"ESP32 WebSocket forward error: {e}")
+                logger.error(f"ESP32 WebSocket forward error: {e}")
 
 
 esp_clients = {}
@@ -81,7 +81,7 @@ def esp_ws(ws):
         updating the browser clients currently viewing the detail page for the `esp_id` battery unit.
     """
 
-    print("New ESP32 WebSocket client")
+    logger.info("New ESP32 WebSocket client")
     try:
         # listen for client messages
         while True:
@@ -102,12 +102,12 @@ def esp_ws(ws):
                     update_browsers(data["esp_id"]) # updates browsers currently viewing `data["esp_id"]` detail page
                 response["content"] = "OK"
             except Exception as e:
-                print(f"ESP WebSocket error in while loop: {e}")
+                logger.error(f"ESP WebSocket error in while loop: {e}")
 
             update_browsers("LIST") # indicate to browser clients on ListPage that (at least one) esp has connected / sent an update
             ws.send(json.dumps(response))
     except Exception as e:
-        print(f"ESP WebSocket error: {e}")
+        logger.error(f"ESP WebSocket error: {e}")
     finally:
         with lock:
             for esp_id, info in list(esp_clients.items()):
@@ -116,7 +116,7 @@ def esp_ws(ws):
                         set_live_websocket(mesh_id, False)
                         update_browsers(mesh_id)
                     del esp_clients[esp_id]
-                    print(f"ESP WebSocket with esp_id={esp_id} disconnected")
+                    logger.warning(f"ESP WebSocket with esp_id={esp_id} disconnected")
                     break
             update_browsers("LIST") # indicate to browser clients on ListPage that the esp has disconnected
 
@@ -137,5 +137,5 @@ def update_browsers(esp_id: str) -> None:
                 message["esp_id"] = esp_id
                 ws.send(json.dumps(message))
             except Exception as e:
-                print(f"Browser WebSocket forward error: {e}")
+                logger.error(f"Browser WebSocket forward error: {e}")
                 del browser_clients[browser_id]

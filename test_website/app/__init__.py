@@ -18,7 +18,8 @@ def create_app():
             format="%(asctime)s [%(levelname)s] %(name)s: %(message)s",
             handlers=[logging.StreamHandler(sys.stdout)],
         )
-    
+    logging.getLogger("werkzeug").setLevel(logging.WARNING)
+
     app = Flask(__name__)
 
     app.config.from_pyfile("config.py")

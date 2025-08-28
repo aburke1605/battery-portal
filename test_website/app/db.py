@@ -59,7 +59,7 @@ def update_battery_data(json: list) -> None:
                     live_websocket = False,
                 )
                 DB.session.add(battery)
-                print(f"inserted new battery_info row with esp_id: {esp_id}")
+                logger.info(f"inserted new battery_info row with esp_id: {esp_id}")
             # update the entry info
             battery.esp_id = esp_id
             battery.root_id = None if i==0 else root_id
@@ -68,7 +68,7 @@ def update_battery_data(json: list) -> None:
             set_live_websocket(esp_id, True) # this function (`update_battery_data`) is only ever called from the /esp_ws handler, so must be True
         except Exception as e:
             DB.session.rollback()
-            print(f"DB error processing WebSocket message from {esp_id}: {e}")
+            logger.error(f"DB error processing WebSocket message from {esp_id}: {e}")
 
         # then update/create battery_data_<esp_id> table
         battery_data_table = get_battery_data_table(esp_id)
@@ -87,7 +87,7 @@ def update_battery_data(json: list) -> None:
             DB.session.commit()
         except Exception as e:
             DB.session.rollback()
-            print(f"DB error inserting data from {esp_id} into table: {e}")
+            logger.error(f"DB error inserting data from {esp_id} into table: {e}")
 
 
 def set_live_websocket(esp_id: str, live: bool) -> None:
@@ -100,7 +100,7 @@ def set_live_websocket(esp_id: str, live: bool) -> None:
         DB.session.commit()
     except Exception as e:
         DB.session.rollback()
-        print(f"DB error resetting WebSocket status for {esp_id}: {e}")
+        logger.error(f"DB error resetting WebSocket status for {esp_id}: {e}")
 
 
 def get_battery_data_table(esp_id: str) -> Table:
@@ -128,7 +128,7 @@ def get_battery_data_table(esp_id: str) -> Table:
             DB.Column("wifi", DB.Boolean, nullable=False),
         )
         table.create(bind=DB.engine, checkfirst=True)
-        print(f"created new table: {name}")
+        logger.info(f"created new table: {name}")
 
     return table
 
