@@ -232,7 +232,7 @@ def data():
 
 
 @db.route("/esp_ids", methods=["GET"])
-# @login_required # can't be used in chart data (see below) otherwise
+# @login_required # log in not required otherwise can't be used in chart data (see below)
 def esp_ids():
     """
         API used by frontend to fetch all esp_ids from battery_info table.
@@ -242,7 +242,7 @@ def esp_ids():
 
 
 @db.route("/chart_data", methods=["GET"])
-# @login_required # wouldn't show in homepage otherwise
+# @login_required # log in not required otherwise wouldn't show in homepage
 def chart_data():
     """
         API used by frontend to fetch 250 entries from battery_data_<esp_id> table for chart display.
