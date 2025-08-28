@@ -4,7 +4,7 @@ logger = logging.getLogger(__name__)
 from flask import Blueprint, request, jsonify
 from flask_sqlalchemy import SQLAlchemy
 from flask_security import roles_required, login_required
-from sqlalchemy import inspect, insert, select, desc, text
+from sqlalchemy import inspect, insert, select, desc, text, Table
 
 from datetime import datetime, timedelta
 from collections import defaultdict
