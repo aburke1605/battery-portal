@@ -6,10 +6,10 @@ from flask_migrate import Migrate
 from flask_security import Security
 from flask_admin import Admin
 
-from app.ws import sock
 from app.main import main
 from app.db import db, DB, BatteryInfo
 from app.user import user, users, create_admin
+from app.ws import sock
 
 def create_app():
     if not logging.getLogger().handlers: # only configure if root logger has no handlers (avoids duplicate setup under Gunicorn)
