@@ -62,6 +62,8 @@ def auth_status():
     return jsonify({
         'loggedIn': True,
         'email': current_user.email,
+        'first_name': current_user.first_name,
+        'last_name': current_user.last_name,
         'roles': [role.name for role in current_user.roles]  # if using roles
     })
 
@@ -191,5 +193,89 @@ def delete_user(user_id):
         DB.session.rollback()
         return jsonify({"error": "Failed to delete user. Please try again."}), 500
 
+@user_bp.route('/change-password', methods=['PUT'])
+@login_required
+def change_password():
+    """Change the current user's password"""
+    data = request.get_json()
+    current_password = data.get('current_password')
+    new_password = data.get('new_password')
+    
+    # Validate required fields
+    if not current_password:
+        return jsonify({"error": "Current password is required."}), 400
+    
+    if not new_password:
+        return jsonify({"error": "New password is required."}), 400
+    
+    # Validate minimum password length
+    if len(new_password) < 6:
+        return jsonify({"error": "New password must be at least 6 characters long."}), 400
+    
+    # Verify current password
+    if not current_user.verify_and_update_password(current_password):
+        return jsonify({"error": "Current password is incorrect."}), 400
+    
+    try:
+        # Update password
+        current_user.password = hash_password(new_password)
+        DB.session.commit()
+        
+        return jsonify({"message": "Password changed successfully."}), 200
+    except Exception as e:
+        DB.session.rollback()
+        return jsonify({"error": "Failed to change password. Please try again."}), 500
+
+@user_bp.route('/profile', methods=['PUT'])
+@login_required
+def update_profile():
+    """Update the current user's profile information"""
+    data = request.get_json()
+    
+    new_email = data.get('email', current_user.email)
+    first_name = data.get('first_name', current_user.first_name)
+    last_name = data.get('last_name', current_user.last_name)
+    
+    # Validate required fields
+    if not first_name or not first_name.strip():
+        return jsonify({"error": "First name is required."}), 400
+    
+    if not last_name or not last_name.strip():
+        return jsonify({"error": "Last name is required."}), 400
+    
+    if not new_email or not new_email.strip():
+        return jsonify({"error": "Email is required."}), 400
+    
+    # Validate email format (basic validation)
+    import re
+    email_pattern = r'^[^\s@]+@[^\s@]+\.[^\s@]+$'
+    if not re.match(email_pattern, new_email):
+        return jsonify({"error": "Please enter a valid email address."}), 400
+    
+    # Check if email is being changed and if the new email already exists
+    if new_email != current_user.email:
+        existing_user = User.query.filter_by(email=new_email).first()
+        if existing_user:
+            return jsonify({"error": "Email already exists. Please use a different email address."}), 400
+    
+    try:
+        # Update profile information
+        current_user.first_name = first_name.strip()
+        current_user.last_name = last_name.strip()
+        current_user.email = new_email.strip()
+        
+        DB.session.commit()
+        
+        return jsonify({
+            "message": "Profile updated successfully.",
+            "user": {
+                "first_name": current_user.first_name,
+                "last_name": current_user.last_name,
+                "email": current_user.email
+            }
+        }), 200
+    except Exception as e:
+        DB.session.rollback()
+        return jsonify({"error": "Failed to update profile. Please try again."}), 500
 
     
