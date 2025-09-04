@@ -49,6 +49,7 @@ def upgrade():
     sa.ForeignKeyConstraint(["user_id"], ["users.id"], )
     )
 
+    """
     with op.batch_alter_table('battery_info', schema=None) as batch_op:
         batch_op.add_column(sa.Column('esp_id', sa.String(length=7), nullable=False))
         batch_op.add_column(sa.Column('root_id', sa.String(length=7), nullable=True))
@@ -61,6 +62,33 @@ def upgrade():
         batch_op.drop_column('charge')
         batch_op.drop_column('lat')
         batch_op.drop_column('parent_id')
+    """
+
+    with op.batch_alter_table("battery_info", schema=None) as batch_op:
+        # 1. Add the new column (nullable=True for now so it's allowed to exist)
+        batch_op.add_column(sa.Column("esp_id", sa.String(length=7), nullable=True))
+        batch_op.add_column(sa.Column("root_id", sa.String(length=7), nullable=True))
+        batch_op.add_column(sa.Column("live_websocket", sa.Boolean(), nullable=False, server_default=sa.text("0")))
+
+    # 2. Backfill esp_id values if needed (otherwise PK will fail)
+    conn = op.get_bind()
+    conn.execute(sa.text("UPDATE battery_info SET esp_id = LEFT(id, 7)"))  # or however esp_id derives from old id
+
+    # 3. Now make esp_id NOT NULL + Primary Key
+    with op.batch_alter_table("battery_info", schema=None) as batch_op:
+        batch_op.alter_column("esp_id", existing_type=sa.String(length=7), nullable=False)
+        batch_op.drop_constraint("PRIMARY", type_="primary")  # drop old PK
+        batch_op.create_primary_key("pk_battery_info", ["esp_id"])
+
+        # 4. Drop the old id + other unused columns
+        batch_op.drop_column("id")
+        batch_op.drop_column("voltage")
+        batch_op.drop_column("temperature")
+        batch_op.drop_column("name")
+        batch_op.drop_column("lon")
+        batch_op.drop_column("charge")
+        batch_op.drop_column("lat")
+        batch_op.drop_column("parent_id")
     # ### end Alembic commands ###
 
 
