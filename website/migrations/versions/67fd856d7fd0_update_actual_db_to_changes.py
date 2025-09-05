@@ -64,6 +64,7 @@ def upgrade():
         batch_op.drop_column('parent_id')
     """
 
+    """
     with op.batch_alter_table("battery_info", schema=None) as batch_op:
         # 1. Add the new column (nullable=True for now so it's allowed to exist)
         batch_op.add_column(sa.Column("esp_id", sa.String(length=7), nullable=True))
@@ -89,6 +90,29 @@ def upgrade():
         batch_op.drop_column("charge")
         batch_op.drop_column("lat")
         batch_op.drop_column("parent_id")
+    """
+    with op.batch_alter_table("battery_info", schema=None) as batch_op:
+        batch_op.alter_column(
+            "id",
+            new_column_name="esp_id",
+            existing_type=sa.String(length=64),   # whatever `id` was
+            type_=sa.String(length=7),            # shrink/change to VARCHAR(7)
+            nullable=False,
+        )
+
+        # add the new columns
+        batch_op.add_column(sa.Column("root_id", sa.String(length=7), nullable=True))
+        batch_op.add_column(sa.Column("live_websocket", sa.Boolean(), nullable=False, server_default=sa.text("0")))
+
+        # drop the old unused columns
+        batch_op.drop_column("voltage")
+        batch_op.drop_column("temperature")
+        batch_op.drop_column("name")
+        batch_op.drop_column("lon")
+        batch_op.drop_column("charge")
+        batch_op.drop_column("lat")
+        batch_op.drop_column("parent_id")
+
     # ### end Alembic commands ###
 
 
