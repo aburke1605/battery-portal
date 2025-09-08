@@ -29,11 +29,11 @@ export default function BatteryPage() {
   const [map, setMap] = useState<google.maps.Map | null>(null)
   const [markers, setMarkers] = useState<google.maps.Marker[]>([])
   
-  const [batteryData, setBatteryData] = useState<BatteryDataNew[]>([])
-  const totalItems = batteryData.length
+  const [batteries, setBatteryData] = useState<BatteryDataNew[]>([])
+  const totalItems = batteries.length
   const startIndex = (currentPage - 1) * itemsPerPage
   const endIndex = Math.min(startIndex + itemsPerPage, totalItems)
-  const currentBatteries = batteryData.slice(startIndex, endIndex)
+  const currentBatteries = batteries.slice(startIndex, endIndex)
   
   const totalPages = Math.ceil(totalItems / itemsPerPage)
   

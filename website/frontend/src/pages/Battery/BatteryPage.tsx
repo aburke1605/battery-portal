@@ -9,17 +9,17 @@ import { createMessage, fetchBatteryData, useWebSocket } from '../../hooks/useWe
 import { generate_random_string } from '../../utils/helpers';
 
 interface BatteriesPageProps {
-    isFromEsp32?: boolean;
+    isFromESP32?: boolean;
 }
 
-export default function BatteryPage({ isFromEsp32 = false }: BatteriesPageProps) {
+export default function BatteryPage({ isFromESP32 = false }: BatteriesPageProps) {
 
     // Handle auth_token
     const { getAuthToken } = useAuth();
 
     let ws_url = apiConfig.WEBSOCKET_BROWSER;
     let queryString = window.location.search;
-    if (!isFromEsp32) {
+    if (!isFromESP32) {
         const hash = window.location.hash;  // e.g., "#/battery-detail?esp_id=BMS_02"
         queryString = hash.split('?')[1];  // Extract "esp_id=BMS_02"
     }
@@ -29,19 +29,19 @@ export default function BatteryPage({ isFromEsp32 = false }: BatteriesPageProps)
     if (esp_id == null) esp_id = "empty";
 
     const ws_session_browser_id = useRef(generate_random_string(32));
-    ws_url = isFromEsp32 ? ws_url += "?auth_token=" + getAuthToken() : ws_url += "?browser_id=" + ws_session_browser_id.current + "&esp_id=" + esp_id;
+    ws_url = isFromESP32 ? ws_url += "?auth_token=" + getAuthToken() : ws_url += "?browser_id=" + ws_session_browser_id.current + "&esp_id=" + esp_id;
 
-    const [batteryItem, setSelectedBattery] = useState<BatteryDataNew | null>(null);
+    const [battery, setBatteryData] = useState<BatteryDataNew | null>(null);
     const [voltageThreshold] = useState(46.5);
 
     const sleep = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
 
-    if (!isFromEsp32) {
+    if (!isFromESP32) {
         // get fall-back data from DB
         useEffect(() => {
             const loadBattery = async () => {
                 const esp = await fetchBatteryData(esp_id);
-                if (esp !== null) setSelectedBattery(esp);
+                if (esp !== null) setBatteryData(esp);
             };
 
             loadBattery();
@@ -54,11 +54,11 @@ export default function BatteryPage({ isFromEsp32 = false }: BatteriesPageProps)
         if (data.esp_id === esp_id && data.browser_id === ws_session_browser_id.current) {
             if (data.type === "status_update") {
                 const esp = await fetchBatteryData(esp_id);
-                if (esp !== null) setSelectedBattery(esp);
+                if (esp !== null) setBatteryData(esp);
             }
-        } else if (isFromEsp32 && data.content) {
+        } else if (isFromESP32 && data.content) {
             const parsed = parseBatteryDataNew(data.content);
-            setSelectedBattery(parsed);
+            setBatteryData(parsed);
         }
     }, [esp_id, fetchBatteryData]);
     const { sendMessage } = useWebSocket({
@@ -87,27 +87,27 @@ export default function BatteryPage({ isFromEsp32 = false }: BatteriesPageProps)
     return (
         <div>
             { 
-                !isFromEsp32 ? 
+                !isFromESP32 ? 
                 <PageMeta
                     title="Battery Dashboard"
                     description="Battery Detail Page"
                 /> : null
             }
             {
-                !isFromEsp32 ? 
+                !isFromESP32 ? 
                 <PageBreadcrumb pageTitle="Battery Detail" />
                 : null
             }
             <div className="space-y-6">
-                {batteryItem ? (
+                {battery ? (
                     <BatteryDetail 
-                        battery={batteryItem}
+                        battery={battery}
                         voltageThreshold={voltageThreshold}
                         sendBatteryUpdate={sendBatteryUpdate} // pass function to BatteryDetail
                         sendWiFiConnect={sendWiFiConnect}
                         sendUnseal={sendUnseal}
                         sendReset={sendReset}
-                        isFromESP32={isFromEsp32}
+                        isFromESP32={isFromESP32}
                     />
                 ) : (
                     <p> Connecting to battery... </p> // fallback UI
