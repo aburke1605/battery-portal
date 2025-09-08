@@ -2,7 +2,6 @@ from flask import Blueprint, send_from_directory, request, jsonify
 
 main = Blueprint("main", __name__, url_prefix="/")
 
-"""
 @main.route("/", methods=["GET"])
 def home():
     # return "<p>hello</p>"
@@ -66,3 +65,4 @@ def test_execute_query(query):
 @main.route("/")
 def query():
     return send_from_directory("../templates/db/", "query.html")
+"""
