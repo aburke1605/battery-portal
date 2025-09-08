@@ -36,10 +36,7 @@ export interface BatteryData extends BatteryInfoData {
   wifi: boolean;
 }
 
-export const parseBatteryData = (
-  raw: any,
-  isFromESP32 = false
-): BatteryData => ({
+export const parseDataOnESP32 = (raw: any): BatteryData => ({
   esp_id: raw?.esp_id || 0,
   root_id: raw?.root_id || 0,
   last_updated_time: raw?.last_updated_time || 0,
@@ -65,7 +62,13 @@ export const parseBatteryData = (
   T4: raw?.T4 / 10 || 0,
   new_esp_id: "",
   OTC: raw?.OTC || 0,
-  wifi: isFromESP32 ? !!raw?.wifi : !!raw,
+  wifi: !!raw?.wifi,
+  // these dont matter on ESP32 server,
+  // just set to zero
+  Q1: 0,
+  Q2: 0,
+  Q3: 0,
+  Q4: 0,
 });
 
 

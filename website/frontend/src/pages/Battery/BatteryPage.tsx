@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import PageBreadcrumb from "../../components/common/PageBreadCrumb";
 import PageMeta from "../../components/common/PageMeta";
-import { BatteryData, parseBatteryData } from '../../types';
+import { BatteryData, parseDataOnESP32 } from '../../types';
 import BatteryDetail from './BatteryDetail';
 import apiConfig from '../../apiConfig';
 import { useAuth } from '../../auth/AuthContext';
@@ -51,14 +51,14 @@ export default function BatteryPage({ isFromESP32 = false }: BatteriesPageProps)
 
     // get fresh data from WebSocket when it connects
     const handleMessage = useCallback(async (data: any) => {
-        if (data.esp_id === esp_id && data.browser_id === ws_session_browser_id.current) {
+        if (isFromESP32 && data.content) {
+            const parsed = parseDataOnESP32(data.content);
+            setBatteryData(parsed);
+        } else if (data.esp_id === esp_id && data.browser_id === ws_session_browser_id.current) {
             if (data.type === "status_update") {
                 const esp = await fetchBatteryData(esp_id);
                 if (esp !== null) setBatteryData(esp);
             }
-        } else if (isFromESP32 && data.content) {
-            const parsed = parseBatteryData(data.content);
-            setBatteryData(parsed);
         }
     }, [esp_id, fetchBatteryData]);
     const { sendMessage } = useWebSocket({
