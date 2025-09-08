@@ -1,13 +1,14 @@
-import React, { useCallback, useMemo, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Canvas } from "@react-three/fiber";
 import { Edges, Html, OrbitControls } from "@react-three/drei";
 import * as THREE from "three";
 import { useAuth } from "../../auth/AuthContext";
 import apiConfig from "../../apiConfig";
-import { BatteryData, parseBatteryData } from "../../types";
+import { BatteryDataNew } from "../../types";
 import { useLoader } from '@react-three/fiber'
 import { SVGLoader } from 'three-stdlib'
-import { useWebSocket } from "../../hooks/useWebSocket";
+import { fetchBatteryData, useWebSocket } from "../../hooks/useWebSocket";
+import { generate_random_string } from "../../utils/helpers";
 
 const cellNSegments = 32;
 const cellFrameWidth = 1.0;
@@ -193,30 +194,45 @@ const BatteryPack: React.FC<BatteryPackProps> = ({ cells, esp_id, connected }) =
 };
 
 interface BatteriesPageProps {
-    isFromEsp32?: boolean;
+    isFromESP32?: boolean;
 }
 
-export default function DigitalTwin({ isFromEsp32 = false }: BatteriesPageProps) {
+export default function DigitalTwin({ isFromESP32 = false }: BatteriesPageProps) {
     const { getAuthToken } = useAuth();
 
     let ws_url = apiConfig.WEBSOCKET_BROWSER;
     let queryString = window.location.search;
-    if (!isFromEsp32) {
+    if (!isFromESP32) {
         const hash = window.location.hash;
         queryString = hash.split('?')[1];
     }
     const urlParams = new URLSearchParams(queryString);
     let esp_id = urlParams.get('esp_id');
     if (esp_id == null) esp_id = "empty";
-    ws_url = isFromEsp32 ? ws_url += "?auth_token=" + getAuthToken() : ws_url += "?esp_id=" + esp_id;
 
-    const [batteryItem, setSelectedBattery] = useState<BatteryData | null>(null);
+    const ws_session_browser_id = useRef(generate_random_string(32));
+    ws_url = isFromESP32 ? ws_url += "?auth_token=" + getAuthToken() : ws_url += "?browser_id=" + ws_session_browser_id.current + "&esp_id=" + esp_id;
 
-    // Get data from Webscocket
-    const handleMessage = useCallback((data: any) => {
-        const battery = data[esp_id];
-        const parsed = parseBatteryData(esp_id, battery, true);
-        setSelectedBattery(parsed);
+    const [battery, setBatteryData] = useState<BatteryDataNew | null>(null);
+
+    // get data from DB
+    useEffect(() => {
+        const loadBattery = async () => {
+            const esp = await fetchBatteryData(esp_id);
+            if (esp !== null) setBatteryData(esp);
+        };
+
+        loadBattery();
+    }, []);
+
+    // update data after WebSocket trigger
+    const handleMessage = useCallback(async (data: any) => {
+        if (data.esp_id === esp_id && data.browser_id === ws_session_browser_id.current) {
+            if (data.type === "status_update") {
+                const esp = await fetchBatteryData(esp_id);
+                if (esp !== null) setBatteryData(esp);
+            }
+        }
     }, [esp_id]);
     useWebSocket({
         url: ws_url,
@@ -224,13 +240,13 @@ export default function DigitalTwin({ isFromEsp32 = false }: BatteriesPageProps)
     });
   
   
-  const cells: CellData[] = batteryItem ?
+  const cells: CellData[] = battery ?
     // websocket data
     ([
-      { label: "cell 1", temperature: batteryItem.cell1_temperature, position: [-3, 0, -3], charge: batteryItem.cell1_charge/100, isCharging: batteryItem.cell1_current>0?true:false },
-      { label: "cell 2", temperature: batteryItem.cell2_temperature, position: [-3, 0, -1], charge: batteryItem.cell2_charge/100, isCharging: batteryItem.cell2_current>0?true:false },
-      { label: "cell 3", temperature: batteryItem.cell3_temperature, position: [-3, 0, 1], charge: batteryItem.cell3_charge/100, isCharging: batteryItem.cell3_current>0?true:false },
-      { label: "cell 4", temperature: batteryItem.cell4_temperature, position: [-3, 0, 3], charge: batteryItem.cell4_charge/100, isCharging: batteryItem.cell4_current>0?true:false },
+      { label: "cell 1", temperature: battery.cell1_temperature, position: [-3, 0, -3], charge: battery.cell1_charge/100, isCharging: battery.cell1_current>0?true:false },
+      { label: "cell 2", temperature: battery.cell2_temperature, position: [-3, 0, -1], charge: battery.cell2_charge/100, isCharging: battery.cell2_current>0?true:false },
+      { label: "cell 3", temperature: battery.cell3_temperature, position: [-3, 0, 1], charge: battery.cell3_charge/100, isCharging: battery.cell3_current>0?true:false },
+      { label: "cell 4", temperature: battery.cell4_temperature, position: [-3, 0, 3], charge: battery.cell4_charge/100, isCharging: battery.cell4_current>0?true:false },
     ])
     :
     // some hardcoded examples
@@ -255,7 +271,7 @@ export default function DigitalTwin({ isFromEsp32 = false }: BatteriesPageProps)
 
   return (
     <div style={{ height: "100vh" }}>
-      <BatteryPack cells={cells} esp_id={batteryItem?batteryItem.esp_id:"simulation"} connected={batteryItem?true:false}/>
+      <BatteryPack cells={cells} esp_id={battery?battery.esp_id:"simulation"} connected={battery?true:false}/>
     </div>
   );
 }

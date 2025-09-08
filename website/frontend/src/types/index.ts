@@ -21,7 +21,7 @@ export interface BatteryDataNew extends BatteryInfoData {
 
 export const parseBatteryDataNew = (
   raw: any,
-  isFromEsp32 = false
+  isFromESP32 = false
 ): BatteryDataNew => ({
   esp_id: raw?.esp_id || 0,
   root_id: raw?.root_id || 0,
@@ -35,7 +35,7 @@ export const parseBatteryDataNew = (
   I: raw?.I / 10 || 0,
   new_esp_id: "",
   OTC: raw?.OTC || 0,
-  wifi: isFromEsp32 ? !!raw?.wifi : !!raw,
+  wifi: isFromESP32 ? !!raw?.wifi : !!raw,
 });
 
 
@@ -75,7 +75,7 @@ export interface BatteryData {
 export const parseBatteryData = (
   esp_id: string,
   raw: any,
-  isFromEsp32 = false
+  isFromESP32 = false
 ): BatteryData => ({
   esp_id,
   new_esp_id: "",
@@ -86,7 +86,7 @@ export const parseBatteryData = (
   ambient_temperature: raw?.aT / 10 || 0,
   cell_temperature: raw?.cT / 10 || 0,
   OTC_threshold: raw?.OTC_threshold || 0,
-  isConnected: isFromEsp32 ? !!raw?.connected_to_WiFi : !!raw,
+  isConnected: isFromESP32 ? !!raw?.connected_to_WiFi : !!raw,
   status: raw ? "online" : "offline",
   timestamp: Date.now(),
   cell1_current: raw?.I1 / 100 || 0,

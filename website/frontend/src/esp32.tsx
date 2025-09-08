@@ -19,12 +19,12 @@ createRoot(document.getElementById("root")!).render(
     <ThemeProvider>
       <AppWrapper>
         <Router>
-        <AuthProvider isFromEsp32={true} >
+        <AuthProvider isFromESP32={true} >
         <ScrollToTop />
         <Routes>
           <Route index path="/" element={
                 <AuthRequire>
-                  <BatteryPage isFromEsp32={true} />
+                  <BatteryPage isFromESP32={true} />
                 </AuthRequire>
                 } />
             <Route path="/login" element={<SignIn />} />
