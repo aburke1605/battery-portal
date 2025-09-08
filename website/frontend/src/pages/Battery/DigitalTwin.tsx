@@ -4,7 +4,7 @@ import { Edges, Html, OrbitControls } from "@react-three/drei";
 import * as THREE from "three";
 import { useAuth } from "../../auth/AuthContext";
 import apiConfig from "../../apiConfig";
-import { BatteryDataNew } from "../../types";
+import { BatteryData } from "../../types";
 import { useLoader } from '@react-three/fiber'
 import { SVGLoader } from 'three-stdlib'
 import { fetchBatteryData, useWebSocket } from "../../hooks/useWebSocket";
@@ -213,7 +213,7 @@ export default function DigitalTwin({ isFromESP32 = false }: BatteriesPageProps)
     const ws_session_browser_id = useRef(generate_random_string(32));
     ws_url = isFromESP32 ? ws_url += "?auth_token=" + getAuthToken() : ws_url += "?browser_id=" + ws_session_browser_id.current + "&esp_id=" + esp_id;
 
-    const [battery, setBatteryData] = useState<BatteryDataNew | null>(null);
+    const [battery, setBatteryData] = useState<BatteryData | null>(null);
 
     // get data from DB
     useEffect(() => {

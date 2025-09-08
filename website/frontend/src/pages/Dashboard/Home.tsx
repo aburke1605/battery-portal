@@ -1,6 +1,6 @@
 import{ useState, useEffect } from 'react';
 import PageMeta from "../../components/common/PageMeta";
-import { BatteryDataNew, AlertData } from '../..//types';
+import { BatteryData, AlertData } from '../..//types';
 import { initialBatteries, initialAlerts } from '../../mock/mockData';
 import { AlertTriangle, Info } from 'lucide-react';
 import { formatDateTime, getAlertTypeColor } from '../../utils/helpers';
@@ -11,7 +11,7 @@ import apiConfig from '../../apiConfig';
 export default function Home() {
 
 
-  const [batteries, setBatteryData] = useState<BatteryDataNew[]>(initialBatteries);
+  const [batteries, setBatteryData] = useState<BatteryData[]>(initialBatteries);
   useEffect(() => {
     const fetchBatteryData = async () => {
       try {

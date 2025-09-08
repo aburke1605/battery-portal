@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import PageBreadcrumb from "../../components/common/PageBreadCrumb";
 import PageMeta from "../../components/common/PageMeta";
-import { BatteryDataNew, parseBatteryDataNew } from '../../types';
+import { BatteryData, parseBatteryData } from '../../types';
 import BatteryDetail from './BatteryDetail';
 import apiConfig from '../../apiConfig';
 import { useAuth } from '../../auth/AuthContext';
@@ -31,7 +31,7 @@ export default function BatteryPage({ isFromESP32 = false }: BatteriesPageProps)
     const ws_session_browser_id = useRef(generate_random_string(32));
     ws_url = isFromESP32 ? ws_url += "?auth_token=" + getAuthToken() : ws_url += "?browser_id=" + ws_session_browser_id.current + "&esp_id=" + esp_id;
 
-    const [battery, setBatteryData] = useState<BatteryDataNew | null>(null);
+    const [battery, setBatteryData] = useState<BatteryData | null>(null);
     const [voltageThreshold] = useState(46.5);
 
     const sleep = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
@@ -57,7 +57,7 @@ export default function BatteryPage({ isFromESP32 = false }: BatteriesPageProps)
                 if (esp !== null) setBatteryData(esp);
             }
         } else if (isFromESP32 && data.content) {
-            const parsed = parseBatteryDataNew(data.content);
+            const parsed = parseBatteryData(data.content);
             setBatteryData(parsed);
         }
     }, [esp_id, fetchBatteryData]);
@@ -66,7 +66,7 @@ export default function BatteryPage({ isFromESP32 = false }: BatteriesPageProps)
         onMessage: handleMessage,
     });
 
-    const sendBatteryUpdate = async (updates: Partial<BatteryDataNew>) => {
+    const sendBatteryUpdate = async (updates: Partial<BatteryData>) => {
         sendMessage(createMessage("change-settings", updates, esp_id));
         if (updates.new_esp_id && updates.new_esp_id !== esp_id) {
             await sleep(5000);

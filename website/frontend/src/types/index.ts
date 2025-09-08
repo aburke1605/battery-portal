@@ -7,7 +7,7 @@ export interface BatteryInfoData {
   nodes?: BatteryInfoData[];
 }
 
-export interface BatteryDataNew extends BatteryInfoData {
+export interface BatteryData extends BatteryInfoData {
   t: number;
   Q: number
   H: number;
@@ -32,10 +32,10 @@ export interface BatteryDataNew extends BatteryInfoData {
   wifi: boolean;
 }
 
-export const parseBatteryDataNew = (
+export const parseBatteryData = (
   raw: any,
   isFromESP32 = false
-): BatteryDataNew => ({
+): BatteryData => ({
   esp_id: raw?.esp_id || 0,
   root_id: raw?.root_id || 0,
   last_updated_time: raw?.last_updated_time || 0,

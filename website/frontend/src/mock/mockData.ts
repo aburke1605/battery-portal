@@ -1,4 +1,4 @@
-import { BatteryDataNew, AlertData, UserData } from '../types';
+import { BatteryData, AlertData, UserData } from '../types';
 // Sample battery data
 
 // Sample battery data
@@ -158,7 +158,7 @@ export const Batteries = {
   }
 };
 
-export const initialBatteries: BatteryDataNew[] = [
+export const initialBatteries: BatteryData[] = [
   {
     esp_id: 'B-001',
     root_id: null,
