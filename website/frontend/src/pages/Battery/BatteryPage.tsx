@@ -5,7 +5,7 @@ import { BatteryDataNew, parseBatteryDataNew } from '../../types';
 import BatteryDetail from './BatteryDetail';
 import apiConfig from '../../apiConfig';
 import { useAuth } from '../../auth/AuthContext';
-import { createMessage, fetchBatteryInfo, useWebSocket } from '../../hooks/useWebSocket';
+import { createMessage, fetchBatteryData, useWebSocket } from '../../hooks/useWebSocket';
 import { generate_random_string } from '../../utils/helpers';
 
 interface BatteriesPageProps {
@@ -40,7 +40,7 @@ export default function BatteryPage({ isFromEsp32 = false }: BatteriesPageProps)
         // get fall-back data from DB
         useEffect(() => {
             const loadBattery = async () => {
-                const esp = await fetchBatteryInfo(esp_id);
+                const esp = await fetchBatteryData(esp_id);
                 if (esp !== null) setSelectedBattery(esp);
             };
 
@@ -53,14 +53,14 @@ export default function BatteryPage({ isFromEsp32 = false }: BatteriesPageProps)
     const handleMessage = useCallback(async (data: any) => {
         if (data.esp_id === esp_id && data.browser_id === ws_session_browser_id.current) {
             if (data.type === "status_update") {
-                const esp = await fetchBatteryInfo(esp_id);
+                const esp = await fetchBatteryData(esp_id);
                 if (esp !== null) setSelectedBattery(esp);
             }
         } else if (isFromEsp32 && data.content) {
             const parsed = parseBatteryDataNew(data.content);
             setSelectedBattery(parsed);
         }
-    }, [esp_id, fetchBatteryInfo]);
+    }, [esp_id, fetchBatteryData]);
     const { sendMessage } = useWebSocket({
         url: ws_url,
         onMessage: handleMessage,

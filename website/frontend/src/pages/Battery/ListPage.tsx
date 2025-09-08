@@ -5,7 +5,7 @@ import BatteryCard from './BatteryCard';
 import { useNavigate } from 'react-router-dom';
 import apiConfig from '../../apiConfig';
 import { generate_random_string } from '../../utils/helpers';
-import { fetchBatteryInfo, useWebSocket } from '../../hooks/useWebSocket';
+import { fetchBatteryData, useWebSocket } from '../../hooks/useWebSocket';
 
 // Add this interface for map markers
 interface MapMarker {
@@ -45,12 +45,12 @@ export default function BatteryPage() {
   // initial fetch
   useEffect(() => {
     const loadBatteries = async () => {
-      const esps = await fetchBatteryInfo("LIST");
+      const esps = await fetchBatteryData("LIST");
       if (esps !== null) setBatteryData(esps);
     }
 
     loadBatteries();
-  }, [fetchBatteryInfo])
+  }, [fetchBatteryData])
 
   // get status updates from backend through websocket
   const ws_session_browser_id = useRef(generate_random_string(32));
@@ -59,11 +59,11 @@ export default function BatteryPage() {
   const handleMessage = useCallback(async (data: any) => {
     if (data.esp_id === "LIST" && data.browser_id === ws_session_browser_id.current) {
       if (data.type === "status_update"){
-        const esps = await fetchBatteryInfo("LIST");
+        const esps = await fetchBatteryData("LIST");
         if (esps !== null) setBatteryData(esps);
       }
     }
-  }, [fetchBatteryInfo]);
+  }, [fetchBatteryData]);
   useWebSocket({
       url: ws_url,
       onMessage: handleMessage,

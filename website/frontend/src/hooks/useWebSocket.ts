@@ -63,22 +63,22 @@ export const createMessage = (
 });
 
 
-export async function fetchBatteryInfo(esp_id: string) {
+export async function fetchBatteryData(esp_id: string) {
   /*
     fetches data from battery_info table in database
   */
   try {
       const response = await axios.get(`${apiConfig.DB_INFO_API}`);
-      const batteries = parseBatteryInfoMESHs(response.data);
+      const batteries = extendBatteryInfo(response.data);
 
       // add telemetry data (recusively) to battery info
-      const detailed = await Promise.all(batteries.map(addBatteryDataToInfo));
+      const detailed = await Promise.all(batteries.map(appendBatteryData));
 
       if (esp_id === "LIST") {
         return detailed;
       } else {
         // extract only one battery data item
-        return get_sub_info(detailed, esp_id);
+        return extractSingleBattery(detailed, esp_id);
       }
 
   } catch(error) {
@@ -88,7 +88,7 @@ export async function fetchBatteryInfo(esp_id: string) {
 }
 
 // parsing helper
-const parseBatteryInfoMESHs = (data: BatteryInfoData[]): BatteryDataNew[] => {
+const extendBatteryInfo = (data: BatteryInfoData[]): BatteryDataNew[] => {
     /*
       contructs BatteryData (which is BatteryInfo + extra from battery_data_<esp_id>) objects,
       initially populating them with data from BatteryInfo inputs
@@ -100,7 +100,7 @@ const parseBatteryInfoMESHs = (data: BatteryInfoData[]): BatteryDataNew[] => {
         live_websocket: root.live_websocket,
         nodes: root.nodes,
 
-        // fetch these from api in fetchBatteryInfo later:
+        // fetch these from api in fetchBatteryData later:
         t: 0,
         Q: 0,
         H: 0,
@@ -114,7 +114,7 @@ const parseBatteryInfoMESHs = (data: BatteryInfoData[]): BatteryDataNew[] => {
 };
 
 // recursive helper
-const addBatteryDataToInfo = async (battery: any): Promise<any> => {
+const appendBatteryData = async (battery: any): Promise<any> => {
     /*
         to loop through the json returned at /api/db/data,
         merging data defined in BatteryData to the already existing data defined in BatteryInfo
@@ -126,7 +126,7 @@ const addBatteryDataToInfo = async (battery: any): Promise<any> => {
 
         // recurse on children if any
         if (battery.nodes && battery.nodes.length > 0) {
-            const mergedNodes = await Promise.all(battery.nodes.map(addBatteryDataToInfo));
+            const mergedNodes = await Promise.all(battery.nodes.map(appendBatteryData));
             return { ...merged, nodes: mergedNodes };
         }
 
@@ -134,7 +134,7 @@ const addBatteryDataToInfo = async (battery: any): Promise<any> => {
     } catch {
         // fallback if fetch fails
         if (battery.nodes && battery.nodes.length > 0) {
-            const mergedNodes = await Promise.all(battery.nodes.map(addBatteryDataToInfo));
+            const mergedNodes = await Promise.all(battery.nodes.map(appendBatteryData));
             return { ...battery, nodes: mergedNodes };
         }
         return battery;
@@ -142,7 +142,7 @@ const addBatteryDataToInfo = async (battery: any): Promise<any> => {
 };
 
 // recursive helper
-const get_sub_info = (info: BatteryDataNew[]|BatteryInfoData[], esp_id: string): any => {
+const extractSingleBattery = (info: BatteryDataNew[]|BatteryInfoData[], esp_id: string): any => {
     /*
         to loop through the json returned at /api/db/info,
         returning the correct object according to esp_id
@@ -152,7 +152,7 @@ const get_sub_info = (info: BatteryDataNew[]|BatteryInfoData[], esp_id: string):
             return esp;
         }
         if (esp.nodes && esp.nodes.length > 0) {
-            const found = get_sub_info(esp.nodes, esp_id);
+            const found = extractSingleBattery(esp.nodes, esp_id);
             if (found) return found;
         }
     }
