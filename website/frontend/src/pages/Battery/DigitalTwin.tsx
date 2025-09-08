@@ -1,13 +1,14 @@
-import React, { useCallback, useMemo, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Canvas } from "@react-three/fiber";
 import { Edges, Html, OrbitControls } from "@react-three/drei";
 import * as THREE from "three";
 import { useAuth } from "../../auth/AuthContext";
 import apiConfig from "../../apiConfig";
-import { BatteryData, parseBatteryData } from "../../types";
+import { BatteryDataNew } from "../../types";
 import { useLoader } from '@react-three/fiber'
 import { SVGLoader } from 'three-stdlib'
-import { useWebSocket } from "../../hooks/useWebSocket";
+import { fetchBatteryInfo, useWebSocket } from "../../hooks/useWebSocket";
+import { generate_random_string } from "../../utils/helpers";
 
 const cellNSegments = 32;
 const cellFrameWidth = 1.0;
@@ -208,15 +209,30 @@ export default function DigitalTwin({ isFromEsp32 = false }: BatteriesPageProps)
     const urlParams = new URLSearchParams(queryString);
     let esp_id = urlParams.get('esp_id');
     if (esp_id == null) esp_id = "empty";
-    ws_url = isFromEsp32 ? ws_url += "?auth_token=" + getAuthToken() : ws_url += "?esp_id=" + esp_id;
 
-    const [batteryItem, setSelectedBattery] = useState<BatteryData | null>(null);
+    const ws_session_browser_id = useRef(generate_random_string(32));
+    ws_url = isFromEsp32 ? ws_url += "?auth_token=" + getAuthToken() : ws_url += "?browser_id=" + ws_session_browser_id.current + "&esp_id=" + esp_id;
 
-    // Get data from Webscocket
-    const handleMessage = useCallback((data: any) => {
-        const battery = data[esp_id];
-        const parsed = parseBatteryData(esp_id, battery, true);
-        setSelectedBattery(parsed);
+    const [batteryItem, setSelectedBattery] = useState<BatteryDataNew | null>(null);
+
+    // get data from DB
+    useEffect(() => {
+        const loadBattery = async () => {
+            const esp = await fetchBatteryInfo(esp_id);
+            if (esp !== null) setSelectedBattery(esp);
+        };
+
+        loadBattery();
+    }, []);
+
+    // update data after WebSocket trigger
+    const handleMessage = useCallback(async (data: any) => {
+        if (data.esp_id === esp_id && data.browser_id === ws_session_browser_id.current) {
+            if (data.type === "status_update") {
+                const esp = await fetchBatteryInfo(esp_id);
+                if (esp !== null) setSelectedBattery(esp);
+            }
+        }
     }, [esp_id]);
     useWebSocket({
         url: ws_url,
