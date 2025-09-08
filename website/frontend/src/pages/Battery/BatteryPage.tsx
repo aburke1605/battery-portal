@@ -1,12 +1,11 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import PageBreadcrumb from "../../components/common/PageBreadCrumb";
 import PageMeta from "../../components/common/PageMeta";
-import { BatteryDataNew, BatteryInfoData, parseBatteryDataNew } from '../../types';
+import { BatteryDataNew, parseBatteryDataNew } from '../../types';
 import BatteryDetail from './BatteryDetail';
 import apiConfig from '../../apiConfig';
 import { useAuth } from '../../auth/AuthContext';
-import { createMessage, useWebSocket } from '../../hooks/useWebSocket';
-import axios from 'axios';
+import { createMessage, fetchBatteryInfo, useWebSocket } from '../../hooks/useWebSocket';
 import { generate_random_string } from '../../utils/helpers';
 
 interface BatteriesPageProps {
@@ -37,106 +36,25 @@ export default function BatteryPage({ isFromEsp32 = false }: BatteriesPageProps)
 
     const sleep = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
 
-    const parseBatteryInfoMESHs = (data: BatteryInfoData[]): BatteryDataNew[] => {
-        return data.map((root) => ({
-            esp_id: root.esp_id,
-            root_id: root.root_id,
-            last_updated_time: root.last_updated_time,
-            live_websocket: root.live_websocket,
-            nodes: root.nodes,
-
-            // fetch these from api in fetchBatteryInfo later:
-            t: 0,
-            Q: 0,
-            H: 0,
-            cT: 0,
-            V: 0,
-            I: 0,
-            new_esp_id: "",
-            OTC: 0,
-            wifi: false
-        }));
-    };
-
-    const get_sub_info = (info: BatteryDataNew[]|BatteryInfoData[], esp_id: string): any => {
-        /*
-            to loop through the json returned at /api/db/info,
-            returning the correct object according to esp_id
-        */
-        for (const esp of info) {
-            if (esp.esp_id === esp_id) {
-                return esp;
-            }
-            if (esp.nodes && esp.nodes.length > 0) {
-                const found = get_sub_info(esp.nodes, esp_id);
-                if (found) return found;
-            }
-        }
-        return null;
-    }
-
-    // recursive helper
-    const addBatteryDataToInfo = async (battery: any): Promise<any> => {
-        /*
-            to loop through the json returned at /api/db/data,
-            merging data defined in BatteryData to the already existing data defined in BatteryInfo
-        */
-        try {
-            const res = await axios.get(`${apiConfig.DB_DATA_API}?esp_id=${battery.esp_id}`);
-            // merge root battery with fetched telemetry
-            const merged = { ...battery, ...res.data };
-
-            // recurse on children if any
-            if (battery.nodes && battery.nodes.length > 0) {
-                const mergedNodes = await Promise.all(battery.nodes.map(addBatteryDataToInfo));
-                return { ...merged, nodes: mergedNodes };
-            }
-
-            return merged;
-        } catch {
-            // fallback if fetch fails
-            if (battery.nodes && battery.nodes.length > 0) {
-                const mergedNodes = await Promise.all(battery.nodes.map(addBatteryDataToInfo));
-                return { ...battery, nodes: mergedNodes };
-            }
-            return battery;
-        }
-    };
-
-    // TODO:
-    // make this a FC as its used a few times
-    const fetchBatteryInfo = useCallback(async () => {
-        try {
-            const response = await axios.get(`${apiConfig.DB_INFO_API}`);
-            const batteries = parseBatteryInfoMESHs(response.data);
-
-            // add telemetry data (recusively) to battery info
-            const detailed = await Promise.all(batteries.map(addBatteryDataToInfo));
-
-            // extract only one battery data item
-            const esp = get_sub_info(detailed, esp_id);
-            if (esp !== null) setSelectedBattery(esp);
-
-        } catch(error) {
-            console.error("Error fetching battery data:", error);
-        } finally {
-            // setLoading(false);
-        }
-    }, []);
-
     if (!isFromEsp32) {
         // get fall-back data from DB
         useEffect(() => {
-            fetchBatteryInfo();
-        }, [fetchBatteryInfo])
+            const loadBattery = async () => {
+                const esp = await fetchBatteryInfo(esp_id);
+                if (esp !== null) setSelectedBattery(esp);
+            };
+
+            loadBattery();
+        }, []);
     }
 
 
     // get fresh data from WebSocket when it connects
-    const handleMessage = useCallback((data: any) => {
+    const handleMessage = useCallback(async (data: any) => {
         if (data.esp_id === esp_id && data.browser_id === ws_session_browser_id.current) {
             if (data.type === "status_update") {
-                fetchBatteryInfo();
+                const esp = await fetchBatteryInfo(esp_id);
+                if (esp !== null) setSelectedBattery(esp);
             }
         } else if (isFromEsp32 && data.content) {
             const parsed = parseBatteryDataNew(data.content);
