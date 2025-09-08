@@ -74,8 +74,12 @@ export async function fetchBatteryInfo(esp_id: string) {
       // add telemetry data (recusively) to battery info
       const detailed = await Promise.all(batteries.map(addBatteryDataToInfo));
 
-      // extract only one battery data item
-      return get_sub_info(detailed, esp_id);
+      if (esp_id === "LIST") {
+        return detailed;
+      } else {
+        // extract only one battery data item
+        return get_sub_info(detailed, esp_id);
+      }
 
   } catch(error) {
       console.error("Error fetching battery data:", error);

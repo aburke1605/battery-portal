@@ -3,10 +3,9 @@ import { ChevronDown } from 'lucide-react';
 import { BatteryInfoData, BatteryDataNew } from '../../types';
 import BatteryCard from './BatteryCard';
 import { useNavigate } from 'react-router-dom';
-import axios from 'axios';
 import apiConfig from '../../apiConfig';
 import { generate_random_string } from '../../utils/helpers';
-import { useWebSocket } from '../../hooks/useWebSocket';
+import { fetchBatteryInfo, useWebSocket } from '../../hooks/useWebSocket';
 
 // Add this interface for map markers
 interface MapMarker {
@@ -42,66 +41,26 @@ export default function BatteryPage() {
   const [statusFilter, setStatusFilter] = useState('all');
   const [sortBy, setSortBy] = useState('status');
 
-  const parseBatteryInfoMESHs = (data: BatteryInfoData[]): BatteryDataNew[] => {
-    return data.map((root) => ({
-      esp_id: root.esp_id,
-      root_id: root.root_id,
-      last_updated_time: root.last_updated_time,
-      live_websocket: root.live_websocket,
-      nodes: root.nodes,
-
-      // fetch these from api in fetchBatteryInfo later:
-      t: 0,
-      Q: 0,
-      H: 0,
-      cT: 0,
-      V: 0,
-      I: 0,
-      new_esp_id: "",
-      OTC: 0,
-      wifi: false
-    }));
-  };
-
-  // TODO:
-  // make this a FC as its used a few times
-  const fetchBatteryInfo = useCallback(async () => {
-    try {
-      const response = await axios.get(`${apiConfig.DB_INFO_API}`);
-      const batteries = parseBatteryInfoMESHs(response.data);
-
-      // add telemetry data to battery info
-      const detailed = await Promise.all(
-        batteries.map(async (b) => {
-          try {
-            const res = await axios.get(`${apiConfig.DB_DATA_API}?esp_id=${b.esp_id}`);
-            return { ...b, ...res.data }; // merge battery data
-          } catch {
-            return b; // fallback if fetch fails
-          }
-        })
-      );
-      setBatteryData(detailed);
-    } catch(error) {
-      console.error("Error fetching battery data:", error);
-    } finally {
-      // setLoading(false);
-    }
-  }, []);
 
   // initial fetch
   useEffect(() => {
-    fetchBatteryInfo();
+    const loadBatteries = async () => {
+      const esps = await fetchBatteryInfo("LIST");
+      if (esps !== null) setBatteryData(esps);
+    }
+
+    loadBatteries();
   }, [fetchBatteryInfo])
 
   // get status updates from backend through websocket
   const ws_session_browser_id = useRef(generate_random_string(32));
   const ws_url = `${apiConfig.WEBSOCKET_BROWSER}?browser_id=${ws_session_browser_id.current}&esp_id=LIST`;
   // fetch from database on message receipt
-  const handleMessage = useCallback((data: any) => {
+  const handleMessage = useCallback(async (data: any) => {
     if (data.esp_id === "LIST" && data.browser_id === ws_session_browser_id.current) {
       if (data.type === "status_update"){
-        fetchBatteryInfo();
+        const esps = await fetchBatteryInfo("LIST");
+        if (esps !== null) setBatteryData(esps);
       }
     }
   }, [fetchBatteryInfo]);
