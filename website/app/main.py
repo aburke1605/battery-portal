@@ -4,7 +4,6 @@ main = Blueprint("main", __name__, url_prefix="/")
 
 @main.route("/", methods=["GET"])
 def home():
-    # return "<p>hello</p>"
     return send_from_directory("../frontend/dist/", "home.html")
 
 @main.route("/admin", methods=["GET"])
