@@ -21,7 +21,7 @@
         }
 
         // send initial request
-        const response = await fetch("/api/db/test/execute_sql", {
+        const response = await fetch("/api/db/execute_sql", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ query: query })
@@ -35,7 +35,7 @@
 
             if (userConfirm && userConfirm === query) {
                 // resend request with confirmation
-                const finalResponse = await fetch("/api/db/test/execute_sql", {
+                const finalResponse = await fetch("/api/db/execute_sql", {
                     method: "POST",
                     headers: { "Content-Type": "application/json" },
                     body: JSON.stringify({ query: "ADMIN " + userConfirm })
