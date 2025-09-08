@@ -205,7 +205,7 @@ esp_err_t perform_request(cJSON *message, cJSON *response) {
 
             cJSON *esp_id = cJSON_GetObjectItem(data, "new_esp_id");
             char* name = esp_id_string();
-            if (esp_id && strcmp(esp_id->valuestring, "") != 0 && strcmp(esp_id->valuestring, "bms_000") != 0 && esp_id->valuestring != name) {
+            if (esp_id && strcmp(esp_id->valuestring, "") != 0 && strcmp(esp_id->valuestring, "bms_00") != 0 && esp_id->valuestring != name) {
                 ESP_LOGI(TAG, "Changing device name...");
 
                 uint8_t address[2] = {0};
