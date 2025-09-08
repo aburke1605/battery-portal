@@ -1,6 +1,6 @@
 import{ useState, useEffect } from 'react';
 import PageMeta from "../../components/common/PageMeta";
-import { BatteryData, AlertData } from '../..//types';
+import { BatteryDataNew, AlertData } from '../..//types';
 import { initialBatteries, initialAlerts } from '../../mock/mockData';
 import { AlertTriangle, Info } from 'lucide-react';
 import { formatDateTime, getAlertTypeColor } from '../../utils/helpers';
@@ -11,7 +11,7 @@ import apiConfig from '../../apiConfig';
 export default function Home() {
 
 
-  const [batteries, setBatteryData] = useState<BatteryData[]>(initialBatteries);
+  const [batteries, setBatteryData] = useState<BatteryDataNew[]>(initialBatteries);
   useEffect(() => {
     const fetchBatteryData = async () => {
       try {
@@ -35,7 +35,7 @@ export default function Home() {
 
   // Get average charge level
   const getAverageChargeLevel = () => {
-    const total = batteries.reduce((sum, battery) => sum + battery.charge, 0);
+    const total = batteries.reduce((sum, battery) => sum + battery.Q, 0);
     return Math.round(total / batteries.length);
   };
 
@@ -68,7 +68,7 @@ export default function Home() {
   const [selectedID, setSelectedID] = useState("");
 
   // tick-box options for charts
-  const chartOptions = ["Q", "H", "cT", "V", "I"];
+  const chartOptions = ["Q", "H", "V", "V1", "V2", "V3", "V4", "I", "I1", "I2", "I3", "I4", "aT", "cT", "T1", "T2", "T3", "T4"];
   const [selectedCharts, setSelectedCharts] = useState<string[]>([]);
   const toggleOption = (option: string) => {
   setSelectedCharts((prev) =>
