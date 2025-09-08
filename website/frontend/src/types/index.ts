@@ -27,6 +27,10 @@ export interface BatteryData extends BatteryInfoData {
   T2: number;
   T3: number;
   T4: number;
+  Q1: number;
+  Q2: number;
+  Q3: number;
+  Q4: number;
   new_esp_id: string;
   OTC: number;
   wifi: boolean;

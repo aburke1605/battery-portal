@@ -9,6 +9,8 @@ from flask_sqlalchemy import SQLAlchemy
 from flask_security import roles_required, login_required
 from sqlalchemy import inspect, insert, select, desc, text, Table
 
+from utils import process_telemetry_data
+
 db = Blueprint("db", __name__, url_prefix="/api/db")
 
 DB = SQLAlchemy()
@@ -73,6 +75,7 @@ def update_battery_data(json: list) -> None:
         # then update/create battery_data_<esp_id> table
         battery_data_table = get_battery_data_table(esp_id)
         try:
+            process_telemetry_data(content) # first add approximate cell charges
             statement = insert(battery_data_table).values(
                 t = datetime.now(), # TODO: update this to GPS data
                 Q = content["Q"],
@@ -93,6 +96,10 @@ def update_battery_data(json: list) -> None:
                 T2 = content["T2"] / 10,
                 T3 = content["T3"] / 10,
                 T4 = content["T4"] / 10,
+                Q1 = content["Q1"] / 10,
+                Q2 = content["Q2"] / 10,
+                Q3 = content["Q3"] / 10,
+                Q4 = content["Q4"] / 10,
                 OTC = content["OTC"],
                 wifi = content["wifi"],
             )
@@ -150,6 +157,10 @@ def get_battery_data_table(esp_id: str) -> Table:
             DB.Column("T2", DB.Float, nullable=False),
             DB.Column("T3", DB.Float, nullable=False),
             DB.Column("T4", DB.Float, nullable=False),
+            DB.Column("Q1", DB.Float, nullable=False),
+            DB.Column("Q2", DB.Float, nullable=False),
+            DB.Column("Q3", DB.Float, nullable=False),
+            DB.Column("Q4", DB.Float, nullable=False),
             DB.Column("OTC", DB.Integer, nullable=False),
             DB.Column("wifi", DB.Boolean, nullable=False),
         )

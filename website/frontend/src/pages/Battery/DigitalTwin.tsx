@@ -243,10 +243,10 @@ export default function DigitalTwin({ isFromESP32 = false }: BatteriesPageProps)
   const cells: CellData[] = battery ?
     // websocket data
     ([
-      { label: "cell 1", temperature: battery.T1, position: [-3, 0, -3], charge: battery.Q/100, isCharging: battery.I1>0?true:false },
-      { label: "cell 2", temperature: battery.T2, position: [-3, 0, -1], charge: battery.Q/100, isCharging: battery.I2>0?true:false },
-      { label: "cell 3", temperature: battery.T3, position: [-3, 0, 1], charge: battery.Q/100, isCharging: battery.I3>0?true:false },
-      { label: "cell 4", temperature: battery.T4, position: [-3, 0, 3], charge: battery.Q/100, isCharging: battery.I4>0?true:false },
+      { label: "cell 1", temperature: battery.T1, position: [-3, 0, -3], charge: battery.Q1/100, isCharging: battery.I1>0?true:false },
+      { label: "cell 2", temperature: battery.T2, position: [-3, 0, -1], charge: battery.Q2/100, isCharging: battery.I2>0?true:false },
+      { label: "cell 3", temperature: battery.T3, position: [-3, 0, 1], charge: battery.Q3/100, isCharging: battery.I3>0?true:false },
+      { label: "cell 4", temperature: battery.T4, position: [-3, 0, 3], charge: battery.Q4/100, isCharging: battery.I4>0?true:false },
     ])
     :
     // some hardcoded examples
