@@ -17,7 +17,7 @@ char* esp_id_string() {
         ESP_LOGE("utils", "Couldn't allocate memory for esp_id string!");
         return NULL;
     }
-    snprintf(esp_id, n_bytes, "bms_%03u", ESP_ID);
+    snprintf(esp_id, n_bytes, "bms_%02u", ESP_ID);
     esp_id[n_bytes - 1] = '\0';
     return esp_id;
 }
@@ -27,7 +27,15 @@ void change_esp_id(char* name) {
         ESP_LOGE("utils", "New name not formatted correctly: \"%s\", should begin with \"bms_\"", name);
         return;
     }
-    ESP_ID = atoi(&name[4]);
+    char* id_str = &name[4];
+    // stop at first non-digit
+    for (char* p = id_str; *p; p++) {
+        if (!isdigit((unsigned char)*p)) {
+            *p = '\0'; // force terminate
+            break;
+        }
+    }
+    ESP_ID = atoi(id_str);
 }
 
 void send_fake_request() {

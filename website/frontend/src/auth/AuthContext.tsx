@@ -28,10 +28,10 @@ export const useAuth = (): AuthContextType => {
 
 interface AuthProviderProps {
   children: ReactNode;
-  isFromEsp32?: boolean;
+  isFromESP32?: boolean;
 }
 
-export const AuthProvider: React.FC<AuthProviderProps> = ({ children, isFromEsp32 = false }) => {
+export const AuthProvider: React.FC<AuthProviderProps> = ({ children, isFromESP32 = false }) => {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
   const navigate = useNavigate();
@@ -39,8 +39,8 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children, isFromEsp3
   useEffect(() => {
     const checkAuthStatus = async () => {
       try {
-        let url = '/api/users/check-auth';
-        if (isFromEsp32) {
+        let url = '/api/user/check-auth';
+        if (isFromESP32) {
           const token = getAuthToken();
           url += '?auth_token=' + token;
         }
@@ -68,7 +68,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children, isFromEsp3
 
   const logout = async () => {
     try {
-      await fetch('/api/users/logout', {
+      await fetch('/api/user/logout', {
         method: 'POST',
         credentials: 'include',
       });
@@ -82,7 +82,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children, isFromEsp3
 
   const login = async (email: string, password: string): Promise<boolean> => {
     try {
-      const res = await fetch('/api/users/login', {
+      const res = await fetch('/api/user/login', {
         method: 'POST',
         credentials: 'include',
         headers: {

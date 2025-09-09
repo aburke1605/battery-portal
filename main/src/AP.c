@@ -286,10 +286,10 @@ esp_err_t login_handler(httpd_req_t *req) {
     char response[39 + UTILS_AUTH_TOKEN_LENGTH];
     httpd_resp_set_type(req, "application/json");
 
-    char *check_session = strstr(req->uri, "/api/users/check-auth?auth_token=");
+    char *check_session = strstr(req->uri, "/api/user/check-auth?auth_token=");
     if (check_session) {
         char auth_token[UTILS_AUTH_TOKEN_LENGTH] = {0};
-        sscanf(check_session,"/api/users/check-auth?auth_token=%50s", auth_token);
+        sscanf(check_session,"/api/user/check-auth?auth_token=%50s", auth_token);
 
         for (int i=0; i < WS_CONFIG_MAX_CLIENTS; i++) {
             if (strcmp(client_sockets[i].auth_token, auth_token) == 0) {
@@ -421,7 +421,7 @@ httpd_handle_t start_webserver(void) {
         httpd_register_uri_handler(server, &esp32_uri);
 
         httpd_uri_t login_uri = {
-            .uri       = "/api/users/login",
+            .uri       = "/api/user/login",
             .method    = HTTP_POST,
             .handler   = login_handler,
             .user_ctx  = NULL
@@ -429,7 +429,7 @@ httpd_handle_t start_webserver(void) {
         httpd_register_uri_handler(server, &login_uri);
 
         httpd_uri_t refresh_uri = {
-            .uri       = "/api/users/check-auth",
+            .uri       = "/api/user/check-auth",
             .method    = HTTP_GET,
             .handler   = login_handler,
             .user_ctx  = NULL
@@ -476,8 +476,8 @@ httpd_handle_t start_webserver(void) {
         };
         httpd_register_uri_handler(server, &js_uri);
 
-        js_uri.uri = "/assets/zap.js";
-        js_uri.user_ctx = "/static/assets/zap.js";
+        js_uri.uri = "/assets/apiConfig.js";
+        js_uri.user_ctx = "/static/assets/apiConfig.js";
         httpd_register_uri_handler(server, &js_uri);
 
         js_uri.uri = "/assets/mock-socket.js";
@@ -485,10 +485,10 @@ httpd_handle_t start_webserver(void) {
         httpd_register_uri_handler(server, &js_uri);
 
         httpd_uri_t css_uri = {
-            .uri      = "/assets/zap.css",
+            .uri      = "/assets/apiConfig.css",
             .method   = HTTP_GET,
             .handler  = file_serve_handler,
-            .user_ctx = "/static/assets/zap.css",
+            .user_ctx = "/static/assets/apiConfig.css",
         };
         httpd_register_uri_handler(server, &css_uri);
 

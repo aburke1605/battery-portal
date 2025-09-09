@@ -220,8 +220,8 @@ export default function UserProfiles() {
   return (
     <>
       <PageMeta
-        title="User Profile | Battery Portal"
-        description="Manage your user profile and account settings"
+        title="Profile Dashboard"
+        description="React.js Profile Dashboard Tailwind CSS Admin"
       />
       <PageBreadcrumb pageTitle="Profile" />
       

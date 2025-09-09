@@ -15,6 +15,7 @@ import {
   AlertTriangle,
   AlertCircle
 } from 'lucide-react';
+import axios from 'axios';
 
 const UserList = () => {
   const [users, setUsers] = useState<User[]>([]);
@@ -38,11 +39,10 @@ const UserList = () => {
   const fetchUsers = async (page = 1) => {
     setLoading(true);
     try {
-      const res = await fetch(`/api/users/list?page=${page}&per_page=10`);
-      const data = await res.json();
-      setUsers(data.users);
-      setCurrentPage(data.current_page);
-      setPages(data.pages);
+      const response = await axios.get(`/api/user/list?page=${page}&per_page=10`);
+      setUsers(response.data.users);
+      setCurrentPage(response.data.current_page);
+      setPages(response.data.pages);
     } catch (err) {
       console.error('Failed to fetch users:', err);
     }
@@ -165,27 +165,19 @@ const UserList = () => {
       let res;
       if (isEditMode && editingUser) {
         // Edit existing user
-        res = await fetch(`/api/users/${editingUser.id}`, {
-          method: 'PUT',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(payload)
-        });
+        res = await axios.put(`/api/users/${editingUser.id}`, { payload });
       } else {
         // Add new user
-        res = await fetch('/api/users/add', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(payload)
-        });
+        res = await axios.post('/api/users/add', { payload });
       }
 
-      if (res.ok) {
+      if (res.data.ok) {
         handleCloseModal();
         fetchUsers(currentPage);
       } else {
         // Handle server-side validation errors
         try {
-          const errorData = await res.json();
+          const errorData = await res.data.json();
           if (errorData.error) {
             // Check if it's an email duplicate error
             if (errorData.error.toLowerCase().includes('email already exists')) {
@@ -226,19 +218,16 @@ const UserList = () => {
     setDeleteError('');
     
     try {
-      const res = await fetch(`/api/users/${userToDelete.id}`, {
-        method: 'DELETE',
-        credentials: 'include',
-      });
+      const res = await axios.delete(`/api/users/${userToDelete.id}`);
 
-      if (res.ok) {
+      if (res.data.ok) {
         // Success - close modal and refresh list
         handleDeleteCancel();
         fetchUsers(currentPage);
       } else {
         // Handle server-side errors
         try {
-          const errorData = await res.json();
+          const errorData = await res.data.json();
           setDeleteError(errorData.error || 'Failed to delete user. Please try again.');
         } catch (parseError) {
           setDeleteError('Failed to delete user. Please try again.');

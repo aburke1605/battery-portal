@@ -1,30 +1,40 @@
-# users.py
+import logging
+logger = logging.getLogger(__name__)
+import os
 from uuid import uuid4
-from flask import Blueprint, request, jsonify
-from flask_security import SQLAlchemyUserDatastore, UserMixin, RoleMixin, login_user, login_required, logout_user
+import re
+
+from flask import Flask, Blueprint, request, jsonify
+from flask_security import UserMixin, RoleMixin, SQLAlchemyUserDatastore, login_user, logout_user, login_required, roles_required
 from flask_security.utils import hash_password
 from flask_login import current_user
+from sqlalchemy import inspect
+
+user = Blueprint("user", __name__, url_prefix="/api/user")
+
 from app.db import DB
+class Roles(DB.Model, RoleMixin):
+    """
+        Defines the structure of the roles table, which defines types of users.
+    """
+    __tablename__ = "roles"
 
-# Blueprint setup
-user_bp = Blueprint('user_bp', __name__, url_prefix='/api/users')
-
-# Models and Security Setup
-roles_users = DB.Table(
-    'roles_users',
-    DB.Column('user_id', DB.Integer(), DB.ForeignKey('user.id')),
-    DB.Column('role_id', DB.Integer(), DB.ForeignKey('role.id'))
-)
-
-class Role(DB.Model, RoleMixin):
-    id = DB.Column(DB.Integer(), primary_key=True)
+    id = DB.Column(DB.Integer, primary_key=True)
     name = DB.Column(DB.String(80), unique=True)
     description = DB.Column(DB.String(255))
 
-    def __str__(self):
-        return self.name
+# simple association table to link User(s) and Role(s)
+roles_users = DB.Table("roles_users",
+    DB.Column("user_id", DB.Integer, DB.ForeignKey("users.id")),
+    DB.Column("role_id", DB.Integer, DB.ForeignKey("roles.id"))
+)
 
-class User(DB.Model, UserMixin):
+class Users(DB.Model, UserMixin):
+    """
+        Defines the structure of the users table.
+    """
+    __tablename__ = "users"
+
     id = DB.Column(DB.Integer, primary_key=True)
     first_name = DB.Column(DB.String(255), nullable=False)
     last_name = DB.Column(DB.String(255))
@@ -33,66 +43,118 @@ class User(DB.Model, UserMixin):
     active = DB.Column(DB.Boolean())
     confirmed_at = DB.Column(DB.DateTime())
     fs_uniquifier = DB.Column(DB.String(64), unique=True, nullable=False, default=lambda: str(uuid4()))
-    roles = DB.relationship('Role', secondary=roles_users,
-                            backref=DB.backref('users', lazy='dynamic'))
-    def __str__(self):
-        return self.email
+    roles = DB.relationship("Roles", secondary=roles_users,
+                            backref=DB.backref("users", lazy="dynamic"))
 
-user_datastore = SQLAlchemyUserDatastore(DB, User, Role)
+users = SQLAlchemyUserDatastore(DB, Users, Roles)
 
-@user_bp.route('/login', methods=['POST'])
-def api_login():
+
+def create_admin(app: Flask):
+    """
+        Builds initial role data in the database and creates the admin user for basic functionality.
+    """
+    with app.app_context():
+        inspector = inspect(DB.engine)
+        if not inspector.has_table(Roles.__tablename__):
+            return  # roles table not yet created
+
+        admin_name = os.getenv("ADMIN_NAME", "admin")
+        admin_email = os.getenv("ADMIN_EMAIL", "user@admin.dev")
+        admin_password = os.getenv("ADMIN_PASSWORD", "password")
+
+
+        # first ensure basic roles exist
+        role_names = ["user", "superuser"]
+        roles = {}
+        for role_name in role_names:
+            role = Roles.query.filter_by(name=role_name).first()
+            if not role:
+                role = Roles(name=role_name)
+                DB.session.add(role)
+                logger.info(f"creating new role \"{role_name}\"")
+            roles[role_name] = role
+        DB.session.commit()
+
+        # then ensure the admin user exists
+        if Users.query.filter_by(email=admin_email).first() is not None:
+            return
+        users.create_user(
+            first_name=admin_name,
+            email=admin_email,
+            password=hash_password(admin_password),
+            roles=[roles["user"], roles["superuser"]]
+            # are the other columns of Users therefore not needed?
+        )
+        logger.info(f"creating admin user \"{admin_email}\"")
+        DB.session.commit()
+
+
+@user.route("/login", methods=["POST"])
+def login():
+    """
+        API to verify user login requests, works in conjunction with AuthContext.tsx.
+    """
     data = request.get_json()
-    email = data.get('email')
-    password = data.get('password')
+    email = data.get("email")
+    password = data.get("password")
 
-    user = user_datastore.find_user(email=email)
-    if user and user.verify_and_update_password(password):
-        login_user(user)
+    u = users.find_user(email=email)
+    if u and u.verify_and_update_password(password):
+        login_user(u)
         return jsonify({
-            'loggedIn': True,
-            'email': user.email,
-            'roles': [role.name for role in user.roles]  # if using roles
+            "loggedIn": True,
+            "email": u.email,
+            "roles": [role.name for role in u.roles]
         })
-    return jsonify({'success': False}), 401
+    return jsonify({"success": False}), 401
 
-@user_bp.route('/check-auth', methods=['GET'])
+
+@user.route("/check-auth", methods=["GET"])
 @login_required
-def auth_status():
+def check_auth():
+    """
+        API to check for already logged-in users, works in conjunction with AuthContext.tsx.
+    """
     return jsonify({
-        'loggedIn': True,
-        'email': current_user.email,
-        'first_name': current_user.first_name,
-        'last_name': current_user.last_name,
-        'roles': [role.name for role in current_user.roles]  # if using roles
+        "loggedIn": True,
+        "email": current_user.email,
+        "first_name": current_user.first_name,
+        "last_name": current_user.last_name,
+        "roles": [role.name for role in current_user.roles]
     })
 
-@user_bp.route('/logout', methods=['POST'])
+
+@user.route("/logout", methods=["POST"])
 @login_required
 def logout():
+    """
+        API to perform user logout requests, works in conjunction with AuthContext.tsx.
+    """
     logout_user()
-    return jsonify({'message': 'Logged out'}), 200
+    return jsonify({"message": "Logged out"}), 200
 
-@user_bp.route('/list')
+
+@user.route("/list", methods=["GET"])
 @login_required
-def list_users():
-    # Get pagination parameters from query string
-    page = request.args.get('page', default=1, type=int)
-    per_page = request.args.get('per_page', default=10, type=int)
+def list():
+    """
+        API to list users already existing in the database, works in conjunction with list.tsx.
+    """
+    page = request.args.get("page", default=1, type=int)
+    per_page = request.args.get("per_page", default=10, type=int)
 
-    # Paginate query
-    pagination = User.query.paginate(page=page, per_page=per_page, error_out=False)
+    pagination = Users.query.paginate(page=page, per_page=per_page, error_out=False)
     users = pagination.items
 
     user_list = [
         {
-            "id": user.id,
-            "first_name": user.first_name,
-            "last_name": user.last_name,
-            "email": user.email,
-            "roles": [role.name for role in user.roles]
+            "id": u.id,
+            "first_name": u.first_name,
+            "last_name": u.last_name,
+            "email": u.email,
+            "roles": [role.name for role in u.roles]
         }
-        for user in users
+        for u in users
     ]
 
     return jsonify({
@@ -105,28 +167,29 @@ def list_users():
         "has_prev": pagination.has_prev
     })
 
-@user_bp.route('/add', methods=['POST'])
-@login_required
-def add_user():
-    data = request.get_json()
-    first_name = data.get('first_name')
-    last_name = data.get('last_name')
-    email = data.get('email')
-    password = data.get('password')
-    
-    # Check if email already exists
-    existing_user = User.query.filter_by(email=email).first()
-    if existing_user:
-        return jsonify({"error": "Email already exists. Please use a different email address."}), 400
-    
-    # role_ids = data.get('roles', [])
-    # Only can add normal role users for now
-    role_ids = [1]
 
-    roles = Role.query.filter(Role.id.in_(role_ids)).all()
+@user.route("/add", methods=["POST"])
+@roles_required("superuser")
+def add():
+    """
+        API to add new user to the database, works in conjunction with list.tsx
+    """
+    data = request.get_json()
+    first_name = data.get("first_name")
+    last_name = data.get("last_name")
+    email = data.get("email")
+    password = data.get("password")
+    # role_ids = data.get("roles", [])
+    
+    existing_user = Users.query.filter_by(email=email).first()
+    if existing_user:
+        return jsonify({"error": "A user with this email address already exists. Please use a different one."}), 400
+    
+    role_ids = [1] # can only add normal role users for now
+    roles = Roles.query.filter(Roles.id.in_(role_ids)).all()
 
     try:
-        user_datastore.create_user(
+        users.create_user(
             first_name=first_name,
             last_name=last_name,
             email=email,
@@ -139,143 +202,110 @@ def add_user():
         DB.session.rollback()
         return jsonify({"error": "Failed to create user. Please try again."}), 500
 
-@user_bp.route('/<int:user_id>', methods=['PUT'])
-@login_required
-def edit_user(user_id):
-    user = User.query.get_or_404(user_id)
+
+@user.route("/<int:user_id>", methods=["PUT"])
+@roles_required("superuser")
+def edit(user_id: int):
+    """
+        API to edit existing user in the database, works in conjunction with list.tsx
+    """
+    u = Users.query.get_or_404(user_id)
+
     data = request.get_json()
+    new_email = data.get("email", u.email)
     
-    new_email = data.get('email', user.email)
-    
-    # Check if email is being changed and if the new email already exists
-    if new_email != user.email:
-        existing_user = User.query.filter_by(email=new_email).first()
+    if new_email != u.email: # email address is being edited
+        existing_user = Users.query.filter_by(email=new_email).first()
         if existing_user:
             return jsonify({"error": "Email already exists. Please use a different email address."}), 400
     
     try:
-        user.first_name = data.get('first_name', user.first_name)
-        user.last_name = data.get('last_name', user.last_name)
-        user.email = new_email
-        
-        # Update password if provided
-        new_password = data.get('password')
-        if new_password and new_password.strip():
-            user.password = hash_password(new_password)
-        
+        u.first_name = data.get("first_name", u.first_name)
+        u.last_name = data.get("last_name", u.last_name)
+        u.email = new_email
+        new_password = data.get("password")
+        if new_password: # and new_password.strip(): # TODO add function to check all user entered stuff
+            u.password = hash_password(new_password)
         DB.session.commit()
         return jsonify({"message": "User updated successfully"}), 200
     except Exception as e:
         DB.session.rollback()
-        return jsonify({"error": "Failed to update user. Please try again."}), 500
+        return jsonify({"error": f"Failed to update user: {e}."}), 500
 
-@user_bp.route('/<int:user_id>', methods=['DELETE'])
-@login_required
-def delete_user(user_id):
-    # Prevent users from deleting themselves
+
+@user.route("/<int:user_id>", methods=["DELETE"])
+@roles_required("superuser")
+def delete(user_id: int):
+    """
+        API to delete existing user from the database, works in conjunction with list.tsx
+    """
     if current_user.id == user_id:
-        return jsonify({"error": "You cannot delete your own account."}), 400
+        return jsonify({"error": "Cannot delete admin account."}), 400
     
-    user = User.query.get_or_404(user_id)
-    
+    u = Users.query.get_or_404(user_id)
     try:
-        # Store user info for response
-        user_email = user.email
-        user_name = f"{user.first_name} {user.last_name}"
-        
-        DB.session.delete(user)
+        DB.session.delete(u)
         DB.session.commit()
-        
-        return jsonify({
-            "message": f"User {user_name} ({user_email}) has been deleted successfully."
-        }), 200
+        return jsonify({"message": f"User {u.first_name} {u.last_name} ({u.email}) has been deleted successfully."}), 200
     except Exception as e:
         DB.session.rollback()
         return jsonify({"error": "Failed to delete user. Please try again."}), 500
 
-@user_bp.route('/change-password', methods=['PUT'])
+
+@user.route("/change-password", methods=["PUT"])
 @login_required
 def change_password():
-    """Change the current user's password"""
+    """
+        API to change the current user's password.
+    """
     data = request.get_json()
-    current_password = data.get('current_password')
-    new_password = data.get('new_password')
+    current_password = data.get("current_password")
+    new_password = data.get("new_password")
     
-    # Validate required fields
-    if not current_password:
-        return jsonify({"error": "Current password is required."}), 400
-    
-    if not new_password:
-        return jsonify({"error": "New password is required."}), 400
-    
-    # Validate minimum password length
-    if len(new_password) < 6:
-        return jsonify({"error": "New password must be at least 6 characters long."}), 400
-    
-    # Verify current password
-    if not current_user.verify_and_update_password(current_password):
+    if not current_password or new_password:
+        return jsonify({"error": "All password fields are required."}), 400
+
+    if not current_user.verify_and_update_password(current_password.strip()):
         return jsonify({"error": "Current password is incorrect."}), 400
-    
+
+    if len(new_password) < 8:
+        return jsonify({"error": "New password must be at least 6 characters long."}), 400
+
     try:
-        # Update password
-        current_user.password = hash_password(new_password)
+        current_user.password = hash_password(new_password.strip())
         DB.session.commit()
-        
         return jsonify({"message": "Password changed successfully."}), 200
     except Exception as e:
         DB.session.rollback()
         return jsonify({"error": "Failed to change password. Please try again."}), 500
-
-@user_bp.route('/profile', methods=['PUT'])
+# TODO: merge these (above and below)
+@user.route("/profile", methods=["PUT"])
 @login_required
-def update_profile():
-    """Update the current user's profile information"""
+def profile():
+    """
+        API to update the current user's profile information.
+    """
     data = request.get_json()
     
-    new_email = data.get('email', current_user.email)
-    first_name = data.get('first_name', current_user.first_name)
-    last_name = data.get('last_name', current_user.last_name)
+    new_first_name = data.get("first_name", current_user.first_name)
+    new_last_name = data.get("last_name", current_user.last_name)
+    new_email = data.get("email", current_user.email)
     
-    # Validate required fields
-    if not first_name or not first_name.strip():
-        return jsonify({"error": "First name is required."}), 400
-    
-    if not last_name or not last_name.strip():
-        return jsonify({"error": "Last name is required."}), 400
-    
-    if not new_email or not new_email.strip():
-        return jsonify({"error": "Email is required."}), 400
-    
-    # Validate email format (basic validation)
-    import re
-    email_pattern = r'^[^\s@]+@[^\s@]+\.[^\s@]+$'
-    if not re.match(email_pattern, new_email):
+    # basic email format validation
+    if not re.match(r"^[^\s@]+@[^\s@]+\.[^\s@]+$", new_email):
         return jsonify({"error": "Please enter a valid email address."}), 400
     
-    # Check if email is being changed and if the new email already exists
     if new_email != current_user.email:
-        existing_user = User.query.filter_by(email=new_email).first()
+        existing_user = Users.query.filter_by(email=new_email).first()
         if existing_user:
             return jsonify({"error": "Email already exists. Please use a different email address."}), 400
     
     try:
-        # Update profile information
-        current_user.first_name = first_name.strip()
-        current_user.last_name = last_name.strip()
+        current_user.first_name = new_first_name.strip()
+        current_user.last_name = new_last_name.strip()
         current_user.email = new_email.strip()
-        
         DB.session.commit()
-        
-        return jsonify({
-            "message": "Profile updated successfully.",
-            "user": {
-                "first_name": current_user.first_name,
-                "last_name": current_user.last_name,
-                "email": current_user.email
-            }
-        }), 200
+        return jsonify({"message": "Profile updated successfully."}), 200
     except Exception as e:
         DB.session.rollback()
         return jsonify({"error": "Failed to update profile. Please try again."}), 500
-
-    
