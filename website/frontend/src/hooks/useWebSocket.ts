@@ -120,10 +120,6 @@ const extendBatteryInfo = (data: BatteryInfoData[]): BatteryData[] => {
         T2: 0,
         T3: 0,
         T4: 0,
-        Q1: 0,
-        Q2: 0,
-        Q3: 0,
-        Q4: 0,
         new_esp_id: "",
         OTC: 0,
         wifi: false
