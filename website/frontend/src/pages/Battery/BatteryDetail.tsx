@@ -571,27 +571,27 @@ const BatteryDetail: React.FC<BatteryDetailProps> = ({
                     </div>
                     <div>
                       <h4 className="text-sm font-medium text-gray-500 mb-2">Cell 1</h4>
-                      <p className="text-2xl font-semibold text-gray-900">{battery.I} A </p>
-                      <p className="text-2xl font-semibold text-gray-900">{battery.cT} °C</p>
-                      <p className="text-2xl font-semibold text-gray-900">{battery.V} V</p>
+                      <p className="text-2xl font-semibold text-gray-900">{battery.I1} A </p>
+                      <p className="text-2xl font-semibold text-gray-900">{battery.T1} °C</p>
+                      <p className="text-2xl font-semibold text-gray-900">{battery.V1} V</p>
                     </div>
                     <div>
                       <h4 className="text-sm font-medium text-gray-500 mb-2">Cell 2</h4>
-                      <p className="text-2xl font-semibold text-gray-900">{battery.I} A</p>
-                      <p className="text-2xl font-semibold text-gray-900">{battery.cT} °C</p>
-                      <p className="text-2xl font-semibold text-gray-900">{battery.V} V</p>
+                      <p className="text-2xl font-semibold text-gray-900">{battery.I2} A</p>
+                      <p className="text-2xl font-semibold text-gray-900">{battery.T2} °C</p>
+                      <p className="text-2xl font-semibold text-gray-900">{battery.V2} V</p>
                     </div>
                     <div>
                       <h4 className="text-sm font-medium text-gray-500 mb-2">Cell 3</h4>
-                      <p className="text-2xl font-semibold text-gray-900">{battery.I} A</p>
-                      <p className="text-2xl font-semibold text-gray-900">{battery.cT} °C</p>
-                      <p className="text-2xl font-semibold text-gray-900">{battery.V} V</p>
+                      <p className="text-2xl font-semibold text-gray-900">{battery.I3} A</p>
+                      <p className="text-2xl font-semibold text-gray-900">{battery.T3} °C</p>
+                      <p className="text-2xl font-semibold text-gray-900">{battery.V3} V</p>
                     </div>
                     <div>
                       <h4 className="text-sm font-medium text-gray-500 mb-2">Cell 4</h4>
-                      <p className="text-2xl font-semibold text-gray-900">{battery.I} A</p>
-                      <p className="text-2xl font-semibold text-gray-900">{battery.cT} °C</p>
-                      <p className="text-2xl font-semibold text-gray-900">{battery.V} V</p>
+                      <p className="text-2xl font-semibold text-gray-900">{battery.I4} A</p>
+                      <p className="text-2xl font-semibold text-gray-900">{battery.T4} °C</p>
+                      <p className="text-2xl font-semibold text-gray-900">{battery.V4} V</p>
                     </div>
                     {/* <div>
                       <h4 className="text-sm font-medium text-gray-500 mb-2">Capacity</h4>
