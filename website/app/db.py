@@ -9,6 +9,8 @@ from flask_sqlalchemy import SQLAlchemy
 from flask_security import roles_required, login_required
 from sqlalchemy import inspect, insert, select, desc, text, Table
 
+from utils import process_telemetry_data
+
 db = Blueprint("db", __name__, url_prefix="/api/db")
 
 DB = SQLAlchemy()
@@ -73,13 +75,31 @@ def update_battery_data(json: list) -> None:
         # then update/create battery_data_<esp_id> table
         battery_data_table = get_battery_data_table(esp_id)
         try:
+            process_telemetry_data(content) # first add approximate cell charges
             statement = insert(battery_data_table).values(
                 t = datetime.now(), # TODO: update this to GPS data
                 Q = content["Q"],
                 H = content["H"],
-                cT = content["cT"] / 10,
-                I = content["I"] / 10,
                 V = content["V"] / 10,
+                V1 = content["V1"] / 10,
+                V2 = content["V2"] / 10,
+                V3 = content["V3"] / 10,
+                V4 = content["V4"] / 10,
+                I = content["I"] / 10,
+                I1 = content["I1"] / 10,
+                I2 = content["I2"] / 10,
+                I3 = content["I3"] / 10,
+                I4 = content["I4"] / 10,
+                aT = content["aT"] / 10,
+                cT = content["cT"] / 10,
+                T1 = content["T1"] / 10,
+                T2 = content["T2"] / 10,
+                T3 = content["T3"] / 10,
+                T4 = content["T4"] / 10,
+                Q1 = content["Q1"] / 10,
+                Q2 = content["Q2"] / 10,
+                Q3 = content["Q3"] / 10,
+                Q4 = content["Q4"] / 10,
                 OTC = content["OTC"],
                 wifi = content["wifi"],
             )
@@ -121,9 +141,26 @@ def get_battery_data_table(esp_id: str) -> Table:
             DB.Column("t", DB.DateTime, nullable=False, default=datetime.now, primary_key=True),
             DB.Column("Q", DB.Integer, nullable=False),
             DB.Column("H", DB.Integer, nullable=False),
-            DB.Column("cT", DB.Float, nullable=False),
-            DB.Column("I", DB.Float, nullable=False),
             DB.Column("V", DB.Float, nullable=False),
+            DB.Column("V1", DB.Float, nullable=False),
+            DB.Column("V2", DB.Float, nullable=False),
+            DB.Column("V3", DB.Float, nullable=False),
+            DB.Column("V4", DB.Float, nullable=False),
+            DB.Column("I", DB.Float, nullable=False),
+            DB.Column("I1", DB.Float, nullable=False),
+            DB.Column("I2", DB.Float, nullable=False),
+            DB.Column("I3", DB.Float, nullable=False),
+            DB.Column("I4", DB.Float, nullable=False),
+            DB.Column("aT", DB.Float, nullable=False),
+            DB.Column("cT", DB.Float, nullable=False),
+            DB.Column("T1", DB.Float, nullable=False),
+            DB.Column("T2", DB.Float, nullable=False),
+            DB.Column("T3", DB.Float, nullable=False),
+            DB.Column("T4", DB.Float, nullable=False),
+            DB.Column("Q1", DB.Float, nullable=False),
+            DB.Column("Q2", DB.Float, nullable=False),
+            DB.Column("Q3", DB.Float, nullable=False),
+            DB.Column("Q4", DB.Float, nullable=False),
             DB.Column("OTC", DB.Integer, nullable=False),
             DB.Column("wifi", DB.Boolean, nullable=False),
         )

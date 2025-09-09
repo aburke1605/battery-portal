@@ -533,7 +533,7 @@ void binary_to_json(uint8_t* binary_message, cJSON* json_array) {
             radio_request_packet* packet = (radio_request_packet*)&binary_message[packet_start];
             cJSON_AddStringToObject(message, "type", "request");
 
-            snprintf(id_str, sizeof(id_str), "bms_%03u", packet->esp_id);
+            snprintf(id_str, sizeof(id_str), "bms_%02u", packet->esp_id);
             cJSON_AddStringToObject(message, "esp_id", id_str);
 
             cJSON* content = cJSON_CreateObject();
@@ -556,7 +556,7 @@ void binary_to_json(uint8_t* binary_message, cJSON* json_array) {
                 cJSON_AddStringToObject(content, "summary", "change-settings");
 
                 char new_id_str[8]; // enough to hold "bms_255\0"
-                snprintf(new_id_str, sizeof(new_id_str), "bms_%03u", packet->new_esp_id);
+                snprintf(new_id_str, sizeof(new_id_str), "bms_%02u", packet->new_esp_id);
                 cJSON_AddStringToObject(data, "new_esp_id", new_id_str);
 
                 cJSON_AddNumberToObject(data, "OTC", packet->OTC);

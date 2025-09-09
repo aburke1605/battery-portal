@@ -1,5 +1,5 @@
 import React, {useEffect, useState} from 'react';
-import { BatteryDataNew } from '../../types';
+import { BatteryData } from '../../types';
 import { 
   Share2, 
   Download, 
@@ -32,10 +32,10 @@ import { getStatusColor } from '../../utils/helpers';
 import { useNavigate } from 'react-router-dom';
 
 interface BatteryDetailProps {
-  battery: BatteryDataNew;
+  battery: BatteryData;
   // onToggleCharging: (batteryId: string) => void;
   voltageThreshold: number;
-  sendBatteryUpdate: (updatedValues: Partial<BatteryDataNew>) => void;
+  sendBatteryUpdate: (updatedValues: Partial<BatteryData>) => void;
   sendWiFiConnect: (username: string, password: string, eduroam: boolean) => void;
   sendUnseal: () => void;
   sendReset: () => void;
@@ -67,7 +67,7 @@ const BatteryDetail: React.FC<BatteryDetailProps> = ({
   const OTC_threshold_min = 450;
   const OTC_threshold_max = 650;
   // initialise
-  const [values, setValues] = useState<Partial<BatteryDataNew>>({
+  const [values, setValues] = useState<Partial<BatteryData>>({
     esp_id: battery.esp_id,
     OTC: battery.OTC
   });
@@ -88,7 +88,7 @@ const BatteryDetail: React.FC<BatteryDetailProps> = ({
     setValues((prevValues) => {
       const updatedValues = { ...prevValues, [key]: newValue };
       // check if any slider has moved
-      const hasAnyChange = (Object.keys(values) as Array<keyof BatteryDataNew>).some((k) => values[k] !== battery[k as keyof BatteryDataNew]);
+      const hasAnyChange = (Object.keys(values) as Array<keyof BatteryData>).some((k) => values[k] !== battery[k as keyof BatteryData]);
       setHasChanges(hasAnyChange);
       setIsEditing(true);
       return updatedValues;
@@ -689,8 +689,9 @@ const BatteryDetail: React.FC<BatteryDetailProps> = ({
                     )}
                   </button> */}
                   <button className="w-full flex items-center justify-center px-4 py-2 border border-blue-300 shadow-sm text-sm font-medium rounded-md text-blue-700 bg-blue-50 hover:bg-blue-100 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
-                  onClick={() => viewDigitalTwin(battery)}>
-                    <BrainCircuit size={16} className="mr-2" /> Digital Twin
+                  onClick={() => !isFromESP32 ? viewDigitalTwin(battery) : null}>
+                    <BrainCircuit size={16} className="mr-2" />
+                    Digital Twin {isFromESP32 ? "- UNAVAILABLE" : ""}
                   </button>
                   <button
                     onClick={() => (isFromESP32 || battery.live_websocket) ? sendUnseal() : null}
@@ -756,7 +757,7 @@ const BatteryDetail: React.FC<BatteryDetailProps> = ({
 
   const navigate = useNavigate();
 
-  const viewDigitalTwin = (battery: BatteryDataNew) => {
+  const viewDigitalTwin = (battery: BatteryData) => {
     navigate(`/digital-twin?esp_id=${battery.esp_id}`);
   };
 

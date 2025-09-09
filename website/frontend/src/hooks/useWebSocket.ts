@@ -1,5 +1,5 @@
 import { useEffect, useRef, useCallback } from "react";
-import { BatteryDataNew, BatteryInfoData } from "../types";
+import { BatteryData, BatteryInfoData } from "../types";
 import axios from "axios";
 import apiConfig from "../apiConfig";
 
@@ -88,7 +88,7 @@ export async function fetchBatteryData(esp_id: string) {
 }
 
 // parsing helper
-const extendBatteryInfo = (data: BatteryInfoData[]): BatteryDataNew[] => {
+const extendBatteryInfo = (data: BatteryInfoData[]): BatteryData[] => {
     /*
       contructs BatteryData (which is BatteryInfo + extra from battery_data_<esp_id>) objects,
       initially populating them with data from BatteryInfo inputs
@@ -104,9 +104,26 @@ const extendBatteryInfo = (data: BatteryInfoData[]): BatteryDataNew[] => {
         t: 0,
         Q: 0,
         H: 0,
-        cT: 0,
         V: 0,
+        V1: 0,
+        V2: 0,
+        V3: 0,
+        V4: 0,
         I: 0,
+        I1: 0,
+        I2: 0,
+        I3: 0,
+        I4: 0,
+        aT: 0,
+        cT: 0,
+        T1: 0,
+        T2: 0,
+        T3: 0,
+        T4: 0,
+        Q1: 0,
+        Q2: 0,
+        Q3: 0,
+        Q4: 0,
         new_esp_id: "",
         OTC: 0,
         wifi: false
@@ -142,7 +159,7 @@ const appendBatteryData = async (battery: any): Promise<any> => {
 };
 
 // recursive helper
-const extractSingleBattery = (info: BatteryDataNew[]|BatteryInfoData[], esp_id: string): any => {
+const extractSingleBattery = (info: BatteryData[]|BatteryInfoData[], esp_id: string): any => {
     /*
         to loop through the json returned at /api/db/info,
         returning the correct object according to esp_id

@@ -49,7 +49,7 @@ def forward_to_esp(data: dict) -> None:
     """
     Used to send WebSocket messages to esp clients which contain requests made by browser clients.
     Request messages look like:
-        { "type":"request", "content":{"summary":"change-settings", "data":{"esp_id":"bms_001", "OTC_threshold":550, ...}} }
+        { "type":"request", "content":{"summary":"change-settings", "data":{"esp_id":"bms_01", "OTC_threshold":550, ...}} }
     Root and node esp_ids are appended to this for the case where the request is for a mesh node.
     """
 
@@ -77,7 +77,7 @@ def esp_ws(ws: Sock):
     """
         Handles server WebSocket connections which are initiated by ESP32 clients, and subsequent client messages.
         Incoming messages always have the following format:
-            [ {"esp_id":"bms_001","content":{"Q": 1,"H": 1}}, {"esp_id":"bms_002","content":{"Q": 2,"H": 2}}, ... ]
+            [ {"esp_id":"bms_01","content":{"Q": 1,"H": 1}}, {"esp_id":"bms_02","content":{"Q": 2,"H": 2}}, ... ]
         The database is updated according to new telemetry data before each list element is parsed in turn,
         updating the browser clients currently viewing the detail page for the `esp_id` battery unit.
     """

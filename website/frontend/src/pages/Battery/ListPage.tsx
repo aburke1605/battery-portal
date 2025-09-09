@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef, useCallback } from 'react'
 import { ChevronDown } from 'lucide-react';
-import { BatteryInfoData, BatteryDataNew } from '../../types';
+import { BatteryInfoData, BatteryData } from '../../types';
 import BatteryCard from './BatteryCard';
 import { useNavigate } from 'react-router-dom';
 import apiConfig from '../../apiConfig';
@@ -29,7 +29,7 @@ export default function BatteryPage() {
   const [map, setMap] = useState<google.maps.Map | null>(null)
   const [markers, setMarkers] = useState<google.maps.Marker[]>([])
   
-  const [batteries, setBatteryData] = useState<BatteryDataNew[]>([])
+  const [batteries, setBatteryData] = useState<BatteryData[]>([])
   const totalItems = batteries.length
   const startIndex = (currentPage - 1) * itemsPerPage
   const endIndex = Math.min(startIndex + itemsPerPage, totalItems)
@@ -274,7 +274,7 @@ export default function BatteryPage() {
 
       {viewMode === 'grid' ? (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 xl:grid-cols-3 gap-6">
-          {currentBatteries.map((battery: BatteryDataNew) => (
+          {currentBatteries.map((battery: BatteryData) => (
             <BatteryCard
               battery={battery}
               viewBatteryDetails={viewBatteryDetails}

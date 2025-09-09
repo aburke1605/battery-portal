@@ -1,10 +1,10 @@
 import React from 'react';
-import { BatteryInfoData, BatteryDataNew } from '../..//types';
+import { BatteryInfoData, BatteryData } from '../..//types';
 import { getStatusColor} from '../../utils/helpers';
 import { format } from "date-fns";
 
 interface BatteryCardProps {
-  battery: BatteryDataNew;
+  battery: BatteryData;
   viewBatteryDetails: (battery: BatteryInfoData) => void;
 }
 
