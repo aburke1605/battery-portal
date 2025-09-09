@@ -10,9 +10,9 @@ import { SVGLoader } from 'three-stdlib'
 import { fetchBatteryData, useWebSocket } from "../../hooks/useWebSocket";
 import { generate_random_string } from "../../utils/helpers";
 
-const cellNSegments = 32;
-const cellFrameWidth = 1.0;
-const cellFrameHeight = 2.5;
+const cellFrameWidthX = 2.5;
+const cellFrameWidthY = 1.5;
+const cellFrameHeight = 2.0;
 
 const maxTemp = 30;
 const minTemp = 20;
@@ -125,14 +125,14 @@ const Cell: React.FC<CellData> = ({ label, position, temperature, charge, isChar
     <group position={position}>
       {/* unfilled */}
       <mesh position={[0, fillHeight + unfilledHeight / 2, 0]}>
-        <cylinderGeometry args={[cellFrameWidth, cellFrameWidth, unfilledHeight, cellNSegments]} />
+        <boxGeometry args={[cellFrameWidthX, unfilledHeight, cellFrameWidthY]} />
         <meshStandardMaterial color="white" transparent opacity={0.2} />
         <Edges scale={1.01} threshold={15} />
       </mesh>
 
       {/* filled */}
       <mesh position={[0, fillHeight / 2, 0]}>
-        <cylinderGeometry args={[cellFrameWidth, cellFrameWidth, fillHeight, cellNSegments]} />
+        <boxGeometry args={[cellFrameWidthX, fillHeight, cellFrameWidthY]} />
         <meshStandardMaterial color={color} />
         <Edges scale={1.01} threshold={15} />
       </mesh>
@@ -243,30 +243,30 @@ export default function DigitalTwin({ isFromESP32 = false }: BatteriesPageProps)
   const cells: CellData[] = battery ?
     // websocket data
     ([
-      { label: "cell 1", temperature: battery.T1, position: [-3, 0, -3], charge: battery.Q/100, isCharging: battery.I1>0?true:false },
-      { label: "cell 2", temperature: battery.T2, position: [-3, 0, -1], charge: battery.Q/100, isCharging: battery.I2>0?true:false },
-      { label: "cell 3", temperature: battery.T3, position: [-3, 0, 1], charge: battery.Q/100, isCharging: battery.I3>0?true:false },
-      { label: "cell 4", temperature: battery.T4, position: [-3, 0, 3], charge: battery.Q/100, isCharging: battery.I4>0?true:false },
+      { label: "cell 1", temperature: battery.T1, position: [-1.5*cellFrameWidthX, 0, -1.5*cellFrameWidthY], charge: battery.Q/100, isCharging: battery.I1>0?true:false },
+      { label: "cell 2", temperature: battery.T2, position: [-1.5*cellFrameWidthX, 0, -0.5*cellFrameWidthY], charge: battery.Q/100, isCharging: battery.I2>0?true:false },
+      { label: "cell 3", temperature: battery.T3, position: [-1.5*cellFrameWidthX, 0,  0.5*cellFrameWidthY], charge: battery.Q/100, isCharging: battery.I3>0?true:false },
+      { label: "cell 4", temperature: battery.T4, position: [-1.5*cellFrameWidthX, 0,  1.5*cellFrameWidthY], charge: battery.Q/100, isCharging: battery.I4>0?true:false },
     ])
     :
     // some hardcoded examples
     ([
-      { label: "cell 1", temperature: 5, position: [-3, 0, -3], charge: 0.8, isCharging: false },
-      { label: "cell 2", temperature: 10, position: [-1, 0, -3], charge: 0.9, isCharging: false },
-      { label: "cell 3", temperature: 15, position: [1, 0, -3], charge: 1.0, isCharging: false },
-      { label: "cell 4", temperature: 20, position: [3, 0, -3], charge: 0.9, isCharging: false },
-      { label: "cell 5", temperature: 25, position: [3, 0, -1], charge: 0.8, isCharging: false },
-      { label: "cell 6", temperature: 30, position: [1, 0, -1], charge: 0.7, isCharging: false },
-      { label: "cell 7", temperature: 35, position: [-1, 0, -1], charge: 0.6, isCharging: false },
-      { label: "cell 8", temperature: 40, position: [-3, 0, -1], charge: 0.5, isCharging: false },
-      { label: "cell 9", temperature: 45, position: [-3, 0, 1], charge: 0.4, isCharging: false },
-      { label: "cell 10", temperature: 50, position: [-1, 0, 1], charge: 0.3, isCharging: false },
-      { label: "cell 11", temperature: 55, position: [1, 0, 1], charge: 0.2, isCharging: false },
-      { label: "cell 12", temperature: 60, position: [3, 0, 1], charge: 0.1, isCharging: false },
-      { label: "cell 13", temperature: 65, position: [3, 0, 3], charge: 0.0, isCharging: false },
-      { label: "cell 14", temperature: 70, position: [1, 0, 3], charge: 0.1, isCharging: false },
-      { label: "cell 15", temperature: 75, position: [-1, 0, 3], charge: 0.2, isCharging: false },
-      { label: "cell 16", temperature: 80, position: [-3, 0, 3], charge: 0.3, isCharging: false },
+      { label: "cell 1", temperature: 5, position:   [-1.5*cellFrameWidthX, 0, -1.5*cellFrameWidthY], charge: 0.8, isCharging: false },
+      { label: "cell 2", temperature: 10, position:  [-0.5*cellFrameWidthX, 0, -1.5*cellFrameWidthY], charge: 0.9, isCharging: false },
+      { label: "cell 3", temperature: 15, position:  [ 0.5*cellFrameWidthX, 0, -1.5*cellFrameWidthY], charge: 1.0, isCharging: false },
+      { label: "cell 4", temperature: 20, position:  [ 1.5*cellFrameWidthX, 0, -1.5*cellFrameWidthY], charge: 0.9, isCharging: false },
+      { label: "cell 5", temperature: 25, position:  [ 1.5*cellFrameWidthX, 0, -0.5*cellFrameWidthY], charge: 0.8, isCharging: false },
+      { label: "cell 6", temperature: 30, position:  [ 0.5*cellFrameWidthX, 0, -0.5*cellFrameWidthY], charge: 0.7, isCharging: false },
+      { label: "cell 7", temperature: 35, position:  [-0.5*cellFrameWidthX, 0, -0.5*cellFrameWidthY], charge: 0.6, isCharging: false },
+      { label: "cell 8", temperature: 40, position:  [-1.5*cellFrameWidthX, 0, -0.5*cellFrameWidthY], charge: 0.5, isCharging: false },
+      { label: "cell 9", temperature: 45, position:  [-1.5*cellFrameWidthX, 0,  0.5*cellFrameWidthY], charge: 0.4, isCharging: false },
+      { label: "cell 10", temperature: 50, position: [-0.5*cellFrameWidthX, 0,  0.5*cellFrameWidthY], charge: 0.3, isCharging: false },
+      { label: "cell 11", temperature: 55, position: [ 0.5*cellFrameWidthX, 0,  0.5*cellFrameWidthY], charge: 0.2, isCharging: false },
+      { label: "cell 12", temperature: 60, position: [ 1.5*cellFrameWidthX, 0,  0.5*cellFrameWidthY], charge: 0.1, isCharging: false },
+      { label: "cell 13", temperature: 65, position: [ 1.5*cellFrameWidthX, 0,  1.5*cellFrameWidthY], charge: 0.0, isCharging: false },
+      { label: "cell 14", temperature: 70, position: [ 0.5*cellFrameWidthX, 0,  1.5*cellFrameWidthY], charge: 0.1, isCharging: false },
+      { label: "cell 15", temperature: 75, position: [-0.5*cellFrameWidthX, 0,  1.5*cellFrameWidthY], charge: 0.2, isCharging: false },
+      { label: "cell 16", temperature: 80, position: [-1.5*cellFrameWidthX, 0,  1.5*cellFrameWidthY], charge: 0.3, isCharging: false },
   ]);
 
   return (
