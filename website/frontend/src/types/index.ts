@@ -27,10 +27,6 @@ export interface BatteryData extends BatteryInfoData {
   T2: number;
   T3: number;
   T4: number;
-  Q1: number;
-  Q2: number;
-  Q3: number;
-  Q4: number;
   new_esp_id: string;
   OTC: number;
   wifi: boolean;
@@ -63,12 +59,6 @@ export const parseDataOnESP32 = (raw: any): BatteryData => ({
   new_esp_id: "",
   OTC: raw?.OTC || 0,
   wifi: !!raw?.wifi,
-  // these dont matter on ESP32 server,
-  // just set to zero
-  Q1: 0,
-  Q2: 0,
-  Q3: 0,
-  Q4: 0,
 });
 
 
