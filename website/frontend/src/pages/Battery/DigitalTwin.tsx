@@ -9,6 +9,7 @@ import { useLoader } from '@react-three/fiber'
 import { SVGLoader } from 'three-stdlib'
 import { fetchBatteryData, useWebSocket } from "../../hooks/useWebSocket";
 import { generate_random_string } from "../../utils/helpers";
+import { useNavigate } from "react-router";
 
 const cellFrameWidthX = 2.5;
 const cellFrameWidthY = 1.5;
@@ -215,6 +216,11 @@ export default function DigitalTwin({ isFromESP32 = false }: BatteriesPageProps)
 
     const [battery, setBatteryData] = useState<BatteryData | null>(null);
 
+    const navigate = useNavigate();
+    const viewDetails = (battery: BatteryData) => {
+      navigate(`/battery-detail?esp_id=${battery.esp_id}`);
+    };
+
     // get data from DB
     useEffect(() => {
         const loadBattery = async () => {
@@ -270,8 +276,14 @@ export default function DigitalTwin({ isFromESP32 = false }: BatteriesPageProps)
   ]);
 
   return (
-    <div style={{ height: "100vh" }}>
+    <div style={{ height: "80vh" }} className="flex flex-col items-center">
       <BatteryPack cells={cells} esp_id={battery?battery.esp_id:"simulation"} connected={battery?true:false}/>
+      <button
+        className="w-full max-w-xs flex items-center justify-center px-4 py-2 border border-blue-300 shadow-sm text-sm font-medium rounded-md text-blue-700 bg-blue-50 hover:bg-blue-100 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 mt-4"
+        onClick={() => battery && viewDetails(battery)}
+      >
+        Back
+      </button>
     </div>
   );
 }
