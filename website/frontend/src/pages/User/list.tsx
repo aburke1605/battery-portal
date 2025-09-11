@@ -162,6 +162,7 @@ const UserList = () => {
       ...formData
     };
 
+    let unknown_error = true; // assume unknown error, change if error known or no error
     try {
       let res;
       if (isEditMode && editingUser) {
@@ -172,32 +173,29 @@ const UserList = () => {
         res = await axios.post(`${apiConfig.USER_API}/add`, payload);
       }
 
-      if (res.data.ok) {
+      let message = res.data.success;
+      if (message) {
         handleCloseModal();
         fetchUsers(currentPage);
-      } else {
-        // Handle server-side validation errors
-        try {
-          const errorData = await res.data.json();
-          if (errorData.error) {
-            // Check if it's an email duplicate error
-            if (errorData.error.toLowerCase().includes('email already exists')) {
-              setErrors({ email: errorData.error });
-            } else {
-              // Generic server error
-              setErrors({ general: errorData.error });
-            }
-          } else {
-            setErrors({ general: `Failed to ${isEditMode ? 'update' : 'add'} user. Please try again.` });
-          }
-        } catch (parseError) {
-          setErrors({ general: `Failed to ${isEditMode ? 'update' : 'add'} user. Please try again.` });
-        }
+        unknown_error = false;
       }
     } catch (err) {
-      console.error(`Error ${isEditMode ? 'updating' : 'adding'} user:`, err);
-      setErrors({ general: 'Network error. Please check your connection and try again.' });
+      if (axios.isAxiosError(err)) {
+        let res = err.response;
+        if (res) {
+          let message = res.data.error;
+          if (message) {
+            if (message.includes('already exists')) {
+              setErrors({email: message})
+            } else {
+              setErrors({general: message})
+            }
+            unknown_error = false;
+          }
+        }
+      }
     }
+    if (unknown_error) setErrors({general: "Unknown error occurred"});
   };
 
   const handleDeleteClick = (user: User) => {
@@ -218,28 +216,31 @@ const UserList = () => {
     setDeleteLoading(true);
     setDeleteError('');
     
+    let unknown_error = true; // assume unknown error, change if error known or no error
     try {
       const res = await axios.delete(`${apiConfig.USER_API}/${userToDelete.id}`);
 
-      if (res.data.ok) {
-        // Success - close modal and refresh list
+      let message = res.data.success;
+      if (message) {
         handleDeleteCancel();
         fetchUsers(currentPage);
-      } else {
-        // Handle server-side errors
-        try {
-          const errorData = await res.data.json();
-          setDeleteError(errorData.error || 'Failed to delete user. Please try again.');
-        } catch (parseError) {
-          setDeleteError('Failed to delete user. Please try again.');
-        }
+        unknown_error = false;
       }
     } catch (err) {
-      // Handle network errors
-      setDeleteError('Network error. Please check your connection and try again.');
+      if (axios.isAxiosError(err)) {
+        let res = err.response;
+        if (res) {
+          let message = res.data.error;
+          if (message) {
+            setDeleteError(message);
+            unknown_error = false;
+          }
+        }
+      }
     } finally {
       setDeleteLoading(false);
     }
+    if (unknown_error) setDeleteError("Unknown error occurred");
   };
 
   return (

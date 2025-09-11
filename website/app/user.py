@@ -183,7 +183,7 @@ def add():
     
     existing_user = Users.query.filter_by(email=email).first()
     if existing_user:
-        return jsonify({"error": "A user with this email address already exists. Please use a different one."}), 400
+        return jsonify({"error": "A user with this email address already exists."}), 400
     
     role_ids = [1] # can only add normal role users for now
     roles = Roles.query.filter(Roles.id.in_(role_ids)).all()
@@ -200,7 +200,7 @@ def add():
         return jsonify({"success": "User added successfully"}), 201
     except Exception as e:
         DB.session.rollback()
-        return jsonify({"error": "Failed to create user. Please try again."}), 500
+        return jsonify({"error": f"Failed to create user: {e}"}), 500
 
 
 @user.route("/<int:user_id>", methods=["PUT"])
@@ -217,7 +217,7 @@ def edit(user_id: int):
     if new_email != u.email: # email address is being edited
         existing_user = Users.query.filter_by(email=new_email).first()
         if existing_user:
-            return jsonify({"error": "Email already exists. Please use a different email address."}), 400
+            return jsonify({"error": "A user with this email address already exists."}), 400
     
     try:
         u.first_name = data.get("first_name", u.first_name)
@@ -249,7 +249,7 @@ def delete(user_id: int):
         return jsonify({"success": "User deleted successfully."}), 200
     except Exception as e:
         DB.session.rollback()
-        return jsonify({"error": "Failed to delete user. Please try again."}), 500
+        return jsonify({"error": f"Failed to delete user: {e}."}), 500
 
 
 @user.route("/change-password", methods=["PUT"])
