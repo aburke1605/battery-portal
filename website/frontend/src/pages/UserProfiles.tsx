@@ -145,7 +145,8 @@ export default function UserProfiles() {
         if (res) {
           let message = res.data.error;
           if (message) {
-            setErrors({ general: message });
+            if (message.toLowerCase().includes("email")) setErrors({ email: message });
+            else setErrors({ general: message });
             unknown_error = false;
           }
         }
@@ -162,34 +163,43 @@ export default function UserProfiles() {
     setLoading(true);
     setSuccessMessage('');
     
+    let unknown_error = true; // assume unknown error, change if error known or no error
     try {
-      const res = await fetch(`${apiConfig.USER_API}/change-password`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        credentials: 'include',
-        body: JSON.stringify({
-          current_password: passwordData.current_password,
-          new_password: passwordData.new_password
-        })
+      const res = await axios.put(`${apiConfig.USER_API}/change-password`, {
+        current_password: passwordData.current_password,
+        new_password: passwordData.new_password
       });
 
-      if (res.ok) {
+      let message = res.data.success;
+      if (message) {
         setIsChangingPassword(false);
         setPasswordData({
           current_password: '',
           new_password: '',
           confirm_password: '',
         });
-        setSuccessMessage('Password changed successfully!');
-      } else {
-        const errorData = await res.json();
-        setErrors({ general: errorData.error || 'Failed to change password. Please try again.' });
+        setSuccessMessage(message);
+        unknown_error = false;
       }
     } catch (err) {
-      setErrors({ general: 'Network error. Please check your connection and try again.' });
+      if (axios.isAxiosError(err)) {
+        let res = err.response;
+        if (res) {
+          let message = res.data.error;
+          if (message) {
+            setErrors({ general: message });
+            if (message.toLowerCase().includes("password")) {
+              if (message.toLowerCase().includes("current")) setErrors({ current_password: message });
+              else if (message.toLowerCase().includes("new")) setErrors({ new_password: message });
+            }
+            unknown_error = false;
+          }
+        }
+      }
     } finally {
       setLoading(false);
     }
+    if (unknown_error) setErrors({ general: "Unknown error occurred" });
   };
 
   const handleCancelEdit = () => {

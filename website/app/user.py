@@ -265,14 +265,14 @@ def change_password():
     current_password = data.get("current_password")
     new_password = data.get("new_password")
     
-    if not current_password or new_password:
+    if not current_password or not new_password:
         return jsonify({"error": "All password fields are required."}), 400
 
     if not current_user.verify_and_update_password(current_password.strip()):
         return jsonify({"error": "Current password is incorrect."}), 400
 
     if len(new_password) < 8:
-        return jsonify({"error": "New password must be at least 6 characters long."}), 400
+        return jsonify({"error": "New password must be at least 8 characters long."}), 400
 
     try:
         current_user.password = hash_password(new_password.strip())
@@ -280,7 +280,7 @@ def change_password():
         return jsonify({"success": "Password changed successfully."}), 200
     except Exception as e:
         DB.session.rollback()
-        return jsonify({"error": "Failed to change password. Please try again."}), 500
+        return jsonify({"error": f"Failed to change password: {e}."}), 500
 # TODO: merge these (above and below)
 @user.route("/profile", methods=["PUT"])
 @login_required
@@ -304,7 +304,7 @@ def profile():
     if new_email != current_user.email:
         existing_user = Users.query.filter_by(email=new_email).first()
         if existing_user:
-            return jsonify({"error": "Email already exists. Please use a different email address."}), 400
+            return jsonify({"error": "A user with this email address already exists."}), 400
     
     try:
         current_user.first_name = new_first_name.strip()
@@ -314,4 +314,4 @@ def profile():
         return jsonify({"success": "Profile updated successfully."}), 200
     except Exception as e:
         DB.session.rollback()
-        return jsonify({"error": "Failed to update profile. Please try again."}), 500
+        return jsonify({"error": f"Failed to update profile: {e}."}), 500
