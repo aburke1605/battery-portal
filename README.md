@@ -13,6 +13,9 @@ The diagram below illustrates the components of each individual battery module, 
 ![information_exchange.png](img/information_exchange.png)
 
 
+---
+
+
 ### BMS, LoRa and GPS
 The battery itself is wired to a BMS.
 At this point we are working with a four-series-cell lithium-ion battery and a [BQ40Z50-R1](https://www.ti.com/product/BQ40Z50) BMS.
@@ -44,6 +47,8 @@ Building on these are functions designed to initialise the LoRa transceiver (see
 #### GPS
 <placeholder>
 
+
+---
 
 
 ### Wi-Fi Networking
@@ -110,6 +115,8 @@ This network is referred to as a 'MESH', with the following logic:
     <h6>*The reason for random periods is such that each node in a given MESH delays for a different length of time. Therefore, one node will restart earlier than the others and become the ROOT, which the others will then detect and connect to.</h6>
 
 
+---
+
 
 ### Radio Communication
 When an ESP32 is not connected to the internet, it can still communicate with the web server via radio transmission.
@@ -166,17 +173,19 @@ byte | data
 11   | 0x7E     - FRAME_END
 ```
 
-## Web Server Backend
+## Web App
+
+### Server Backend
 
 The backend is implemented in Python using the Flask framework (`https://flask.palletsprojects.com`). It follows a separate frontend and backend architecture, enabling independent development, deployment, and scaling.
 
-### Admin User Management
-The admin interface provides user and role management functionality. Flask-Security (`https://flask-security-too.readthedocs.io`) is used for authentication, authorization, role management, and password security. Database Tables:
-- `role` – Stores available user roles.
+#### Admin User Management
+The admin interface provides user and role management functionality. Flask-Security (`https://flask-security-too.readthedocs.io`) is used for authentication, authorisation, role management, and password security. Database Tables:
+- `roles` – Stores available user roles.
 - `roles_users` – Mapping table between users and their assigned roles.
-- `user` – Stores user account details.
+- `users` – Stores user account details.
 
-### Battery Management
+#### Battery Management
 The battery management module supports:
 - Mesh group–enabled real-time monitoring
 - Digital twin capabilities 
@@ -184,14 +193,14 @@ The battery management module supports:
 
 #### Data Flow & Storage:
 - Flask-Sock (`https://flask-sock.readthedocs.io`) manages WebSocket connections to receive real-time battery data.
-- Data is stored in MySQL for analysis and visualization.
+- Data is stored in MySQL for analysis and visualisation.
 - Real-time battery status is stored in memory and updated via WebSocket messages.
 
 #### Database Tables:
 - `battery_info` – Stores basic details of each battery.
-- `battery_data_xx` – Stores time-series measurement data for each battery, where `xx` is the battery name. Data is separated per battery for scalability and efficiency.
+- `battery_data_<esp_id>` – Stores time-series measurement data for each battery. Data is separated per battery for scalability and efficiency.
 
-### Non-Functional Features
+#### Non-Functional Features
 - Database Migration with Flask-Migrate (`https://flask-migrate.readthedocs.io`)
    Used for managing and version-controlling database schema changes.
    ```bash
@@ -204,9 +213,11 @@ The battery management module supports:
 - Deployment
    - Hosted on **Azure Web App** for high availability and scalability.
 
+
 ---
 
-## UI Frontend
+
+### Frontend UI
 
 The frontend is built with TypeScript, React, Tailwind CSS, and TailAdmin (free React version `https://tailadmin.com/`). It includes all UI pages for:
 - Admin web application
@@ -215,7 +226,7 @@ The frontend is built with TypeScript, React, Tailwind CSS, and TailAdmin (free 
 
 The project uses Webpack and React’s component management to compile and output each page separately for modular development.
 
-### Admin Web Application
+#### Admin Web Application
 Provides system management and monitoring features.
 
 Pages:
@@ -225,13 +236,13 @@ Pages:
 - Settings – Configuration options.
 - List View – Tabular display of the battery mesh network.
 - Map View – Shows the geographic location of each battery pack.
-- Battery Detail & Digital Twin – Detailed battery data and digital twin visualization.
+- Battery Detail & Digital Twin – Detailed battery data and digital twin visualisation.
 
-### ESP32 Device User Interface
+#### ESP32 Device User Interface
 Designed for local access when near a battery via Access Point (AP). Entry File: `esp32.html`.
 - Login component for authentication.
 - Battery detail page for status display.
 - Backend implemented in C on the ESP32 firmware.
 
-### Project Instruction Home Page
+#### Project Instruction Home Page
 A standalone page providing an overview of the project, including its purpose, architecture, and main features. Entry File: `home.html`.
