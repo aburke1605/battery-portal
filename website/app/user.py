@@ -131,7 +131,7 @@ def logout():
         API to perform user logout requests, works in conjunction with AuthContext.tsx.
     """
     logout_user()
-    return jsonify({"message": "Logged out"}), 200
+    return jsonify({"success": "Logged out"}), 200
 
 
 @user.route("/list", methods=["GET"])
@@ -197,7 +197,7 @@ def add():
             roles=roles
         )
         DB.session.commit()
-        return jsonify({"message": "User added successfully"}), 201
+        return jsonify({"success": "User added successfully"}), 201
     except Exception as e:
         DB.session.rollback()
         return jsonify({"error": "Failed to create user. Please try again."}), 500
@@ -227,7 +227,7 @@ def edit(user_id: int):
         if new_password: # and new_password.strip(): # TODO add function to check all user entered stuff
             u.password = hash_password(new_password)
         DB.session.commit()
-        return jsonify({"message": "User updated successfully"}), 200
+        return jsonify({"success": "User updated successfully"}), 200
     except Exception as e:
         DB.session.rollback()
         return jsonify({"error": f"Failed to update user: {e}."}), 500
@@ -246,7 +246,7 @@ def delete(user_id: int):
     try:
         DB.session.delete(u)
         DB.session.commit()
-        return jsonify({"message": f"User {u.first_name} {u.last_name} ({u.email}) has been deleted successfully."}), 200
+        return jsonify({"success": "User deleted successfully."}), 200
     except Exception as e:
         DB.session.rollback()
         return jsonify({"error": "Failed to delete user. Please try again."}), 500
@@ -274,7 +274,7 @@ def change_password():
     try:
         current_user.password = hash_password(new_password.strip())
         DB.session.commit()
-        return jsonify({"message": "Password changed successfully."}), 200
+        return jsonify({"success": "Password changed successfully."}), 200
     except Exception as e:
         DB.session.rollback()
         return jsonify({"error": "Failed to change password. Please try again."}), 500
@@ -305,7 +305,7 @@ def profile():
         current_user.last_name = new_last_name.strip()
         current_user.email = new_email.strip()
         DB.session.commit()
-        return jsonify({"message": "Profile updated successfully."}), 200
+        return jsonify({"success": "Profile updated successfully."}), 200
     except Exception as e:
         DB.session.rollback()
         return jsonify({"error": "Failed to update profile. Please try again."}), 500
