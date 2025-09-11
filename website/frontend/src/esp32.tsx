@@ -11,7 +11,7 @@ import { ScrollToTop } from "./components/common/ScrollToTop";
 import { setupMockWebSocket } from './mock/ws';
 import AuthRequire from "./auth/AuthRequire.tsx";
 import {AuthProvider} from "./auth/AuthContext.tsx";
-import SignIn from "./pages/AuthPages/SignIn";
+import SignIn from "./pages/SignIn.tsx";
 
 setupMockWebSocket();
 
@@ -19,12 +19,12 @@ createRoot(document.getElementById("root")!).render(
     <ThemeProvider>
       <AppWrapper>
         <Router>
-        <AuthProvider isFromEsp32={true} >
+        <AuthProvider isFromESP32={true} >
         <ScrollToTop />
         <Routes>
           <Route index path="/" element={
                 <AuthRequire>
-                  <BatteryPage isFromEsp32={true} />
+                  <BatteryPage isFromESP32={true} />
                 </AuthRequire>
                 } />
             <Route path="/login" element={<SignIn />} />

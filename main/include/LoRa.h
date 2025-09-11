@@ -37,7 +37,8 @@ typedef struct __attribute__((packed)) {
     int16_t T2;
     int16_t T3;
     int16_t T4;
-    int16_t OTC_threshold;
+    int16_t OTC;
+    bool wifi;
 } radio_data_packet;
 
 typedef struct __attribute__((packed)) {
@@ -58,7 +59,7 @@ typedef struct __attribute__((packed)) {
     uint8_t esp_id;
     int8_t request;
     uint8_t new_esp_id;
-    int16_t OTC_threshold;
+    int16_t OTC;
     bool eduroam;
     uint8_t username[16];
     uint8_t password[16];

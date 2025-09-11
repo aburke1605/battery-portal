@@ -19,9 +19,9 @@ execute_process(
     --include=favicon.png
     --include=assets/
     --include=assets/esp.js
-    --include=assets/zap.js
+    --include=assets/apiConfig.js
     --include=assets/mock-socket.js
-    --include=assets/zap.css
+    --include=assets/apiConfig.css
     --include=assets/mock-socket.css
     --exclude=assets/*
     --exclude=*

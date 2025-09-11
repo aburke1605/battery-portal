@@ -63,6 +63,7 @@ jobs:
           path: |
             release.zip
             !venv/
+          retention-days: 30
 
   deploy:
     runs-on: ubuntu-latest
@@ -89,3 +90,4 @@ jobs:
           slot-name: 'Production'
           publish-profile: ${{ secrets.AZUREAPPSERVICE_PUBLISHPROFILE_961B555B3A254B308372AF29982CA753 }}
           package: ./website
+

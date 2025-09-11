@@ -136,8 +136,8 @@ esp_err_t client_handler(httpd_req_t *req) {
             perform_request(message, response);
         } else {
             // queue message from mesh client to forward via LoRa
-            cJSON *id_obj = cJSON_GetObjectItem(message, "id");
-            if (!id_obj) {
+            cJSON *esp_id_obj = cJSON_GetObjectItem(message, "esp_id");
+            if (!esp_id_obj) {
                 ESP_LOGE(TAG, "incoming LoRa queue message not formatted properly:\n  %s", cJSON_PrintUnformatted(message));
                 free(ws_pkt.payload);
                 cJSON_Delete(message);
@@ -145,15 +145,15 @@ esp_err_t client_handler(httpd_req_t *req) {
             }
             bool found = false;
             for (int i=0; i<MESH_SIZE; i++) {
-                if (strcmp(all_messages[i].id, id_obj->valuestring) == 0) {
+                if (strcmp(all_messages[i].esp_id, esp_id_obj->valuestring) == 0) {
                     // update existing message
                     found = true;
                     strcpy(all_messages[i].message, (char *)ws_pkt.payload);
                     i = MESH_SIZE;
-                } else if (strcmp(all_messages[i].id, "") == 0) {
+                } else if (strcmp(all_messages[i].esp_id, "") == 0) {
                     // create new message
                     found = true;
-                    strcpy(all_messages[i].id, id_obj->valuestring);
+                    strcpy(all_messages[i].esp_id, esp_id_obj->valuestring);
                     strcpy(all_messages[i].message, (char *)ws_pkt.payload);
                     i = MESH_SIZE;
                 }
@@ -175,7 +175,7 @@ esp_err_t perform_request(cJSON *message, cJSON *response) {
     // construct response message
     cJSON_AddStringToObject(response, "type", "response");
     char* esp_id = esp_id_string();
-    cJSON_AddStringToObject(response, "id", esp_id);
+    cJSON_AddStringToObject(response, "esp_id", esp_id);
     free(esp_id);
     cJSON *response_content = cJSON_CreateObject();
 
@@ -205,7 +205,7 @@ esp_err_t perform_request(cJSON *message, cJSON *response) {
 
             cJSON *esp_id = cJSON_GetObjectItem(data, "new_esp_id");
             char* name = esp_id_string();
-            if (esp_id && strcmp(esp_id->valuestring, "") != 0 && strcmp(esp_id->valuestring, "bms_000") != 0 && esp_id->valuestring != name) {
+            if (esp_id && strcmp(esp_id->valuestring, "") != 0 && strcmp(esp_id->valuestring, "bms_00") != 0 && esp_id->valuestring != name) {
                 ESP_LOGI(TAG, "Changing device name...");
 
                 uint8_t address[2] = {0};
@@ -223,15 +223,15 @@ esp_err_t perform_request(cJSON *message, cJSON *response) {
                 free(name);
             }
 
-            int OTC_threshold = cJSON_GetObjectItem(data, "OTC_threshold")->valueint;
+            int OTC = cJSON_GetObjectItem(data, "OTC")->valueint;
 
             uint8_t address[2] = {0};
             convert_uint_to_n_bytes(I2C_OTC_THRESHOLD_ADDR, address, sizeof(address), true);
             uint8_t data_flash[2] = {0};
             read_data_flash(address, sizeof(address), data_flash, sizeof(data_flash));
-            if (OTC_threshold != (data_flash[1] << 8 | data_flash[0])) {
+            if (OTC != (data_flash[1] << 8 | data_flash[0])) {
                 ESP_LOGI(TAG, "Changing OTC threshold...");
-                convert_uint_to_n_bytes(OTC_threshold, data_flash, sizeof(data_flash), false);
+                convert_uint_to_n_bytes(OTC, data_flash, sizeof(data_flash), false);
                 write_data_flash(address, sizeof(address), data_flash, sizeof(data_flash));
             }
 
@@ -438,17 +438,15 @@ void websocket_event_handler(void *arg, esp_event_base_t event_base, int32_t eve
 void websocket_task(void *pvParameters) {
     while (true) {
         // get sensor data
-        char* data_string = LORA_IS_RECEIVER ? "" : get_data(false); // goes to website
+        char* data_string = LORA_IS_RECEIVER ? "" : get_data();
 
-        char* full_data_string = get_data(true); // goes to local clients
-
-        if (full_data_string != NULL && data_string != NULL) {
+        if (data_string != NULL) {
             // first send to all connected WebSocket clients
             for (int i = 0; i < WS_CONFIG_MAX_CLIENTS; i++) {
                 if (client_sockets[i].is_browser_not_mesh && client_sockets[i].descriptor >= 0) {
                     httpd_ws_frame_t ws_pkt = {
-                        .payload = (uint8_t *)full_data_string,
-                        .len = strlen(full_data_string),
+                        .payload = (uint8_t *)data_string,
+                        .len = strlen(data_string),
                         .type = HTTPD_WS_TYPE_TEXT,
                     };
 
@@ -524,39 +522,28 @@ void websocket_task(void *pvParameters) {
                     ws_client = NULL;
                 } else {
                     if (!LORA_IS_RECEIVER) {
-                        char *message = malloc(WS_MESSAGE_MAX_LEN);
-                        if (!message) ESP_LOGE(TAG, "Couldn't allocate memory in websocket_task!");
-                        else {
-                            char* esp_id = esp_id_string();
-                            snprintf(message, WS_MESSAGE_MAX_LEN, "{\"type\":\"data\",\"id\":\"%s\",\"content\":%s}", esp_id, data_string);
-                            free(esp_id);
-
-                            cJSON* json_array = cJSON_CreateArray();
-                            if (json_array == NULL) {
-                                ESP_LOGE(TAG, "Failed to create JSON array");
-                                free(message);
-                                return;
-                            }
-                            cJSON *item = cJSON_Parse(message);
-                            if (!item) {
-                                ESP_LOGE(TAG, "Failed to parse JSON");
-                                free(message);
-                                cJSON_Delete(json_array);
-                                return;
-                            }
-                            cJSON_AddItemToArray(json_array, item);
-                            send_message(cJSON_PrintUnformatted(json_array));
-
-                            free(message);
-                            cJSON_Delete(json_array);
+                        // send in json array so webserver can parse
+                        cJSON* json_array = cJSON_CreateArray();
+                        if (json_array == NULL) {
+                            ESP_LOGE(TAG, "Failed to create JSON array");
+                            return;
                         }
+                        cJSON *item = cJSON_Parse(data_string);
+                        if (!item) {
+                            ESP_LOGE(TAG, "Failed to parse JSON");
+                            cJSON_Delete(json_array);
+                            return;
+                        }
+                        cJSON_AddItemToArray(json_array, item);
+                        send_message(cJSON_PrintUnformatted(json_array));
+
+                        cJSON_Delete(json_array);
                     }
                 }
             }
 
             // clean up
             if (!LORA_IS_RECEIVER) free(data_string);
-            free(full_data_string);
         }
 
         // check wifi connection still exists
