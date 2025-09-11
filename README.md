@@ -174,44 +174,42 @@ byte | data
 ```
 
 ## Web App
+The web app and database are hosted with Microsoft Azure cloud services for consistent availability and scalability.
+Deployment to Azure is managed with GitHub Actions (see `.github/workflows/main_batteryportal.yml` for details).
 
-### Server Backend
 
-The backend is implemented in Python using the Flask framework (`https://flask.palletsprojects.com`). It follows a separate frontend and backend architecture, enabling independent development, deployment, and scaling.
+---
 
-#### Admin User Management
-The admin interface provides user and role management functionality. Flask-Security (`https://flask-security-too.readthedocs.io`) is used for authentication, authorisation, role management, and password security. Database Tables:
-- `roles` – Stores available user roles.
-- `roles_users` – Mapping table between users and their assigned roles.
-- `users` – Stores user account details.
 
-#### Battery Management
-The battery management module supports:
-- Mesh group–enabled real-time monitoring
-- Digital twin capabilities 
-- Algorithm-based battery diagnostics (TODO)
+### Backend Server
+The web app backend server is implemented using the [Flask](https://flask.palletsprojects.com) Python framework. The architecture is spread across four main components:
+  1. `app.main` <br>
+    Registers the sites core endpoints to functions which respond by serving the HTML files which are built (see section on <b>Frontend UI</b>) before starting the web app.
 
-#### Data Flow & Storage:
-- Flask-Sock (`https://flask-sock.readthedocs.io`) manages WebSocket connections to receive real-time battery data.
-- Data is stored in MySQL for analysis and visualisation.
-- Real-time battery status is stored in memory and updated via WebSocket messages.
+  2. `app.db` <br>
+    Defines the two table structures which manage battery telemetry data in the project database.
+    The first of these is named `battery_info`, which contains only columns needed for displaying the status of the network of battery modules.
+    Individual tables named `battery_data_<esp_id>`, containing the actual telemetry data for each battery, are dynamically created / deleted as modules are in real life, while `battery_info` persists.
+    Additionally, a number of API endpoints are registered to let the site query and update the database through the web app.
 
-#### Database Tables:
-- `battery_info` – Stores basic details of each battery.
-- `battery_data_<esp_id>` – Stores time-series measurement data for each battery. Data is separated per battery for scalability and efficiency.
+  3. `app.ws` <br>
+    Registers endpoints through which clients can establish WebSocket connections with the server using [Flask-Sock](https://flask-sock.readthedocs.io).
+    There are two kinds of defined client: ESP32 and browser (site users).
+    Telemetry data is sent to the server by the ESP32 microcontrollers interfaced with each battery module via WebSocket rather than with simple HTTP POST.
+    In this way the list of live WebSocket connections is used to indicate to site users which modules are currently online.
+    The live telemetry data is then forwarded to active site users via WebSocket so that the most recent data is always displayed without needing a page refresh.
+    The WebSockets are also used to forward any module configuration changes made by site users back through the connection to the corresponding ESP32.
 
-#### Non-Functional Features
-- Database Migration with Flask-Migrate (`https://flask-migrate.readthedocs.io`)
-   Used for managing and version-controlling database schema changes.
-   ```bash
-   flask db init
-   flask db migrate -m "Description of changes"
-   flask db upgrade
-   ```
-- HTTPS Certificates
-   - Located in the `/cert` folder.
-- Deployment
-   - Hosted on **Azure Web App** for high availability and scalability.
+  4. `app.user` <br>
+    Manages user access to the web app, defined by three table structures.
+    The first of these is named `roles` and defines unique user types, each with certain permissions / abilities.
+    The second, `users`, stores actual user data (email, password, role, etc), while the final table is a simple association table linking the `users` and `roles` tables and is aptly named `roles_users`.
+    [Flask-Security](https://flask-security-too.readthedocs.io) is used to implement user authentication, authorisation, role management, and password security.
+
+#### Database
+Telemetry (and user) data is stored in a MySQL database.
+This is primarily to allow research of second-life batteries at a later stage, but is also useful for module history and visualisation on the web site.
+Database schema management and versioning are handled with [Flask-Migrate](https://flask-migrate.readthedocs.io).
 
 
 ---
