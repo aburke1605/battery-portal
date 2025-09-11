@@ -16,6 +16,7 @@ import {
   CheckCircle 
 } from 'lucide-react';
 import apiConfig from '../apiConfig';
+import axios from 'axios';
 
 interface ProfileFormData {
   first_name: string;
@@ -128,35 +129,31 @@ export default function UserProfiles() {
     setLoading(true);
     setSuccessMessage('');
     
+    let unknown_error = true; // assume unknown error, change if error known or no error
     try {
-      const res = await fetch(`${apiConfig.USER_API}/profile`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        credentials: 'include',
-        body: JSON.stringify(profileData)
-      });
+      const res = await axios.put(`${apiConfig.USER_API}/profile`, profileData);
 
-      if (res.ok) {
+      let message = res.data.success;
+      if (message) {
         setIsEditing(false);
-        setSuccessMessage('Profile updated successfully!');
-        // You might want to update the auth context here
-      } else {
-        const errorData = await res.json();
-        if (errorData.error) {
-          if (errorData.error.toLowerCase().includes('email already exists')) {
-            setErrors({ email: errorData.error });
-          } else {
-            setErrors({ general: errorData.error });
-          }
-        } else {
-          setErrors({ general: 'Failed to update profile. Please try again.' });
-        }
+        setSuccessMessage(message);
+        unknown_error = false;
       }
     } catch (err) {
-      setErrors({ general: 'Network error. Please check your connection and try again.' });
+      if (axios.isAxiosError(err)) {
+        let res = err.response;
+        if (res) {
+          let message = res.data.error;
+          if (message) {
+            setErrors({ general: message });
+            unknown_error = false;
+          }
+        }
+      }
     } finally {
       setLoading(false);
     }
+    if (unknown_error) setErrors({ general: "Unknown error occurred" });
   };
 
   const handleChangePassword = async () => {
