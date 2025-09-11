@@ -16,6 +16,7 @@ import {
   AlertCircle
 } from 'lucide-react';
 import axios from 'axios';
+import apiConfig from '../../apiConfig';
 
 const UserList = () => {
   const [users, setUsers] = useState<User[]>([]);
@@ -39,7 +40,7 @@ const UserList = () => {
   const fetchUsers = async (page = 1) => {
     setLoading(true);
     try {
-      const response = await axios.get(`/api/user/list?page=${page}&per_page=10`);
+      const response = await axios.get(`${apiConfig.USER_API}/list?page=${page}&per_page=10`);
       setUsers(response.data.users);
       setCurrentPage(response.data.current_page);
       setPages(response.data.pages);
@@ -165,10 +166,10 @@ const UserList = () => {
       let res;
       if (isEditMode && editingUser) {
         // Edit existing user
-        res = await axios.put(`/api/users/${editingUser.id}`, { payload });
+        res = await axios.put(`${apiConfig.USER_API}/${editingUser.id}`, payload);
       } else {
         // Add new user
-        res = await axios.post('/api/users/add', { payload });
+        res = await axios.post(`${apiConfig.USER_API}/add`, payload);
       }
 
       if (res.data.ok) {
@@ -218,7 +219,7 @@ const UserList = () => {
     setDeleteError('');
     
     try {
-      const res = await axios.delete(`/api/users/${userToDelete.id}`);
+      const res = await axios.delete(`${apiConfig.USER_API}/${userToDelete.id}`);
 
       if (res.data.ok) {
         // Success - close modal and refresh list

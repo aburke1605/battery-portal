@@ -1,6 +1,7 @@
 // context/AuthContext.tsx
 import React, { createContext, useContext, useEffect, useState, ReactNode } from 'react';
 import { useNavigate } from 'react-router-dom';
+import apiConfig from '../apiConfig';
 
 interface User {
   email: string;
@@ -39,7 +40,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children, isFromESP3
   useEffect(() => {
     const checkAuthStatus = async () => {
       try {
-        let url = '/api/user/check-auth';
+        let url = `${apiConfig.USER_API}/check-auth`;
         if (isFromESP32) {
           const token = getAuthToken();
           url += '?auth_token=' + token;
@@ -68,7 +69,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children, isFromESP3
 
   const logout = async () => {
     try {
-      await fetch('/api/user/logout', {
+      await fetch(`${apiConfig.USER_API}/logout`, {
         method: 'POST',
         credentials: 'include',
       });
@@ -82,7 +83,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children, isFromESP3
 
   const login = async (email: string, password: string): Promise<boolean> => {
     try {
-      const res = await fetch('/api/user/login', {
+      const res = await fetch(`${apiConfig.USER_API}/login`, {
         method: 'POST',
         credentials: 'include',
         headers: {

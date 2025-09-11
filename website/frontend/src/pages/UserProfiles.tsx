@@ -15,6 +15,7 @@ import {
   AlertTriangle,
   CheckCircle 
 } from 'lucide-react';
+import apiConfig from '../apiConfig';
 
 interface ProfileFormData {
   first_name: string;
@@ -128,7 +129,7 @@ export default function UserProfiles() {
     setSuccessMessage('');
     
     try {
-      const res = await fetch('/api/users/profile', {
+      const res = await fetch(`${apiConfig.USER_API}/profile`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         credentials: 'include',
@@ -165,7 +166,7 @@ export default function UserProfiles() {
     setSuccessMessage('');
     
     try {
-      const res = await fetch('/api/users/change-password', {
+      const res = await fetch(`${apiConfig.USER_API}/change-password`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         credentials: 'include',
