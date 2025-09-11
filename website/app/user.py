@@ -258,6 +258,9 @@ def change_password():
     """
         API to change the current user's password.
     """
+    if Roles.query.filter_by(name="superuser").first() in current_user.roles:
+        return jsonify({"error": "Cannot change admin account."}), 400
+
     data = request.get_json()
     current_password = data.get("current_password")
     new_password = data.get("new_password")
@@ -285,6 +288,9 @@ def profile():
     """
         API to update the current user's profile information.
     """
+    if Roles.query.filter_by(name="superuser").first() in current_user.roles:
+        return jsonify({"error": "Cannot change admin account."}), 400
+
     data = request.get_json()
     
     new_first_name = data.get("first_name", current_user.first_name)
