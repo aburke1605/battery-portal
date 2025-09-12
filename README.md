@@ -230,7 +230,7 @@ These include:
     Displays a summary of the network and key metrics, including graphical respresentations of telemetry data.
   * <b>Batteries</b> <br>
     Lists each registered battery module, displaying their connection status to the server and any MESH network relationships.
-    The list view can be toggles to a map view, displaying the most recent GPS coordinates of each module with a Google maps API.
+    The list view can be toggled to a map view, displaying the most recent GPS coordinates of each module with a Google maps API.
   * <b>Users</b> <br>
     Here the administrator can create, remove or manage user access to the portal.
   * <b>Settings</b> <br>
