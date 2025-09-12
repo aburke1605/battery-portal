@@ -71,15 +71,7 @@ typedef struct __attribute__((packed)) {
 #define ESC_END       0x5E  // escaped 0x7E → 0x7D 0x5E
 #define ESC_ESC       0x5D  // escaped 0x7D → 0x7D 0x5D
 
-void lora_reset();
-
-uint8_t lora_read_register(uint8_t reg);
-
-void lora_write_register(uint8_t reg, uint8_t value);
-
-esp_err_t lora_init();
-
-void lora_configure_defaults();
+void lora_init();
 
 size_t json_to_binary(uint8_t* binary_message, cJSON* json_array);
 
