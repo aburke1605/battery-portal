@@ -36,7 +36,7 @@ function App() {
           Remote monitoring, configuration, and analytics for your energy storage systems.
         </p>
         <a
-          href="/admin"
+          href="/portal"
           className="inline-flex items-center bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg shadow-lg transition-colors duration-200 mb-18"
         >
           <Settings className="h-5 w-5 mr-2 animate-pulse" />

@@ -6,8 +6,8 @@ main = Blueprint("main", __name__, url_prefix="/")
 def home():
     return send_from_directory("../frontend/dist/", "home.html")
 
-@main.route("/admin", methods=["GET"])
-def admin():
+@main.route("/portal", methods=["GET"])
+def portal():
     return send_from_directory("../frontend/dist", "index.html")
 
 @main.route("/<path:path>", methods=["GET"])

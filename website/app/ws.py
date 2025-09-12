@@ -17,7 +17,7 @@ browser_clients = {}
 def browser_ws(ws: Sock):
     """
         Handles server WebSocket connections which are initiated by browser clients, and subsequent client messages.
-        Connections are requested in the battery list and the individual detail pages of the admin portal:
+        Connections are requested in the battery list and the individual detail pages of the portal:
             * on individual detail pages, the `esp_id` of the battery in question is the key used to store the browser client.
             * on the battery list page, a random 32-byte id string is used to imitate a unique '`esp_id`' for each browser client.
     """
