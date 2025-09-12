@@ -243,7 +243,7 @@ From the <b>Batteries</b> tab, users can click <b>Details</b> on any battery car
 Configuration and optimisation of the module's BMS settings are customised here, though only successfully on modules which are currently online.
 
 #### Local ESP32 HTTP Server
-As mentioned already (see section on <b>ESP32 > Wi-Fi Networking</b>), telemetry data is also accessible by battery module users by connecting a smart phone or other browser-capable device to the HTTP server hosted on the ESP32 that is interfaced with the module.
+As mentioned already (see section on <b>ESP32 > Wi-Fi Networking</b>), telemetry data is also accessible by battery module users by connecting a smart phone or other browser-capable device to the HTTP server hosted locally on the ESP32 that is interfaced with the module.
 The only necessary frontend to be served by each individual module is the same detailed view which is accessed by clicking <b>Details</b> on a module on the web site.
 For this reason, a separate route is compiled specifically for ESP32 HTTP servers, producing an entry file named `esp32.html` which is flashed to each ESP32.
 This is separate from the main entry files `home.html` and `index.html` which are served by the web app.
