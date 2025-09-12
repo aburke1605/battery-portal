@@ -216,31 +216,34 @@ Database schema management and versioning are handled with [Flask-Migrate](https
 
 
 ### Frontend UI
+The web site frontend is built with TypeScript, React, Tailwind CSS, and TailAdmin (free React version `https://tailadmin.com/`). 
+It consists of a simple public home page and the remote monitoring portal which is accessible only through validated user login.
 
-The frontend is built with TypeScript, React, Tailwind CSS, and TailAdmin (free React version `https://tailadmin.com/`). It includes all UI pages for:
-- Admin web application
-- ESP32 device interface
-- Project instruction home page
+#### Portal
+The portal provides tabs for battery module remote management and monitoring features.
+These include:
+  * <b>Dashboard</b> <br>
+    Displays a summary of the network and key metrics, including graphical respresentations of telemetry data.
+  * <b>Batteries</b> <br>
+    Lists each registered battery module, displaying their connection status to the server and any MESH network relationships.
+    The list view can be toggles to a map view, displaying the most recent GPS coordinates of each module with a Google maps API.
+  * <b>Users</b> <br>
+    Here the administrator can create, remove or manage user access to the portal.
+  * <b>Settings</b> <br>
+    `YET TO BE IMPLEMENTED`
+  * <b>Database</b> <br>
+    Area to execute SQL query commands on the database tables through APIs.
+    This exsists mainly for ease of administrator access to the database on Azure, whose IP is otherwise inaccessible without additional cloud virtual machine instances.
 
-The project uses Webpack and React’s component management to compile and output each page separately for modular development.
+From the <b>Batteries</b> tab, users can click <b>Details</b> on any battery card to open a more detailed view of that module's most recent (live, if online) telemetry data, including a <b>Digital Twin</b> view for visualisation.
+Configuration and optimisation of the module's BMS settings are customised here, though only successfully on modules which are currently online.
 
-#### Admin Web Application
-Provides system management and monitoring features.
+#### Local ESP32 HTTP Server
+As mentioned already (see section on <b>ESP32 > Wi-Fi Networking</b>), telemetry data is also accessible by battery module users by connecting a smart phone or other browser-capable device to the HTTP server hosted on the ESP32 that is interfaced with the module.
+The only necessary frontend to be served by each individual module is the same detailed view which is accessed by clicking <b>Details</b> on a module on the web site.
+For this reason, a separate route is compiled specifically for ESP32 HTTP servers, producing an entry file named `esp32.html` which is flashed to each ESP32.
+This is separate from the main entry files `home.html` and `index.html` which are served by the web app.
+However, the functionality of the detailed view remains the same, and so the ESP32 HTTP server programming mimics that of the web app so that the frontend seamlessly interacts with both.
 
-Pages:
-- Dashboard – Displays key metrics and summaries.
-- Batteries – Lists battery packs, mesh network connections, and status.
-- Users – User and role management.
-- Settings – Configuration options.
-- List View – Tabular display of the battery mesh network.
-- Map View – Shows the geographic location of each battery pack.
-- Battery Detail & Digital Twin – Detailed battery data and digital twin visualisation.
 
-#### ESP32 Device User Interface
-Designed for local access when near a battery via Access Point (AP). Entry File: `esp32.html`.
-- Login component for authentication.
-- Battery detail page for status display.
-- Backend implemented in C on the ESP32 firmware.
-
-#### Project Instruction Home Page
-A standalone page providing an overview of the project, including its purpose, architecture, and main features. Entry File: `home.html`.
+---
