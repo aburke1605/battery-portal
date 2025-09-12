@@ -220,7 +220,7 @@ Database schema management and versioning are handled with [Flask-Migrate](https
 
 
 ### Frontend UI
-The web site frontend is built with TypeScript, React, Tailwind CSS, and TailAdmin (free React version `https://tailadmin.com/`). 
+The web site frontend is built with TypeScript, React, Tailwind CSS, and [TailAdmin](https://tailadmin.com/) (free React version). 
 It consists of a simple public home page and the remote monitoring portal which is accessible only through validated user login.
 
 #### Portal
