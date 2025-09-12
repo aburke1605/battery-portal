@@ -10,6 +10,6 @@ def home():
 def portal():
     return send_from_directory("../frontend/dist", "index.html")
 
-@main.route("/<path:path>", methods=["GET"])
-def serve_react_static(path: str):
-    return send_from_directory("../frontend/dist", path)
+@main.route("/<path:file>", methods=["GET"])
+def serve_react_static(file: str):
+    return send_from_directory("../frontend/dist", file)
