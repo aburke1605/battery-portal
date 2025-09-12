@@ -173,6 +173,10 @@ byte | data
 11   | 0x7E     - FRAME_END
 ```
 
+---
+---
+
+
 ## Web App
 The web app and database are hosted with Microsoft Azure cloud services for consistent availability and scalability.
 Deployment to Azure is managed with GitHub Actions (see `.github/workflows/main_batteryportal.yml` for details).
