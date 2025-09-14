@@ -3,9 +3,14 @@ FROM ubuntu:latest
 RUN apt-get update && apt-get upgrade -y && apt-get install -y python3 python3-venv npm
 
 COPY ./website /website
-WORKDIR "/website"
+WORKDIR /website
 
-RUN chmod +x initialisation.sh start_webapp.sh
-RUN ./initialisation.sh
+RUN cd frontend && \
+    npm install && \
+    npm run build && \
+    cd ..
 
-CMD ["./start_webapp.sh"]
+RUN python3 -m venv .venv && \
+    . .venv/bin/activate && \
+    pip install -r requirements.txt
+ENV PATH="/website/.venv/bin:$PATH"
