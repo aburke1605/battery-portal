@@ -11,3 +11,4 @@ Flask-Migrate==4.1.0
 python-dotenv==1.1.0
 apscheduler==3.11.0
 scipy==1.15.3
+gunicorn==23.0.0
