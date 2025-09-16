@@ -4,15 +4,15 @@ import os
 SECRET_KEY = "123456790"
 
 # environment variables for MySQL database
-MYSQL_HOST = os.getenv("NEW_MYSQL_HOST", "localhost")
-MYSQL_PORT = os.getenv("AZURE_MYSQL_PORT", 3306)
-MYSQL_USER = os.getenv("NEW_MYSQL_ADMIN_LOGIN", "root")
-MYSQL_PASSWORD = os.getenv("NEW_MYSQL_ADMIN_PASSWORD", "password")
-MYSQL_DATABASE = os.getenv("AZURE_MYSQL_NAME", "battery_data")
+MYSQL_ADMIN_PASSWORD = os.getenv("MYSQL_ADMIN_PASSWORD", "password")
+MYSQL_ADMIN_USERNAME = os.getenv("MYSQL_ADMIN_USERNAME", "root")
+MYSQL_DATABASE_NAME = os.getenv("MYSQL_DATABASE_NAME", "battery_data")
+MYSQL_PORT = os.getenv("MYSQL_PORT", 3306)
+MYSQL_SERVER_HOST = os.getenv("MYSQL_SERVER_HOST", "localhost")
+MYSQL_SSL_CA = os.getenv("MYSQL_SSL_CA", None),
+MYSQL_SSL_DISABLED =os.getenv("MYSQL_SSL_DISABLED", "False") == "True"
 
-MYSQL_SSL_CART = os.getenv("AZURE_MYSQL_SSL_CA", None),
-MYSQL_SSL_DISABLED =os.getenv("AZURE_MYSQL_SSL_DISABLED", "False") == "True"
-SQLALCHEMY_DATABASE_URI = f"mysql+mysqlconnector://{MYSQL_USER}:{MYSQL_PASSWORD}@{MYSQL_HOST}:{MYSQL_PORT}/{MYSQL_DATABASE}"
+SQLALCHEMY_DATABASE_URI = f"mysql+mysqlconnector://{MYSQL_ADMIN_USERNAME}:{MYSQL_ADMIN_PASSWORD}@{MYSQL_SERVER_HOST}:{MYSQL_PORT}/{MYSQL_DATABASE_NAME}"
 SQLALCHEMY_ECHO = os.getenv("SQLALCHEMY_ECHO")
 
 # flask_security config
