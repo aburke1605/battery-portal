@@ -4,10 +4,10 @@ import os
 SECRET_KEY = "123456790"
 
 # environment variables for MySQL database
-MYSQL_HOST = os.getenv("AZURE_MYSQL_HOST", "localhost")
+MYSQL_HOST = os.getenv("NEW_MYSQL_HOST", "localhost")
 MYSQL_PORT = os.getenv("AZURE_MYSQL_PORT", 3306)
-MYSQL_USER = os.getenv("AZURE_MYSQL_USER", "root")
-MYSQL_PASSWORD = os.getenv("AZURE_MYSQL_PASSWORD", "password")
+MYSQL_USER = os.getenv("NEW_MYSQL_ADMIN_LOGIN", "root")
+MYSQL_PASSWORD = os.getenv("NEW_MYSQL_ADMIN_PASSWORD", "password")
 MYSQL_DATABASE = os.getenv("AZURE_MYSQL_NAME", "battery_data")
 
 MYSQL_SSL_CART = os.getenv("AZURE_MYSQL_SSL_CA", None),
