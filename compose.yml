@@ -16,7 +16,7 @@ services:
   web:
     build: .
     environment:
-      MYSQL_SERVER_HOST: ${MYSQL_SERVER_HOST} # override azure environment variable for local docker dev
+      MYSQL_SERVER_HOST: db # the db service: set environment variable for local docker dev
     command: bash -c "flask db upgrade && gunicorn -k gevent run:app -b 0.0.0.0:8000" # bind to all so can reach container from local host machine
     ports:
       - 8000:8000 # use same port to access from outside container
