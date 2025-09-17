@@ -9,7 +9,6 @@ from flask_security import Security
 from flask_admin import Admin
 from sqlalchemy import inspect
 
-from app.main import main
 from app.db import db, DB, BatteryInfo
 from app.user import user, users, create_admin
 from app.ws import sock
@@ -31,6 +30,7 @@ def create_app():
 
     if os.getenv("FLASK_ENV") == "development":
         # nginx handles frontend service in production
+        from app.main import main
         app.register_blueprint(main)
 
     app.register_blueprint(db)
