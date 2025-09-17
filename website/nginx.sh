@@ -2,7 +2,7 @@
 
 : <<'END'
     ENSURE APP IS RUNNING WITH:
-    `$ gunicorn -k gevent run:app -b 127.0.0.1:8000
+    `$ FLASK_ENV=production gunicorn -k gevent run:app -b 127.0.0.1:8000
 END
 
 
