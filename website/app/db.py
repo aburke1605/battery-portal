@@ -11,7 +11,7 @@ from sqlalchemy import inspect, insert, select, desc, text, Table
 
 from utils import process_telemetry_data
 
-db = Blueprint("db", __name__, url_prefix="/api/db")
+db = Blueprint("db", __name__, url_prefix="/db")
 
 DB = SQLAlchemy()
 class BatteryInfo(DB.Model):

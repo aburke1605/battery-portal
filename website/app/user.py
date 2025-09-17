@@ -10,7 +10,7 @@ from flask_security.utils import hash_password
 from flask_login import current_user
 from sqlalchemy import inspect
 
-user = Blueprint("user", __name__, url_prefix="/api/user")
+user = Blueprint("user", __name__, url_prefix="/user")
 
 from app.db import DB
 class Roles(DB.Model, RoleMixin):
