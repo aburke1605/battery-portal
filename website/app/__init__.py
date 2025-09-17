@@ -1,5 +1,7 @@
+import os
 import sys
 import logging
+from dotenv import load_dotenv
 
 from flask import Flask
 from flask_migrate import Migrate
@@ -21,11 +23,15 @@ def create_app():
         )
     logging.getLogger("werkzeug").setLevel(logging.WARNING)
 
+    load_dotenv()
+
     app = Flask(__name__)
 
     app.config.from_pyfile("config.py")
 
-    app.register_blueprint(main)
+    if os.getenv("FLASK_ENV") == "development":
+        # nginx handles frontend service in production
+        app.register_blueprint(main)
 
     app.register_blueprint(db)
     DB.init_app(app)
