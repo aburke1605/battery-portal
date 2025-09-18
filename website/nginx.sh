@@ -26,10 +26,17 @@ server {
     server_name localhost;
 
     # serve React frontend build directly
-    location / {
+    location = / {
         root $PWD/frontend/dist;
         index home.html;
-        try_files \$uri /index.html;
+    }
+    location = /admin {
+        root $PWD/frontend/dist;
+        index index.html;
+    }
+    location / {
+        root $PWD/frontend/dist;
+        try_files \$uri =404;
     }
 
     # serve Flask app where all other endpoints begin with /api
