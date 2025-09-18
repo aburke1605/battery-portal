@@ -33,7 +33,7 @@ def create_app():
 
     app.register_blueprint(user)
     Security(app, users)
-    Admin(app)
+    Admin(app, url="/portal")
     create_admin(app)
 
     with app.app_context():
