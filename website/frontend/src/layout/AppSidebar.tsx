@@ -26,7 +26,7 @@ const navItems: NavItem[] = [
   {
     icon: <LayoutGrid size={16} className="mr-1" />,
     name: "Dashboard",
-    path: "/",
+    path: "/dashboard",
   },
   {
     icon: <Battery size={16} className="mr-1" />,

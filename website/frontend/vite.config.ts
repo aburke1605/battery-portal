@@ -33,9 +33,8 @@ export default defineConfig(() => ({
   build: {
     rollupOptions: {
       input: {
-        main: path.resolve(__dirname, "index.html"),
+        index: path.resolve(__dirname, "index.html"),
         esp: path.resolve(__dirname, "esp32.html"),
-        home: path.resolve(__dirname, "home.html"),
       },
       output: {
         // no hash in output file names

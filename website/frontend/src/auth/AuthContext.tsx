@@ -96,7 +96,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children, isFromESP3
         const data = await res.json();
         setUser(data);
         setAuthToken(data.auth_token);
-        navigate('/');
+        navigate('/dashboard');
         return true;
       } else {
         return false;
