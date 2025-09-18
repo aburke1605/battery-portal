@@ -35,8 +35,8 @@ function App() {
           <Route path="/" element={<HomePage />} />
           
           {/* Dashboard Layout */}
-          <Route element={<AppLayout />}>
-            <Route path="/dashboard" element={<AuthRequire><Home /></AuthRequire>} />
+          <Route element={<AuthRequire><AppLayout /></AuthRequire>}>
+            <Route path="/dashboard" element={<Home />} />
 
             {/* Others Page */}
             <Route path="/profile" element={<UserProfiles />} />
