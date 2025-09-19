@@ -251,3 +251,15 @@ However, the functionality of the detailed view remains the same, and so the ESP
 
 
 ---
+
+
+
+## Local Development and Testing
+
+To enable end-to-end testing of the web app locally before deployment, a production-like instance of the app is containerised with Docker and served via an Nginx proxy.
+
+The Docker configuration can be found in `Dockerfile` and `compose.yml`.
+The web app image uses the Nginx config file in `nginx/battery-portal.conf`, however the Nginx proxy can also be run locally without Docker by executing the `nginx/local_setup.sh` script.
+
+
+---
