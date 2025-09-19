@@ -2,12 +2,13 @@ services:
   db:
     image: mysql:8.0
     environment:
-      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
-      MYSQL_DATABASE: ${MYSQL_DATABASE} # auto create the database
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ADMIN_PASSWORD} # required
+      MYSQL_ADMIN_USERNAME: ${MYSQL_ADMIN_USERNAME}
+      MYSQL_DATABASE: ${MYSQL_DATABASE_NAME} # auto creates the database
     volumes:
       - mysqldata:/var/lib/mysql
     healthcheck:
-      test: ["CMD-SHELL", "mysqladmin ping -h localhost -u root --password=$$MYSQL_ROOT_PASSWORD || exit 1"]
+      test: ["CMD-SHELL", "mysqladmin ping -h localhost -u $$MYSQL_ADMIN_USERNAME --password=$$MYSQL_ROOT_PASSWORD || exit 1"]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -15,7 +16,7 @@ services:
   web:
     build: .
     environment:
-      AZURE_MYSQL_HOST: ${AZURE_MYSQL_HOST} # override azure environment variable for local docker dev
+      MYSQL_SERVER_HOST: db # the db service: set environment variable for local docker dev
     command: bash -c "flask db upgrade && gunicorn -k gevent run:app -b 0.0.0.0:8000" # bind to all so can reach container from local host machine
     ports:
       - 8000:8000 # use same port to access from outside container

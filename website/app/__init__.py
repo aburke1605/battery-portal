@@ -6,7 +6,6 @@ from dotenv import load_dotenv
 from flask import Flask, Blueprint
 from flask_migrate import Migrate
 from flask_security import Security
-from flask_admin import Admin
 from sqlalchemy import inspect
 
 from app.db import db, DB, BatteryInfo
@@ -43,7 +42,7 @@ def create_app():
 
     api.register_blueprint(user)
     Security(app, users)
-    Admin(app)
+
     create_admin(app)
 
     with app.app_context():
