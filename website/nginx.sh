@@ -28,10 +28,6 @@ server {
     # serve React frontend build directly
     location = / {
         root $PWD/frontend/dist;
-        index home.html;
-    }
-    location = /admin {
-        root $PWD/frontend/dist;
         index index.html;
     }
     location / {
