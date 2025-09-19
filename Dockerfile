@@ -1,17 +1,5 @@
-# build web app frontend
-FROM node:lts AS frontend-build
-WORKDIR /battery-portal/website/frontend
-
-COPY ./website/frontend/package*.json ./
-RUN npm install
-
-COPY ./website/frontend/ ./
-RUN npm run build
-
-
-
 # build web app pip environment
-FROM python:3.12-slim
+FROM python:3.12-slim AS backend-build
 WORKDIR /battery-portal/website
 
 RUN apt-get update && apt-get install -y build-essential && rm -rf /var/lib/apt/lists/*
@@ -23,14 +11,22 @@ RUN pip install --no-cache-dir -r requirements.txt
 
 COPY ./website/ ./
 
-# copy frontend build output
-COPY --from=frontend-build /battery-portal/website/frontend/dist ./frontend/dist
-
-
 
 # default command, overridden in compose.yml
 EXPOSE 8000
-CMD ["flask", "db", "upgrade", "&&", "gunicorn", "-k", "gevent", "run:app", "-b", "0.0.0.0:8000"]
+CMD ["flask", "db", "upgrade", "&&", "FLASK_ENV=production", "gunicorn", "-k", "gevent", "run:app", "-b", "0.0.0.0:8000"]
+
+
+
+# build web app frontend
+FROM node:lts AS frontend-build
+WORKDIR /battery-portal/website/frontend
+
+COPY ./website/frontend/package*.json ./
+RUN npm install
+
+COPY ./website/frontend/ ./
+RUN npm run build
 
 
 
