@@ -20,18 +20,17 @@ rm /etc/nginx/sites-enabled/default
 
 
 # create site for web app
-cat <<EOF > /etc/nginx/sites-available/batteryportal
+cat <<EOF > /etc/nginx/sites-available/battery-portal
 server {
     listen 80;
     server_name localhost;
 
     # serve React frontend build directly
-    location = / {
-        root $PWD/frontend/dist;
+    root $PWD/frontend/dist;
+    location = / { # built html entry file
         index index.html;
     }
-    location / {
-        root $PWD/frontend/dist;
+    location / { # all other built files (static)
         try_files \$uri =404;
     }
 
