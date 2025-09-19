@@ -102,6 +102,7 @@ void app_main(void) {
     TaskParams websocket_params = {.stack_size = 4600, .task_name = "websocket_task"};
     xTaskCreate(&websocket_task, websocket_params.task_name, websocket_params.stack_size, &websocket_params, 1, &websocket_task_handle);
 
+    // TODO: add task to send SOC and current to Ben's ESP32 via I2C
 
     if (!LORA_IS_RECEIVER) {
         /*
