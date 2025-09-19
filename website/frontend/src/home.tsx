@@ -1,12 +1,12 @@
-import { StrictMode, useEffect, useState } from 'react';
-import { createRoot } from 'react-dom/client';
+import { useEffect, useState } from 'react';
 import './index.css';
 import { Settings } from 'lucide-react';
 import DataChart from './components/charts/DataChart';
 import axios from 'axios';
 import apiConfig from './apiConfig';
+import { Link } from 'react-router';
 
-function App() {
+export default function HomePage() {
   // pick a random esp_id from the battery_info table
   // so we can display a graph beneath
   const [id, setID] = useState("unavailable!");
@@ -35,13 +35,13 @@ function App() {
         <p className="text-lg text-gray-600 max-w-xl mb-8">
           Remote monitoring, configuration, and analytics for your energy storage systems.
         </p>
-        <a
-          href="/admin"
+        <Link
+          to="/dashboard"
           className="inline-flex items-center bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg shadow-lg transition-colors duration-200 mb-18"
         >
           <Settings className="h-5 w-5 mr-2 animate-pulse" />
           <span className="font-medium">BMS Portal</span>
-        </a>
+        </Link>
 
         <div className="bg-blue-600/5 rounded-lg p-6 mb-4">
           <h1 className="text-xl md:text-2xl font-bold text-gray-900 mb-4">
@@ -89,9 +89,3 @@ function App() {
     </div>
   );
 }
-
-createRoot(document.getElementById('root')!).render(
-  <StrictMode>
-    <App />
-  </StrictMode>
-);

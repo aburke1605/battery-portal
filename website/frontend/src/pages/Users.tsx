@@ -1,11 +1,11 @@
 import { useEffect, useState } from 'react';
-import PageBreadcrumb from "../../components/common/PageBreadCrumb";
-import { useModal } from "../../hooks/useModal";
-import { User } from '../../types/index';
-import { Modal } from "../../components/ui/modal";
-import Button from "../../components/ui/button/Button";
-import Input from "../../components/form/input/InputField";
-import Label from "../../components/form/Label";
+import PageBreadcrumb from "../components/common/PageBreadCrumb";
+import { useModal } from "../hooks/useModal";
+import { User } from '../types/index';
+import { Modal } from "../components/ui/modal";
+import Button from "../components/ui/button/Button";
+import Input from "../components/form/input/InputField";
+import Label from "../components/form/Label";
 import { 
   UserPlus, 
   Edit3, 
@@ -16,7 +16,7 @@ import {
   AlertCircle
 } from 'lucide-react';
 import axios from 'axios';
-import apiConfig from '../../apiConfig';
+import apiConfig from '../apiConfig';
 
 const UserList = () => {
   const [users, setUsers] = useState<User[]>([]);

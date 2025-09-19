@@ -1,15 +1,15 @@
+import os
+
 from flask import Blueprint, send_from_directory
 
 main = Blueprint("main", __name__, url_prefix="/")
 
+build_dir = os.path.join(os.path.dirname(__file__), "../frontend/dist")
+
 @main.route("/", methods=["GET"])
-def home():
-    return send_from_directory("../frontend/dist/", "home.html")
+def serve_react_frontend():
+    return send_from_directory(build_dir, "index.html")
 
-@main.route("/admin", methods=["GET"])
-def admin():
-    return send_from_directory("../frontend/dist", "index.html")
-
-@main.route("/<path:path>", methods=["GET"])
-def serve_react_static(path: str):
-    return send_from_directory("../frontend/dist", path)
+@main.route("/<path:file>", methods=["GET"])
+def serve_react_static(file: str):
+    return send_from_directory(build_dir, file)

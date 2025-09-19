@@ -1,6 +1,6 @@
-import PageBreadcrumb from "../../components/common/PageBreadCrumb";
-import DefaultInputs from "../../components/form/form-elements/DefaultInputs";
-import PageMeta from "../../components/common/PageMeta";
+import PageBreadcrumb from "../components/common/PageBreadCrumb";
+import DefaultInputs from "../components/form/form-elements/DefaultInputs";
+import PageMeta from "../components/common/PageMeta";
 
 export default function SystemSettings() {
   return (
