@@ -38,3 +38,6 @@ COPY --from=frontend-build /battery-portal/website/frontend/dist /usr/share/ngin
 
 # copy nginx config file from host machine as default site
 COPY ./nginx/battery-portal.conf /etc/nginx/conf.d/default.conf
+
+# copy ssl certificates from host machine too
+COPY ./website/cert /etc/nginx/certs

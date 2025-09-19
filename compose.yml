@@ -30,8 +30,9 @@ services:
     build: # build custom image from Dockerfile rather than pull from DockerHub
       context: .
       target: nginx-build
-    ports:
-      - 80:80 # use same port to access from outside container
+    ports: # use same port to access from outside container
+      - 80:80 # redirect only
+      - 443:443
     depends_on:
       - web
 
