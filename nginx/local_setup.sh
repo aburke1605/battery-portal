@@ -1,11 +1,14 @@
 #!/bin/bash
 
 : <<'END'
-    ENSURE APP IS RUNNING WITH:
-        $ FLASK_ENV=production gunicorn -k gevent run:app -b 127.0.0.1:8000
+    SCRIPT TO SETUP AND RUN NGINX LOCALLY, WITHOUT DOCKER
+    ENSURE FRONTEND IS BUILT:
+        $ cd website/frontend && npm run build
+    AND BACKEND APP IS RUNNING:
+        $ cd website && FLASK_ENV=production gunicorn -k gevent run:app -b 127.0.0.1:8000
 
     THEN:
-        $ chmod +x nginx.sh && sudo ./nginx.sh
+        $ sudo chmod +x nginx/local_setup.sh && sudo ./nginx/local_setup.sh
 END
 
 
@@ -20,18 +23,29 @@ rm /etc/nginx/sites-enabled/default
 
 
 # create site for web app
-cat <<EOF > /etc/nginx/sites-available/batteryportal
+cat <<EOF > /etc/nginx/sites-available/battery-portal
+# HTTP: redirect to HTTPS
 server {
     listen 80;
     server_name localhost;
+    return 301 https://\$host\$request_uri;
+}
+
+# HTTPS
+server {
+    listen 443 ssl;
+    server_name localhost;
+
+    ssl_certificate $PWD/website/cert/local_cert.pem;
+    ssl_certificate_key $PWD/website/cert/local_key.pem;
 
     # serve React frontend build directly
-    location = / {
-        root $PWD/frontend/dist;
-        index index.html;
+    root $PWD/website/frontend/dist;
+    index index.html;
+    location = / { # built html entry file
+        try_files /index.html =404;
     }
-    location / {
-        root $PWD/frontend/dist;
+    location / { # all other built files (static)
         try_files \$uri =404;
     }
 
@@ -49,7 +63,7 @@ server {
     }
 }
 EOF
-ln -sf /etc/nginx/sites-available/batteryportal /etc/nginx/sites-enabled/
+ln -sf /etc/nginx/sites-available/battery-portal /etc/nginx/sites-enabled/
 
 
 # set directory and file permissions so nginx (www-data) can read static files
