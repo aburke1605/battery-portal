@@ -31,3 +31,14 @@ COPY --from=frontend-build /battery-portal/website/frontend/dist ./frontend/dist
 # default command, overridden in compose.yml
 EXPOSE 8000
 CMD ["flask", "db", "upgrade", "&&", "gunicorn", "-k", "gevent", "run:app", "-b", "0.0.0.0:8000"]
+
+
+
+# nginx
+FROM nginx:stable AS nginx-build
+
+# copy built frontend; overwrites default site html file
+COPY --from=frontend-build /battery-portal/website/frontend/dist /usr/share/nginx/html
+
+# copy nginx config file from host machine as default site
+COPY ./nginx/battery-portal.conf /etc/nginx/conf.d/default.conf

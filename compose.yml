@@ -25,14 +25,13 @@ services:
       - "8000" # expose to other containers only
 
   nginx:
-    image: nginx:stable
+    build: # build custom image from Dockerfile rather than pull from DockerHub
+      context: .
+      target: nginx-build
     ports:
       - 80:80 # use same port to access from outside container
     depends_on:
       - web
-    volumes:
-      - ./website/frontend/dist:/usr/share/nginx/html:ro # mount built frontend; overwrites default site html file
-      - ./nginx/battery-portal.conf:/etc/nginx/conf.d/default.conf:ro # mount nginx config file as default site
 
 
 volumes:
