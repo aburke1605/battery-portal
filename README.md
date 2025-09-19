@@ -263,7 +263,7 @@ The web app image uses the Nginx config file in `nginx/battery-portal.conf`, how
 
 Otherwise, the containerised app is started with:
 ```bash
-$ docker compose up
+docker compose up
 ```
 
 ---
