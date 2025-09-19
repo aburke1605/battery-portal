@@ -1,15 +1,16 @@
+import os
 import sys
 import logging
+from dotenv import load_dotenv
 
-from flask import Flask
+from flask import Flask, Blueprint
 from flask_migrate import Migrate
 from flask_security import Security
 from sqlalchemy import inspect
 
-from app.main import main
 from app.db import db, DB, BatteryInfo
 from app.user import user, users, create_admin
-from app.ws import sock
+from app.ws import ws
 
 def create_app():
     if not logging.getLogger().handlers: # only configure if root logger has no handlers (avoids duplicate setup under Gunicorn)
@@ -20,17 +21,26 @@ def create_app():
         )
     logging.getLogger("werkzeug").setLevel(logging.WARNING)
 
+    load_dotenv()
+
     app = Flask(__name__)
 
     app.config.from_pyfile("config.py")
 
-    app.register_blueprint(main)
+    # first register main page URLs
+    if os.getenv("FLASK_ENV") == "development":
+        # nginx handles frontend service in production
+        from app.main import main
+        app.register_blueprint(main)
 
-    app.register_blueprint(db)
+    # then eveything else at /api
+    api = Blueprint("api", __name__, url_prefix="/api")
+
+    api.register_blueprint(db)
     DB.init_app(app)
     Migrate(app, DB)
 
-    app.register_blueprint(user)
+    api.register_blueprint(user)
     Security(app, users)
 
     create_admin(app)
@@ -43,6 +53,9 @@ def create_app():
                 # reset the status of all websockets existing in database on startup
                 DB.session.query(BatteryInfo).filter_by(live_websocket=True).update({BatteryInfo.live_websocket: False})
                 DB.session.commit()
-    sock.init_app(app)
+    api.register_blueprint(ws)
+
+    # finally, register eveything at /api with main app
+    app.register_blueprint(api)
 
     return app

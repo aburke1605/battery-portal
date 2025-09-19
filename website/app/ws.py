@@ -3,12 +3,14 @@ logger = logging.getLogger(__name__)
 from threading import Lock
 import json
 
-from flask import request
+from flask import Blueprint, request
 from flask_sock import Sock
 
 from app.db import update_battery_data, set_live_websocket
 
-sock = Sock()
+ws = Blueprint("ws", __name__, url_prefix="/")
+
+sock = Sock(ws)
 lock = Lock()
 
 
