@@ -12,11 +12,6 @@ RUN pip install --no-cache-dir -r requirements.txt
 COPY ./website/ ./
 
 
-# default command, overridden in compose.yml
-EXPOSE 8000
-CMD ["flask", "db", "upgrade", "&&", "FLASK_ENV=production", "gunicorn", "-k", "gevent", "run:app", "-b", "0.0.0.0:8000"]
-
-
 
 # build web app frontend
 FROM node:lts AS frontend-build
