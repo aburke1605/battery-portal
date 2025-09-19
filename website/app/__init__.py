@@ -4,7 +4,6 @@ import logging
 from flask import Flask
 from flask_migrate import Migrate
 from flask_security import Security
-from flask_admin import Admin
 from sqlalchemy import inspect
 
 from app.main import main
@@ -33,7 +32,7 @@ def create_app():
 
     app.register_blueprint(user)
     Security(app, users)
-    Admin(app, url="/portal")
+
     create_admin(app)
 
     with app.app_context():
