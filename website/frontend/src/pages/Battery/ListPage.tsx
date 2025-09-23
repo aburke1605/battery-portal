@@ -101,57 +101,57 @@ export default function BatteryPage() {
   }
 
 
-useEffect(() => {
-  if (map) {
-    // clear old markers first if needed
-    markers.forEach(m => m.setMap(null));
+  useEffect(() => {
+    if (map) {
+      // clear old markers first if needed
+      markers.forEach(m => m.setMap(null));
 
-    const newMarkers = currentBatteries.map((battery: BatteryData) => {
-      const battery_position = {
-        lat: battery.lat,
-        lng: battery.lon,
-      }
-      const markerObj = new google.maps.Marker({
-        position: battery_position,
-        map,
-        title: battery.esp_id,
-        icon: getBatteryIcon(battery.live_websocket)
-      })
-
-      // Add click listener with enhanced info window
-      markerObj.addListener('click', () => {
-        const infoWindow = new google.maps.InfoWindow({
-          content: `
-            <div class="p-3 min-w-[200px]">
-              <h3 class="font-semibold text-lg">${battery.esp_id}</h3>
-              <p class="text-sm text-gray-600 mt-1">Status: ${(battery.live_websocket) ? 'online' : 'offline'}</p>
-              <div class="mt-2 text-sm">
-                <p>SoC: ${battery.Q} %</p>
-                <p>Health: ${battery.H} %</p>
-                <p>Latitude: ${battery.lat}</p>
-                <p>Longitude: ${battery.lon}</p>
-              </div>
-              <div class="mt-3 pt-3 border-t border-gray-200">
-                <a 
-                  href="/#/battery-detail?esp_id=${battery.esp_id}"
-                  class="inline-block w-full text-center px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded hover:bg-blue-700 transition-colors"
-                  onclick="window.location.href='/#/battery-detail?esp_id=${battery.esp_id}'; return false;"
-                >
-                  View Details
-                </a>
-              </div>
-            </div>
-          `
+      const newMarkers = currentBatteries.map((battery: BatteryData) => {
+        const battery_position = {
+          lat: battery.lat,
+          lng: battery.lon,
+        }
+        const markerObj = new google.maps.Marker({
+          position: battery_position,
+          map,
+          title: battery.esp_id,
+          icon: getBatteryIcon(battery.live_websocket)
         })
-        infoWindow.open(map, markerObj)
+
+        // Add click listener with enhanced info window
+        markerObj.addListener('click', () => {
+          const infoWindow = new google.maps.InfoWindow({
+            content: `
+              <div class="p-3 min-w-[200px]">
+                <h3 class="font-semibold text-lg">${battery.esp_id}</h3>
+                <p class="text-sm text-gray-600 mt-1">Status: ${(battery.live_websocket) ? 'online' : 'offline'}</p>
+                <div class="mt-2 text-sm">
+                  <p>SoC: ${battery.Q} %</p>
+                  <p>Health: ${battery.H} %</p>
+                  <p>Latitude: ${battery.lat}</p>
+                  <p>Longitude: ${battery.lon}</p>
+                </div>
+                <div class="mt-3 pt-3 border-t border-gray-200">
+                  <a 
+                    href="/#/battery-detail?esp_id=${battery.esp_id}"
+                    class="inline-block w-full text-center px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded hover:bg-blue-700 transition-colors"
+                    onclick="window.location.href='/#/battery-detail?esp_id=${battery.esp_id}'; return false;"
+                  >
+                    View Details
+                  </a>
+                </div>
+              </div>
+            `
+          })
+          infoWindow.open(map, markerObj)
+        })
+
+        return markerObj
       })
 
-      return markerObj
-    })
-
-    setMarkers(newMarkers)
-  }
-}, [currentBatteries, map]);
+      setMarkers(newMarkers)
+    }
+  }, [currentBatteries, map]);
 
   const getMarkerColor = (online: boolean) => {
     switch (online) {
