@@ -3,6 +3,8 @@
 #include "include/config.h"
 #include "include/I2C.h"
 
+#include <freertos/FreeRTOS.h>
+
 void get_display_data(uint8_t* data) {
     uint8_t data_SBS[2] = {0};
 
@@ -15,4 +17,11 @@ void get_display_data(uint8_t* data) {
     read_SBS_data(I2C_CURRENT_ADDR, data_SBS, sizeof(data_SBS));
     data[2] = data_SBS[1];
     data[3] = data_SBS[0];
+}
+
+void inverter_task(void *pvParameters) {
+    while (true) {
+        write_to_unit();
+        vTaskDelay(pdMS_TO_TICKS(5000));
+    }
 }

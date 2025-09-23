@@ -5,4 +5,6 @@
 
 void get_display_data(uint8_t* data);
 
+void inverter_task(void *pvParameters);
+
 #endif
