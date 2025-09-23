@@ -17,6 +17,7 @@ import Feature from "ol/Feature";
 import Point from "ol/geom/Point";
 import { Icon, Style } from "ol/style";
 import { fromLonLat } from 'ol/proj';
+import Overlay from 'ol/Overlay';
 
 export default function BatteryPage() {
   const itemsPerPage = 4
@@ -25,6 +26,8 @@ export default function BatteryPage() {
 
   const mapRef = useRef<HTMLDivElement>(null)
   const mapInstance = useRef<Map | null>(null);
+  const markerLayer = useRef<VectorLayer<VectorSource> | null>(null);
+  const overlayRef = useRef<Overlay | null>(null);
   
   const [batteries, setBatteryData] = useState<BatteryData[]>([])
   let startIndex = (currentPage - 1) * itemsPerPage
@@ -73,33 +76,95 @@ export default function BatteryPage() {
   });
 
 
-  // initialise map (once!)
+  // initialise map layers (once!)
   useEffect(() => {
     if (mapRef.current && !mapInstance.current) {
-      mapInstance.current = new Map({
+      // create empty marker layer
+      markerLayer.current = new VectorLayer({ source: new VectorSource() });
+
+      // create overlay
+      const popupEl = document.getElementById("popup")!;
+      overlayRef.current = new Overlay({
+        element: popupEl,
+        positioning: "bottom-center",
+        stopEvent: true,
+      });
+
+      // create map
+      const map = new Map({
         target: mapRef.current,
         layers: [
-          new TileLayer({
-            source: new OSM(),
-          }),
+          new TileLayer({ source: new OSM() }),
+          markerLayer.current,
         ],
         view: new View({
           center: fromLonLat([-0.1276, 51.5074]),
           zoom: 5,
         }),
+        overlays: [overlayRef.current],
       });
+      mapInstance.current = map;
+
+      // click handler
+      const handleClick = (evt: any) => {
+        map.forEachFeatureAtPixel(evt.pixel, (feature) => {
+          const battery = feature.get("batteryData") as BatteryData;
+          if (!battery) {
+            console.log("returning")
+            return;
+          }
+
+          // overlay popup
+          const popup = document.getElementById("popup")!;
+          popup.innerHTML = `
+            <div class="p-3 min-w-[200px]">
+              <h3 class="font-semibold text-lg">${battery.esp_id}</h3>
+              <p class="text-sm text-gray-600 mt-1">Status: ${battery.live_websocket?'online':'offline'}</p>
+              <div class="mt-2 text-sm">
+                <p>Charge: ${battery.Q}</p>
+                <p>Health: ${battery.H}</p>
+              </div>
+              <div class="mt-3 pt-3 border-t border-gray-200">
+                <a
+                  href="/battery/${battery.esp_id}"
+                  class="inline-block w-full text-center px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded hover:bg-blue-700 transition-colors"
+                  onclick="window.location.href='/battery/${battery.esp_id}'; return false;"
+                >
+                  View Details
+                </a>
+              </div>
+            </div>
+          `;
+          overlayRef.current!.setPosition((feature.getGeometry() as Point).getCoordinates());
+        });
+      };
+
+      // hover cursor handler
+      const handlePointerMove = (evt: any) => {
+        const hit = map.hasFeatureAtPixel(evt.pixel);
+        map.getTargetElement().style.cursor = hit ? "pointer" : "";
+      };
+
+      map.on("click", handleClick);
+      map.on("pointermove", handlePointerMove);
+
+      return () => {
+        map.un("click", handleClick);
+        map.un("pointermove", handlePointerMove);
+      };
     }
   }, []);
 
 
   // dynamically update marker layer on top of map
   useEffect(() => {
-    if (!mapInstance.current) return;
+    if (!markerLayer.current) return;
 
     // create marker feature
     const newMarkers = currentBatteries.map((battery: BatteryData) => {
       const marker = new Feature({
-        geometry: new Point(fromLonLat([battery.lon, battery.lat]))
+        geometry: new Point(fromLonLat([battery.lon, battery.lat])),
+        batteryData: battery,
       });
       marker.setStyle(
         new Style({
@@ -107,23 +172,15 @@ export default function BatteryPage() {
             src: "battery.png",
             scale: 0.15,
             color: battery.live_websocket?'#10B981':'#6B7280',
-            rotation: -3.14/2,
+            rotation: -Math.PI / 2,
           }),
         })
       );
-      // TODO: addListener
       return marker;
     })
 
-    const vectorSource = new VectorSource({ features: newMarkers });
-    const vectorLayer = new VectorLayer({ source: vectorSource });
-
-    // remove old marker layers, keep base layer
-    const layers = mapInstance.current.getLayers();
-    layers.forEach((layer, i) => {
-      if (i > 0) layers.remove(layer); // assumes index 0 is OSM base
-    });
-    layers.push(vectorLayer);
+    markerLayer.current.getSource()?.clear();
+    markerLayer.current.getSource()?.addFeatures(newMarkers);
 
   }, [currentBatteries]);
 
@@ -245,6 +302,7 @@ export default function BatteryPage() {
           style={{ display: viewMode !== 'grid' ? 'block' : 'none' }}
         >
           <div ref={mapRef} className="w-full h-[700px]" />
+          <div id="popup" className="ol-popup"></div>
         </div>
 
       {/* Show pagination only in grid view */}
