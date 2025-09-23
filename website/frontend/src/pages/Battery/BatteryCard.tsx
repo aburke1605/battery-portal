@@ -1,11 +1,11 @@
 import React from 'react';
-import { BatteryData } from '../..//types';
+import { BatteryInfoData, BatteryData } from '../..//types';
 import { getStatusColor} from '../../utils/helpers';
 import { format } from "date-fns";
 
 interface BatteryCardProps {
   battery: BatteryData;
-  viewBatteryDetails: (battery: BatteryData) => void;
+  viewBatteryDetails: (battery: BatteryInfoData) => void;
 }
 
 
@@ -29,8 +29,8 @@ const BatteryCard: React.FC<BatteryCardProps> = ({ battery, viewBatteryDetails }
             >
               Details
             </a>
-          <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${getStatusColor(battery.status)}`}>
-            {battery.status}
+          <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${getStatusColor(battery.live_websocket)}`}>
+            {battery.live_websocket?"online":"offline"}
           </span>
         </div>
       </div>
@@ -38,11 +38,11 @@ const BatteryCard: React.FC<BatteryCardProps> = ({ battery, viewBatteryDetails }
       <div className="grid grid-cols-2 gap-2 mb-3">
         <div className="bg-gray-50 p-2 rounded">
           <p className="text-xs text-gray-600">temperature</p>
-          <p className="text-sm font-semibold">{battery.ambient_temperature}°C</p>
+          <p className="text-sm font-semibold">{battery.cT}°C</p>
         </div>
         <div className="bg-gray-50 p-2 rounded">
           <p className="text-xs text-gray-600">Voltage</p>
-          <p className="text-sm font-semibold">{battery.voltage}V</p>
+          <p className="text-sm font-semibold">{battery.V}V</p>
         </div>
       </div>
 
@@ -50,11 +50,11 @@ const BatteryCard: React.FC<BatteryCardProps> = ({ battery, viewBatteryDetails }
         <div className="flex justify-between items-center">
           <h3 className="text-sm font-medium text-gray-700">Connected Batteries</h3>
           <span className="text-xs text-gray-500">
-            {battery.children?.length || 0} units
+            {battery.nodes?.length || 0} units
           </span>
         </div>
-        <div className={`space-y-2 ${battery.children && battery.children.length > 3 ? 'max-h-[200px] overflow-y-auto pr-1 custom-scrollbar' : ''}`}>
-          {battery.children?.map((childBattery) => (
+        <div className={`space-y-2 ${battery.nodes && battery.nodes.length > 3 ? 'max-h-[200px] overflow-y-auto pr-1 custom-scrollbar' : ''}`}>
+          {battery.nodes?.map((childBattery) => (
             <div 
               onClick={() => viewBatteryDetails(childBattery)}
               key={childBattery.esp_id}
@@ -63,17 +63,17 @@ const BatteryCard: React.FC<BatteryCardProps> = ({ battery, viewBatteryDetails }
               <div className="flex justify-between items-center">
                 <div>
                   <h4 className="text-sm font-medium">{childBattery.esp_id}</h4>
-                  <div className="flex items-center gap-2 mt-0.5">
+                  {/* <div className="flex items-center gap-2 mt-0.5">
                     <span className="text-xs text-gray-600">
-                      {childBattery.ambient_temperature}°C
+                      {childBattery.cT}°C
                     </span>
                     <span className="text-xs text-gray-600">
-                      {childBattery.voltage}V
+                      {childBattery.V}V
                     </span>
-                  </div>
+                  </div> */}
                 </div>
-                <span className={`px-1.5 py-0.5 rounded-full text-xs font-medium ${getStatusColor(childBattery.status)}`}>
-                  {childBattery.status}
+                <span className={`px-1.5 py-0.5 rounded-full text-xs font-medium ${getStatusColor(childBattery.live_websocket)}`}>
+                  {childBattery.live_websocket?"online":"offline"}
                 </span>
               </div>
             </div>

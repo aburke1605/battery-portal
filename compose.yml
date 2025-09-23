@@ -1,0 +1,41 @@
+services:
+  db:
+    image: mysql:8.0 # pull pre-built image from DockerHub
+    environment:
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ADMIN_PASSWORD} # required
+      MYSQL_ADMIN_USERNAME: ${MYSQL_ADMIN_USERNAME}
+      MYSQL_DATABASE: ${MYSQL_DATABASE_NAME} # auto creates the database
+    volumes:
+      - mysqldata:/var/lib/mysql
+    healthcheck:
+      test: ["CMD-SHELL", "mysqladmin ping -h localhost -u $$MYSQL_ADMIN_USERNAME --password=$$MYSQL_ROOT_PASSWORD || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  web:
+    build: # build custom image from Dockerfile rather than pull from DockerHub
+      context: .
+      target: backend-build
+    environment:
+      MYSQL_SERVER_HOST: db # the db service: set environment variable for local docker dev
+    command: bash -c "flask db upgrade && FLASK_ENV=production gunicorn -k gevent run:app -b 0.0.0.0:8000" # mimic azure command, but bind to all (0.0.0.0) so can reach container from local host machine
+    depends_on:
+      db:
+        condition: service_healthy
+    expose:
+      - "8000" # expose to other containers only
+
+  nginx:
+    build: # build custom image from Dockerfile rather than pull from DockerHub
+      context: .
+      target: nginx-build
+    ports: # use same port to access from outside container
+      - 80:80 # redirect only
+      - 443:443
+    depends_on:
+      - web
+
+
+volumes:
+  mysqldata:

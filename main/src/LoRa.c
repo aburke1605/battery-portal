@@ -2,110 +2,33 @@
 
 #include "include/BMS.h"
 #include "include/global.h"
-#include "include/WS.h"
+#include "include/SPI.h"
 #include "include/utils.h"
+#include "include/WS.h"
 
-#include <driver/spi_master.h>
 #include <driver/gpio.h>
 #include <esp_err.h>
 #include <esp_log.h>
 #include <esp_timer.h>
 
-static spi_device_handle_t lora_spi;
 extern QueueHandle_t lora_queue;
 
 static const char* TAG = "LoRa";
 
-void lora_reset() {
-    gpio_set_direction(PIN_NUM_RST, GPIO_MODE_OUTPUT);
-    gpio_set_level(PIN_NUM_RST, 0);
-    vTaskDelay(pdMS_TO_TICKS(10));
-    gpio_set_level(PIN_NUM_RST, 1);
-    vTaskDelay(pdMS_TO_TICKS(10));
-}
+void lora_init() {
+    spi_init();
 
-uint8_t lora_read_register(uint8_t reg) {
-    uint8_t rx_data[2];
-    uint8_t tx_data[2] = { reg & 0b01111111, 0x00 }; // MSB=0 for read
-
-    spi_transaction_t t = {
-        .length = 8 * 2,
-        .tx_buffer = tx_data,
-        .rx_buffer = rx_data,
-    };
-    spi_device_transmit(lora_spi, &t);
-    return rx_data[1];
-}
-
-void lora_write_register(uint8_t reg, uint8_t value) {
-    uint8_t tx_data[2] = { reg | 0b10000000, value }; // MSB=1 for write
-
-    spi_transaction_t t = {
-        .length = 8 * 2,
-        .tx_buffer = tx_data,
-    };
-    spi_device_transmit(lora_spi, &t);
-}
-
-esp_err_t lora_init() {
-    // SPI bus configuration
-    spi_bus_config_t buscfg = {
-        .mosi_io_num = PIN_NUM_MOSI,
-        .miso_io_num = PIN_NUM_MISO,
-        .sclk_io_num = PIN_NUM_CLK,
-        .quadwp_io_num = -1,
-        .quadhd_io_num = -1,
-    };
-    spi_bus_initialize(LORA_SPI_HOST, &buscfg, SPI_DMA_CH_AUTO);
-
-    // SPI device configuration
-    spi_device_interface_config_t devcfg = {
-        .clock_speed_hz = 8 * 1000 * 1000, // 8 MHz
-        .mode = 0,
-        .spics_io_num = PIN_NUM_CS,
-        .queue_size = 1,
-    };
-    spi_bus_add_device(LORA_SPI_HOST, &devcfg, &lora_spi);
-
-    lora_reset();
-
-    // Read version
-    uint8_t version = lora_read_register(REG_VERSION);
-    ESP_LOGI(TAG, "SX127x version: 0x%02X", version);
-    if (version != 0x12) {
-        ESP_LOGE(TAG, "SX127x not found");
-        esp_restart();
-        return ESP_FAIL;
-    }
-
-    // Enter LoRa + Sleep mode
-    lora_write_register(REG_OP_MODE, MODE_SLEEP | MODE_LORA);
-    vTaskDelay(pdMS_TO_TICKS(10));
-
-    // Enter standby
-    lora_write_register(REG_OP_MODE, MODE_STDBY | MODE_LORA);
-    vTaskDelay(pdMS_TO_TICKS(10));
-
-    ESP_LOGI(TAG, "SX127x initialized");
-
-    lora_configure_defaults();
-    gpio_set_direction(PIN_NUM_DIO0, GPIO_MODE_INPUT);
-
-    return ESP_OK;
-}
-
-void lora_configure_defaults() {
     // Set carrier frequency
     uint64_t frf = ((uint64_t)(LORA_FREQ * 1E6) << 19) / 32000000;
-    lora_write_register(REG_FRF_MSB, (uint8_t)(frf >> 16));
-    lora_write_register(REG_FRF_MID, (uint8_t)(frf >> 8));
-    lora_write_register(REG_FRF_LSB, (uint8_t)(frf >> 0));
+    spi_write_register(REG_FRF_MSB, (uint8_t)(frf >> 16));
+    spi_write_register(REG_FRF_MID, (uint8_t)(frf >> 8));
+    spi_write_register(REG_FRF_LSB, (uint8_t)(frf >> 0));
 
     // Set LNA gain to maximum
-    lora_write_register(REG_LNA, 0b00100011);  // LNA_MAX_GAIN | LNA_BOOST
+    spi_write_register(REG_LNA, 0b00100011);  // LNA_MAX_GAIN | LNA_BOOST
 
     // Enable AGC (bit 2 of RegModemConfig3)
-    lora_write_register(REG_MODEM_CONFIG_3,                                                                    // bits:
+    spi_write_register(REG_MODEM_CONFIG_3,                                                                    // bits:
         (0b00001111 & 0)                                                                               << 4 |  //  7-4
         (0b00000001 & (LORA_LDRO | (calculate_symbol_length(LORA_SF, LORA_BW) > 16.0 ? true : false))) << 3 |  //  3
         (0b00000001 & 1)                                                                               << 2 |  //  2    AGC on
@@ -114,13 +37,13 @@ void lora_configure_defaults() {
 
     // Configure modem parameters:
     //  bandwidth, coding rate, header
-    lora_write_register(REG_MODEM_CONFIG_1,  // bits:
+    spi_write_register(REG_MODEM_CONFIG_1,  // bits:
         (0b00001111 & LORA_BW)     << 4 |    //  7-4
         (0b00000111 & LORA_CR)     << 1 |    //  3-1
         (0b00000001 & LORA_HEADER)           //  0
     );
     //  spreading factor, cyclic redundancy check
-    lora_write_register(REG_MODEM_CONFIG_2,     // bits:
+    spi_write_register(REG_MODEM_CONFIG_2,     // bits:
         (0b00001111 & LORA_SF)          << 4 |  //  7-4
         (0b00000001 & LORA_Tx_CONT)     << 3 |  //  3
         (0b00000001 & LORA_Rx_PAYL_CRC) << 2 |  //  2
@@ -128,18 +51,18 @@ void lora_configure_defaults() {
     );  // SF7, TxContinuousMode=0, CRC on
 
     // Preamble length (8 bytes = 0x0008)
-    lora_write_register(REG_PREAMBLE_MSB, 0x00);
-    lora_write_register(REG_PREAMBLE_LSB, 0x08);
+    spi_write_register(REG_PREAMBLE_MSB, 0x00);
+    spi_write_register(REG_PREAMBLE_LSB, 0x08);
 
     // Set output power to 13 dBm using PA_BOOST
-    lora_write_register(REG_PA_CONFIG,           // bits:
+    spi_write_register(REG_PA_CONFIG,           // bits:
         (0b00000001 & 1)                 << 7 |  // 7   PA BOOST
         (0b00000111 & 0x04)              << 4 |  // 6-4
         (0b00001111 & LORA_OUTPUT_POWER)
     );
 
-    if (LORA_POWER_BOOST) lora_write_register(REG_PA_DAC, 0x87);
-    else lora_write_register(REG_PA_DAC, 0x84);
+    if (LORA_POWER_BOOST) spi_write_register(REG_PA_DAC, 0x87);
+    else spi_write_register(REG_PA_DAC, 0x84);
 
     ESP_LOGI(TAG, "SX127x configured to RadioHead defaults");
 }
@@ -174,17 +97,17 @@ size_t json_to_binary(uint8_t* binary_message, cJSON* json_array) {
             memset(packet, 0, sizeof(radio_data_packet));
             packet->type = DATA;
 
-            cJSON *id = cJSON_GetObjectItem(item, "id");
-            if (!id) {
-                ESP_LOGE(TAG, "No \"id\" key in cJSON array item");
+            cJSON *esp_id = cJSON_GetObjectItem(item, "esp_id");
+            if (!esp_id) {
+                ESP_LOGE(TAG, "No \"esp_id\" key in cJSON array item");
                 return 0;
             }
 
-            if (strcmp(id->valuestring, "unknown") == 0)
+            if (strcmp(esp_id->valuestring, "unknown") == 0)
                 packet->esp_id = 0;
             else {
                 char esp_id_number[3];
-                strcpy(esp_id_number, &id->valuestring[4]);
+                strcpy(esp_id_number, &esp_id->valuestring[4]);
                 packet->esp_id = atoi(esp_id_number);
             }
 
@@ -283,8 +206,11 @@ size_t json_to_binary(uint8_t* binary_message, cJSON* json_array) {
             if (obj) packet->T4 = (int16_t)obj->valueint;
             obj = NULL;
 
-            obj = cJSON_GetObjectItem(content, "OTC_threshold");
-            if (obj) packet->OTC_threshold = (int16_t)obj->valueint;
+            obj = cJSON_GetObjectItem(content, "OTC");
+            if (obj) packet->OTC = (int16_t)obj->valueint;
+
+            obj = cJSON_GetObjectItem(content, "wifi");
+            if (obj) packet->wifi = (bool)obj->valueint;
 
 
             // now copy the packet into the returned binary_message which will be broadcasted
@@ -358,8 +284,8 @@ size_t json_to_binary(uint8_t* binary_message, cJSON* json_array) {
                 cJSON* new_esp_id = cJSON_GetObjectItem(data, "new_esp_id");
                 if (new_esp_id) packet->new_esp_id = new_esp_id->valueint;
 
-                cJSON* OTC_threshold = cJSON_GetObjectItem(data, "OTC_threshold");
-                if (OTC_threshold) packet->OTC_threshold = OTC_threshold->valueint;
+                cJSON* OTC = cJSON_GetObjectItem(data, "OTC");
+                if (OTC) packet->OTC = OTC->valueint;
             }
             else if (strcmp(summary->valuestring, "connect-wifi") == 0) {
                 cJSON* data = cJSON_GetObjectItem(content, "data");
@@ -519,10 +445,11 @@ void binary_to_json(uint8_t* binary_message, cJSON* json_array) {
             cJSON_AddNumberToObject(content, "T2", packet->T2);
             cJSON_AddNumberToObject(content, "T3", packet->T3);
             cJSON_AddNumberToObject(content, "T4", packet->T4);
-            cJSON_AddNumberToObject(content, "OTC_threshold", packet->OTC_threshold);
+            cJSON_AddNumberToObject(content, "OTC", packet->OTC);
+            cJSON_AddBoolToObject(content, "wifi", packet->wifi);
 
             snprintf(id_str, sizeof(id_str), "bms_%u", packet->esp_id);
-            cJSON_AddStringToObject(message, "id", id_str);
+            cJSON_AddStringToObject(message, "esp_id", id_str);
 
             cJSON_AddItemToObject(message, "content", content);
 
@@ -536,7 +463,7 @@ void binary_to_json(uint8_t* binary_message, cJSON* json_array) {
             cJSON_AddStringToObject(message, "type", "query");
 
             snprintf(id_str, sizeof(id_str), "bms_%u", packet->esp_id);
-            cJSON_AddStringToObject(message, "id", id_str);
+            cJSON_AddStringToObject(message, "esp_id", id_str);
 
             if (packet->query == 1) cJSON_AddStringToObject(message, "content", "are you still there?");
 
@@ -549,8 +476,8 @@ void binary_to_json(uint8_t* binary_message, cJSON* json_array) {
             radio_request_packet* packet = (radio_request_packet*)&binary_message[packet_start];
             cJSON_AddStringToObject(message, "type", "request");
 
-            snprintf(id_str, sizeof(id_str), "bms_%03u", packet->esp_id);
-            cJSON_AddStringToObject(message, "id", id_str);
+            snprintf(id_str, sizeof(id_str), "bms_%02u", packet->esp_id);
+            cJSON_AddStringToObject(message, "esp_id", id_str);
 
             cJSON* content = cJSON_CreateObject();
             if (content == NULL) {
@@ -572,10 +499,10 @@ void binary_to_json(uint8_t* binary_message, cJSON* json_array) {
                 cJSON_AddStringToObject(content, "summary", "change-settings");
 
                 char new_id_str[8]; // enough to hold "bms_255\0"
-                snprintf(new_id_str, sizeof(new_id_str), "bms_%03u", packet->new_esp_id);
+                snprintf(new_id_str, sizeof(new_id_str), "bms_%02u", packet->new_esp_id);
                 cJSON_AddStringToObject(data, "new_esp_id", new_id_str);
 
-                cJSON_AddNumberToObject(data, "OTC_threshold", packet->OTC_threshold);
+                cJSON_AddNumberToObject(data, "OTC", packet->OTC);
 
                 cJSON_AddItemToObject(content, "data", data);
             }
@@ -607,14 +534,14 @@ void receive(size_t* full_message_length, bool* chunked) {
 
     // wait for RX done (DIO0 goes high)
     if (gpio_get_level(PIN_NUM_DIO0) == 1) {
-        uint8_t irq_flags = lora_read_register(REG_IRQ_FLAGS);
+        uint8_t irq_flags = spi_read_register(REG_IRQ_FLAGS);
         if (irq_flags & 0x40) {  // RX_DONE
-            uint8_t len = lora_read_register(0x13);  // RX bytes
-            uint8_t fifo_rx_current = lora_read_register(0x10);
-            lora_write_register(REG_FIFO_ADDR_PTR, fifo_rx_current);
+            uint8_t len = spi_read_register(0x13);  // RX bytes
+            uint8_t fifo_rx_current = spi_read_register(0x10);
+            spi_write_register(REG_FIFO_ADDR_PTR, fifo_rx_current);
 
             for (int i = 0; i < len; i++)
-                buffer[i] = lora_read_register(0x00); // 0x00 = REG_FIFO ?
+                buffer[i] = spi_read_register(0x00); // 0x00 = REG_FIFO ?
 
 
             if (!*chunked) {
@@ -623,7 +550,7 @@ void receive(size_t* full_message_length, bool* chunked) {
                 }
                 else {
                     // bogus message received
-                    lora_write_register(REG_IRQ_FLAGS, 0b11111111);
+                    spi_write_register(REG_IRQ_FLAGS, 0b11111111);
                     return;
                 }
             } else if (*chunked && buffer[len - 1] == FRAME_END) *chunked = false;
@@ -631,7 +558,7 @@ void receive(size_t* full_message_length, bool* chunked) {
             *full_message_length += len;
 
             if (!*chunked) {
-                uint8_t rssi_raw = lora_read_register(0x1A);
+                uint8_t rssi_raw = spi_read_register(0x1A);
                 int rssi_dbm = -157 + rssi_raw;
 
                 uint8_t decoded_payload[*full_message_length];
@@ -667,8 +594,8 @@ void receive(size_t* full_message_length, bool* chunked) {
                         cJSON_ArrayForEach(message, json_array) {
                             if (!cJSON_IsObject(message)) return;
 
-                            // pop the "id" key
-                            cJSON* esp_id = cJSON_DetachItemFromObject(message, "id");
+                            // pop the "esp_id" key
+                            cJSON* esp_id = cJSON_DetachItemFromObject(message, "esp_id");
                             if (esp_id) {
                                 uint8_t id_int = atoi(&esp_id->valuestring[4]);
                                 if (id_int == ESP_ID) {
@@ -719,36 +646,36 @@ void receive(size_t* full_message_length, bool* chunked) {
         }
 
         // Clear IRQ flags again
-        lora_write_register(REG_IRQ_FLAGS, 0b11111111);
+        spi_write_register(REG_IRQ_FLAGS, 0b11111111);
     }
 }
 
 void execute_transmission(uint8_t* message, size_t n_bytes) {
-    lora_write_register(REG_OP_MODE, 0b10000001); // LoRa + standby
+    spi_write_register(REG_OP_MODE, 0b10000001); // LoRa + standby
 
     // set DIO0 = TxDone
-    lora_write_register(REG_DIO_MAPPING_1, 0b01000000); // bits 7-6 for DIO0
+    spi_write_register(REG_DIO_MAPPING_1, 0b01000000); // bits 7-6 for DIO0
 
-    lora_write_register(REG_FIFO_ADDR_PTR, 0x00); // reset FIFO pointer to base address
+    spi_write_register(REG_FIFO_ADDR_PTR, 0x00); // reset FIFO pointer to base address
 
     // write payload to FIFO
     for (int i = 0; i < n_bytes; i++)
-        lora_write_register(REG_FIFO, message[i]);
+        spi_write_register(REG_FIFO, message[i]);
 
-    lora_write_register(REG_PAYLOAD_LENGTH, n_bytes);
+    spi_write_register(REG_PAYLOAD_LENGTH, n_bytes);
 
-    lora_write_register(REG_IRQ_FLAGS, 0b11111111); // clear all IRQ flags
+    spi_write_register(REG_IRQ_FLAGS, 0b11111111); // clear all IRQ flags
 
-    lora_write_register(REG_OP_MODE, 0b10000011); // LoRa + TX mode
+    spi_write_register(REG_OP_MODE, 0b10000011); // LoRa + TX mode
 
     // wait for TX done (DIO0 goes high)
     while (gpio_get_level(PIN_NUM_DIO0) == 0)
         vTaskDelay(pdMS_TO_TICKS(1));
 
-    lora_write_register(REG_IRQ_FLAGS, 0b00001000);  // clear TxDone
+    spi_write_register(REG_IRQ_FLAGS, 0b00001000);  // clear TxDone
 
     // set DIO0 = RxDone again
-    lora_write_register(REG_DIO_MAPPING_1, 0b00000000); // bits 7-6 for DIO0
+    spi_write_register(REG_DIO_MAPPING_1, 0b00000000); // bits 7-6 for DIO0
 }
 
 void transmit(int64_t* delay_transmission_until) {
@@ -781,12 +708,11 @@ void transmit(int64_t* delay_transmission_until) {
                 strcpy(forwarded_message, "\0");
             }
         } else {
-            char individual_message[LORA_MAX_PACKET_LEN];
             uint8_t n_devices = 1; // the transmitter, at least
 
             // now form the LoRa message out of non-empty messages and transmit
             for (int i=0; i<MESH_SIZE; i++) {
-                if (strcmp(all_messages[i].id, "") != 0)
+                if (strcmp(all_messages[i].esp_id, "") != 0)
                     n_devices++;
             }
 
@@ -797,25 +723,22 @@ void transmit(int64_t* delay_transmission_until) {
             }
 
             // get own data first
-            char *data_string = get_data(false);
-            char* esp_id = esp_id_string();
-            snprintf(individual_message, sizeof(individual_message), "{\"type\":\"data\",\"id\":\"%s\",\"content\":%s}", esp_id, data_string);
-            free(esp_id);
-            cJSON *item = cJSON_Parse(individual_message);
+            char *data_string = get_data();
+            cJSON *item = cJSON_Parse(data_string);
             cJSON_AddItemToArray(json_array, item);
 
             // now add the data of other devices in mesh to payload
             n_devices = 1;
             for (int i=0; i<MESH_SIZE; i++) {
-                if (strcmp(all_messages[i].id, "") != 0) {
+                if (strcmp(all_messages[i].esp_id, "") != 0) {
                     n_devices++;
 
                     item = cJSON_Parse(all_messages[i].message);
                     cJSON_AddItemToArray(json_array, item);
 
                     // clear the message slot again in case of disconnect
-                    strcpy(all_messages[i].id, "");
-                    all_messages[i].id[0] = '\0';
+                    strcpy(all_messages[i].esp_id, "");
+                    all_messages[i].esp_id[0] = '\0';
                     strcpy(all_messages[i].message, "");
                     all_messages[i].message[0] = '\0';
                 }
@@ -863,18 +786,18 @@ void lora_task(void *pvParameters) {
     int64_t delay_transmission_until = 0; // microseconds
 
     // setup
-    lora_write_register(REG_FIFO_RX_BASE_ADDR, 0x00);
-    lora_write_register(REG_FIFO_TX_BASE_ADDR, 0x00);
-    lora_write_register(REG_FIFO_ADDR_PTR, 0x00);
+    spi_write_register(REG_FIFO_RX_BASE_ADDR, 0x00);
+    spi_write_register(REG_FIFO_TX_BASE_ADDR, 0x00);
+    spi_write_register(REG_FIFO_ADDR_PTR, 0x00);
     // clear IRQ flags
-    lora_write_register(REG_IRQ_FLAGS, 0b11111111);
+    spi_write_register(REG_IRQ_FLAGS, 0b11111111);
 
     // task loop
     while(true) {
         // should only run if receiver or ROOT but not connected to Wi-Fi
         if (LORA_IS_RECEIVER || (is_root && !connected_to_WiFi)) {
             // enter continuous RX mode
-            lora_write_register(REG_OP_MODE, 0b10000101); // LoRa + RX mode
+            spi_write_register(REG_OP_MODE, 0b10000101); // LoRa + RX mode
             receive(&full_message_length, &chunked);
 
             transmit(&delay_transmission_until);

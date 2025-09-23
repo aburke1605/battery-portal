@@ -11,7 +11,14 @@ const __dirname = path.dirname(__filename);
 export default defineConfig(() => ({
   server: {
     host: true,  // or '0.0.0.0'
-    port: 5173
+    port: 5173,
+    proxy: {
+      '/api': {
+        target: 'http://localhost:5000', // Change this to your backend server URL
+        changeOrigin: true,
+        secure: false,
+      },
+    },
   },
   plugins: [
     react(),
@@ -26,9 +33,8 @@ export default defineConfig(() => ({
   build: {
     rollupOptions: {
       input: {
-        main: path.resolve(__dirname, "index.html"),
+        index: path.resolve(__dirname, "index.html"),
         esp: path.resolve(__dirname, "esp32.html"),
-        home: path.resolve(__dirname, "home.html"),
       },
       output: {
         // no hash in output file names

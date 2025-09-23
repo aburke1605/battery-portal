@@ -41,7 +41,8 @@ typedef struct __attribute__((packed)) {
     int16_t T2;
     int16_t T3;
     int16_t T4;
-    int16_t OTC_threshold;
+    int16_t OTC;
+    bool wifi;
 } radio_data_packet;
 
 typedef struct __attribute__((packed)) {
@@ -62,7 +63,7 @@ typedef struct __attribute__((packed)) {
     uint8_t esp_id;
     int8_t request;
     uint8_t new_esp_id;
-    int16_t OTC_threshold;
+    int16_t OTC;
     bool eduroam;
     uint8_t username[16];
     uint8_t password[16];
@@ -74,15 +75,7 @@ typedef struct __attribute__((packed)) {
 #define ESC_END       0x5E  // escaped 0x7E → 0x7D 0x5E
 #define ESC_ESC       0x5D  // escaped 0x7D → 0x7D 0x5D
 
-void lora_reset();
-
-uint8_t lora_read_register(uint8_t reg);
-
-void lora_write_register(uint8_t reg, uint8_t value);
-
-esp_err_t lora_init();
-
-void lora_configure_defaults();
+void lora_init();
 
 size_t json_to_binary(uint8_t* binary_message, cJSON* json_array);
 

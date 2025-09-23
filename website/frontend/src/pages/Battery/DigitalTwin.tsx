@@ -1,17 +1,19 @@
-import React, { useCallback, useMemo, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Canvas } from "@react-three/fiber";
 import { Edges, Html, OrbitControls } from "@react-three/drei";
 import * as THREE from "three";
 import { useAuth } from "../../auth/AuthContext";
 import apiConfig from "../../apiConfig";
-import { BatteryData, parseBatteryData } from "../../types";
+import { BatteryData } from "../../types";
 import { useLoader } from '@react-three/fiber'
 import { SVGLoader } from 'three-stdlib'
-import { useWebSocket } from "../../hooks/useWebSocket";
+import { fetchBatteryData, useWebSocket } from "../../hooks/useWebSocket";
+import { generate_random_string } from "../../utils/helpers";
+import { useNavigate } from "react-router";
 
-const cellNSegments = 32;
-const cellFrameWidth = 1.0;
-const cellFrameHeight = 2.5;
+const cellFrameWidthX = 2.5;
+const cellFrameWidthY = 1.5;
+const cellFrameHeight = 2.0;
 
 const maxTemp = 30;
 const minTemp = 20;
@@ -124,14 +126,14 @@ const Cell: React.FC<CellData> = ({ label, position, temperature, charge, isChar
     <group position={position}>
       {/* unfilled */}
       <mesh position={[0, fillHeight + unfilledHeight / 2, 0]}>
-        <cylinderGeometry args={[cellFrameWidth, cellFrameWidth, unfilledHeight, cellNSegments]} />
+        <boxGeometry args={[cellFrameWidthX, unfilledHeight, cellFrameWidthY]} />
         <meshStandardMaterial color="white" transparent opacity={0.2} />
         <Edges scale={1.01} threshold={15} />
       </mesh>
 
       {/* filled */}
       <mesh position={[0, fillHeight / 2, 0]}>
-        <cylinderGeometry args={[cellFrameWidth, cellFrameWidth, fillHeight, cellNSegments]} />
+        <boxGeometry args={[cellFrameWidthX, fillHeight, cellFrameWidthY]} />
         <meshStandardMaterial color={color} />
         <Edges scale={1.01} threshold={15} />
       </mesh>
@@ -193,30 +195,50 @@ const BatteryPack: React.FC<BatteryPackProps> = ({ cells, esp_id, connected }) =
 };
 
 interface BatteriesPageProps {
-    isFromEsp32?: boolean;
+    isFromESP32?: boolean;
 }
 
-export default function DigitalTwin({ isFromEsp32 = false }: BatteriesPageProps) {
+export default function DigitalTwin({ isFromESP32 = false }: BatteriesPageProps) {
     const { getAuthToken } = useAuth();
 
     let ws_url = apiConfig.WEBSOCKET_BROWSER;
     let queryString = window.location.search;
-    if (!isFromEsp32) {
+    if (!isFromESP32) {
         const hash = window.location.hash;
         queryString = hash.split('?')[1];
     }
     const urlParams = new URLSearchParams(queryString);
     let esp_id = urlParams.get('esp_id');
     if (esp_id == null) esp_id = "empty";
-    ws_url = isFromEsp32 ? ws_url += "?auth_token=" + getAuthToken() : ws_url += "?esp_id=" + esp_id;
 
-    const [batteryItem, setSelectedBattery] = useState<BatteryData | null>(null);
+    const ws_session_browser_id = useRef(generate_random_string(32));
+    ws_url = isFromESP32 ? ws_url += "?auth_token=" + getAuthToken() : ws_url += "?browser_id=" + ws_session_browser_id.current + "&esp_id=" + esp_id;
 
-    // Get data from Webscocket
-    const handleMessage = useCallback((data: any) => {
-        const battery = data[esp_id];
-        const parsed = parseBatteryData(esp_id, battery, true);
-        setSelectedBattery(parsed);
+    const [battery, setBatteryData] = useState<BatteryData | null>(null);
+
+    const navigate = useNavigate();
+    const viewDetails = (battery: BatteryData) => {
+      navigate(`/battery-detail?esp_id=${battery.esp_id}`);
+    };
+
+    // get data from DB
+    useEffect(() => {
+        const loadBattery = async () => {
+            const esp = await fetchBatteryData(esp_id);
+            if (esp !== null) setBatteryData(esp);
+        };
+
+        loadBattery();
+    }, []);
+
+    // update data after WebSocket trigger
+    const handleMessage = useCallback(async (data: any) => {
+        if (data.esp_id === esp_id && data.browser_id === ws_session_browser_id.current) {
+            if (data.type === "status_update") {
+                const esp = await fetchBatteryData(esp_id);
+                if (esp !== null) setBatteryData(esp);
+            }
+        }
     }, [esp_id]);
     useWebSocket({
         url: ws_url,
@@ -224,38 +246,44 @@ export default function DigitalTwin({ isFromEsp32 = false }: BatteriesPageProps)
     });
   
   
-  const cells: CellData[] = batteryItem ?
+  const cells: CellData[] = battery ?
     // websocket data
     ([
-      { label: "cell 1", temperature: batteryItem.cell1_temperature, position: [-3, 0, -3], charge: batteryItem.cell1_charge/100, isCharging: batteryItem.cell1_current>0?true:false },
-      { label: "cell 2", temperature: batteryItem.cell2_temperature, position: [-3, 0, -1], charge: batteryItem.cell2_charge/100, isCharging: batteryItem.cell2_current>0?true:false },
-      { label: "cell 3", temperature: batteryItem.cell3_temperature, position: [-3, 0, 1], charge: batteryItem.cell3_charge/100, isCharging: batteryItem.cell3_current>0?true:false },
-      { label: "cell 4", temperature: batteryItem.cell4_temperature, position: [-3, 0, 3], charge: batteryItem.cell4_charge/100, isCharging: batteryItem.cell4_current>0?true:false },
+      { label: "cell 1", temperature: battery.T1, position: [-1.5*cellFrameWidthX, 0, -1.5*cellFrameWidthY], charge: battery.Q/100, isCharging: battery.I1>0?true:false },
+      { label: "cell 2", temperature: battery.T2, position: [-1.5*cellFrameWidthX, 0, -0.5*cellFrameWidthY], charge: battery.Q/100, isCharging: battery.I2>0?true:false },
+      { label: "cell 3", temperature: battery.T3, position: [-1.5*cellFrameWidthX, 0,  0.5*cellFrameWidthY], charge: battery.Q/100, isCharging: battery.I3>0?true:false },
+      { label: "cell 4", temperature: battery.T4, position: [-1.5*cellFrameWidthX, 0,  1.5*cellFrameWidthY], charge: battery.Q/100, isCharging: battery.I4>0?true:false },
     ])
     :
     // some hardcoded examples
     ([
-      { label: "cell 1", temperature: 5, position: [-3, 0, -3], charge: 0.8, isCharging: false },
-      { label: "cell 2", temperature: 10, position: [-1, 0, -3], charge: 0.9, isCharging: false },
-      { label: "cell 3", temperature: 15, position: [1, 0, -3], charge: 1.0, isCharging: false },
-      { label: "cell 4", temperature: 20, position: [3, 0, -3], charge: 0.9, isCharging: false },
-      { label: "cell 5", temperature: 25, position: [3, 0, -1], charge: 0.8, isCharging: false },
-      { label: "cell 6", temperature: 30, position: [1, 0, -1], charge: 0.7, isCharging: false },
-      { label: "cell 7", temperature: 35, position: [-1, 0, -1], charge: 0.6, isCharging: false },
-      { label: "cell 8", temperature: 40, position: [-3, 0, -1], charge: 0.5, isCharging: false },
-      { label: "cell 9", temperature: 45, position: [-3, 0, 1], charge: 0.4, isCharging: false },
-      { label: "cell 10", temperature: 50, position: [-1, 0, 1], charge: 0.3, isCharging: false },
-      { label: "cell 11", temperature: 55, position: [1, 0, 1], charge: 0.2, isCharging: false },
-      { label: "cell 12", temperature: 60, position: [3, 0, 1], charge: 0.1, isCharging: false },
-      { label: "cell 13", temperature: 65, position: [3, 0, 3], charge: 0.0, isCharging: false },
-      { label: "cell 14", temperature: 70, position: [1, 0, 3], charge: 0.1, isCharging: false },
-      { label: "cell 15", temperature: 75, position: [-1, 0, 3], charge: 0.2, isCharging: false },
-      { label: "cell 16", temperature: 80, position: [-3, 0, 3], charge: 0.3, isCharging: false },
+      { label: "cell 1", temperature: 5, position:   [-1.5*cellFrameWidthX, 0, -1.5*cellFrameWidthY], charge: 0.8, isCharging: false },
+      { label: "cell 2", temperature: 10, position:  [-0.5*cellFrameWidthX, 0, -1.5*cellFrameWidthY], charge: 0.9, isCharging: false },
+      { label: "cell 3", temperature: 15, position:  [ 0.5*cellFrameWidthX, 0, -1.5*cellFrameWidthY], charge: 1.0, isCharging: false },
+      { label: "cell 4", temperature: 20, position:  [ 1.5*cellFrameWidthX, 0, -1.5*cellFrameWidthY], charge: 0.9, isCharging: false },
+      { label: "cell 5", temperature: 25, position:  [ 1.5*cellFrameWidthX, 0, -0.5*cellFrameWidthY], charge: 0.8, isCharging: false },
+      { label: "cell 6", temperature: 30, position:  [ 0.5*cellFrameWidthX, 0, -0.5*cellFrameWidthY], charge: 0.7, isCharging: false },
+      { label: "cell 7", temperature: 35, position:  [-0.5*cellFrameWidthX, 0, -0.5*cellFrameWidthY], charge: 0.6, isCharging: false },
+      { label: "cell 8", temperature: 40, position:  [-1.5*cellFrameWidthX, 0, -0.5*cellFrameWidthY], charge: 0.5, isCharging: false },
+      { label: "cell 9", temperature: 45, position:  [-1.5*cellFrameWidthX, 0,  0.5*cellFrameWidthY], charge: 0.4, isCharging: false },
+      { label: "cell 10", temperature: 50, position: [-0.5*cellFrameWidthX, 0,  0.5*cellFrameWidthY], charge: 0.3, isCharging: false },
+      { label: "cell 11", temperature: 55, position: [ 0.5*cellFrameWidthX, 0,  0.5*cellFrameWidthY], charge: 0.2, isCharging: false },
+      { label: "cell 12", temperature: 60, position: [ 1.5*cellFrameWidthX, 0,  0.5*cellFrameWidthY], charge: 0.1, isCharging: false },
+      { label: "cell 13", temperature: 65, position: [ 1.5*cellFrameWidthX, 0,  1.5*cellFrameWidthY], charge: 0.0, isCharging: false },
+      { label: "cell 14", temperature: 70, position: [ 0.5*cellFrameWidthX, 0,  1.5*cellFrameWidthY], charge: 0.1, isCharging: false },
+      { label: "cell 15", temperature: 75, position: [-0.5*cellFrameWidthX, 0,  1.5*cellFrameWidthY], charge: 0.2, isCharging: false },
+      { label: "cell 16", temperature: 80, position: [-1.5*cellFrameWidthX, 0,  1.5*cellFrameWidthY], charge: 0.3, isCharging: false },
   ]);
 
   return (
-    <div style={{ height: "100vh" }}>
-      <BatteryPack cells={cells} esp_id={batteryItem?batteryItem.esp_id:"simulation"} connected={batteryItem?true:false}/>
+    <div style={{ height: "80vh" }} className="flex flex-col items-center">
+      <BatteryPack cells={cells} esp_id={battery?battery.esp_id:"simulation"} connected={battery?true:false}/>
+      <button
+        className="w-full max-w-xs flex items-center justify-center px-4 py-2 border border-blue-300 shadow-sm text-sm font-medium rounded-md text-blue-700 bg-blue-50 hover:bg-blue-100 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 mt-4"
+        onClick={() => battery && viewDetails(battery)}
+      >
+        Back
+      </button>
     </div>
   );
 }

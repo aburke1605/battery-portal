@@ -1,21 +1,11 @@
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect, useRef, useCallback } from 'react'
 import { ChevronDown } from 'lucide-react';
-import { BatteryData } from '../../types';
+import { BatteryInfoData, BatteryData } from '../../types';
 import BatteryCard from './BatteryCard';
 import { useNavigate } from 'react-router-dom';
-
-// const getStatusColor = (status: BatteryData['status']) => {
-//   switch (status) {
-//     case 'online':
-//       return 'bg-green-100 text-green-800'
-//     case 'offline':
-//       return 'bg-red-100 text-red-800'
-//     case 'maintenance':
-//       return 'bg-yellow-100 text-yellow-800'
-//     default:
-//       return 'bg-gray-100 text-gray-800'
-//   }
-// }
+import apiConfig from '../../apiConfig';
+import { generate_random_string } from '../../utils/helpers';
+import { fetchBatteryData, useWebSocket } from '../../hooks/useWebSocket';
 
 export default function BatteryPage() {
   const itemsPerPage = 4
@@ -25,11 +15,11 @@ export default function BatteryPage() {
   const [map, setMap] = useState<google.maps.Map | null>(null)
   const [markers, setMarkers] = useState<google.maps.Marker[]>([])
   
-  const [batteryData, setBatteryData] = useState<BatteryData[]>([])
-  const totalItems = batteryData.length
+  const [batteries, setBatteryData] = useState<BatteryData[]>([])
+  const totalItems = batteries.length
   const startIndex = (currentPage - 1) * itemsPerPage
   const endIndex = Math.min(startIndex + itemsPerPage, totalItems)
-  const currentBatteries = batteryData.slice(startIndex, endIndex)
+  const currentBatteries = batteries.slice(startIndex, endIndex)
   
   const totalPages = Math.ceil(totalItems / itemsPerPage)
   
@@ -37,25 +27,33 @@ export default function BatteryPage() {
   const [statusFilter, setStatusFilter] = useState('all');
   const [sortBy, setSortBy] = useState('status');
 
+
+  // initial fetch
   useEffect(() => {
-    const fetchBatteryData = async () => {
-      try {
-        const response = await fetch('/api/battery/list');
-        const data = await response.json();
-        setBatteryData(data);
-      } catch (error) {
-        console.error('Error fetching battery data:', error)
-      } finally {
-        //setLoading(false)
-      }
+    const loadBatteries = async () => {
+      const esps = await fetchBatteryData("LIST");
+      if (esps !== null) setBatteryData(esps);
     }
 
-    fetchBatteryData()
-    const interval = setInterval(fetchBatteryData, 10000)
-    return () => {
-      clearInterval(interval)
+    loadBatteries();
+  }, [fetchBatteryData])
+
+  // get status updates from backend through websocket
+  const ws_session_browser_id = useRef(generate_random_string(32));
+  const ws_url = `${apiConfig.WEBSOCKET_BROWSER}?browser_id=${ws_session_browser_id.current}&esp_id=LIST`;
+  // fetch from database on message receipt
+  const handleMessage = useCallback(async (data: any) => {
+    if (data.esp_id === "LIST" && data.browser_id === ws_session_browser_id.current) {
+      if (data.type === "status_update"){
+        const esps = await fetchBatteryData("LIST");
+        if (esps !== null) setBatteryData(esps);
+      }
     }
-  }, [])
+  }, [fetchBatteryData]);
+  useWebSocket({
+      url: ws_url,
+      onMessage: handleMessage,
+  });
 
 
   // Initialize Google Maps
@@ -84,8 +82,8 @@ export default function BatteryPage() {
     }
   }
 
-  const getBatteryIcon = (status: string) => {
-    const color = getMarkerColor(status)
+  const getBatteryIcon = (online: boolean) => {
+    const color = getMarkerColor(online)
     return {
       path: "M15.67 4H14V2H10V4H8.33C7.6 4 7 4.6 7 5.33v13.33C7 19.4 7.6 20 8.33 20h7.33c.73 0 1.33-.6 1.33-1.33V5.33C17 4.6 16.4 4 15.67 4z",
       fillColor: color,
@@ -108,7 +106,7 @@ export default function BatteryPage() {
         position: battery_position,
         map,
         title: battery.esp_id,
-        icon: getBatteryIcon(battery.status)
+        icon: getBatteryIcon(battery.live_websocket)
       })
 
       // Add click listener with enhanced info window
@@ -117,18 +115,18 @@ export default function BatteryPage() {
           content: `
             <div class="p-3 min-w-[200px]">
               <h3 class="font-semibold text-lg">${battery.esp_id}</h3>
-              <p class="text-sm text-gray-600 mt-1">Status: ${battery.status}</p>
+              <p class="text-sm text-gray-600 mt-1">Status: ${(battery.live_websocket) ? 'online' : 'offline'}</p>
               <div class="mt-2 text-sm">
-                <p>SoC: ${battery.charge} %</p>
-                <p>Health: ${battery.health} %</p>
+                <p>SoC: ${battery.Q} %</p>
+                <p>Health: ${battery.H} %</p>
                 <p>Latitude: ${battery.lat}</p>
                 <p>Longitude: ${battery.lon}</p>
               </div>
               <div class="mt-3 pt-3 border-t border-gray-200">
                 <a 
-                  href="/admin#/battery-detail?esp_id=${battery.esp_id}"
+                  href="/#/battery-detail?esp_id=${battery.esp_id}"
                   class="inline-block w-full text-center px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded hover:bg-blue-700 transition-colors"
-                  onclick="window.location.href='/admin#/battery-detail?esp_id=${battery.esp_id}'; return false;"
+                  onclick="window.location.href='/#/battery-detail?esp_id=${battery.esp_id}'; return false;"
                 >
                   View Details
                 </a>
@@ -145,14 +143,12 @@ export default function BatteryPage() {
     setMarkers(newMarkers)
   }
 
-  const getMarkerColor = (status: string) => {
-    switch (status) {
-      case 'active':
+  const getMarkerColor = (online: boolean) => {
+    switch (online) {
+      case true:
         return '#10B981' // green-500
-      case 'inactive':
-        return '#EF4444' // red-500
-      case 'maintenance':
-        return '#F59E0B' // yellow-500
+      case false:
+        return '#6B7280' // gray-500
       default:
         return '#6B7280' // gray-500
     }
@@ -172,7 +168,7 @@ export default function BatteryPage() {
 
   const navigate = useNavigate();
   // View battery details
-  const viewBatteryDetails = (battery: BatteryData) => {
+  const viewBatteryDetails = (battery: BatteryInfoData) => {
     navigate(`/battery-detail?esp_id=${battery.esp_id}`);
   };
   
@@ -272,8 +268,8 @@ export default function BatteryPage() {
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 xl:grid-cols-3 gap-6">
           {currentBatteries.map((battery: BatteryData) => (
             <BatteryCard
-            battery={battery}
-            viewBatteryDetails={viewBatteryDetails}
+              battery={battery}
+              viewBatteryDetails={viewBatteryDetails}
             />
           ))}
         </div>

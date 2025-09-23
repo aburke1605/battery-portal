@@ -1,4 +1,4 @@
-idf_component_register(SRCS "battery-portal.c" "src/AP.c" "src/I2C.c" "src/BMS.c" "src/GPS.c" "src/DNS.c" "src/WS.c" "src/MESH.c" "src/LoRa.c" "src/utils.c"
+idf_component_register(SRCS "battery-portal.c" "src/AP.c" "src/I2C.c" "src/BMS.c" "src/GPS.c" "src/DNS.c" "src/WS.c" "src/MESH.c" "src/SPI.c" "src/LoRa.c" "src/utils.c"
                        INCLUDE_DIRS "."
                        REQUIRES esp_wifi esp_http_server esp_http_client nvs_flash driver spiffs json esp_driver_gpio wpa_supplicant)
 
@@ -19,9 +19,9 @@ execute_process(
     --include=favicon.png
     --include=assets/
     --include=assets/esp.js
-    --include=assets/zap.js
+    --include=assets/apiConfig.js
     --include=assets/mock-socket.js
-    --include=assets/zap.css
+    --include=assets/apiConfig.css
     --include=assets/mock-socket.css
     --exclude=assets/*
     --exclude=*

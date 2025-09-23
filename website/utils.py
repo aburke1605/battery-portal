@@ -45,7 +45,7 @@ def estimate_soc_per_cell(voltage, temperature):
     return soc
 
 def process_telemetry_data(data: dict):
-    data["Q1"] = float(estimate_soc_per_cell(data["V1"]/100, data["T1"]/100))
-    data["Q2"] = float(estimate_soc_per_cell(data["V2"]/100, data["T2"]/100))
-    data["Q3"] = float(estimate_soc_per_cell(data["V3"]/100, data["T3"]/100))
-    data["Q4"] = float(estimate_soc_per_cell(data["V4"]/100, data["T4"]/100))
+    data["Q1"] = float(estimate_soc_per_cell(data["V1"]/10, data["T1"]/10))
+    data["Q2"] = float(estimate_soc_per_cell(data["V2"]/10, data["T2"]/10))
+    data["Q3"] = float(estimate_soc_per_cell(data["V3"]/10, data["T3"]/10))
+    data["Q4"] = float(estimate_soc_per_cell(data["V4"]/10, data["T4"]/10))
