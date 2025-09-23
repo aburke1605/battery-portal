@@ -5,6 +5,10 @@
 
 esp_err_t i2c_master_init(void);
 
+void write_to_unit();
+
+void read_from_unit();
+
 esp_err_t check_device();
 
 void device_scan(void);
