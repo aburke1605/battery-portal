@@ -8,7 +8,8 @@
 #include <driver/i2c_master.h>
 
 static i2c_master_bus_handle_t i2c_bus = NULL;
-static i2c_master_dev_handle_t i2c_device = NULL;
+static i2c_master_dev_handle_t bms_device = NULL;
+static i2c_master_dev_handle_t inv_device = NULL;
 
 static const char* TAG = "I2C";
 
@@ -29,9 +30,40 @@ esp_err_t i2c_master_init(void) {
         .device_address = I2C_ADDR,
         .scl_speed_hz = I2C_MASTER_FREQ_HZ
     };
-    err |= i2c_master_bus_add_device(i2c_bus, &dev_cfg, &i2c_device);
+    err |= i2c_master_bus_add_device(i2c_bus, &dev_cfg, &bms_device);
+
+    i2c_device_config_t dev_2_cfg = {
+        .device_address = 0x55,
+        .scl_speed_hz = I2C_MASTER_FREQ_HZ
+    };
+    err |= i2c_master_bus_add_device(i2c_bus, &dev_2_cfg, &inv_device);
 
     return err;
+}
+
+void write_to_unit() {
+    uint8_t data[4] = {0};
+    get_display_data(data);
+
+    esp_err_t ret = i2c_master_transmit(inv_device, data, sizeof(data), I2C_MASTER_TIMEOUT_MS);
+    if (ret != ESP_OK) {
+        ESP_LOGE(TAG, "Failed to write to Ben's ESP32!");
+        return;
+    }
+}
+
+void read_from_unit() {
+    uint8_t data[16];
+    esp_err_t ret = i2c_master_receive(inv_device, data, sizeof(data), I2C_MASTER_TIMEOUT_MS);
+    printf("requestFrom: %u\n", sizeof(data));
+    for (uint8_t i=0; i<sizeof(data); i++)
+        printf("0x%x ", data[i]);
+    printf("\n");
+    for (uint8_t i=0; i<sizeof(data); i++)
+        if (data[i] != 0xff) printf("%c", data[i]);
+    printf("\n");
+
+    return;
 }
 
 esp_err_t check_device() {
@@ -66,11 +98,11 @@ esp_err_t read_SBS_data(uint8_t reg, uint8_t* data, size_t data_size) {
     }
 
     // transmit the register address
-    ret = i2c_master_transmit(i2c_device, &reg, 1, I2C_MASTER_TIMEOUT_MS);
+    ret = i2c_master_transmit(bms_device, &reg, 1, I2C_MASTER_TIMEOUT_MS);
     if (ret != ESP_OK) return ret;
 
     // receive the response data
-    ret = i2c_master_receive(i2c_device, data, data_size, I2C_MASTER_TIMEOUT_MS);
+    ret = i2c_master_receive(bms_device, data, data_size, I2C_MASTER_TIMEOUT_MS);
 
     return ret;
 }
@@ -84,7 +116,7 @@ void write_word(uint8_t command, uint8_t* word, size_t word_size) {
     for (size_t i=0; i<word_size; i++)
         data[1 + i] = word[word_size - 1 - i]; // assumed little-endian(?)
 
-    ret = i2c_master_transmit(i2c_device, data, sizeof(data), I2C_MASTER_TIMEOUT_MS);
+    ret = i2c_master_transmit(bms_device, data, sizeof(data), I2C_MASTER_TIMEOUT_MS);
     if (ret != ESP_OK) {
         ESP_LOGE(TAG, "Failed to write word!");
         return;
@@ -102,14 +134,14 @@ void read_data_flash(uint8_t* address, size_t address_size, uint8_t* data, size_
         addr[2 + i] = address[address_size - 1 - i]; // little-endian
 
     // write the number of bytes of the address of the data we want to read, and the address itself
-    ret = i2c_master_transmit(i2c_device, addr, sizeof(addr), I2C_MASTER_TIMEOUT_MS);
+    ret = i2c_master_transmit(bms_device, addr, sizeof(addr), I2C_MASTER_TIMEOUT_MS);
     if (ret != ESP_OK) {
         ESP_LOGE(TAG, "Failed to write in read_data_flash!");
         return;
     }
     // initiate read
     uint8_t MAC = I2C_MANUFACTURER_BLOCK_ACCESS;
-    ret = i2c_master_transmit(i2c_device, &MAC, 1, I2C_MASTER_TIMEOUT_MS);
+    ret = i2c_master_transmit(bms_device, &MAC, 1, I2C_MASTER_TIMEOUT_MS);
 
 
     uint8_t buff[1 + address_size + 32]; // each ManufacturerBlockAccess() block is maximum 32 bytes,
@@ -117,7 +149,7 @@ void read_data_flash(uint8_t* address, size_t address_size, uint8_t* data, size_
                                          // plus extra bytes to echo the address
     for (size_t i=0; i<sizeof(buff); i++) buff[i] = 0; // initialise to zeros
 
-    ret = i2c_master_receive(i2c_device, buff, sizeof(buff), I2C_MASTER_TIMEOUT_MS);
+    ret = i2c_master_receive(bms_device, buff, sizeof(buff), I2C_MASTER_TIMEOUT_MS);
     if (ret == ESP_OK) {
         for (size_t i=0; i<MIN(data_size, sizeof(buff)-1-address_size); i++)
             data[i] = buff[1 + address_size + i];
@@ -140,7 +172,7 @@ void write_data_flash(uint8_t* address, size_t address_size, uint8_t* data, size
     for (uint8_t i=0; i<data_size; i++)
         block[2 + address_size + i] = data[i];
 
-    ret = i2c_master_transmit(i2c_device, block, sizeof(block), I2C_MASTER_TIMEOUT_MS);
+    ret = i2c_master_transmit(bms_device, block, sizeof(block), I2C_MASTER_TIMEOUT_MS);
     if (ret != ESP_OK) {
         ESP_LOGE(TAG, "Failed to write block!");
     }
