@@ -124,16 +124,20 @@ export default function BatteryPage() {
                 <p>Health: ${battery.H}</p>
               </div>
               <div class="mt-3 pt-3 border-t border-gray-200">
-                <a
-                  href="/battery/${battery.esp_id}"
+                <button
+                  id="view-details-btn"
                   class="inline-block w-full text-center px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded hover:bg-blue-700 transition-colors"
-                  onclick="window.location.href='/battery/${battery.esp_id}'; return false;"
                 >
                   View Details
-                </a>
+                </button>
               </div>
             </div>
           `;
+          const btn = document.getElementById("view-details-btn");
+          if (btn) {
+            btn.onclick = () => viewBatteryDetails(battery);
+          }
+
           overlayRef.current!.setPosition((feature.getGeometry() as Point).getCoordinates());
         });
 
