@@ -77,9 +77,7 @@ def update_battery_data(json: list) -> None:
         try:
             process_telemetry_data(content) # first add approximate cell charges
             statement = insert(battery_data_table).values(
-                timestamp = datetime.now(),
-                t = content["t"],
-                d = content["d"],
+                timestamp = datetime.fromisoformat(content["timestamp"]),
                 lat = content["lat"],
                 lon = content["lon"],
                 Q = content["Q"],
@@ -139,8 +137,6 @@ def get_battery_data_table(esp_id: str) -> Table:
     else:
         table = DB.Table(name,
             DB.Column("timestamp", DB.DateTime, nullable=False, default=datetime.now, primary_key=True),
-            DB.Column("t", DB.Integer, nullable=False),
-            DB.Column("d", DB.Integer, nullable=False),
             DB.Column("lat", DB.Float, nullable=False),
             DB.Column("lon", DB.Float, nullable=False),
             DB.Column("Q", DB.Integer, nullable=False),
@@ -252,7 +248,8 @@ def data():
     table_name = f"battery_data_{esp_id}"
     data_table = DB.Table(table_name, DB.metadata, autoload_with=DB.engine)
 
-    statement = select(data_table).order_by(desc(data_table.c.t)).limit(1)
+    # this really is ordered by most recent and not just date or time individually
+    statement = select(data_table).order_by(desc(data_table.c.timestamp)).limit(1)
 
     with DB.engine.connect() as conn:
         row = conn.execute(statement).first()

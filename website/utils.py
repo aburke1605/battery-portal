@@ -44,8 +44,30 @@ def estimate_soc_per_cell(voltage, temperature):
     soc = np.clip(soc_interp(corrected_voltage), 0, 100)
     return soc
 
+def date_to_string(d: int):
+    full_date = f"{d:06d}"
+
+    day = full_date[:2]
+    month = full_date[2:4]
+    year = full_date[4:]
+
+    return f"20{year}-{month}-{day}"
+
+def time_to_string(t: float):
+    full_time = str(t)
+
+    hour = full_time[:2]
+    minute = full_time[2:4]
+    second = full_time[4:]
+
+    return f"{hour}:{minute}:{second}"
+
 def process_telemetry_data(data: dict):
     data["Q1"] = float(estimate_soc_per_cell(data["V1"]/10, data["T1"]/10))
     data["Q2"] = float(estimate_soc_per_cell(data["V2"]/10, data["T2"]/10))
     data["Q3"] = float(estimate_soc_per_cell(data["V3"]/10, data["T3"]/10))
     data["Q4"] = float(estimate_soc_per_cell(data["V4"]/10, data["T4"]/10))
+
+    d = date_to_string(int(data["d"]))
+    t = time_to_string(float(data["t"]))
+    data["timestamp"] = f"{d}T{t}"
