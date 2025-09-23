@@ -41,31 +41,6 @@ esp_err_t i2c_master_init(void) {
     return err;
 }
 
-void write_to_unit() {
-    uint8_t data[4] = {0};
-    get_display_data(data);
-
-    esp_err_t ret = i2c_master_transmit(inv_device, data, sizeof(data), I2C_MASTER_TIMEOUT_MS);
-    if (ret != ESP_OK) {
-        ESP_LOGE(TAG, "Failed to write to Ben's ESP32!");
-        return;
-    }
-}
-
-void read_from_unit() {
-    uint8_t data[16];
-    esp_err_t ret = i2c_master_receive(inv_device, data, sizeof(data), I2C_MASTER_TIMEOUT_MS);
-    printf("requestFrom: %u\n", sizeof(data));
-    for (uint8_t i=0; i<sizeof(data); i++)
-        printf("0x%x ", data[i]);
-    printf("\n");
-    for (uint8_t i=0; i<sizeof(data); i++)
-        if (data[i] != 0xff) printf("%c", data[i]);
-    printf("\n");
-
-    return;
-}
-
 esp_err_t check_device() {
     esp_err_t ret = i2c_master_probe(i2c_bus, I2C_ADDR, I2C_MASTER_TIMEOUT_MS);
     if (ret != ESP_OK) ESP_LOGE(TAG, "I2C device not found at address 0x%x.", I2C_ADDR);
@@ -177,4 +152,29 @@ void write_data_flash(uint8_t* address, size_t address_size, uint8_t* data, size
         ESP_LOGE(TAG, "Failed to write block!");
     }
     vTaskDelay(pdMS_TO_TICKS(100));
+}
+
+void write_to_unit() {
+    uint8_t data[4] = {0};
+    get_display_data(data);
+
+    esp_err_t ret = i2c_master_transmit(inv_device, data, sizeof(data), I2C_MASTER_TIMEOUT_MS);
+    if (ret != ESP_OK) {
+        ESP_LOGE(TAG, "Failed to write to Ben's ESP32!");
+        return;
+    }
+}
+
+void read_from_unit() {
+    uint8_t data[16];
+    esp_err_t ret = i2c_master_receive(inv_device, data, sizeof(data), I2C_MASTER_TIMEOUT_MS);
+    printf("requestFrom: %u\n", sizeof(data));
+    for (uint8_t i=0; i<sizeof(data); i++)
+        printf("0x%x ", data[i]);
+    printf("\n");
+    for (uint8_t i=0; i<sizeof(data); i++)
+        if (data[i] != 0xff) printf("%c", data[i]);
+    printf("\n");
+
+    return;
 }
