@@ -16,12 +16,18 @@ export default function BatteryPage() {
   const [markers, setMarkers] = useState<google.maps.Marker[]>([])
   
   const [batteries, setBatteryData] = useState<BatteryData[]>([])
-  const totalItems = batteries.length
-  const startIndex = (currentPage - 1) * itemsPerPage
-  const endIndex = Math.min(startIndex + itemsPerPage, totalItems)
-  const currentBatteries = batteries.slice(startIndex, endIndex)
+  let startIndex = (currentPage - 1) * itemsPerPage
+  let endIndex = Math.min(startIndex + itemsPerPage, batteries.length)
+  let totalPages = Math.ceil(batteries.length / itemsPerPage)
+
+  const [currentBatteries, setCurrentBatteries] = useState<BatteryData[]>([]);
+  useEffect(() => {
+    startIndex = (currentPage - 1) * itemsPerPage;
+    endIndex = Math.min(startIndex + itemsPerPage, batteries.length);
+    totalPages = Math.ceil(batteries.length / itemsPerPage)
+    setCurrentBatteries(batteries.slice(startIndex, endIndex));
+  }, [batteries, currentPage, itemsPerPage]); // update as batteries (and other variables) do
   
-  const totalPages = Math.ceil(totalItems / itemsPerPage)
   
 
   const [statusFilter, setStatusFilter] = useState('all');
@@ -78,7 +84,6 @@ export default function BatteryPage() {
       })
 
       setMap(newMap)
-      addMarkers(newMap)
     }
   }
 
@@ -95,13 +100,17 @@ export default function BatteryPage() {
     }
   }
 
-  const addMarkers = (map: google.maps.Map) => {
+
+useEffect(() => {
+  if (map) {
+    // clear old markers first if needed
+    markers.forEach(m => m.setMap(null));
+
     const newMarkers = currentBatteries.map((battery: BatteryData) => {
       const battery_position = {
         lat: battery.lat,
         lng: battery.lon,
       }
-      console.log(battery_position);
       const markerObj = new google.maps.Marker({
         position: battery_position,
         map,
@@ -142,6 +151,7 @@ export default function BatteryPage() {
 
     setMarkers(newMarkers)
   }
+}, [currentBatteries, map]);
 
   const getMarkerColor = (online: boolean) => {
     switch (online) {
@@ -284,7 +294,7 @@ export default function BatteryPage() {
         <div className="mt-8 flex flex-col items-center gap-4">
           <div className="flex items-center justify-between w-full max-w-2xl">
             <div className="text-sm text-gray-600">
-              Showing {startIndex + 1} to {endIndex} of {totalItems} entries
+              Showing {startIndex + 1} to {endIndex} of {batteries.length} entries
             </div>
             
             <div className="flex items-center gap-2">
