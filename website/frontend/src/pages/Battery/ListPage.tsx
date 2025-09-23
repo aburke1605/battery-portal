@@ -107,12 +107,11 @@ export default function BatteryPage() {
 
       // click handler
       const handleClick = (evt: any) => {
+        let found = false;
         map.forEachFeatureAtPixel(evt.pixel, (feature) => {
+          found = true;
           const battery = feature.get("batteryData") as BatteryData;
-          if (!battery) {
-            console.log("returning")
-            return;
-          }
+          if (!battery) return;
 
           // overlay popup
           const popup = document.getElementById("popup")!;
@@ -137,6 +136,10 @@ export default function BatteryPage() {
           `;
           overlayRef.current!.setPosition((feature.getGeometry() as Point).getCoordinates());
         });
+
+        if (!found) {
+          overlayRef.current!.setPosition(undefined); // hides popup
+        }
       };
 
       // hover cursor handler
