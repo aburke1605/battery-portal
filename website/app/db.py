@@ -77,7 +77,11 @@ def update_battery_data(json: list) -> None:
         try:
             process_telemetry_data(content) # first add approximate cell charges
             statement = insert(battery_data_table).values(
-                t = datetime.now(), # TODO: update this to GPS data
+                timestamp = datetime.now(),
+                t = content["t"],
+                d = content["d"],
+                lat = content["lat"],
+                lon = content["lon"],
                 Q = content["Q"],
                 H = content["H"],
                 V = content["V"] / 10,
@@ -134,7 +138,11 @@ def get_battery_data_table(esp_id: str) -> Table:
     # create one if not
     else:
         table = DB.Table(name,
-            DB.Column("t", DB.DateTime, nullable=False, default=datetime.now, primary_key=True),
+            DB.Column("timestamp", DB.DateTime, nullable=False, default=datetime.now, primary_key=True),
+            DB.Column("t", DB.Integer, nullable=False),
+            DB.Column("d", DB.Integer, nullable=False),
+            DB.Column("lat", DB.Float, nullable=False),
+            DB.Column("lon", DB.Float, nullable=False),
             DB.Column("Q", DB.Integer, nullable=False),
             DB.Column("H", DB.Integer, nullable=False),
             DB.Column("V", DB.Float, nullable=False),
