@@ -305,7 +305,17 @@ export default function BatteryPage() {
           style={{ display: viewMode !== 'grid' ? 'block' : 'none' }}
         >
           <div ref={mapRef} className="w-full h-[700px]" />
-          <div id="popup" className="ol-popup"></div>
+          <div
+            id="popup"
+            className="ol-popup"
+            style={{
+              background: "white",
+              opacity: 1,
+              borderRadius: "8px",
+              boxShadow: "0 2px 8px rgba(0,0,0,0.3)",
+              padding: "8px",
+            }}
+          ></div>
         </div>
 
       {/* Show pagination only in grid view */}
