@@ -451,6 +451,12 @@ CONFIG_FULL_ACCESS_CMD_2=0xFFFF
 # end of [CUSTOM] BMS Configuration
 
 #
+# [CUSTOM] Inverter Configuration
+#
+CONFIG_UNIT_I2C_ADDR=0x55
+# end of [CUSTOM] Inverter Configuration
+
+#
 # [CUSTOM] LoRa Configuration
 #
 # CONFIG_IS_RECEIVER is not set

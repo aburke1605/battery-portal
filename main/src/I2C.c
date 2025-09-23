@@ -26,17 +26,17 @@ esp_err_t i2c_master_init(void) {
     esp_err_t err = i2c_new_master_bus(&bus_cfg, &i2c_bus);
     if (err != ESP_OK) return err;
 
-    i2c_device_config_t dev_cfg = {
+    i2c_device_config_t bms_cfg = {
         .device_address = I2C_ADDR,
         .scl_speed_hz = I2C_MASTER_FREQ_HZ
     };
-    err |= i2c_master_bus_add_device(i2c_bus, &dev_cfg, &bms_device);
+    err |= i2c_master_bus_add_device(i2c_bus, &bms_cfg, &bms_device);
 
-    i2c_device_config_t dev_2_cfg = {
-        .device_address = 0x55,
+    i2c_device_config_t inv_cfg = {
+        .device_address = UNIT_I2C_ADDR,
         .scl_speed_hz = I2C_MASTER_FREQ_HZ
     };
-    err |= i2c_master_bus_add_device(i2c_bus, &dev_2_cfg, &inv_device);
+    err |= i2c_master_bus_add_device(i2c_bus, &inv_cfg, &inv_device);
 
     return err;
 }
