@@ -142,8 +142,8 @@ char* get_data() {
         cJSON_AddNumberToObject(data, "lon", gprmc->longitude);
         free(gprmc);
     } else {
-        cJSON_AddNumberToObject(data, "t", 0);
-        cJSON_AddNumberToObject(data, "d", 0);
+        cJSON_AddNumberToObject(data, "t", 132600.00);
+        cJSON_AddNumberToObject(data, "d", 230925);
         cJSON_AddNumberToObject(data, "lat", 53.40680302139558);
         cJSON_AddNumberToObject(data, "lon", -2.968465812849439);
     }
