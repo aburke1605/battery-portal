@@ -58,9 +58,9 @@ def time_to_string(t: float):
 
     hour = full_time[:2]
     minute = full_time[2:4]
-    second = full_time[4:]
+    second = float(full_time[4:])
 
-    return f"{hour}:{minute}:{second}"
+    return f"{hour}:{minute}:{second:.3f}"  # 3 decimal for ISO
 
 def process_telemetry_data(data: dict):
     data["Q1"] = float(estimate_soc_per_cell(data["V1"]/10, data["T1"]/10))
