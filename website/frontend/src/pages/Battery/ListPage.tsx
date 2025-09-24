@@ -28,7 +28,8 @@ export default function BatteryPage() {
   const mapInstance = useRef<Map | null>(null);
   const markerLayer = useRef<VectorLayer<VectorSource> | null>(null);
   const overlayRef = useRef<Overlay | null>(null);
-  
+  const [selectedESPID, setSelectedESPID] = useState<string | null>(null);
+
   const [batteries, setBatteryData] = useState<BatteryData[]>([])
   let startIndex = (currentPage - 1) * itemsPerPage
   let endIndex = Math.min(startIndex + itemsPerPage, batteries.length)
@@ -112,36 +113,12 @@ export default function BatteryPage() {
           found = true;
           const battery = feature.get("batteryData") as BatteryData;
           if (!battery) return;
-
-          // overlay popup
-          const popup = document.getElementById("popup")!;
-          popup.innerHTML = `
-            <div class="p-3 min-w-[200px]">
-              <h3 class="font-semibold text-lg">${battery.esp_id}</h3>
-              <p class="text-sm text-gray-600 mt-1">Status: ${battery.live_websocket?'online':'offline'}</p>
-              <div class="mt-2 text-sm">
-                <p>Charge: ${battery.Q}</p>
-                <p>Health: ${battery.H}</p>
-              </div>
-              <div class="mt-3 pt-3 border-t border-gray-200">
-                <button
-                  id="view-details-btn"
-                  class="inline-block w-full text-center px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded hover:bg-blue-700 transition-colors"
-                >
-                  View Details
-                </button>
-              </div>
-            </div>
-          `;
-          const btn = document.getElementById("view-details-btn");
-          if (btn) {
-            btn.onclick = () => viewBatteryDetails(battery);
-          }
-
+          setSelectedESPID(battery.esp_id);
           overlayRef.current!.setPosition((feature.getGeometry() as Point).getCoordinates());
         });
 
         if (!found) {
+          setSelectedESPID(null);
           overlayRef.current!.setPosition(undefined); // hides popup
         }
       };
@@ -319,7 +296,32 @@ export default function BatteryPage() {
               boxShadow: "0 2px 8px rgba(0,0,0,0.3)",
               padding: "8px",
             }}
-          ></div>
+          >
+            {selectedESPID && (() => {
+                const selectedBattery = batteries.find(b => b.esp_id === selectedESPID);
+                if (!selectedBattery) return null;
+                return (
+                  <div className="p-3 min-w-[200px]">
+                    <h3 className="font-semibold text-lg">{selectedBattery.esp_id}</h3>
+                    <p className="text-sm text-gray-600 mt-1">
+                      Status: {selectedBattery.live_websocket ? "online" : "offline"}
+                    </p>
+                    <div className="mt-2 text-sm">
+                      <p>Charge: {selectedBattery.Q}</p>
+                      <p>Health: {selectedBattery.H}</p>
+                    </div>
+                    <div className="mt-3 pt-3 border-t border-gray-200">
+                      <button
+                        onClick={() => viewBatteryDetails(selectedBattery)}
+                        className="inline-block w-full text-center px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded hover:bg-blue-700 transition-colors"
+                      >
+                        View Details
+                      </button>
+                    </div>
+                  </div>
+                );
+              })()}
+          </div>
         </div>
 
       {/* Show pagination only in grid view */}
