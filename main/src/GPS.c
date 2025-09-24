@@ -139,7 +139,7 @@ GPRMC* get_gps() {
                             data[data_length] = '\0';
 
                             if (strcmp(type, "GPRMC") == 0) {
-                                char test_line[] = "123519.00,A,4807.038,N,01131.000,E,022.4,084.4,040823,,,A*6C";
+                                char test_line[] = "123519.00,A,5324.408,N,00258.108,W,022.4,084.4,240925,,,A*6C";
                                 GPRMC* sentence = parse_gprmc(test_line);
                                 // GPRMC* sentence = parse_gprmc((char*)data);
                                 return sentence;
