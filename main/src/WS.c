@@ -482,12 +482,12 @@ void websocket_task(void *pvParameters) {
 
                 char s[64];
                 if (LOCAL) {
-                    snprintf(s, sizeof(s), "%s:5000", FLASK_IP);
+                    snprintf(s, sizeof(s), "%s:8000", FLASK_IP);
                 } else {
                     snprintf(s, sizeof(s), "%s", AZURE_URL);
                 }
                 char uri[128];
-                snprintf(uri, sizeof(uri), "wss://%s/esp_ws", s);
+                snprintf(uri, sizeof(uri), "wss://%s/api/esp_ws", s);
 
                 const esp_websocket_client_config_t websocket_cfg = {
                     .uri = uri,
