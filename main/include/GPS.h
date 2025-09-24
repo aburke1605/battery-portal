@@ -26,6 +26,8 @@ bool validate_nmea_checksum(const char *sentence);
 
 GPRMC* parse_gprmc(char* gprmc);
 
+double nmea_to_decimal(double coord, char hemi);
+
 GPRMC* get_gps();
 
 #endif

@@ -46,6 +46,16 @@ bool validate_nmea_checksum(const char *sentence) {
     return checksum == received;
 }
 
+double nmea_to_decimal(double coord, char hemi) {
+    int degrees = (int)(coord / 100);
+    double minutes = coord - (degrees * 100);
+    double decimal = degrees + minutes / 60.0;
+    if (hemi == 'S' || hemi == 'W') {
+        decimal = -decimal;
+    }
+    return decimal;
+}
+
 GPRMC* parse_gprmc(char* gprmc) {
     // initialise empty array
     const size_t n_fields = 12;
@@ -80,9 +90,9 @@ GPRMC* parse_gprmc(char* gprmc) {
     GPRMC* sentence = malloc(sizeof(GPRMC));
     sentence->time = atof(data[0]);
     sentence->status = *data[1];
-    sentence->latitude = atof(data[2]);
+    sentence->latitude = nmea_to_decimal(atof(data[2]), *data[3]);
     sentence->lat_dir = *data[3];
-    sentence->longitude = atof(data[4]);
+    sentence->longitude = nmea_to_decimal(atof(data[4]), *data[5]);
     sentence->long_dir = *data[5];
     sentence->speed = atof(data[6]);
     sentence->course = atof(data[7]);
