@@ -8,10 +8,10 @@ services:
     volumes:
       - mysqldata:/var/lib/mysql
     healthcheck:
-      test: ["CMD-SHELL", "mysqladmin ping -h localhost -u $$MYSQL_ADMIN_USERNAME --password=$$MYSQL_ROOT_PASSWORD || exit 1"]
-      interval: 10s
+      test: ["CMD-SHELL", "mysqladmin ping -h 127.0.0.1 -u $$MYSQL_ADMIN_USERNAME --password=$$MYSQL_ROOT_PASSWORD"]
+      interval: 5s
       timeout: 5s
-      retries: 5
+      retries: 20
 
   web:
     build: # build custom image from Dockerfile rather than pull from DockerHub
