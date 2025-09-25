@@ -437,7 +437,7 @@ httpd_handle_t start_webserver(void) {
         httpd_register_uri_handler(server, &refresh_uri);
 
         httpd_uri_t ws_uri = {
-            .uri = "/browser_ws",
+            .uri = "/api/browser_ws",
             .method = HTTP_GET,
             .handler = client_handler,
             .is_websocket = true
@@ -476,24 +476,16 @@ httpd_handle_t start_webserver(void) {
         };
         httpd_register_uri_handler(server, &js_uri);
 
-        js_uri.uri = "/assets/apiConfig.js";
-        js_uri.user_ctx = "/static/assets/apiConfig.js";
-        httpd_register_uri_handler(server, &js_uri);
-
-        js_uri.uri = "/assets/mock-socket.js";
-        js_uri.user_ctx = "/static/assets/mock-socket.js";
+        js_uri.uri = "/assets/AuthRequire.js";
+        js_uri.user_ctx = "/static/assets/AuthRequire.js";
         httpd_register_uri_handler(server, &js_uri);
 
         httpd_uri_t css_uri = {
-            .uri      = "/assets/apiConfig.css",
+            .uri      = "/assets/AuthRequire.css",
             .method   = HTTP_GET,
             .handler  = file_serve_handler,
-            .user_ctx = "/static/assets/apiConfig.css",
+            .user_ctx = "/static/assets/AuthRequire.css",
         };
-        httpd_register_uri_handler(server, &css_uri);
-
-        css_uri.uri = "/assets/mock-socket.css";
-        css_uri.user_ctx = "/static/assets/mock-socket.css";
         httpd_register_uri_handler(server, &css_uri);
 
     } else {
