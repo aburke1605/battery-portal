@@ -5,9 +5,10 @@ import { useAuth } from './AuthContext';
 
 interface AuthRequireProps {
   children: ReactNode;
+  isFromESP32?: boolean;
 }
 
-const AuthRequire: React.FC<AuthRequireProps> = ({ children }) => {
+const AuthRequire: React.FC<AuthRequireProps> = ({ children, isFromESP32 = false }) => {
   const { isAuthenticated, loading } = useAuth();
 
   if (loading) {
@@ -15,7 +16,7 @@ const AuthRequire: React.FC<AuthRequireProps> = ({ children }) => {
   }
 
   if (!isAuthenticated) {
-    return <Navigate to="/login" replace />;
+    return <Navigate to="/login" replace state={{ isFromESP32 }}/>;
   }
 
   return <>{children}</>;

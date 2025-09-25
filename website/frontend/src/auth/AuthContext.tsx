@@ -13,7 +13,7 @@ interface AuthContextType {
   isAuthenticated: boolean;
   loading: boolean;
   logout: () => Promise<void>;
-  login: (email: string, password: string) => Promise<boolean>;
+  login: (email: string, password: string, isFromESP32?: boolean) => Promise<boolean>;
   getAuthToken: () => string | null;
 }
 
@@ -81,7 +81,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children, isFromESP3
     }
   };
 
-  const login = async (email: string, password: string): Promise<boolean> => {
+  const login = async (email: string, password: string, isFromESP32?: boolean): Promise<boolean> => {
     try {
       const res = await fetch(`${apiConfig.USER_API}/login`, {
         method: 'POST',
@@ -96,7 +96,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children, isFromESP3
         const data = await res.json();
         setUser(data);
         setAuthToken(data.auth_token);
-        navigate('/dashboard');
+        isFromESP32 ? navigate('/') : navigate('/dashboard');
         return true;
       } else {
         return false;

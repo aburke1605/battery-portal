@@ -261,5 +261,9 @@ To enable end-to-end testing of the web app locally before deployment, a product
 The Docker configuration can be found in `Dockerfile` and `compose.yml`.
 The web app image uses the Nginx config file in `nginx/battery-portal.conf`, however the Nginx proxy can also be run locally without Docker by executing the `nginx/local_setup.sh` script.
 
+Otherwise, the containerised app is started with:
+```bash
+docker compose up
+```
 
 ---
