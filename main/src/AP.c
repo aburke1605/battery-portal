@@ -437,7 +437,7 @@ httpd_handle_t start_webserver(void) {
         httpd_register_uri_handler(server, &refresh_uri);
 
         httpd_uri_t ws_uri = {
-            .uri = "/browser_ws",
+            .uri = "/api/browser_ws",
             .method = HTTP_GET,
             .handler = client_handler,
             .is_websocket = true
