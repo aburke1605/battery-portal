@@ -23,7 +23,7 @@ createRoot(document.getElementById("root")!).render(
         <ScrollToTop />
         <Routes>
           <Route index path="/" element={
-                <AuthRequire>
+                <AuthRequire isFromESP32={true}>
                   <BatteryPage isFromESP32={true} />
                 </AuthRequire>
                 } />
