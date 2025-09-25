@@ -9,20 +9,12 @@ execute_process(COMMAND rm -rf ${SPIFFS_BUILD_DIR})
 execute_process(COMMAND mkdir -p ${SPIFFS_BUILD_DIR})
 execute_process(
     COMMAND rsync -av
-    --include=esp_login.html
-    --exclude=*
-    ${CMAKE_SOURCE_DIR}/website/templates/ ${SPIFFS_BUILD_DIR}/
-)
-execute_process(
-    COMMAND rsync -av
     --include=esp32.html
     --include=favicon.png
     --include=assets/
     --include=assets/esp.js
-    --include=assets/apiConfig.js
-    --include=assets/mock-socket.js
-    --include=assets/apiConfig.css
-    --include=assets/mock-socket.css
+    --include=assets/AuthRequire.js
+    --include=assets/AuthRequire.css
     --exclude=assets/*
     --exclude=*
     ${CMAKE_SOURCE_DIR}/website/frontend/dist/ ${SPIFFS_BUILD_DIR}/

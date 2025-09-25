@@ -4,6 +4,7 @@ import { Eye, EyeOff } from "lucide-react";
 import Label from "../form/Label";
 import Input from "../form/input/InputField";
 import Button from "../ui/button/Button";
+import { useLocation } from "react-router";
 
 export default function SignInForm() {
   const [showPassword, setShowPassword] = useState(false);
@@ -12,9 +13,12 @@ export default function SignInForm() {
   const [error, setError] = useState("");
   const { login } = useAuth();
 
+  const { state } = useLocation();
+  const isFromESP32 = state?.isFromESP32 ?? false;
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    const success = await login(email, password);
+    const success = await login(email, password, isFromESP32);
     if (!success) {
       setError("Invalid credentials. Please try again.");
     }
