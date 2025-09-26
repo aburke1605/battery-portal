@@ -679,7 +679,7 @@ void transmit(int64_t* delay_transmission_until) {
 
             // now form the LoRa message out of non-empty messages and transmit
             for (int i=0; i<MESH_SIZE; i++) {
-                if (strcmp(all_messages[i].esp_id, "") != 0)
+                if (all_messages[i].esp_id != 0)
                     n_devices++;
             }
 
@@ -697,15 +697,14 @@ void transmit(int64_t* delay_transmission_until) {
             // now add the data of other devices in mesh to payload
             n_devices = 1;
             for (int i=0; i<MESH_SIZE; i++) {
-                if (strcmp(all_messages[i].esp_id, "") != 0) {
+                if (all_messages[i].esp_id != 0) {
                     n_devices++;
 
                     item = cJSON_Parse(all_messages[i].message);
                     cJSON_AddItemToArray(json_array, item);
 
                     // clear the message slot again in case of disconnect
-                    strcpy(all_messages[i].esp_id, "");
-                    all_messages[i].esp_id[0] = '\0';
+                    all_messages[i].esp_id = 0;
                     strcpy(all_messages[i].message, "");
                     all_messages[i].message[0] = '\0';
                 }

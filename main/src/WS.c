@@ -143,15 +143,15 @@ esp_err_t client_handler(httpd_req_t *req) {
             }
             bool found = false;
             for (int i=0; i<MESH_SIZE; i++) {
-                if (strcmp(all_messages[i].esp_id, esp_id_obj->valuestring) == 0) {
+                if (all_messages[i].esp_id == esp_id_obj->valueint) {
                     // update existing message
                     found = true;
                     strcpy(all_messages[i].message, (char *)ws_pkt.payload);
                     i = MESH_SIZE;
-                } else if (strcmp(all_messages[i].esp_id, "") == 0) {
+                } else if (all_messages[i].esp_id == 0) {
                     // create new message
                     found = true;
-                    strcpy(all_messages[i].esp_id, esp_id_obj->valuestring);
+                    all_messages[i].esp_id = esp_id_obj->valueint;
                     strcpy(all_messages[i].message, (char *)ws_pkt.payload);
                     i = MESH_SIZE;
                 }
