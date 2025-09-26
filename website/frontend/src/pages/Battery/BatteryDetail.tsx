@@ -15,8 +15,8 @@ import {
   Sliders,
   Users,
   Bell,
-  Shield,
   Battery,
+  Layers2,
 } from 'lucide-react';
 import { getStatusColor } from '../../utils/helpers';
 import { useNavigate } from 'react-router-dom';
@@ -438,11 +438,11 @@ const BatteryDetail: React.FC<BatteryDetailProps> = ({
             <div className="bg-white border border-gray-200 rounded-lg shadow-sm">
               <div className="px-4 py-5 sm:px-6 border-b border-gray-200">
                 <h3 className="text-lg font-medium text-gray-900 flex items-center">
-                  <Battery size={20} className="mr-2" /> Performance Metrics
+                  <Battery size={20} className="mr-2" /> Digital Twin
                 </h3>
               </div>
               <div className="p-6">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
                   <div>
                     <h4 className="text-sm font-medium text-gray-500 mb-2">Efficiency Rate</h4>
                     <div className="text-2xl font-semibold text-gray-900">94%</div>
@@ -464,17 +464,34 @@ const BatteryDetail: React.FC<BatteryDetailProps> = ({
                     <p className="mt-1 text-sm text-gray-500">Optimal performance</p>
                   </div>
                 </div>
-              </div>
-            </div>
 
-            <div className="bg-white border border-gray-200 rounded-lg shadow-sm">
-              <div className="px-4 py-5 sm:px-6 border-b border-gray-200">
-                <h3 className="text-lg font-medium text-gray-900 flex items-center">
-                  <Shield size={20} className="mr-2" /> Recommendations
-                </h3>
-              </div>
-              <div className="p-6">
                 <div className="space-y-4">
+                  {!isFromESP32 ? (
+                      <div>
+                        <button
+                          onClick={() => getRecommendations()}
+                          className="w-full flex items-center justify-center px-4 py-2 border border-blue-300 shadow-sm text-sm font-medium rounded-md text-blue-700 bg-blue-50 hover:bg-blue-100 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+                        >
+                          <BrainCircuit size={16} className="mr-2" />
+                          Get Recommendations
+                        </button>
+                      </div>
+                    ) : (
+                      <div>
+                        <h4 className="text-sm font-medium text-gray-500 mb-2">Not available offline.</h4>
+                        <h4 className="text-sm font-medium text-gray-500 mb-2">
+                          Check out our{" "}
+                          <a
+                            href='https://batteryportal-e9czhgamgferavf7.ukwest-01.azurewebsites.net/'
+                            className="text-sm font-medium text-blue-500 mb-2"
+                          >
+                            website
+                          </a>
+                          !
+                        </h4>
+                      </div>
+                    )
+                  }
                 </div>
               </div>
             </div>
@@ -488,6 +505,10 @@ const BatteryDetail: React.FC<BatteryDetailProps> = ({
   const viewDigitalTwin = (battery: BatteryData) => {
     navigate(`/visualisation?esp_id=${battery.esp_id}`);
   };
+
+  const getRecommendations = () => {
+    console.log("Write an API for me!");
+  }
 
   return (
     <div className="bg-white rounded-lg shadow-md overflow-hidden border border-gray-200">
