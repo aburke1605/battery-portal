@@ -102,6 +102,9 @@ const extendBatteryInfo = (data: BatteryInfoData[]): BatteryData[] => {
 
         // fetch these from api in fetchBatteryData later:
         t: 0,
+        d: 0,
+        lat: 0,
+        lon: 0,
         Q: 0,
         H: 0,
         V: 0,
