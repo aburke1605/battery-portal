@@ -53,7 +53,7 @@ export function useWebSocket({
 export const createMessage = (
   summary: string,
   data: any,
-  esp_id?: string
+  esp_id?: number
 ) => ({
   type: "request",
   content: {
@@ -63,7 +63,7 @@ export const createMessage = (
 });
 
 
-export async function fetchBatteryData(esp_id: string) {
+export async function fetchBatteryData(esp_id: number) {
   /*
     fetches data from battery_info table in database
   */
@@ -74,7 +74,7 @@ export async function fetchBatteryData(esp_id: string) {
       // add telemetry data (recusively) to battery info
       const detailed = await Promise.all(batteries.map(appendBatteryData));
 
-      if (esp_id === "LIST") {
+      if (esp_id === -999) { // special ID for ListPage
         return detailed;
       } else {
         // extract only one battery data item
@@ -120,7 +120,7 @@ const extendBatteryInfo = (data: BatteryInfoData[]): BatteryData[] => {
         T2: 0,
         T3: 0,
         T4: 0,
-        new_esp_id: "",
+        new_esp_id: 0,
         OTC: 0,
         wifi: false
     }));
@@ -155,7 +155,7 @@ const appendBatteryData = async (battery: any): Promise<any> => {
 };
 
 // recursive helper
-const extractSingleBattery = (info: BatteryData[]|BatteryInfoData[], esp_id: string): any => {
+const extractSingleBattery = (info: BatteryData[]|BatteryInfoData[], esp_id: number): any => {
     /*
         to loop through the json returned at /api/db/info,
         returning the correct object according to esp_id
