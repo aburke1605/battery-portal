@@ -82,7 +82,7 @@ char *send_fake_login_post_request() {
     };
 
     esp_http_client_config_t config = {
-        .url = "http://192.168.4.1/api/users/login",
+        .url = "http://192.168.4.1/api/user/login",
         .event_handler = fake_login_http_event_handler,
         // .method = HTTP_METHOD_POST,
         .user_data = &response,

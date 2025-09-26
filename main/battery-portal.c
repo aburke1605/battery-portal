@@ -122,7 +122,7 @@ void app_main(void) {
             TaskParams mesh_websocket_params = {.stack_size = 3100, .task_name = "mesh_websocket_task"};
             xTaskCreate(&mesh_websocket_task, mesh_websocket_params.task_name, mesh_websocket_params.stack_size, &mesh_websocket_params, 3, &mesh_websocket_task_handle);
         } else {
-            TaskParams merge_root_params = {.stack_size = 2500, .task_name = "merge_root_task"};
+            TaskParams merge_root_params = {.stack_size = 2600, .task_name = "merge_root_task"};
             xTaskCreate(&merge_root_task, merge_root_params.task_name, merge_root_params.stack_size, &merge_root_params, 4, &merge_root_task_handle);
         }
     }

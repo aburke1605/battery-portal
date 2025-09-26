@@ -63,9 +63,8 @@ def forward_to_esp(data: dict) -> None:
     for root_id, info in esp_clients.items():
         if node_id in info["mesh_ids"]:
             try:
-                # append root and node ids for mesh groups
-                data["root_id"] = root_id
-                data["node_id"] = node_id
+                # append node id for mesh groups
+                data["esp_id"] = node_id
                 # send as json array
                 info["ws"].send(json.dumps([data]))
                 return
