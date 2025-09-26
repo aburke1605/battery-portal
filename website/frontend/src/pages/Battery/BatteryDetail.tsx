@@ -414,8 +414,8 @@ const BatteryDetail: React.FC<BatteryDetailProps> = ({
                     </button> */}
                     <button className="w-full flex items-center justify-center px-4 py-2 border border-blue-300 shadow-sm text-sm font-medium rounded-md text-blue-700 bg-blue-50 hover:bg-blue-100 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
                     onClick={() => !isFromESP32 ? viewDigitalTwin(battery) : null}>
-                      <BrainCircuit size={16} className="mr-2" />
-                      Digital Twin {isFromESP32 ? "- UNAVAILABLE" : ""}
+                      <Layers2 size={16} className="mr-2" />
+                      Visualisation {isFromESP32 ? "- UNAVAILABLE" : ""}
                     </button>
                     <button
                       onClick={() => (isFromESP32 || battery.live_websocket) ? sendUnseal() : null}
@@ -486,7 +486,7 @@ const BatteryDetail: React.FC<BatteryDetailProps> = ({
   const navigate = useNavigate();
 
   const viewDigitalTwin = (battery: BatteryData) => {
-    navigate(`/digital-twin?esp_id=${battery.esp_id}`);
+    navigate(`/visualisation?esp_id=${battery.esp_id}`);
   };
 
   return (
