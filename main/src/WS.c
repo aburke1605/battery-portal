@@ -61,7 +61,7 @@ esp_err_t client_handler(httpd_req_t *req) {
         if (check_new_browser_session || check_new_mesh_session) {
             if (!check_new_browser_session && check_new_mesh_session) is_browser_not_mesh = false;
             char auth_token[UTILS_AUTH_TOKEN_LENGTH] = {0};
-            int esp_id = 0;
+            uint8_t esp_id = 0;
             if (is_browser_not_mesh) {
                 sscanf(check_new_browser_session, "/browser_ws?auth_token=%50s", auth_token);
             } else {
@@ -71,9 +71,7 @@ esp_err_t client_handler(httpd_req_t *req) {
                     ESP_LOGE(TAG, "No `esp_id` passed during attempted client WebSocket connection to mesh!");
                     return ESP_FAIL;
                 }
-                char esp_id_string[3] = {0};
-                sscanf(check_esp_id, "esp_id=%3s", esp_id_string);
-                esp_id = atoi(esp_id_string);
+                sscanf(check_esp_id, "esp_id=%hhu", &esp_id);
             }
             auth_token[UTILS_AUTH_TOKEN_LENGTH - 1] = '\0';
             if (auth_token[0] != '\0' && strcmp(auth_token, current_auth_token) == 0) {
@@ -145,15 +143,15 @@ esp_err_t client_handler(httpd_req_t *req) {
             }
             bool found = false;
             for (int i=0; i<MESH_SIZE; i++) {
-                if (strcmp(all_messages[i].esp_id, esp_id_obj->valuestring) == 0) {
+                if (all_messages[i].esp_id == esp_id_obj->valueint) {
                     // update existing message
                     found = true;
                     strcpy(all_messages[i].message, (char *)ws_pkt.payload);
                     i = MESH_SIZE;
-                } else if (strcmp(all_messages[i].esp_id, "") == 0) {
+                } else if (all_messages[i].esp_id == 0) {
                     // create new message
                     found = true;
-                    strcpy(all_messages[i].esp_id, esp_id_obj->valuestring);
+                    all_messages[i].esp_id = esp_id_obj->valueint;
                     strcpy(all_messages[i].message, (char *)ws_pkt.payload);
                     i = MESH_SIZE;
                 }
@@ -174,9 +172,7 @@ esp_err_t client_handler(httpd_req_t *req) {
 esp_err_t perform_request(cJSON *message, cJSON *response) {
     // construct response message
     cJSON_AddStringToObject(response, "type", "response");
-    char* esp_id = esp_id_string();
-    cJSON_AddStringToObject(response, "esp_id", esp_id);
-    free(esp_id);
+    cJSON_AddNumberToObject(response, "esp_id", ESP_ID);
     cJSON *response_content = cJSON_CreateObject();
 
     cJSON *type = cJSON_GetObjectItem(message, "type");
@@ -204,23 +200,28 @@ esp_err_t perform_request(cJSON *message, cJSON *response) {
             gpio_set_level(I2C_LED_GPIO_PIN, 1);
 
             cJSON *esp_id = cJSON_GetObjectItem(data, "new_esp_id");
-            char* name = esp_id_string();
-            if (esp_id && strcmp(esp_id->valuestring, "") != 0 && strcmp(esp_id->valuestring, "bms_00") != 0 && esp_id->valuestring != name) {
+            if (esp_id && esp_id->valueint != 0 && esp_id->valueint != ESP_ID) {
                 ESP_LOGI(TAG, "Changing device name...");
 
                 uint8_t address[2] = {0};
                 convert_uint_to_n_bytes(I2C_DEVICE_NAME_ADDR, address, sizeof(address), true);
-                char* new_id = (char*)esp_id->valuestring;
+
+                // construct DeviceName string from ID
+                char new_id[7];
+                snprintf(new_id, sizeof(new_id), "bms_%02u", esp_id->valueint);
                 size_t new_id_length = strlen(new_id);
-                if (new_id_length > 20) new_id_length = 20;
+
+                // convert to data array
                 uint8_t new_id_data[1+new_id_length];
                 new_id_data[0] = new_id_length;
                 for (size_t i=0; i<new_id_length; i++)
                     new_id_data[1 + i] = new_id[i];
+
+                // write to DataFlash
                 write_data_flash(address, sizeof(address), new_id_data, sizeof(new_id_data));
 
+                // update ESP32 memory
                 change_esp_id(new_id);
-                free(name);
             }
 
             int OTC = cJSON_GetObjectItem(data, "OTC")->valueint;

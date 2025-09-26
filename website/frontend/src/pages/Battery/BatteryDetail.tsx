@@ -134,11 +134,11 @@ const BatteryDetail: React.FC<BatteryDetailProps> = ({
                     <h4 className="text-sm font-medium text-gray-900 mb-4">Charging Parameters</h4>
                     <div className="space-y-4">
                       <div>
-                        <label className="block text-sm font-medium text-gray-700">Device name:</label>
+                        <label className="block text-sm font-medium text-gray-700">Device ID:</label>
                         <input
-                          type="text"
+                          type="number"
                           className="border p-1 w-full"
-                          placeholder={battery.esp_id}
+                          defaultValue={battery.esp_id}
                           onChange={handleSliderChange("new_esp_id")}
                         />
 
@@ -495,7 +495,7 @@ const BatteryDetail: React.FC<BatteryDetailProps> = ({
       <div className="p-6 border-b border-gray-200 bg-gray-50">
         <div className="flex justify-between items-start">
           <div>
-            <h2 className="text-2xl font-bold text-gray-800">{battery.esp_id}</h2>
+            <h2 className="text-2xl font-bold text-gray-800">BMS ID: {battery.esp_id}</h2>
           </div>
           <div className="flex items-center space-x-3">
             <span className={`px-3 py-1 rounded-full text-sm font-medium ${getStatusColor(isFromESP32 ? true : battery.live_websocket)}`}>
