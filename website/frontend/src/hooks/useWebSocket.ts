@@ -74,7 +74,7 @@ export async function fetchBatteryData(esp_id: string) {
       // add telemetry data (recusively) to battery info
       const detailed = await Promise.all(batteries.map(appendBatteryData));
 
-      if (esp_id === "LIST") {
+      if (esp_id === -999) { // special ID for ListPage
         return detailed;
       } else {
         // extract only one battery data item

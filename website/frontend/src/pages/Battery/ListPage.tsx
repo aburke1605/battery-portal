@@ -45,7 +45,7 @@ export default function BatteryPage() {
   // initial fetch
   useEffect(() => {
     const loadBatteries = async () => {
-      const esps = await fetchBatteryData("LIST");
+      const esps = await fetchBatteryData(-999);
       if (esps !== null) setBatteryData(esps);
     }
 
@@ -54,12 +54,12 @@ export default function BatteryPage() {
 
   // get status updates from backend through websocket
   const ws_session_browser_id = useRef(generate_random_string(32));
-  const ws_url = `${apiConfig.WEBSOCKET_BROWSER}?browser_id=${ws_session_browser_id.current}&esp_id=LIST`;
+  const ws_url = `${apiConfig.WEBSOCKET_BROWSER}?browser_id=${ws_session_browser_id.current}&esp_id=-999`;
   // fetch from database on message receipt
   const handleMessage = useCallback(async (data: any) => {
-    if (data.esp_id === "LIST" && data.browser_id === ws_session_browser_id.current) {
+    if (data.esp_id === -999 && data.browser_id === ws_session_browser_id.current) {
       if (data.type === "status_update"){
-        const esps = await fetchBatteryData("LIST");
+        const esps = await fetchBatteryData(-999);
         if (esps !== null) setBatteryData(esps);
       }
     }
