@@ -30,8 +30,8 @@ class BatteryInfo(DB.Model):
     """
     __tablename__ = "battery_info"
 
-    esp_id = DB.Column(DB.String(7), primary_key=True)
-    root_id = DB.Column(DB.String(7), nullable=True)
+    esp_id = DB.Column(DB.Integer, primary_key=True)
+    root_id = DB.Column(DB.Integer, nullable=True)
     last_updated_time = DB.Column(DB.DateTime, default=datetime.now, onupdate=datetime.now, nullable=False)
     live_websocket = DB.Column(DB.Boolean, default=False, nullable=False)
 
@@ -55,7 +55,7 @@ def update_battery_data(json: list) -> None:
             if not battery:
                 # create default one if not
                 battery = BatteryInfo(
-                    esp_id = "",
+                    esp_id = 0,
                     root_id = None,
                     last_updated_time = datetime.now(),
                     live_websocket = False,
@@ -72,7 +72,7 @@ def update_battery_data(json: list) -> None:
             DB.session.rollback()
             logger.error(f"DB error processing WebSocket message from {esp_id}: {e}")
 
-        # then update/create battery_data_<esp_id> table
+        # then update/create battery_data_bms_<esp_id> table
         battery_data_table = get_battery_data_table(esp_id)
         try:
             process_telemetry_data(content) # first add approximate cell charges
@@ -123,10 +123,10 @@ def set_live_websocket(esp_id: str, live: bool) -> None:
 
 def get_battery_data_table(esp_id: str) -> Table:
     """
-        Returns a handle to a specified battery_data_<esp_id> table in the database.
+        Returns a handle to a specified battery_data_bms_<esp_id> table in the database.
         A new table is created if one does not yet exist.
     """
-    name = f"battery_data_{esp_id}"
+    name = f"battery_data_bms_{esp_id}"
 
     # check if the table already exists
     inspector = inspect(DB.engine)
@@ -242,10 +242,10 @@ def info():
 @login_required
 def data():
     """
-        API used by frontend to fetch most recent row in battery_data_<esp_id> table.
+        API used by frontend to fetch most recent row in battery_data_bms_<esp_id> table.
     """
     esp_id = request.args.get("esp_id")
-    table_name = f"battery_data_{esp_id}"
+    table_name = f"battery_data_bms_{esp_id}"
     data_table = DB.Table(table_name, DB.metadata, autoload_with=DB.engine)
 
     # this really is ordered by most recent and not just date or time individually
@@ -274,13 +274,13 @@ def esp_ids():
 # @login_required # log in not required otherwise wouldn't show in homepage
 def chart_data():
     """
-        API used by frontend to fetch 250 entries from battery_data_<esp_id> table for chart display.
+        API used by frontend to fetch 250 entries from battery_data_bms_<esp_id> table for chart display.
     """
     esp_id = request.args.get("esp_id")
     if esp_id == "unavailable!":
         return {}, 404
 
-    table_name = f"battery_data_{esp_id}"
+    table_name = f"battery_data_bms_{esp_id}"
     data_table = DB.Table(table_name, DB.metadata, autoload_with=DB.engine)
     column = request.args.get("column")
 

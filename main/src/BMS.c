@@ -201,9 +201,7 @@ char* get_data() {
     // construct full message
     cJSON *message = cJSON_CreateObject();
 
-    char* esp_id = esp_id_string();
-    cJSON_AddStringToObject(message, "esp_id", esp_id);
-    free(esp_id);
+    cJSON_AddNumberToObject(message, "esp_id", ESP_ID);
 
     cJSON_AddStringToObject(message, "type", "data");
 

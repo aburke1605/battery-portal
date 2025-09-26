@@ -25,7 +25,7 @@ def browser_ws(ws: Sock):
     """
 
     browser_id = request.args.get("browser_id")
-    esp_id = request.args.get("esp_id")
+    esp_id = int(request.args.get("esp_id"))
     with lock:
         browser_clients[browser_id] = {
             "ws": ws,
@@ -63,9 +63,8 @@ def forward_to_esp(data: dict) -> None:
     for root_id, info in esp_clients.items():
         if node_id in info["mesh_ids"]:
             try:
-                # append root and node ids for mesh groups
-                data["root_id"] = root_id
-                data["node_id"] = node_id
+                # append node id for mesh groups
+                data["esp_id"] = node_id
                 # send as json array
                 info["ws"].send(json.dumps([data]))
                 return
@@ -107,7 +106,7 @@ def esp_ws(ws: Sock):
             except Exception as e:
                 logger.error(f"ESP WebSocket error in while loop: {e}")
 
-            update_browsers("LIST") # indicate to browser clients on ListPage that (at least one) esp has connected / sent an update
+            update_browsers(-999) # indicate to browser clients on ListPage that (at least one) esp has connected / sent an update
             ws.send(json.dumps(response))
     except Exception as e:
         logger.error(f"ESP WebSocket error: {e}")
@@ -121,10 +120,10 @@ def esp_ws(ws: Sock):
                     del esp_clients[esp_id]
                     logger.warning(f"ESP WebSocket with esp_id={esp_id} disconnected")
                     break
-            update_browsers("LIST") # indicate to browser clients on ListPage that the esp has disconnected
+            update_browsers(-999) # indicate to browser clients on ListPage that the esp has disconnected
 
 
-def update_browsers(esp_id: str) -> None:
+def update_browsers(esp_id: int) -> None:
     """
     Used to send WebSocket messages to browser clients when any ESP32 WebSocket client updates.
     The message triggers the frontend to fetch data from the database through an api.

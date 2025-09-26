@@ -25,8 +25,7 @@ export default function BatteryPage({ isFromESP32 = false }: BatteriesPageProps)
     }
     const urlParams = new URLSearchParams(queryString);
     
-    let esp_id = urlParams.get('esp_id');
-    if (esp_id == null) esp_id = "empty";
+    const esp_id = Number(urlParams.get('esp_id'));
 
     const ws_session_browser_id = useRef(generate_random_string(32));
     ws_url = isFromESP32 ? ws_url += "?auth_token=" + getAuthToken() : ws_url += "?browser_id=" + ws_session_browser_id.current + "&esp_id=" + esp_id;
@@ -70,8 +69,11 @@ export default function BatteryPage({ isFromESP32 = false }: BatteriesPageProps)
         sendMessage(createMessage("change-settings", updates, esp_id));
         if (updates.new_esp_id && updates.new_esp_id !== esp_id) {
             await sleep(5000);
-            const prefix = window.location.protocol === 'https:' ? 'battery-detail' : 'esp32';
-            window.location.href = `/${prefix}?esp_id=${updates.new_esp_id}#/`;
+            !isFromESP32 ?
+                window.location.replace(`/#/battery-detail?esp_id=${updates.new_esp_id}`)
+            :
+                window.location.href = `/esp32?esp_id=${updates.new_esp_id}#/`
+            ;
         }
     };
 

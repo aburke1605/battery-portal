@@ -198,7 +198,7 @@ typedef struct {
 } client_socket;
 
 typedef struct {
-    char esp_id[10];
+    uint8_t esp_id;
     char message[WS_MESSAGE_MAX_LEN];
 } LoRa_message;
 

@@ -74,10 +74,12 @@ void app_main(void) {
         };
         gpio_config(&io_conf);
 
+        // grab BMS DeviceName from the BMS DataFlash
         uint8_t address[2] = {0};
         convert_uint_to_n_bytes(I2C_DEVICE_NAME_ADDR, address, sizeof(address), true);
         uint8_t data_flash[UTILS_ID_LENGTH + 1] = {0}; // S21 data type
         read_data_flash(address, sizeof(address), data_flash, sizeof(data_flash));
+        // store the ID in ESP32 memory
         if (strcmp((char *)data_flash, "") != 0)
             change_esp_id((char*)&data_flash[1]);
     }
@@ -123,7 +125,7 @@ void app_main(void) {
             TaskParams mesh_websocket_params = {.stack_size = 3100, .task_name = "mesh_websocket_task"};
             xTaskCreate(&mesh_websocket_task, mesh_websocket_params.task_name, mesh_websocket_params.stack_size, &mesh_websocket_params, 3, &mesh_websocket_task_handle);
         } else {
-            TaskParams merge_root_params = {.stack_size = 2500, .task_name = "merge_root_task"};
+            TaskParams merge_root_params = {.stack_size = 2600, .task_name = "merge_root_task"};
             xTaskCreate(&merge_root_task, merge_root_params.task_name, merge_root_params.stack_size, &merge_root_params, 4, &merge_root_task_handle);
         }
     }

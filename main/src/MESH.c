@@ -115,7 +115,7 @@ void mesh_websocket_task(void *pvParameters) {
 
         if (connected_to_root && data_string != NULL && strcmp(mesh_ws_auth_token, "") != 0) {
             char uri[40+UTILS_AUTH_TOKEN_LENGTH+11];
-            snprintf(uri, sizeof(uri), "ws://192.168.4.1:80/mesh_ws?auth_token=%s&esp_id=%03u", mesh_ws_auth_token, ESP_ID);
+            snprintf(uri, sizeof(uri), "ws://192.168.4.1:80/mesh_ws?auth_token=%s&esp_id=%u", mesh_ws_auth_token, ESP_ID);
             const esp_websocket_client_config_t websocket_cfg = {
                 .uri = uri,
                 .reconnect_timeout_ms = 10000,
