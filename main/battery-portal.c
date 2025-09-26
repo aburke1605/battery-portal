@@ -71,10 +71,12 @@ void app_main(void) {
         };
         gpio_config(&io_conf);
 
+        // grab BMS DeviceName from the BMS DataFlash
         uint8_t address[2] = {0};
         convert_uint_to_n_bytes(I2C_DEVICE_NAME_ADDR, address, sizeof(address), true);
         uint8_t data_flash[UTILS_ID_LENGTH + 1] = {0}; // S21 data type
         read_data_flash(address, sizeof(address), data_flash, sizeof(data_flash));
+        // store the ID in ESP32 memory
         if (strcmp((char *)data_flash, "") != 0)
             change_esp_id((char*)&data_flash[1]);
     }

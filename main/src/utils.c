@@ -10,18 +10,6 @@
 #include <esp_http_client.h>
 #include <esp_random.h>
 
-char* esp_id_string() {
-    const uint8_t n_bytes = 8;
-    char* esp_id = malloc(n_bytes); // enough for "bms_255\0"
-    if (esp_id == NULL) {
-        ESP_LOGE("utils", "Couldn't allocate memory for esp_id string!");
-        return NULL;
-    }
-    snprintf(esp_id, n_bytes, "bms_%02u", ESP_ID);
-    esp_id[n_bytes - 1] = '\0';
-    return esp_id;
-}
-
 void change_esp_id(char* name) {
     if (strncmp(name, "bms_", 4) != 0) {
         ESP_LOGE("utils", "New name not formatted correctly: \"%s\", should begin with \"bms_\"", name);
@@ -45,9 +33,7 @@ void send_fake_request() {
         cJSON *content = cJSON_CreateObject();
         cJSON_AddStringToObject(content, "summary", "connect-wifi");
         cJSON *data = cJSON_CreateObject();
-        char* esp_id = esp_id_string();
-        cJSON_AddStringToObject(data, "esp_id", esp_id);
-        free(esp_id);
+        cJSON_AddNumberToObject(data, "esp_id", ESP_ID);
         if (UTILS_EDUROAM) {
             cJSON_AddStringToObject(data, "username", UTILS_EDUROAM_USERNAME);
             cJSON_AddStringToObject(data, "password", UTILS_EDUROAM_PASSWORD);

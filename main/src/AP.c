@@ -129,9 +129,7 @@ void wifi_init(void) {
     } else {
         uint8_t data_SBS[2] = {0};
         read_SBS_data(I2C_RELATIVE_STATE_OF_CHARGE_ADDR, data_SBS, sizeof(data_SBS));
-        char* esp_id = esp_id_string();
-        snprintf(buffer, sizeof(buffer), "%s%s: %d%%", !AP_exists?"ROOT ":"", esp_id, data_SBS[1] << 8 | data_SBS[0]);
-        free(esp_id);
+        snprintf(buffer, sizeof(buffer), "%sbms_%02u: %d%%", !AP_exists?"ROOT ":"", ESP_ID, data_SBS[1] << 8 | data_SBS[0]);
     }
 
     strncpy((char *)wifi_ap_config.ap.ssid, buffer, sizeof(wifi_ap_config.ap.ssid) - 1);
@@ -166,9 +164,7 @@ void wifi_init(void) {
 esp_err_t redirect_handler(httpd_req_t *req) {
     // just need to redirect to the uri where ws data is sent
     char redirect_url[35];
-    char* esp_id = esp_id_string();
-    snprintf(redirect_url, sizeof(redirect_url), "/esp32?esp_id=%s", esp_id);
-    free(esp_id);
+    snprintf(redirect_url, sizeof(redirect_url), "/esp32?esp_id=%u", ESP_ID);
 
     httpd_resp_set_status(req, "302 Found");
     httpd_resp_set_hdr(req, "Location", redirect_url);

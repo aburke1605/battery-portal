@@ -103,13 +103,7 @@ size_t json_to_binary(uint8_t* binary_message, cJSON* json_array) {
                 return 0;
             }
 
-            if (strcmp(esp_id->valuestring, "unknown") == 0)
-                packet->esp_id = 0;
-            else {
-                char esp_id_number[3];
-                strcpy(esp_id_number, &esp_id->valuestring[4]);
-                packet->esp_id = atoi(esp_id_number);
-            }
+            packet->esp_id = esp_id->valueint;
 
             cJSON *content = cJSON_GetObjectItem(item, "content");
             if (!content) {
@@ -249,7 +243,7 @@ size_t json_to_binary(uint8_t* binary_message, cJSON* json_array) {
                 ESP_LOGE(TAG, "No \"esp_id\" key in cJSON array item");
                 return 0;
             }
-            packet->esp_id = atoi(&esp_id->valuestring[4]);
+            packet->esp_id = esp_id->valueint;
 
 
             cJSON* summary = cJSON_GetObjectItem(content, "summary");
@@ -394,8 +388,6 @@ void binary_to_json(uint8_t* binary_message, cJSON* json_array) {
             return;
         }
 
-        char id_str[8]; // enough to hold "bms_255\0"
-
         if (type == DATA) {
             radio_data_packet* packet = (radio_data_packet*)&binary_message[packet_start];
             cJSON_AddStringToObject(message, "type", "data");
@@ -428,8 +420,7 @@ void binary_to_json(uint8_t* binary_message, cJSON* json_array) {
             cJSON_AddNumberToObject(content, "OTC", packet->OTC);
             cJSON_AddBoolToObject(content, "wifi", packet->wifi);
 
-            snprintf(id_str, sizeof(id_str), "bms_%u", packet->esp_id);
-            cJSON_AddStringToObject(message, "esp_id", id_str);
+            cJSON_AddNumberToObject(message, "esp_id", packet->esp_id);
 
             cJSON_AddItemToObject(message, "content", content);
 
@@ -442,8 +433,7 @@ void binary_to_json(uint8_t* binary_message, cJSON* json_array) {
             radio_query_packet* packet = (radio_query_packet*)&binary_message[packet_start];
             cJSON_AddStringToObject(message, "type", "query");
 
-            snprintf(id_str, sizeof(id_str), "bms_%u", packet->esp_id);
-            cJSON_AddStringToObject(message, "esp_id", id_str);
+            cJSON_AddNumberToObject(message, "esp_id", packet->esp_id);
 
             if (packet->query == 1) cJSON_AddStringToObject(message, "content", "are you still there?");
 
@@ -456,8 +446,7 @@ void binary_to_json(uint8_t* binary_message, cJSON* json_array) {
             radio_request_packet* packet = (radio_request_packet*)&binary_message[packet_start];
             cJSON_AddStringToObject(message, "type", "request");
 
-            snprintf(id_str, sizeof(id_str), "bms_%02u", packet->esp_id);
-            cJSON_AddStringToObject(message, "esp_id", id_str);
+            cJSON_AddNumberToObject(message, "esp_id", packet->esp_id);
 
             cJSON* content = cJSON_CreateObject();
             if (content == NULL) {
@@ -478,9 +467,7 @@ void binary_to_json(uint8_t* binary_message, cJSON* json_array) {
             if (packet->request == CHANGE_SETTINGS) {
                 cJSON_AddStringToObject(content, "summary", "change-settings");
 
-                char new_id_str[8]; // enough to hold "bms_255\0"
-                snprintf(new_id_str, sizeof(new_id_str), "bms_%02u", packet->new_esp_id);
-                cJSON_AddStringToObject(data, "new_esp_id", new_id_str);
+                cJSON_AddNumberToObject(data, "new_esp_id", packet->new_esp_id);
 
                 cJSON_AddNumberToObject(data, "OTC", packet->OTC);
 
@@ -577,13 +564,13 @@ void receive(size_t* full_message_length, bool* chunked) {
                             // pop the "esp_id" key
                             cJSON* esp_id = cJSON_DetachItemFromObject(message, "esp_id");
                             if (esp_id) {
-                                uint8_t id_int = atoi(&esp_id->valuestring[4]);
+                                uint8_t id_int = esp_id->valueint;
                                 if (id_int == ESP_ID) {
                                     if (VERBOSE) ESP_LOGI(TAG, "This request is for me, the mesh ROOT");
                                     cJSON *response = cJSON_CreateObject();
                                     perform_request(message, response);
                                 } else {
-                                    if (VERBOSE) ESP_LOGI(TAG, "This request is for mesh client %s:", esp_id->valuestring);
+                                    if (VERBOSE) ESP_LOGI(TAG, "This request is for mesh client bms_%u:", id_int);
                                     char* remainder_string = cJSON_PrintUnformatted(message);
                                     if (remainder_string != NULL) {
                                         if (VERBOSE) ESP_LOGI(TAG, "%s", remainder_string);
