@@ -389,3 +389,16 @@ def example():
         return {}, 200
     except:
         return {}, 404
+
+
+@db.route("/recommendation", methods=["GET"])
+@login_required
+def recommendation():
+    """
+        API used by frontend to fetch generated BMS optimisation recommendations based on recent telemetry.
+    """
+    try:
+        esp_id = request.args.get("esp_id")
+        return {"success": f"{esp_id}"}, 200
+    except:
+        return {"error": "none"}, 404

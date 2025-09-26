@@ -20,6 +20,8 @@ import {
 } from 'lucide-react';
 import { getStatusColor } from '../../utils/helpers';
 import { useNavigate } from 'react-router-dom';
+import axios from 'axios';
+import apiConfig from '../../apiConfig';
 
 interface BatteryDetailProps {
   battery: BatteryData;
@@ -506,8 +508,10 @@ const BatteryDetail: React.FC<BatteryDetailProps> = ({
     navigate(`/visualisation?esp_id=${battery.esp_id}`);
   };
 
-  const getRecommendations = () => {
-    console.log("Write an API for me!");
+  async function getRecommendations() {
+    const response = await axios.get(`${apiConfig.DB_RECOMMENDATION_API}?esp_id=${battery.esp_id}`);
+    console.log(response);
+    return null;
   }
 
   return (
