@@ -160,7 +160,7 @@ export const Batteries = {
 
 export const initialBatteries: BatteryData[] = [
   {
-    esp_id: 'B-001',
+    esp_id: 1,
     root_id: null,
     last_updated_time: '2025-04-02T10:00:00Z',
     live_websocket: true,
@@ -184,12 +184,12 @@ export const initialBatteries: BatteryData[] = [
     T2: 20,
     T3: 30,
     T4: 40,
-    new_esp_id: '',
+    new_esp_id: 0,
     OTC: 550,
     wifi: true,
   },
   {
-    esp_id: 'B-002',
+    esp_id: 2,
     root_id: null,
     last_updated_time: '2025-04-02T10:00:00Z',
     live_websocket: true,
@@ -213,12 +213,12 @@ export const initialBatteries: BatteryData[] = [
     T2: 20,
     T3: 30,
     T4: 40,
-    new_esp_id: '',
+    new_esp_id: 0,
     OTC: 550,
     wifi: true,
   },
   {
-    esp_id: 'B-003',
+    esp_id: 3,
     root_id: null,
     last_updated_time: '2025-04-02T10:00:00Z',
     live_websocket: true,
@@ -242,7 +242,7 @@ export const initialBatteries: BatteryData[] = [
     T2: 20,
     T3: 30,
     T4: 40,
-    new_esp_id: '',
+    new_esp_id: 0,
     OTC: 550,
     wifi: true,
   }

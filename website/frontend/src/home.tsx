@@ -62,7 +62,7 @@ export default function HomePage() {
             </div>
           </div>
           <div className="mx-auto max-w-4xl text-center">
-            <p className="text-lg text-gray-600">{id}</p>
+            <p className="text-lg text-gray-600">BMS ID: {id}</p>
           </div>
         </div>
       </div>

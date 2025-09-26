@@ -30,7 +30,7 @@ export type { CellData };
 
 type BatteryPackProps = {
   cells: CellData[];
-  esp_id: string;
+  esp_id: number;
   connected: boolean;
 }
 
@@ -208,8 +208,7 @@ export default function DigitalTwin({ isFromESP32 = false }: BatteriesPageProps)
         queryString = hash.split('?')[1];
     }
     const urlParams = new URLSearchParams(queryString);
-    let esp_id = urlParams.get('esp_id');
-    if (esp_id == null) esp_id = "empty";
+    const esp_id = Number(urlParams.get('esp_id'));
 
     const ws_session_browser_id = useRef(generate_random_string(32));
     ws_url = isFromESP32 ? ws_url += "?auth_token=" + getAuthToken() : ws_url += "?browser_id=" + ws_session_browser_id.current + "&esp_id=" + esp_id;
@@ -277,7 +276,7 @@ export default function DigitalTwin({ isFromESP32 = false }: BatteriesPageProps)
 
   return (
     <div style={{ height: "80vh" }} className="flex flex-col items-center">
-      <BatteryPack cells={cells} esp_id={battery?battery.esp_id:"simulation"} connected={battery?true:false}/>
+      <BatteryPack cells={cells} esp_id={battery?battery.esp_id:0} connected={battery?true:false}/>
       <button
         className="w-full max-w-xs flex items-center justify-center px-4 py-2 border border-blue-300 shadow-sm text-sm font-medium rounded-md text-blue-700 bg-blue-50 hover:bg-blue-100 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 mt-4"
         onClick={() => battery && viewDetails(battery)}
