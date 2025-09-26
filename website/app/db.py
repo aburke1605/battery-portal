@@ -8,7 +8,7 @@ import csv
 from flask import Blueprint, request, jsonify
 from flask_sqlalchemy import SQLAlchemy
 from flask_security import roles_required, login_required
-from sqlalchemy import inspect, insert, select, desc, text, Table
+from sqlalchemy import inspect, insert, select, desc, func, text, Table
 
 from utils import process_telemetry_data
 
@@ -280,7 +280,23 @@ def chart_data():
     data_table = DB.Table(table_name, DB.metadata, autoload_with=DB.engine)
     column = request.args.get("column")
 
-    sub_query = (select(data_table.c.t, data_table.c[column]).order_by(desc(data_table.c.t)).limit(250).subquery()) # get the 250 most recent (time-wise) entries
+    sub_sub_query = (
+        select(
+            data_table.c.t, data_table.c[column], # query timestamp and column of interest
+            func.row_number().over(
+                order_by=desc(data_table.c.t) # ordered by most recent (time-wise)
+            ).label("rn")
+        )
+        .subquery()
+    )
+    sub_query = (
+        select(
+            sub_sub_query.c.t, sub_sub_query.c[column]
+        )
+        .where(sub_sub_query.c.rn % 75 == 0) # every 75th row so query is not too large
+        .limit(250) # max 250 data points
+        .subquery()
+    )
     statement = select(sub_query)
 
     with DB.engine.connect() as conn:
@@ -296,9 +312,8 @@ def chart_data():
             # take only data from most recent date
             if row[0].date() != rows[-1][0].date():
                 continue
-
             if previous is not None:
-                if previous - row[0] > timedelta(minutes = 5):
+                if previous - row[0] > timedelta(days = 1):
                     break
             previous = row[0]
 
