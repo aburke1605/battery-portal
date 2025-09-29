@@ -17,6 +17,8 @@ import {
   Bell,
   Battery,
   Layers2,
+  ArrowBigRightDash,
+  X,
 } from 'lucide-react';
 import { getStatusColor } from '../../utils/helpers';
 import { useNavigate } from 'react-router-dom';
@@ -478,9 +480,22 @@ const BatteryDetail: React.FC<BatteryDetailProps> = ({
                           Get Recommendations
                         </button>
                         {recommendationCards?.map((recommendation) => (
-                          <p>
+                          <div>
                             { recommendation.message }
-                          </p>
+                            <button
+                              onClick={() => null}
+                              className="w-auto flex items-center justify-center px-4 py-2 border border-green-300 shadow-sm text-sm font-medium rounded-md text-green-700 bg-green-50 hover:bg-green-100 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500"
+                            >
+                              Implement
+                              <ArrowBigRightDash size={16} className="ml-2" />
+                            </button>
+                            <button
+                              onClick={() => null}
+                              className="w-auto flex items-center justify-center px-4 py-2 border border-red-300 shadow-sm text-sm font-medium rounded-md text-red-700 bg-red-50 hover:bg-red-100 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500"
+                            >
+                              <X size={16} />
+                            </button>
+                          </div>
                         ))}
                       </div>
                     ) : (
