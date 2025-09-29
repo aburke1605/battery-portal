@@ -477,6 +477,11 @@ const BatteryDetail: React.FC<BatteryDetailProps> = ({
                           <BrainCircuit size={16} className="mr-2" />
                           Get Recommendations
                         </button>
+                        {recommendationCards?.map((recommendation) => (
+                          <p>
+                            { recommendation.message }
+                          </p>
+                        ))}
                       </div>
                     ) : (
                       <div>
