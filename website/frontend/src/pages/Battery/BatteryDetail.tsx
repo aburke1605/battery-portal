@@ -484,7 +484,7 @@ const BatteryDetail: React.FC<BatteryDetailProps> = ({
                             <span>{ recommendation.message }</span>
                             <div className="flex gap-2">
                               <button
-                                onClick={() => null}
+                                onClick={() => implementRecommendation(recommendation)}
                                 className="w-auto flex items-center justify-center px-4 py-2 border border-green-300 shadow-sm text-sm font-medium rounded-md text-green-700 bg-green-50 hover:bg-green-100 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500"
                               >
                                 Implement
@@ -543,7 +543,12 @@ const BatteryDetail: React.FC<BatteryDetailProps> = ({
     const recommendations: Recommendation[] = response.data.recommendations || [];
     setRecommendationCards(recommendations);
   }
-
+  function implementRecommendation(recommendation: Recommendation) {
+    // actually do it...
+    // confirm completed
+    // then remove from list
+    removeRecommendation(recommendation);
+  }
   function removeRecommendation(recommendation: Recommendation) {
     setRecommendationCards(prev => {
       const updated = prev ? prev.filter((r) => r !== recommendation) : prev;
