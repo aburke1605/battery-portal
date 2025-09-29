@@ -413,12 +413,19 @@ def recommendation():
 
         rows = DB.session.execute(query).fetchall()
 
+        recommendations = []
+
         arr = np.fromiter((r[0] for r in rows), dtype=int)
         soc_max = max(arr)
         soc_min = min(arr)
         if soc_max - soc_min < 50:
-            return {"message": "charge-range"}, 200
+            recommendations.append({
+                "type": "charge-range",
+                "message": f"Update the SoC usage range to [{soc_min}, {soc_max} %]",
+                "min": soc_min,
+                "max": soc_max,
+            })
 
-        return {"success": f"{esp_id}"}, 200
+        return {"recommendations": recommendations}, 200
     except Exception as e:
         return {"Error": e}, 404
