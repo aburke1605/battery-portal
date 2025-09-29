@@ -557,9 +557,13 @@ const BatteryDetail: React.FC<BatteryDetailProps> = ({
 
         // confirm completed
         await sleep(5000);
-
-        // then remove from list
-        removeRecommendation(recommendation);
+        updateRequest();
+        if (battery.Q_low === recommendation.min && battery.Q_high === recommendation.max) {
+          // then remove from list
+          removeRecommendation(recommendation);
+        } else {
+          console.log("Did not complete!!");
+        }
     }
   }
   function removeRecommendation(recommendation: Recommendation) {
