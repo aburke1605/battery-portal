@@ -480,7 +480,7 @@ const BatteryDetail: React.FC<BatteryDetailProps> = ({
                           Get Recommendations
                         </button>
                         {recommendationCards?.map((recommendation) => (
-                          <div className="flex items-center justify-between">
+                          <div className="flex items-center justify-between mb-2">
                             <span>{ recommendation.message }</span>
                             <div className="flex gap-2">
                               <button

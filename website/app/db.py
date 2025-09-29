@@ -421,7 +421,7 @@ def recommendation():
         if soc_max - soc_min < 50:
             recommendations.append({
                 "type": "charge-range",
-                "message": f"Update the SoC usage range to [{soc_min}, {soc_max} %]",
+                "message": f"Update the SoC usage range to [{soc_min},{soc_max}]%",
                 "min": soc_min,
                 "max": soc_max,
             })
