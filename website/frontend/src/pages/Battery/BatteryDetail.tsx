@@ -524,8 +524,9 @@ const BatteryDetail: React.FC<BatteryDetailProps> = ({
     }
   };
 
-  const navigate = useNavigate();
+  const sleep = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
 
+  const navigate = useNavigate();
   const viewDigitalTwin = (battery: BatteryData) => {
     navigate(`/visualisation?esp_id=${battery.esp_id}`);
   };
@@ -543,11 +544,21 @@ const BatteryDetail: React.FC<BatteryDetailProps> = ({
     const recommendations: Recommendation[] = response.data.recommendations || [];
     setRecommendationCards(recommendations);
   }
-  function implementRecommendation(recommendation: Recommendation) {
-    // actually do it...
-    // confirm completed
-    // then remove from list
-    removeRecommendation(recommendation);
+  async function implementRecommendation(recommendation: Recommendation) {
+    switch (recommendation.type) {
+      case "charge-range":
+        const values: Partial<BatteryData> = {
+          Q_low: recommendation.min,
+          Q_high: recommendation.max,
+        }
+        sendBatteryUpdate(values);
+
+        // confirm completed
+        await sleep(5000);
+
+        // then remove from list
+        removeRecommendation(recommendation);
+    }
   }
   function removeRecommendation(recommendation: Recommendation) {
     setRecommendationCards(prev => {

@@ -29,6 +29,8 @@ export interface BatteryData extends BatteryInfoData {
   T4: number;
   new_esp_id: number;
   OTC: number;
+  Q_low: number;
+  Q_high: number;
   wifi: boolean;
 }
 
@@ -58,6 +60,8 @@ export const parseDataOnESP32 = (raw: any): BatteryData => ({
   T4: raw?.T4 / 10 || 0,
   new_esp_id: 0,
   OTC: raw?.OTC || 0,
+  Q_low: raw?.Q_low || 0,
+  Q_high: raw?.Q_high || 0,
   wifi: !!raw?.wifi,
 });
 
