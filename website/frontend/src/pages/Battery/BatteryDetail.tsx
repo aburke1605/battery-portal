@@ -491,7 +491,7 @@ const BatteryDetail: React.FC<BatteryDetailProps> = ({
                                 <ArrowBigRightDash size={16} className="ml-2" />
                               </button>
                               <button
-                                onClick={() => null}
+                                onClick={() => removeRecommendation(recommendation)}
                                 className="w-auto flex items-center justify-center px-4 py-2 border border-red-300 shadow-sm text-sm font-medium rounded-md text-red-700 bg-red-50 hover:bg-red-100 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500"
                               >
                                 <X size={16} />
@@ -536,12 +536,20 @@ const BatteryDetail: React.FC<BatteryDetailProps> = ({
     min?: number;
     max?: number;
   }
-  const [recommendationCards, setRecommendationCards] = useState<Recommendation[]>([]);
+  const [recommendationCards, setRecommendationCards] = useState<Recommendation[] | null>(null);
   async function getRecommendations() {
     const response = await axios.get(`${apiConfig.DB_RECOMMENDATION_API}?esp_id=${battery.esp_id}`);
 
     const recommendations: Recommendation[] = response.data.recommendations || [];
     setRecommendationCards(recommendations);
+  }
+
+  function removeRecommendation(recommendation: Recommendation) {
+    setRecommendationCards(prev => {
+      const updated = prev ? prev.filter((r) => r !== recommendation) : prev;
+      return (updated && updated.length > 0) ? updated
+                                             : null; // allows button to be clicked again
+    });
   }
 
   return (
