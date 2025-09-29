@@ -474,27 +474,29 @@ const BatteryDetail: React.FC<BatteryDetailProps> = ({
                       <div>
                         <button
                           onClick={() => getRecommendations()}
-                          className="w-full flex items-center justify-center px-4 py-2 border border-blue-300 shadow-sm text-sm font-medium rounded-md text-blue-700 bg-blue-50 hover:bg-blue-100 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+                          className="w-full flex items-center justify-center px-4 py-2 border border-blue-300 shadow-sm text-sm font-medium rounded-md text-blue-700 bg-blue-50 hover:bg-blue-100 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 mb-4"
                         >
                           <BrainCircuit size={16} className="mr-2" />
                           Get Recommendations
                         </button>
                         {recommendationCards?.map((recommendation) => (
-                          <div>
-                            { recommendation.message }
-                            <button
-                              onClick={() => null}
-                              className="w-auto flex items-center justify-center px-4 py-2 border border-green-300 shadow-sm text-sm font-medium rounded-md text-green-700 bg-green-50 hover:bg-green-100 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500"
-                            >
-                              Implement
-                              <ArrowBigRightDash size={16} className="ml-2" />
-                            </button>
-                            <button
-                              onClick={() => null}
-                              className="w-auto flex items-center justify-center px-4 py-2 border border-red-300 shadow-sm text-sm font-medium rounded-md text-red-700 bg-red-50 hover:bg-red-100 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500"
-                            >
-                              <X size={16} />
-                            </button>
+                          <div className="flex items-center justify-between">
+                            <span>{ recommendation.message }</span>
+                            <div className="flex gap-2">
+                              <button
+                                onClick={() => null}
+                                className="w-auto flex items-center justify-center px-4 py-2 border border-green-300 shadow-sm text-sm font-medium rounded-md text-green-700 bg-green-50 hover:bg-green-100 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500"
+                              >
+                                Implement
+                                <ArrowBigRightDash size={16} className="ml-2" />
+                              </button>
+                              <button
+                                onClick={() => null}
+                                className="w-auto flex items-center justify-center px-4 py-2 border border-red-300 shadow-sm text-sm font-medium rounded-md text-red-700 bg-red-50 hover:bg-red-100 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500"
+                              >
+                                <X size={16} />
+                              </button>
+                            </div>
                           </div>
                         ))}
                       </div>
