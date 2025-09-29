@@ -78,7 +78,7 @@ def update_battery_data(json: list) -> None:
         battery_data_table = get_battery_data_table(esp_id)
         try:
             process_telemetry_data(content) # first add approximate cell charges
-            statement = insert(battery_data_table).values(
+            query = insert(battery_data_table).values(
                 t = datetime.now(), # TODO: update this to GPS data
                 Q = content["Q"],
                 H = content["H"],
@@ -101,7 +101,7 @@ def update_battery_data(json: list) -> None:
                 OTC = content["OTC"],
                 wifi = content["wifi"],
             )
-            DB.session.execute(statement)
+            DB.session.execute(query)
             DB.session.commit()
         except Exception as e:
             DB.session.rollback()
@@ -246,10 +246,10 @@ def data():
     table_name = f"battery_data_bms_{esp_id}"
     data_table = DB.Table(table_name, DB.metadata, autoload_with=DB.engine)
 
-    statement = select(data_table).order_by(desc(data_table.c.t)).limit(1)
+    query = select(data_table).order_by(desc(data_table.c.t)).limit(1)
 
     with DB.engine.connect() as conn:
-        row = conn.execute(statement).first()
+        row = conn.execute(query).first()
 
     if row:
         return dict(row._mapping)
@@ -298,18 +298,14 @@ def chart_data():
         .limit(250) # max 250 data points
         .subquery()
     )
-    statement = select(sub_query)
+    query = select(sub_query)
 
-    with DB.engine.connect() as conn:
-        rows = conn.execute(statement)
+    rows = DB.session.execute(query).fetchall()
 
     if rows:
-        rows = rows.fetchall()
-
         previous = None
         data = []
         for row in rows:
-
             # take only data from most recent date
             if row[0].date() != rows[-1][0].date():
                 continue
