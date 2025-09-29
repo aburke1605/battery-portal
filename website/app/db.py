@@ -248,8 +248,7 @@ def data():
 
     query = select(data_table).order_by(desc(data_table.c.t)).limit(1)
 
-    with DB.engine.connect() as conn:
-        row = conn.execute(query).first()
+    row = DB.session.execute(query).first()
 
     if row:
         return dict(row._mapping)
