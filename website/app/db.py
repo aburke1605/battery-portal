@@ -416,8 +416,8 @@ def recommendation():
         recommendations = []
 
         arr = np.fromiter((r[0] for r in rows), dtype=int)
-        soc_max = max(arr)
-        soc_min = min(arr)
+        soc_max = int(max(arr))
+        soc_min = int(min(arr))
         if soc_max - soc_min < 50:
             recommendations.append({
                 "type": "charge-range",
