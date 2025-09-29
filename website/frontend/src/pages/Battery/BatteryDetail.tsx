@@ -508,10 +508,18 @@ const BatteryDetail: React.FC<BatteryDetailProps> = ({
     navigate(`/visualisation?esp_id=${battery.esp_id}`);
   };
 
+  interface Recommendation {
+    type: string;
+    message: string;
+    min?: number;
+    max?: number;
+  }
+  const [recommendationCards, setRecommendationCards] = useState<Recommendation[]>([]);
   async function getRecommendations() {
     const response = await axios.get(`${apiConfig.DB_RECOMMENDATION_API}?esp_id=${battery.esp_id}`);
-    console.log(response);
-    return null;
+
+    const recommendations: Recommendation[] = response.data.recommendations || [];
+    setRecommendationCards(recommendations);
   }
 
   return (
