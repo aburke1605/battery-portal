@@ -4,11 +4,12 @@ logger = logging.getLogger(__name__)
 from datetime import datetime, timedelta
 from collections import defaultdict
 import csv
+import numpy as np
 
 from flask import Blueprint, request, jsonify
 from flask_sqlalchemy import SQLAlchemy
 from flask_security import roles_required, login_required
-from sqlalchemy import inspect, insert, select, desc, func, text, Table
+from sqlalchemy import inspect, insert, select, desc, asc, func, text, Table
 
 from utils import process_telemetry_data
 
@@ -399,6 +400,30 @@ def recommendation():
     """
     try:
         esp_id = request.args.get("esp_id")
+        table_name = f"battery_data_bms_{esp_id}"
+        data_table = DB.Table(table_name, DB.metadata, autoload_with=DB.engine)
+
+        # select N most recent
+        N = 3
+        sub_query = (
+            select(data_table.c.Q, data_table.c.t)
+            .order_by(desc(data_table.c.t))
+            .limit(N)
+            .subquery()
+        )
+        # reorder again
+        query = \
+            select(sub_query.c.Q) \
+            .order_by(asc(sub_query.c.t))
+
+        rows = DB.session.execute(query).fetchall()
+
+        arr = np.fromiter((r[0] for r in rows), dtype=int)
+        soc_max = max(arr)
+        soc_min = min(arr)
+        if soc_max - soc_min < 50:
+            return {"message": "charge-range"}, 200
+
         return {"success": f"{esp_id}"}, 200
-    except:
-        return {"error": "none"}, 404
+    except Exception as e:
+        return {"Error": e}, 404
