@@ -34,6 +34,7 @@ interface BatteryDetailProps {
   sendUnseal: () => void;
   sendReset: () => void;
   isFromESP32: boolean;
+  updateRequest: () => void;
 }
 
 const BatteryDetail: React.FC<BatteryDetailProps> = ({ 
@@ -44,6 +45,7 @@ const BatteryDetail: React.FC<BatteryDetailProps> = ({
   sendUnseal,
   sendReset,
   isFromESP32,
+  updateRequest,
 }) => {
   
   const [activeTab, setActiveTab] = useState('overview');

@@ -86,6 +86,11 @@ export default function BatteryPage({ isFromESP32 = false }: BatteriesPageProps)
     const sendReset = () =>
         sendMessage(createMessage("reset-bms", {}, esp_id));
 
+    const updateRequest = async () => {
+        const esp = await fetchBatteryData(esp_id);
+        if (esp !== null) setBatteryData(esp);
+    }
+
     return (
         <div>
             { 
@@ -110,6 +115,7 @@ export default function BatteryPage({ isFromESP32 = false }: BatteriesPageProps)
                         sendUnseal={sendUnseal}
                         sendReset={sendReset}
                         isFromESP32={isFromESP32}
+                        updateRequest={updateRequest}
                     />
                 ) : (
                     <p> Connecting to battery... </p> // fallback UI
