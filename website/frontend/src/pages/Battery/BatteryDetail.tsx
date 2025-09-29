@@ -489,8 +489,17 @@ const BatteryDetail: React.FC<BatteryDetailProps> = ({
                                 onClick={() => implementRecommendation(recommendation)}
                                 className="w-auto flex items-center justify-center px-4 py-2 border border-green-300 shadow-sm text-sm font-medium rounded-md text-green-700 bg-green-50 hover:bg-green-100 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500"
                               >
-                                Implement
-                                <ArrowBigRightDash size={16} className="ml-2" />
+                                {recommendation.implementing === false ? (
+                                  <>
+                                    Implement
+                                    <ArrowBigRightDash size={16} className="ml-2" />
+                                  </>
+                                  ) : (
+                                  <>
+                                    Implementing...
+                                  </>
+                                  )
+                                }
                               </button>
                               <button
                                 onClick={() => removeRecommendation(recommendation)}
@@ -538,15 +547,25 @@ const BatteryDetail: React.FC<BatteryDetailProps> = ({
     message: string;
     min?: number;
     max?: number;
+    implementing: boolean;
   }
   const [recommendationCards, setRecommendationCards] = useState<Recommendation[] | null>(null);
   async function getRecommendations() {
     const response = await axios.get(`${apiConfig.DB_RECOMMENDATION_API}?esp_id=${battery.esp_id}`);
 
-    const recommendations: Recommendation[] = response.data.recommendations || [];
+    const recommendations: Recommendation[] = (response.data.recommendations || []).map((rec: any) => ({
+      ...rec,
+      implementing: false,
+    }));
     setRecommendationCards(recommendations);
   }
   async function implementRecommendation(recommendation: Recommendation) {
+    if (!recommendationCards) return;
+
+    setRecommendationCards(prev =>
+      prev?.map(rec => (rec === recommendation ? { ...rec, implementing: true } : rec)) ?? null
+    );
+
     switch (recommendation.type) {
       case "charge-range":
         const values: Partial<BatteryData> = {
@@ -555,7 +574,7 @@ const BatteryDetail: React.FC<BatteryDetailProps> = ({
         }
         sendBatteryUpdate(values);
 
-        // confirm completed
+        // confirm completed after a brief delay
         await sleep(5000);
         updateRequest();
         if (battery.Q_low === recommendation.min && battery.Q_high === recommendation.max) {
@@ -563,6 +582,9 @@ const BatteryDetail: React.FC<BatteryDetailProps> = ({
           removeRecommendation(recommendation);
         } else {
           console.log("Did not complete!!");
+          setRecommendationCards(prev =>
+            prev?.map(rec => (rec.type === recommendation.type ? { ...rec, implementing: false } : rec)) ?? null
+          );
         }
     }
   }
