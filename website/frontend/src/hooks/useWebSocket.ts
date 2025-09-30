@@ -124,6 +124,7 @@ const extendBatteryInfo = (data: BatteryInfoData[]): BatteryData[] => {
         OTC: 0,
         Q_low: 0,
         Q_high: 0,
+        I_dschg_max: 0,
         wifi: false
     }));
 };

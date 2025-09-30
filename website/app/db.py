@@ -401,29 +401,39 @@ def recommendation():
         # select N most recent
         N = 3
         sub_query = (
-            select(data_table.c.Q, data_table.c.t)
+            select(data_table.c.Q, data_table.c.cT, data_table.c.t)
             .order_by(desc(data_table.c.t))
             .limit(N)
             .subquery()
         )
         # reorder again
         query = \
-            select(sub_query.c.Q) \
+            select(sub_query.c.Q, data_table.c.cT) \
             .order_by(asc(sub_query.c.t))
 
         rows = DB.session.execute(query).fetchall()
 
         recommendations = []
 
-        arr = np.fromiter((r[0] for r in rows), dtype=int)
-        soc_max = int(max(arr))
-        soc_min = int(min(arr))
-        if soc_max - soc_min < 50:
+        Q = np.fromiter((r[0] for r in rows), dtype=int)
+        Q_max = int(max(Q))
+        Q_min = int(min(Q))
+        if Q_max - Q_min < 50:
             recommendations.append({
                 "type": "charge-range",
-                "message": f"Update the SoC usage range to [{soc_min},{soc_max}]%",
-                "min": soc_min,
-                "max": soc_max,
+                "message": f"Restrict SoC range to [{Q_min},{Q_max}]%",
+                "min": Q_min,
+                "max": Q_max,
+            })
+
+        cT = np.fromiter((r[1] for r in rows), dtype=int)
+        cT_mean = np.mean(cT)
+        if cT_mean > 40.0:
+            I_max = 2.0
+            recommendations.append({
+                "type": "current-dischg-limit",
+                "message": f"Overheating detected: {cT_mean}°C. Throttle discharge current to {I_max}A",
+                "max": I_max,
             })
 
         return {"recommendations": recommendations}, 200

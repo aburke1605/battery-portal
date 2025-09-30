@@ -188,6 +188,7 @@ export const initialBatteries: BatteryData[] = [
     OTC: 550,
     Q_low: 0,
     Q_high: 100,
+    I_dschg_max: 10,
     wifi: true,
   },
   {
@@ -219,6 +220,7 @@ export const initialBatteries: BatteryData[] = [
     OTC: 550,
     Q_low: 0,
     Q_high: 100,
+    I_dschg_max: 10,
     wifi: true,
   },
   {
@@ -250,6 +252,7 @@ export const initialBatteries: BatteryData[] = [
     OTC: 550,
     Q_low: 0,
     Q_high: 100,
+    I_dschg_max: 10,
     wifi: true,
   }
 ];

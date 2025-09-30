@@ -594,7 +594,7 @@ const BatteryDetail: React.FC<BatteryDetailProps> = ({
     );
 
     switch (recommendation.type) {
-      case "charge-range":
+      case "charge-range": {
         const values: Partial<BatteryData> = {
           Q_low: recommendation.min,
           Q_high: recommendation.max,
@@ -613,6 +613,37 @@ const BatteryDetail: React.FC<BatteryDetailProps> = ({
             prev?.map(rec => (rec.type === recommendation.type ? { ...rec, implementing: false, success: false } : rec)) ?? null
           );
         }
+
+        break;
+      }
+
+
+      case "current-dischg-limit": {
+        const values: Partial<BatteryData> = {
+          I_dschg_max: recommendation.max,
+        }
+        sendBatteryUpdate(values);
+
+        // confirm completed after a brief delay
+        await sleep(5000);
+        updateRequest();
+        if (battery.I_dschg_max === recommendation.max) {
+          setRecommendationCards(prev =>
+            prev?.map(rec => (rec.type === recommendation.type ? { ...rec, implemented: true } : rec)) ?? null
+          );
+        } else {
+          setRecommendationCards(prev =>
+            prev?.map(rec => (rec.type === recommendation.type ? { ...rec, implementing: false, success: false } : rec)) ?? null
+          );
+        }
+
+
+        break;
+      }
+
+      default: {
+        console.log("default");
+      }
     }
   }
   function removeRecommendation(recommendation: Recommendation) {
