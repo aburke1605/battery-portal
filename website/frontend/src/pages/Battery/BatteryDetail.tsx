@@ -19,6 +19,7 @@ import {
   Layers2,
   ArrowBigRightDash,
   X,
+  SquareCheckBig,
 } from 'lucide-react';
 import { getStatusColor } from '../../utils/helpers';
 import { useNavigate } from 'react-router-dom';
@@ -485,28 +486,49 @@ const BatteryDetail: React.FC<BatteryDetailProps> = ({
                           <div className="flex items-center justify-between mb-2">
                             <span>{ recommendation.message }</span>
                             <div className="flex gap-2">
-                              <button
-                                onClick={() => implementRecommendation(recommendation)}
-                                className="w-auto flex items-center justify-center px-4 py-2 border border-green-300 shadow-sm text-sm font-medium rounded-md text-green-700 bg-green-50 hover:bg-green-100 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500"
-                              >
-                                {recommendation.implementing === false ? (
-                                  <>
-                                    Implement
-                                    <ArrowBigRightDash size={16} className="ml-2" />
-                                  </>
-                                  ) : (
-                                  <>
-                                    Implementing...
-                                  </>
-                                  )
-                                }
-                              </button>
-                              <button
-                                onClick={() => removeRecommendation(recommendation)}
-                                className="w-auto flex items-center justify-center px-4 py-2 border border-red-300 shadow-sm text-sm font-medium rounded-md text-red-700 bg-red-50 hover:bg-red-100 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500"
-                              >
-                                <X size={16} />
-                              </button>
+                              {recommendation.implemented === false ? (
+                                <>
+                                  <button
+                                    onClick={() => implementRecommendation(recommendation)}
+                                    className="w-auto flex items-center justify-center px-4 py-2 border border-green-300 shadow-sm text-sm font-medium rounded-md text-green-700 bg-green-50 hover:bg-green-100 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500"
+                                  >
+                                    {recommendation.implementing === false ? (
+                                      <>
+                                        {recommendation.success === true ? (
+                                          <>
+                                            Implement
+                                          </>
+                                        ) : (
+                                          <>
+                                            Failed! Try again...
+                                          </>
+                                        )}
+                                        <ArrowBigRightDash size={16} className="ml-2" />
+                                      </>
+                                    ) : (
+                                      <>
+                                        Implementing...
+                                      </>
+                                    )}
+                                  </button>
+                                  <button
+                                    onClick={() => removeRecommendation(recommendation)}
+                                    className="w-auto flex items-center justify-center px-4 py-2 border border-red-300 shadow-sm text-sm font-medium rounded-md text-red-700 bg-red-50 hover:bg-red-100 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500"
+                                  >
+                                    <X size={16} />
+                                  </button>
+                                </>
+                              ) : (
+                                <>
+                                  <button
+                                    onClick={() => removeRecommendation(recommendation)}
+                                    className="w-auto flex items-center justify-center px-4 py-2 border border-green-300 shadow-sm text-sm font-medium rounded-md text-green-700 bg-green-50 hover:bg-green-100 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500"
+                                  >
+                                    Implemented
+                                    <SquareCheckBig size={16} className="ml-2" />
+                                  </button>
+                                </>
+                              )}
                             </div>
                           </div>
                         ))}
@@ -548,6 +570,8 @@ const BatteryDetail: React.FC<BatteryDetailProps> = ({
     min?: number;
     max?: number;
     implementing: boolean;
+    implemented: boolean;
+    success: boolean;
   }
   const [recommendationCards, setRecommendationCards] = useState<Recommendation[] | null>(null);
   async function getRecommendations() {
@@ -556,14 +580,17 @@ const BatteryDetail: React.FC<BatteryDetailProps> = ({
     const recommendations: Recommendation[] = (response.data.recommendations || []).map((rec: any) => ({
       ...rec,
       implementing: false,
+      implemented: false,
+      success: true, // assumption
     }));
     setRecommendationCards(recommendations);
   }
   async function implementRecommendation(recommendation: Recommendation) {
+    if (recommendation.implementing) return; // already clicked the button recently
     if (!recommendationCards) return;
 
     setRecommendationCards(prev =>
-      prev?.map(rec => (rec === recommendation ? { ...rec, implementing: true } : rec)) ?? null
+      prev?.map(rec => (rec === recommendation ? { ...rec, implementing: true, success: true } : rec)) ?? null
     );
 
     switch (recommendation.type) {
@@ -578,12 +605,12 @@ const BatteryDetail: React.FC<BatteryDetailProps> = ({
         await sleep(5000);
         updateRequest();
         if (battery.Q_low === recommendation.min && battery.Q_high === recommendation.max) {
-          // then remove from list
-          removeRecommendation(recommendation);
-        } else {
-          console.log("Did not complete!!");
           setRecommendationCards(prev =>
-            prev?.map(rec => (rec.type === recommendation.type ? { ...rec, implementing: false } : rec)) ?? null
+            prev?.map(rec => (rec.type === recommendation.type ? { ...rec, implemented: true } : rec)) ?? null
+          );
+        } else {
+          setRecommendationCards(prev =>
+            prev?.map(rec => (rec.type === recommendation.type ? { ...rec, implementing: false, success: false } : rec)) ?? null
           );
         }
     }
