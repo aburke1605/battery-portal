@@ -551,7 +551,7 @@ void websocket_task(void *pvParameters) {
         wifi_ap_record_t ap_info;
         if (esp_wifi_sta_get_ap_info(&ap_info) != ESP_OK) {
             connected_to_WiFi = false;
-            if (DEV) send_fake_request();
+            if (WIFI_AUTO_CONNECT) send_fake_request();
         }
 
         vTaskDelay(pdMS_TO_TICKS(1000));
