@@ -1,4 +1,4 @@
-import React, {useEffect, useState} from 'react';
+import React, {useEffect, useRef, useState} from 'react';
 import { BatteryData } from '../../types';
 import { 
   BatteryLow, 
@@ -46,7 +46,6 @@ const BatteryDetail: React.FC<BatteryDetailProps> = ({
   sendUnseal,
   sendReset,
   isFromESP32,
-  updateRequest,
 }) => {
   
   const [activeTab, setActiveTab] = useState('overview');
@@ -557,7 +556,6 @@ const BatteryDetail: React.FC<BatteryDetailProps> = ({
     }
   };
 
-  const sleep = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
 
   const navigate = useNavigate();
   const viewDigitalTwin = (battery: BatteryData) => {
@@ -616,6 +614,28 @@ const BatteryDetail: React.FC<BatteryDetailProps> = ({
   }
 
 
+  function useBatteryWaiter(battery: BatteryData) {
+    // hook for waiting until next battery object update
+    const resolvers = useRef<(() => void)[]>([]);
+
+    useEffect(() => {
+      // resolve all waiting promises when battery object changes
+      resolvers.current.forEach(r => r());
+      resolvers.current = [];
+    }, [battery]);
+
+    function awaitNextUpdate(): Promise<void> {
+      return new Promise(resolve => {
+        resolvers.current.push(resolve);
+      });
+    }
+
+    return awaitNextUpdate;
+  }
+
+  const sleep = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
+  const awaitNextBatteryUpdate = useBatteryWaiter(battery);
+
   async function processRecommendation(
     recommendation: Recommendation,
     values: Partial<BatteryData>,
@@ -629,9 +649,9 @@ const BatteryDetail: React.FC<BatteryDetailProps> = ({
     // send the recommended changes back through WebSocket to device
     sendBatteryUpdate(values);
 
-    // confirm completion by querying database after a brief delay
-    await sleep(5000);
-    updateRequest();
+    // confirm completion by waitinf for new battery data...
+    await sleep(5000); // ...after a brief delay so immediate updates don't interfere
+    await awaitNextBatteryUpdate();
 
     // update boolean flags on result
     if (check()) {
