@@ -432,7 +432,7 @@ def recommendation():
             I_max = 2.0
             recommendations.append({
                 "type": "current-dischg-limit",
-                "message": f"Overheating detected: {cT_mean}°C. Throttle discharge current to {I_max}A",
+                "message": f"Overheating detected: {cT_mean:.1f}°C. Throttle discharge current to {I_max}A",
                 "max": I_max,
             })
 
