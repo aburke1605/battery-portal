@@ -112,6 +112,15 @@
 #define MESH_SIZE 5
 
 
+// WiFi:
+#define     WIFI_SSID         CONFIG_WIFI_SSID
+#define     WIFI_PASSWORD     CONFIG_WIFI_PASSWORD
+#ifdef                        CONFIG_WIFI_AUTO_CONNECT
+    #define WIFI_AUTO_CONNECT true
+#else
+    #define WIFI_AUTO_CONNECT false
+#endif
+
 // LoRa:
 #ifdef CONFIG_IS_RECEIVER
     #define LORA_IS_RECEIVER true
