@@ -9,6 +9,9 @@ export interface BatteryInfoData {
 
 export interface BatteryData extends BatteryInfoData {
   t: number;
+  d: number;
+  lat: number;
+  lon: number;
   Q: number
   H: number;
   V: number;
@@ -40,7 +43,10 @@ export const parseDataOnESP32 = (raw: any): BatteryData => ({
   root_id: raw?.root_id || 0,
   last_updated_time: raw?.last_updated_time || 0,
   live_websocket: raw?.live_websocket || 0,
-  t: Date.now(),
+  t: raw?.t || 0,
+  d: raw?.d || 0,
+  lat: raw?.lat || 0,
+  lon: raw?.lon || 0,
   Q: raw?.Q || 0,
   H: raw?.H || 0,
   V: raw?.V / 10 || 0,
