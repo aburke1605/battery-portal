@@ -28,7 +28,7 @@ export default function BatteryPage() {
   const mapInstance = useRef<Map | null>(null);
   const markerLayer = useRef<VectorLayer<VectorSource> | null>(null);
   const overlayRef = useRef<Overlay | null>(null);
-  const [selectedESPID, setSelectedESPID] = useState<string | null>(null);
+  const [selectedESPID, setSelectedESPID] = useState<number | null>(null);
 
   const [batteries, setBatteryData] = useState<BatteryData[]>([])
   let startIndex = (currentPage - 1) * itemsPerPage
