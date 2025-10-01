@@ -36,7 +36,7 @@ interface BatteryDetailProps {
   // onToggleCharging: (batteryId: string) => void;
   voltageThreshold: number;
   sendBatteryUpdate: (updatedValues: Partial<BatteryData>) => void;
-  sendWiFiConnect: (username: string, password: string, eduroam: boolean) => void;
+  sendWiFiConnect: (username: string, password: string, auto_connect: boolean) => void;
   sendUnseal: () => void;
   sendReset: () => void;
   isFromESP32: boolean;
@@ -60,8 +60,7 @@ const BatteryDetail: React.FC<BatteryDetailProps> = ({
 
   const [ssid, setSSID] = useState("");
   const [password, setPassword] = useState("");
-  const [eduroam_username, setEduroamUsername] = useState("");
-  const [eduroam_password, setEduroamPassword] = useState("");
+  const [autoConnect, setAutoConnect] = useState(true);
 
   // range
   const OTC_threshold_min = 450;
@@ -113,17 +112,17 @@ const BatteryDetail: React.FC<BatteryDetailProps> = ({
     (e: React.ChangeEvent<HTMLInputElement>) => {
       setter(e.target.value);
       setHasWiFiChanges(true);
-  };
+    };
+  const handleCheckboxChange = (setter: React.Dispatch<React.SetStateAction<boolean>>) =>
+    (e: React.ChangeEvent<HTMLInputElement>) => {
+      setter(e.target.checked);
+      setHasWiFiChanges(true);
+    };
   // send websocket-connect message
   const handleConnect = () => {
-    if (ssid == "" && password == "")
-      sendWiFiConnect(eduroam_username, eduroam_password, true);
-    else if (eduroam_username == "" && eduroam_password == "")
-      sendWiFiConnect(ssid, password, false);
+    sendWiFiConnect(ssid, password, autoConnect);
     setSSID("");
     setPassword("");
-    setEduroamUsername("");
-    setEduroamPassword("");
     setHasWiFiChanges(false);
   }
 
@@ -483,49 +482,32 @@ const BatteryDetail: React.FC<BatteryDetailProps> = ({
                           onChange={handleTextChange(setPassword)}
                         />
                       </div>
-                    </div>
-                  </div>
 
-                  <div>
-                    <h4 className="text-sm font-medium text-gray-900 mb-4">Eduroam Information</h4>
-                    <div className="space-y-4">
                       <div>
-                        <label className="block text-sm font-medium text-gray-700">Username:</label>
-                        <input
-                          type="text"
-                          className="border p-1 w-full"
-                          value={eduroam_username}
-                          name="eduroam_username"
-                          id="eduroam_username"
-                          required
-                          onChange={handleTextChange(setEduroamUsername)}
-                        />
-
-                        <label className="block text-sm font-medium text-gray-700">Password:</label>
-                        <input
-                          type="password"
-                          className="border p-1 w-full"
-                          value={eduroam_password}
-                          name="eduroam_password"
-                          id="eduroam_password"
-                          required
-                          onChange={handleTextChange(setEduroamPassword)}
-                        />
-
-                        {hasWiFiChanges && (
-                          <div className="flex gap-2 mt-2">
-                            {(isFromESP32 || battery.live_websocket) ? (
-                              <button onClick={handleConnect} className="p-2 bg-blue-500 text-white rounded">
-                                Connect
-                              </button>
-                            ) : (
-                              <button className="p-2 bg-gray-500 text-white rounded">
-                                OFFLINE
-                              </button>
-                            )}
-                          </div>
-                        )}
+                        <label className="flex items-center space-x-2 text-sm font-medium text-gray-700 mt-2">
+                          <input
+                            type="checkbox"
+                            checked={autoConnect}
+                            onChange={handleCheckboxChange(setAutoConnect)}
+                            className="h-4 w-4 border-gray-300 rounded"
+                          />
+                          <span>Auto-connect</span>
+                        </label>
                       </div>
+
+                      {hasWiFiChanges && (
+                        <div className="flex gap-2 mt-2">
+                          {(isFromESP32 || battery.live_websocket) ? (
+                            <button onClick={handleConnect} className="p-2 bg-blue-500 text-white rounded">
+                              Connect
+                            </button>
+                          ) : (
+                            <button className="p-2 bg-gray-500 text-white rounded">
+                              OFFLINE
+                            </button>
+                          )}
+                        </div>
+                      )}
                     </div>
                   </div>
                 </div>
@@ -865,14 +847,16 @@ const BatteryDetail: React.FC<BatteryDetailProps> = ({
             </div>
           </div>
 
-          <div className="bg-purple-50 p-4 rounded-lg">
-            <h3 className="text-sm font-medium text-purple-700 flex items-center mb-2">
-              <Wifi size={16} className="mr-1" /> Wi-Fi
-            </h3>
-            <div className="flex items-end space-x-2">
-              <span className="text-3xl font-bold text-purple-700">{battery.wifi? "Connected":"!! no connection"}</span>
+          { isFromESP32 ? (
+            <div className="bg-purple-50 p-4 rounded-lg">
+              <h3 className="text-sm font-medium text-purple-700 flex items-center mb-2">
+                <Wifi size={16} className="mr-1" /> Wi-Fi
+              </h3>
+              <div className="flex items-end space-x-2">
+                <span className="text-3xl font-bold text-purple-700">{battery.wifi? "Connected":"Not connected"}</span>
+              </div>
             </div>
-          </div>
+          ) : null }
         </div>
 
         {/* Tabs */}
