@@ -13,6 +13,7 @@
 #include <esp_websocket_client.h>
 #include <esp_eap_client.h>
 #include <driver/gpio.h>
+#include <nvs_flash.h>
 
 static bool reconnect = false;
 static char ESP_IP[16] = "xxx.xxx.xxx.xxx\0";
@@ -273,6 +274,18 @@ esp_err_t perform_request(cJSON *message, cJSON *response) {
                     esp_eap_client_set_password((uint8_t *)password, strlen(password));
                     ESP_LOGI(TAG, "Connecting to AP... SSID: eduroam");
                 } else {
+                    // overwrite stored values in NVS
+                    nvs_handle_t nvs;
+                    esp_err_t err = nvs_open("WIFI", NVS_READWRITE, &nvs);
+                    if (err != ESP_OK) {
+                        ESP_LOGW(TAG, "Could not open NVS namespace for writing");
+                    } else {
+                        nvs_set_str(nvs, "WIFI_SSID", username);
+                        nvs_set_str(nvs, "WIFI_PASSWORD", password);
+                        nvs_commit(nvs);
+                        nvs_close(nvs);
+                    }
+
                     strncpy((char *)wifi_sta_config->sta.ssid, username, sizeof(wifi_sta_config->sta.ssid) - 1);
                     if (strlen(password) == 0) {
                         wifi_sta_config->ap.authmode = WIFI_AUTH_OPEN;
