@@ -16,9 +16,9 @@ void uart_init() {
         .flow_ctrl = UART_HW_FLOWCTRL_DISABLE
     };
 
-    ESP_ERROR_CHECK(uart_driver_install(GPS_UART_NUM, GPS_BUFF_SIZE, 0, 0, NULL, 0));
     ESP_ERROR_CHECK(uart_param_config(GPS_UART_NUM, &uart_config));
     ESP_ERROR_CHECK(uart_set_pin(GPS_UART_NUM, GPS_GPIO_NUM_32, GPS_GPIO_NUM_33, UART_PIN_NO_CHANGE, UART_PIN_NO_CHANGE)); // TX, RX
+    ESP_ERROR_CHECK(uart_driver_install(GPS_UART_NUM, GPS_BUFF_SIZE, 0, 0, NULL, 0));
 
     gps_reset();
 }
@@ -130,21 +130,15 @@ GPRMC* get_gps() {
                         strncpy(type, &line[1], sizeof(type) - 1);
                         type[sizeof(type) - 1] = '\0';
 
-                        if (strcmp(type, "GPRMC") == 0 || strcmp(type, "GPGSV") == 0) {
-
+                        if (strcmp(type, "GPRMC") == 0) {
                             int data_length = length - (sizeof(type) + 1); // +1 to account for comma
                             char data[data_length + 1];
                             // skip past the first comma
                             strncpy(data, &line[sizeof(type)+1], data_length);
                             data[data_length] = '\0';
 
-                            if (strcmp(type, "GPRMC") == 0) {
-                                char test_line[] = "123519.00,A,5324.408,N,00258.108,W,022.4,084.4,240925,,,A*6C";
-                                GPRMC* sentence = parse_gprmc(test_line);
-                                // GPRMC* sentence = parse_gprmc((char*)data);
-                                return sentence;
-                            }
-                            // else printf("%s: %s\n", type, data);
+                            GPRMC* sentence = parse_gprmc((char*)data);
+                            return sentence;
                         }
                         i = j;
                         j = len; // skip to end of loop
