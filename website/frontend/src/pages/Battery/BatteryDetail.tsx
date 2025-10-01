@@ -564,6 +564,7 @@ const BatteryDetail: React.FC<BatteryDetailProps> = ({
     navigate(`/visualisation?esp_id=${battery.esp_id}`);
   };
 
+
   interface Recommendation {
     type: string;
     message: string;
@@ -585,67 +586,66 @@ const BatteryDetail: React.FC<BatteryDetailProps> = ({
     }));
     setRecommendationCards(recommendations);
   }
+
+
   async function implementRecommendation(recommendation: Recommendation) {
     if (recommendation.implementing) return; // already clicked the button recently
     if (!recommendationCards) return;
 
+    switch (recommendation.type) {
+      case "charge-range":
+        await processRecommendation(
+          recommendation,
+          { Q_low: recommendation.min, Q_high: recommendation.max },
+          () => battery.Q_low === recommendation.min && battery.Q_high === recommendation.max
+        );
+        break;
+
+      case "current-dischg-limit": {
+        await processRecommendation(
+          recommendation,
+          { I_dschg_max: recommendation.max },
+          () => battery.I_dschg_max === recommendation.max
+        );
+        break;
+      }
+
+      default:
+        console.log("default");
+    }
+  }
+
+
+  async function processRecommendation(
+    recommendation: Recommendation,
+    values: Partial<BatteryData>,
+    check: () => boolean,
+  ) {
+    // initialise boolean flags
     setRecommendationCards(prev =>
       prev?.map(rec => (rec === recommendation ? { ...rec, implementing: true, success: true } : rec)) ?? null
     );
 
-    switch (recommendation.type) {
-      case "charge-range": {
-        const values: Partial<BatteryData> = {
-          Q_low: recommendation.min,
-          Q_high: recommendation.max,
-        }
-        sendBatteryUpdate(values);
+    // send the recommended changes back through WebSocket to device
+    sendBatteryUpdate(values);
 
-        // confirm completed after a brief delay
-        await sleep(5000);
-        updateRequest();
-        if (battery.Q_low === recommendation.min && battery.Q_high === recommendation.max) {
-          setRecommendationCards(prev =>
-            prev?.map(rec => (rec.type === recommendation.type ? { ...rec, implemented: true } : rec)) ?? null
-          );
-        } else {
-          setRecommendationCards(prev =>
-            prev?.map(rec => (rec.type === recommendation.type ? { ...rec, implementing: false, success: false } : rec)) ?? null
-          );
-        }
+    // confirm completion by querying database after a brief delay
+    await sleep(5000);
+    updateRequest();
 
-        break;
-      }
-
-
-      case "current-dischg-limit": {
-        const values: Partial<BatteryData> = {
-          I_dschg_max: recommendation.max,
-        }
-        sendBatteryUpdate(values);
-
-        // confirm completed after a brief delay
-        await sleep(5000);
-        updateRequest();
-        if (battery.I_dschg_max === recommendation.max) {
-          setRecommendationCards(prev =>
-            prev?.map(rec => (rec.type === recommendation.type ? { ...rec, implemented: true } : rec)) ?? null
-          );
-        } else {
-          setRecommendationCards(prev =>
-            prev?.map(rec => (rec.type === recommendation.type ? { ...rec, implementing: false, success: false } : rec)) ?? null
-          );
-        }
-
-
-        break;
-      }
-
-      default: {
-        console.log("default");
-      }
+    // update boolean flags on result
+    if (check()) {
+      setRecommendationCards(prev =>
+        prev?.map(rec => (rec.type === recommendation.type ? { ...rec, implemented: true } : rec)) ?? null
+      );
+    } else {
+      setRecommendationCards(prev =>
+        prev?.map(rec => (rec.type === recommendation.type ? { ...rec, implementing: false, success: false } : rec)) ?? null
+      );
     }
   }
+
+
   function removeRecommendation(recommendation: Recommendation) {
     setRecommendationCards(prev => {
       const updated = prev ? prev.filter((r) => r !== recommendation) : prev;
