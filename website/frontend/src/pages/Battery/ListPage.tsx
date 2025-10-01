@@ -6,36 +6,43 @@ import { useNavigate } from 'react-router-dom';
 import apiConfig from '../../apiConfig';
 import { generate_random_string } from '../../utils/helpers';
 import { fetchBatteryData, useWebSocket } from '../../hooks/useWebSocket';
-
-// Add this interface for map markers
-interface MapMarker {
-  id: string
-  position: {
-    lat: number
-    lng: number
-  }
-  title: string
-  status: 'online' | 'offline'
-}
-
-// Update the map markers to be more spread across the UK
-const mapMarkers: MapMarker[] = []
+import "ol/ol.css";
+import Map from "ol/Map";
+import View from "ol/View";
+import TileLayer from "ol/layer/Tile";
+import VectorLayer from "ol/layer/Vector";
+import VectorSource from "ol/source/Vector";
+import OSM from "ol/source/OSM";
+import Feature from "ol/Feature";
+import Point from "ol/geom/Point";
+import { Icon, Style } from "ol/style";
+import { fromLonLat } from 'ol/proj';
+import Overlay from 'ol/Overlay';
 
 export default function BatteryPage() {
   const itemsPerPage = 4
   const [currentPage, setCurrentPage] = useState(1)
   const [viewMode, setViewMode] = useState<'grid' | 'map'>('grid')
+
   const mapRef = useRef<HTMLDivElement>(null)
-  const [map, setMap] = useState<google.maps.Map | null>(null)
-  const [markers, setMarkers] = useState<google.maps.Marker[]>([])
-  
+  const mapInstance = useRef<Map | null>(null);
+  const markerLayer = useRef<VectorLayer<VectorSource> | null>(null);
+  const overlayRef = useRef<Overlay | null>(null);
+  const [selectedESPID, setSelectedESPID] = useState<number | null>(null);
+
   const [batteries, setBatteryData] = useState<BatteryData[]>([])
-  const totalItems = batteries.length
-  const startIndex = (currentPage - 1) * itemsPerPage
-  const endIndex = Math.min(startIndex + itemsPerPage, totalItems)
-  const currentBatteries = batteries.slice(startIndex, endIndex)
+  let startIndex = (currentPage - 1) * itemsPerPage
+  let endIndex = Math.min(startIndex + itemsPerPage, batteries.length)
+  let totalPages = Math.ceil(batteries.length / itemsPerPage)
+
+  const [currentBatteries, setCurrentBatteries] = useState<BatteryData[]>([]);
+  useEffect(() => {
+    startIndex = (currentPage - 1) * itemsPerPage;
+    endIndex = Math.min(startIndex + itemsPerPage, batteries.length);
+    totalPages = Math.ceil(batteries.length / itemsPerPage)
+    setCurrentBatteries(batteries.slice(startIndex, endIndex));
+  }, [batteries, currentPage, itemsPerPage]); // update as batteries (and other variables) do
   
-  const totalPages = Math.ceil(totalItems / itemsPerPage)
   
 
   const [statusFilter, setStatusFilter] = useState('all');
@@ -70,104 +77,97 @@ export default function BatteryPage() {
   });
 
 
-  // Initialize Google Maps
+  // initialise map layers (once!)
   useEffect(() => {
-    if (viewMode === 'map' && mapRef.current && !map) {
-      const script = document.createElement('script')
-      script.src = `https://maps.googleapis.com/maps/api/js?key=AIzaSyDnwT87aH7CyWG6c7gSNxgA7lfclPOVpvQ`
-      script.async = true
-      script.defer = true
-      script.onload = initializeMap
-      document.head.appendChild(script)
+    if (mapRef.current && !mapInstance.current) {
+      // create empty marker layer
+      markerLayer.current = new VectorLayer({ source: new VectorSource() });
+
+      // create overlay
+      const popupEl = document.getElementById("popup")!;
+      overlayRef.current = new Overlay({
+        element: popupEl,
+        positioning: "bottom-center",
+        stopEvent: true,
+      });
+
+      // create map
+      const map = new Map({
+        target: mapRef.current,
+        layers: [
+          new TileLayer({ source: new OSM() }),
+          markerLayer.current,
+        ],
+        view: new View({
+          center: fromLonLat([-0.1276, 51.5074]),
+          zoom: 5,
+        }),
+        overlays: [overlayRef.current],
+      });
+      mapInstance.current = map;
+
+      // click handler
+      const handleClick = (evt: any) => {
+        let found = false;
+        map.forEachFeatureAtPixel(evt.pixel, (feature) => {
+          found = true;
+          const battery = feature.get("batteryData") as BatteryData;
+          if (!battery) return;
+          setSelectedESPID(battery.esp_id);
+          overlayRef.current!.setPosition((feature.getGeometry() as Point).getCoordinates());
+        });
+
+        if (!found) {
+          setSelectedESPID(null);
+          overlayRef.current!.setPosition(undefined); // hides popup
+        }
+      };
+
+      // hover cursor handler
+      const handlePointerMove = (evt: any) => {
+        const hit = map.hasFeatureAtPixel(evt.pixel);
+        map.getTargetElement().style.cursor = hit ? "pointer" : "";
+      };
+
+      map.on("click", handleClick);
+      map.on("pointermove", handlePointerMove);
+
+      return () => {
+        map.un("click", handleClick);
+        map.un("pointermove", handlePointerMove);
+      };
     }
-  }, [viewMode, map])
+  }, []);
 
-  const initializeMap = () => {
-    if (mapRef.current) {
-      const ukCenter = { lat: 54.5, lng: -2.0 }
-      const newMap = new google.maps.Map(mapRef.current, {
-        center: ukCenter,
-        zoom: 6,
-       
-      })
 
-      setMap(newMap)
-      addMarkers(newMap)
-    }
-  }
+  // dynamically update marker layer on top of map
+  useEffect(() => {
+    if (!markerLayer.current) return;
 
-  const getBatteryIcon = (status: string) => {
-    const color = getMarkerColor(status)
-    return {
-      path: 'M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8zm-1-13h2v6h-2zm0 8h2v2h-2z',
-      fillColor: color,
-      fillOpacity: 1,
-      strokeColor: '#ffffff',
-      strokeWeight: 2,
-      scale: 1.2,
-      anchor: new google.maps.Point(12, 12)
-    }
-  }
-
-  const addMarkers = (map: google.maps.Map) => {
-    const newMarkers = mapMarkers.map(marker => {
-      const markerObj = new google.maps.Marker({
-        position: marker.position,
-        map,
-        title: marker.title,
-        icon: getBatteryIcon(marker.status)
-      })
-
-      // Add click listener with enhanced info window
-      markerObj.addListener('click', () => {
-        const infoWindow = new google.maps.InfoWindow({
-          content: `
-            <div class="p-3 min-w-[200px]">
-              <h3 class="font-semibold text-lg">${marker.title}</h3>
-              <p class="text-sm text-gray-600 mt-1">Status: ${marker.status}</p>
-              <div class="mt-2 text-sm">
-                <p>Capacity: ${marker.id === 'b4' ? '85%' : '90%'}</p>
-                <p>Connected Units: ${marker.id === 'b4' ? '12' : '8'}</p>
-                <p>Last Maintenance: ${marker.id === 'b4' ? '2 days ago' : '1 week ago'}</p>
-              </div>
-              <div class="mt-3 pt-3 border-t border-gray-200">
-                <a 
-                  href="/battery/${marker.id}" 
-                  class="inline-block w-full text-center px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded hover:bg-blue-700 transition-colors"
-                  onclick="window.location.href='/battery/${marker.id}'; return false;"
-                >
-                  View Details
-                </a>
-              </div>
-            </div>
-          `
+    // create marker feature
+    const newMarkers = currentBatteries.map((battery: BatteryData) => {
+      const marker = new Feature({
+        geometry: new Point(fromLonLat([battery.lon, battery.lat])),
+        batteryData: battery,
+      });
+      marker.setStyle(
+        new Style({
+          image: new Icon({
+            src: "battery.png",
+            scale: 0.15,
+            color: battery.live_websocket?'#10B981':'#6B7280',
+            rotation: -Math.PI / 2,
+          }),
         })
-        infoWindow.open(map, markerObj)
-      })
-
-      return markerObj
+      );
+      return marker;
     })
 
-    setMarkers(newMarkers)
-  }
+    markerLayer.current.getSource()?.clear();
+    markerLayer.current.getSource()?.addFeatures(newMarkers);
 
-  const getMarkerColor = (status: string) => {
-    switch (status) {
-      case 'online':
-        return '#10B981' // green-500
-      case 'offline':
-        return '#6B7280' // gray-500
-      default:
-        return '#6B7280' // gray-500
-    }
-  }
+  }, [currentBatteries]);
 
-  // Cleanup markers when component unmounts
-  useEffect(() => {
-    return () => {
-      markers.forEach(marker => marker.setMap(null))
-    }
-  }, [markers])
 
   const handlePageChange = (page: number) => {
     setCurrentPage(page)
@@ -272,8 +272,9 @@ export default function BatteryPage() {
         </button>
       </div>
 
-      {viewMode === 'grid' ? (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 xl:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 xl:grid-cols-3 gap-6"
+          style={{ display: viewMode === 'grid' ? 'block' : 'none' }}
+        >
           {currentBatteries.map((battery: BatteryData) => (
             <BatteryCard
               battery={battery}
@@ -281,18 +282,54 @@ export default function BatteryPage() {
             />
           ))}
         </div>
-      ) : (
-        <div className="bg-white rounded-lg shadow overflow-hidden w-full">
+        <div className="bg-white rounded-lg shadow overflow-hidden w-full"
+          style={{ display: viewMode !== 'grid' ? 'block' : 'none' }}
+        >
           <div ref={mapRef} className="w-full h-[700px]" />
+          <div
+            id="popup"
+            className="ol-popup"
+            style={{
+              background: "white",
+              opacity: 1,
+              borderRadius: "8px",
+              boxShadow: "0 2px 8px rgba(0,0,0,0.3)",
+              padding: "8px",
+            }}
+          >
+            {selectedESPID && (() => {
+                const selectedBattery = batteries.find(b => b.esp_id === selectedESPID);
+                if (!selectedBattery) return null;
+                return (
+                  <div className="p-3 min-w-[200px]">
+                    <h3 className="font-semibold text-lg">{selectedBattery.esp_id}</h3>
+                    <p className="text-sm text-gray-600 mt-1">
+                      Status: {selectedBattery.live_websocket ? "online" : "offline"}
+                    </p>
+                    <div className="mt-2 text-sm">
+                      <p>Charge: {selectedBattery.Q}</p>
+                      <p>Health: {selectedBattery.H}</p>
+                    </div>
+                    <div className="mt-3 pt-3 border-t border-gray-200">
+                      <button
+                        onClick={() => viewBatteryDetails(selectedBattery)}
+                        className="inline-block w-full text-center px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded hover:bg-blue-700 transition-colors"
+                      >
+                        View Details
+                      </button>
+                    </div>
+                  </div>
+                );
+              })()}
+          </div>
         </div>
-      )}
 
       {/* Show pagination only in grid view */}
       {viewMode === 'grid' && (
         <div className="mt-8 flex flex-col items-center gap-4">
           <div className="flex items-center justify-between w-full max-w-2xl">
             <div className="text-sm text-gray-600">
-              Showing {startIndex + 1} to {endIndex} of {totalItems} entries
+              Showing {startIndex + 1} to {endIndex} of {batteries.length} entries
             </div>
             
             <div className="flex items-center gap-2">
