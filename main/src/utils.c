@@ -42,11 +42,12 @@ void initialise_nvs() {
     }
 
     size_t len;
-    err = nvs_get_str(nvs, "WIFI_SSID", NULL, &len);
+    err = nvs_get_str(nvs, "SSID", NULL, &len);
     if (err == ESP_ERR_NVS_NOT_FOUND) {
         // not yet initialised - this must be first boot since the most recent flash
-        nvs_set_str(nvs, "WIFI_SSID", WIFI_SSID);
-        nvs_set_str(nvs, "WIFI_PASSWORD", WIFI_PASSWORD);
+        nvs_set_str(nvs, "SSID", WIFI_SSID);
+        nvs_set_str(nvs, "PASSWORD", WIFI_PASSWORD);
+        nvs_set_u8(nvs, "AUTO_CONNECT", WIFI_AUTO_CONNECT?1:0);
         nvs_commit(nvs);
     }
     nvs_close(nvs);
@@ -60,36 +61,33 @@ void send_fake_request() {
         cJSON_AddStringToObject(content, "summary", "connect-wifi");
         cJSON *data = cJSON_CreateObject();
         cJSON_AddNumberToObject(data, "esp_id", ESP_ID);
-        if (UTILS_EDUROAM) {
-            cJSON_AddStringToObject(data, "username", UTILS_EDUROAM_USERNAME);
-            cJSON_AddStringToObject(data, "password", UTILS_EDUROAM_PASSWORD);
-            cJSON_AddBoolToObject(data, "eduroam", true);
-        } else {
-            // cJSON_AddStringToObject(data, "username", UTILS_ROUTER_SSID);
-            // cJSON_AddStringToObject(data, "password", UTILS_ROUTER_PASSWORD);
-            char ssid[32];
-            strcpy(ssid, WIFI_SSID);
-            char password[64];
-            strcpy(password, WIFI_PASSWORD);
 
-            nvs_handle_t nvs;
-            esp_err_t err = nvs_open("WIFI", NVS_READONLY, &nvs);
-            if (err != ESP_OK) {
-                ESP_LOGE("utils", "Could not open NVS namespace");
-                return;
-            }
+        char ssid[32];
+        strcpy(ssid, WIFI_SSID);
+        char password[64];
+        strcpy(password, WIFI_PASSWORD);
+        uint8_t auto_connect = (uint8_t)WIFI_AUTO_CONNECT;
 
-            size_t len = sizeof(ssid);
-            if (nvs_get_str(nvs, "WIFI_SSID", ssid, &len) != ESP_OK) ESP_LOGW("utils", "Could not read Wi-Fi router SSID from NVS, using default");
-            len = sizeof(password);
-            if (nvs_get_str(nvs, "WIFI_PASSWORD", password, &len) != ESP_OK) ESP_LOGW("utils", "Could not read Wi-Fi router password from NVS, using default");
-
-            nvs_close(nvs);
-
-            cJSON_AddStringToObject(data, "username", ssid);
-            cJSON_AddStringToObject(data, "password", password);
-            cJSON_AddBoolToObject(data, "eduroam", false);
+        nvs_handle_t nvs;
+        esp_err_t err = nvs_open("WIFI", NVS_READONLY, &nvs);
+        if (err != ESP_OK) {
+            ESP_LOGE("utils", "Could not open NVS namespace");
+            return;
         }
+
+        size_t len = sizeof(ssid);
+        if (nvs_get_str(nvs, "SSID", ssid, &len) != ESP_OK) ESP_LOGW("utils", "Could not read Wi-Fi router SSID from NVS, using default");
+        len = sizeof(password);
+        if (nvs_get_str(nvs, "PASSWORD", password, &len) != ESP_OK) ESP_LOGW("utils", "Could not read Wi-Fi router password from NVS, using default");
+        if (nvs_get_u8(nvs, "AUTO_CONNECT", &auto_connect) != ESP_OK) ESP_LOGW("utils", "Could not read Wi-Fi auto-connect setting from NVS, using default");
+        printf("auto_connect: %d\n", auto_connect);
+
+        nvs_close(nvs);
+
+        cJSON_AddStringToObject(data, "ssid", ssid);
+        cJSON_AddStringToObject(data, "password", password);
+        cJSON_AddBoolToObject(data, "auto_connect", (auto_connect!=0));
+
         cJSON_AddItemToObject(content, "data", data);
         cJSON_AddItemToObject(message, "content", content);
 

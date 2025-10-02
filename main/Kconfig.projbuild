@@ -356,38 +356,3 @@ config POWER_BOOST
       Set to true to enable up to +20 dBm high power transmission. WARNING: ensure 1% duty cycle and adequate cooling.
 
 endmenu
-
-
-menu "[CUSTOM] Router Configuration"
-
-config ROUTER_SSID
-    string "Wi-Fi router SSID"
-    default "SSID"
-    help
-      SSID of the router to connect to.
-
-config ROUTER_PASSWORD
-    string "Wi-Fi router password"
-    default "PASSWORD"
-    help
-      Password of the router to connect to.
-
-config EDUROAM
-    bool "Use Eduroam"
-    default n
-    help
-      Set to true to connect to Eduroam.
-
-config EDUROAM_USERNAME
-    string "Eduroam username"
-    default "USERNAME"
-    help
-      University account username (without @liverpool.ac.uk).
-
-config EDUROAM_PASSWORD
-    string "Eduroam password"
-    default "PASSWORD"
-    help
-      University account password.
-
-endmenu
