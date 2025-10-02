@@ -36,7 +36,7 @@ interface BatteryDetailProps {
   // onToggleCharging: (batteryId: string) => void;
   voltageThreshold: number;
   sendBatteryUpdate: (updatedValues: Partial<BatteryData>) => void;
-  sendWiFiConnect: (username: string, password: string, eduroam: boolean) => void;
+  sendWiFiConnect: (ssid: string, password: string, auto_connect: boolean) => void;
   sendUnseal: () => void;
   sendReset: () => void;
   isFromESP32: boolean;
@@ -60,8 +60,7 @@ const BatteryDetail: React.FC<BatteryDetailProps> = ({
 
   const [ssid, setSSID] = useState("");
   const [password, setPassword] = useState("");
-  const [eduroam_username, setEduroamUsername] = useState("");
-  const [eduroam_password, setEduroamPassword] = useState("");
+  const [autoConnect, setAutoConnect] = useState(false);
 
   // range
   const OTC_threshold_min = 450;
@@ -113,17 +112,17 @@ const BatteryDetail: React.FC<BatteryDetailProps> = ({
     (e: React.ChangeEvent<HTMLInputElement>) => {
       setter(e.target.value);
       setHasWiFiChanges(true);
-  };
+    };
+  const handleCheckboxChange = (setter: React.Dispatch<React.SetStateAction<boolean>>) =>
+    (e: React.ChangeEvent<HTMLInputElement>) => {
+      setter(e.target.checked);
+      setHasWiFiChanges(true);
+    };
   // send websocket-connect message
   const handleConnect = () => {
-    if (ssid == "" && password == "")
-      sendWiFiConnect(eduroam_username, eduroam_password, true);
-    else if (eduroam_username == "" && eduroam_password == "")
-      sendWiFiConnect(ssid, password, false);
+    sendWiFiConnect(ssid, password, autoConnect);
     setSSID("");
     setPassword("");
-    setEduroamUsername("");
-    setEduroamPassword("");
     setHasWiFiChanges(false);
   }
 
@@ -483,49 +482,32 @@ const BatteryDetail: React.FC<BatteryDetailProps> = ({
                           onChange={handleTextChange(setPassword)}
                         />
                       </div>
-                    </div>
-                  </div>
 
-                  <div>
-                    <h4 className="text-sm font-medium text-gray-900 mb-4">Eduroam Information</h4>
-                    <div className="space-y-4">
                       <div>
-                        <label className="block text-sm font-medium text-gray-700">Username:</label>
-                        <input
-                          type="text"
-                          className="border p-1 w-full"
-                          value={eduroam_username}
-                          name="eduroam_username"
-                          id="eduroam_username"
-                          required
-                          onChange={handleTextChange(setEduroamUsername)}
-                        />
-
-                        <label className="block text-sm font-medium text-gray-700">Password:</label>
-                        <input
-                          type="password"
-                          className="border p-1 w-full"
-                          value={eduroam_password}
-                          name="eduroam_password"
-                          id="eduroam_password"
-                          required
-                          onChange={handleTextChange(setEduroamPassword)}
-                        />
-
-                        {hasWiFiChanges && (
-                          <div className="flex gap-2 mt-2">
-                            {(isFromESP32 || battery.live_websocket) ? (
-                              <button onClick={handleConnect} className="p-2 bg-blue-500 text-white rounded">
-                                Connect
-                              </button>
-                            ) : (
-                              <button className="p-2 bg-gray-500 text-white rounded">
-                                OFFLINE
-                              </button>
-                            )}
-                          </div>
-                        )}
+                        <label className="flex items-center space-x-2 text-sm font-medium text-gray-700 mt-2">
+                          <input
+                            type="checkbox"
+                            checked={autoConnect}
+                            onChange={handleCheckboxChange(setAutoConnect)}
+                            className="h-4 w-4 border-gray-300 rounded"
+                          />
+                          <span>Auto-connect</span>
+                        </label>
                       </div>
+
+                      {hasWiFiChanges && (
+                        <div className="flex gap-2 mt-2">
+                          {(isFromESP32 || battery.live_websocket) ? (
+                            <button onClick={handleConnect} className="p-2 bg-blue-500 text-white rounded">
+                              Connect
+                            </button>
+                          ) : (
+                            <button className="p-2 bg-gray-500 text-white rounded">
+                              OFFLINE
+                            </button>
+                          )}
+                        </div>
+                      )}
                     </div>
                   </div>
                 </div>
@@ -592,24 +574,6 @@ const BatteryDetail: React.FC<BatteryDetailProps> = ({
                       <p className="text-2xl font-semibold text-gray-900">{battery.I4} A</p>
                       <p className="text-2xl font-semibold text-gray-900">{battery.T4} °C</p>
                       <p className="text-2xl font-semibold text-gray-900">{battery.V4} V</p>
-                    </div>
-                    {/* <div>
-                      <h4 className="text-sm font-medium text-gray-500 mb-2">Capacity</h4>
-                      <p className="text-2xl font-semibold text-gray-900">{battery.capacity} kWh</p>
-                      <div className="mt-1 text-sm text-gray-500">
-                        Nominal capacity
-                      </div>
-                    </div> */}
-                    <div>
-                      <h4 className="text-sm font-medium text-gray-500 mb-2">Last Maintenance</h4>
-                      {/* <p className="text-2xl font-semibold text-gray-900">{battery.lastMaintenance}</p> */}
-                      <div className="mt-1 text-sm text-gray-500">
-                        {/* {new Date(battery.lastMaintenance) < new Date(Date.now() - 90 * 24 * 60 * 60 * 1000) ? (
-                          <span className="text-amber-600">Maintenance due</span>
-                        ) : (
-                          <span className="text-green-600">Up to date</span>
-                        )} */}
-                      </div>
                     </div>
                   </div>
                 </div>
@@ -867,10 +831,21 @@ const BatteryDetail: React.FC<BatteryDetailProps> = ({
 
           <div className="bg-purple-50 p-4 rounded-lg">
             <h3 className="text-sm font-medium text-purple-700 flex items-center mb-2">
-              <Wifi size={16} className="mr-1" /> Wi-Fi
+              { isFromESP32 ? (<>
+                <Wifi size={16} className="mr-1" /> Wi-Fi
+              </>) : (<>
+                <Clock size={16} className="mr-1" /> Most Recent Update
+              </>)}
             </h3>
             <div className="flex items-end space-x-2">
-              <span className="text-3xl font-bold text-purple-700">{battery.wifi? "Connected":"!! no connection"}</span>
+              <span className="text-3xl font-bold text-purple-700">
+                {
+                  isFromESP32 ? (
+                    battery.wifi ? "Connected" : "Not connected"
+                  ) :
+                    battery.last_updated_time
+                }
+                </span>
             </div>
           </div>
         </div>

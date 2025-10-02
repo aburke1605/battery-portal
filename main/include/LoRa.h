@@ -64,9 +64,9 @@ typedef struct __attribute__((packed)) {
     int8_t request;
     uint8_t new_esp_id;
     int16_t OTC;
-    bool eduroam;
-    uint8_t username[16];
+    uint8_t ssid[16];
     uint8_t password[16];
+    bool auto_connect;
     bool success;
 } radio_request_packet;
 

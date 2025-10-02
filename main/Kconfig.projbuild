@@ -210,6 +210,29 @@ config FULL_ACCESS_CMD_2
 endmenu
 
 
+menu "[CUSTOM] Wi-Fi Configuration"
+
+config WIFI_SSID
+    string "Router SSID"
+    default "SSID"
+    help
+      The SSID of the internet conenction router.
+
+config WIFI_PASSWORD
+    string "Router password"
+    default "PASSWORD"
+    help
+      The password of the internet conenction router.
+
+config WIFI_AUTO_CONNECT
+    bool "Auto-connect"
+    default n
+    help
+      Set to true to automatically connect to router with the set SSID.
+
+endmenu
+
+
 menu "[CUSTOM] LoRa Configuration"
 
 config IS_RECEIVER
@@ -331,40 +354,5 @@ config POWER_BOOST
     default n
     help
       Set to true to enable up to +20 dBm high power transmission. WARNING: ensure 1% duty cycle and adequate cooling.
-
-endmenu
-
-
-menu "[CUSTOM] Router Configuration"
-
-config ROUTER_SSID
-    string "Wi-Fi router SSID"
-    default "SSID"
-    help
-      SSID of the router to connect to.
-
-config ROUTER_PASSWORD
-    string "Wi-Fi router password"
-    default "PASSWORD"
-    help
-      Password of the router to connect to.
-
-config EDUROAM
-    bool "Use Eduroam"
-    default n
-    help
-      Set to true to connect to Eduroam.
-
-config EDUROAM_USERNAME
-    string "Eduroam username"
-    default "USERNAME"
-    help
-      University account username (without @liverpool.ac.uk).
-
-config EDUROAM_PASSWORD
-    string "Eduroam password"
-    default "PASSWORD"
-    help
-      University account password.
 
 endmenu
