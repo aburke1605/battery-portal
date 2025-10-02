@@ -451,6 +451,14 @@ CONFIG_FULL_ACCESS_CMD_2=0xFFFF
 # end of [CUSTOM] BMS Configuration
 
 #
+# [CUSTOM] Wi-Fi Configuration
+#
+CONFIG_WIFI_SSID="SSID"
+CONFIG_WIFI_PASSWORD="PASSWORD"
+# CONFIG_WIFI_AUTO_CONNECT is not set
+# end of [CUSTOM] Wi-Fi Configuration
+
+#
 # [CUSTOM] LoRa Configuration
 #
 # CONFIG_IS_RECEIVER is not set
@@ -471,16 +479,6 @@ CONFIG_Rx_PAYL_CRC=y
 CONFIG_OUTPUT_POWER=15
 # CONFIG_POWER_BOOST is not set
 # end of [CUSTOM] LoRa Configuration
-
-#
-# [CUSTOM] Router Configuration
-#
-CONFIG_ROUTER_SSID="SSID"
-CONFIG_ROUTER_PASSWORD="PASSWORD"
-# CONFIG_EDUROAM is not set
-CONFIG_EDUROAM_USERNAME="USERNAME"
-CONFIG_EDUROAM_PASSWORD="PASSWORD"
-# end of [CUSTOM] Router Configuration
 
 #
 # Compiler options

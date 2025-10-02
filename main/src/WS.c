@@ -13,6 +13,7 @@
 #include <esp_websocket_client.h>
 #include <esp_eap_client.h>
 #include <driver/gpio.h>
+#include <nvs_flash.h>
 
 static bool reconnect = false;
 static char ESP_IP[16] = "xxx.xxx.xxx.xxx\0";
@@ -247,9 +248,9 @@ esp_err_t perform_request(cJSON *message, cJSON *response) {
                 return ESP_FAIL;
             }
 
-            const char* username = cJSON_GetObjectItem(data, "username")->valuestring;
+            const char* ssid = cJSON_GetObjectItem(data, "ssid")->valuestring;
             const char* password = cJSON_GetObjectItem(data, "password")->valuestring;
-            cJSON *eduroam = cJSON_GetObjectItem(data, "eduroam");
+            cJSON *auto_connect = cJSON_GetObjectItem(data, "auto_connect");
 
             int tries = 0;
             int max_tries = 10;
@@ -261,26 +262,27 @@ esp_err_t perform_request(cJSON *message, cJSON *response) {
                 wifi_config_t *wifi_sta_config = malloc(sizeof(wifi_config_t));
                 memset(wifi_sta_config, 0, sizeof(wifi_config_t));
 
-                if (cJSON_IsBool(eduroam) && cJSON_IsTrue(eduroam)) {
-                    strncpy((char *)wifi_sta_config->sta.ssid, "eduroam", 8);
-
-                    char full_username[48];
-                    snprintf(full_username, sizeof(full_username), "%s@liverpool.ac.uk", username);
-                    full_username[strlen(full_username)] = '\0';
-
-                    esp_wifi_sta_enterprise_enable();
-                    esp_eap_client_set_username((uint8_t *)full_username, strlen(full_username));
-                    esp_eap_client_set_password((uint8_t *)password, strlen(password));
-                    ESP_LOGI(TAG, "Connecting to AP... SSID: eduroam");
+                // overwrite stored values in NVS
+                nvs_handle_t nvs;
+                esp_err_t err = nvs_open("WIFI", NVS_READWRITE, &nvs);
+                if (err != ESP_OK) {
+                    ESP_LOGW(TAG, "Could not open NVS namespace for writing");
                 } else {
-                    strncpy((char *)wifi_sta_config->sta.ssid, username, sizeof(wifi_sta_config->sta.ssid) - 1);
-                    if (strlen(password) == 0) {
-                        wifi_sta_config->ap.authmode = WIFI_AUTH_OPEN;
-                    } else {
-                        strncpy((char *)wifi_sta_config->sta.password, password, sizeof(wifi_sta_config->sta.password) - 1);
-                    }
-                    ESP_LOGI(TAG, "Connecting to AP... SSID: %s", wifi_sta_config->sta.ssid);
+                    nvs_set_str(nvs, "SSID", ssid);
+                    nvs_set_str(nvs, "PASSWORD", password);
+                    if (cJSON_IsBool(auto_connect) && cJSON_IsTrue(auto_connect)) nvs_set_u8(nvs, "AUTO_CONNECT", 1);
+                    else nvs_set_u8(nvs, "AUTO_CONNECT", 0);
+                    nvs_commit(nvs);
+                    nvs_close(nvs);
                 }
+
+                strncpy((char *)wifi_sta_config->sta.ssid, ssid, sizeof(wifi_sta_config->sta.ssid) - 1);
+                if (strlen(password) == 0) {
+                    wifi_sta_config->ap.authmode = WIFI_AUTH_OPEN;
+                } else {
+                    strncpy((char *)wifi_sta_config->sta.password, password, sizeof(wifi_sta_config->sta.password) - 1);
+                }
+                ESP_LOGI(TAG, "Connecting to AP... SSID: %s", wifi_sta_config->sta.ssid);
 
                 ESP_ERROR_CHECK(esp_wifi_set_config(ESP_IF_WIFI_STA, wifi_sta_config));
                 // TODO: if reconnecting, it doesn't actually seem to drop the old connection in favour of the new one
@@ -551,7 +553,17 @@ void websocket_task(void *pvParameters) {
         wifi_ap_record_t ap_info;
         if (esp_wifi_sta_get_ap_info(&ap_info) != ESP_OK) {
             connected_to_WiFi = false;
-            if (DEV) send_fake_request();
+
+            uint8_t auto_connect = (uint8_t)WIFI_AUTO_CONNECT;
+            nvs_handle_t nvs;
+            esp_err_t err = nvs_open("WIFI", NVS_READONLY, &nvs);
+            if (err != ESP_OK) {
+                ESP_LOGE(TAG, "Could not open NVS namespace");
+            } else {
+                if (nvs_get_u8(nvs, "AUTO_CONNECT", &auto_connect) != ESP_OK) ESP_LOGW(TAG, "Could not read Wi-Fi auto-connect setting from NVS, using default");
+                if (auto_connect != 0) send_fake_request();
+                nvs_close(nvs);
+            }
         }
 
         vTaskDelay(pdMS_TO_TICKS(1000));
