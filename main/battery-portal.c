@@ -11,7 +11,6 @@
 #include "include/utils.h"
 
 #include <esp_log.h>
-#include <esp_spiffs.h>
 #include <driver/gpio.h>
 
 // global variables
@@ -36,21 +35,7 @@ TaskHandle_t merge_root_task_handle = NULL;
 void app_main(void) {
     initialise_nvs();
 
-    // initialise SPIFFS
-    esp_err_t result;
-
-    esp_vfs_spiffs_conf_t config_static = {
-        .base_path = "/static",
-        .partition_label = "static",
-        .max_files = 5,
-        .format_if_mount_failed = true
-    };
-    result = esp_vfs_spiffs_register(&config_static);
-
-    if (result != ESP_OK) {
-        ESP_LOGE("main", "Failed to initialise SPIFFS (%s)", esp_err_to_name(result));
-        return;
-    }
+    initialise_spiffs();
 
     ESP_ERROR_CHECK(i2c_master_init());
     ESP_LOGI("main", "I2C initialized successfully");

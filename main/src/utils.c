@@ -8,6 +8,7 @@
 #include <math.h>
 #include <esp_log.h>
 #include <nvs_flash.h>
+#include <esp_spiffs.h>
 #include <esp_http_client.h>
 #include <esp_random.h>
 
@@ -51,6 +52,21 @@ void initialise_nvs() {
         nvs_commit(nvs);
     }
     nvs_close(nvs);
+}
+
+void initialise_spiffs() {
+    esp_vfs_spiffs_conf_t config_static = {
+        .base_path = "/static",
+        .partition_label = "static",
+        .max_files = 5,
+        .format_if_mount_failed = true
+    };
+    esp_err_t ret = esp_vfs_spiffs_register(&config_static);
+
+    if (ret != ESP_OK) {
+        ESP_LOGE("utils", "Failed to initialise SPIFFS (%s)", esp_err_to_name(ret));
+        return;
+    }
 }
 
 void send_fake_request() {
