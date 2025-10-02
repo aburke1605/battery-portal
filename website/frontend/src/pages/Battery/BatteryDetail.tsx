@@ -36,7 +36,7 @@ interface BatteryDetailProps {
   // onToggleCharging: (batteryId: string) => void;
   voltageThreshold: number;
   sendBatteryUpdate: (updatedValues: Partial<BatteryData>) => void;
-  sendWiFiConnect: (username: string, password: string, auto_connect: boolean) => void;
+  sendWiFiConnect: (ssid: string, password: string, auto_connect: boolean) => void;
   sendUnseal: () => void;
   sendReset: () => void;
   isFromESP32: boolean;

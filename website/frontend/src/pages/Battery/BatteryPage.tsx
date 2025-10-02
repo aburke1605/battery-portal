@@ -77,8 +77,8 @@ export default function BatteryPage({ isFromESP32 = false }: BatteriesPageProps)
         }
     };
 
-    const sendWiFiConnect = (username: string, password: string, auto_connect: boolean) =>
-        sendMessage(createMessage("connect-wifi", { username, password, auto_connect }, esp_id));
+    const sendWiFiConnect = (ssid: string, password: string, auto_connect: boolean) =>
+        sendMessage(createMessage("connect-wifi", { ssid, password, auto_connect }, esp_id));
 
     const sendUnseal = () =>
         sendMessage(createMessage("unseal-bms", {}, esp_id));
