@@ -80,7 +80,6 @@ void send_fake_request() {
         len = sizeof(password);
         if (nvs_get_str(nvs, "PASSWORD", password, &len) != ESP_OK) ESP_LOGW("utils", "Could not read Wi-Fi router password from NVS, using default");
         if (nvs_get_u8(nvs, "AUTO_CONNECT", &auto_connect) != ESP_OK) ESP_LOGW("utils", "Could not read Wi-Fi auto-connect setting from NVS, using default");
-        printf("auto_connect: %d\n", auto_connect);
 
         nvs_close(nvs);
 

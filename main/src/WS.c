@@ -561,7 +561,6 @@ void websocket_task(void *pvParameters) {
                 ESP_LOGE(TAG, "Could not open NVS namespace");
             } else {
                 if (nvs_get_u8(nvs, "AUTO_CONNECT", &auto_connect) != ESP_OK) ESP_LOGW(TAG, "Could not read Wi-Fi auto-connect setting from NVS, using default");
-                printf("auto_connect: %d\n", auto_connect);
                 if (auto_connect != 0) send_fake_request();
                 nvs_close(nvs);
             }
