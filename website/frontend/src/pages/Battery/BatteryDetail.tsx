@@ -60,7 +60,7 @@ const BatteryDetail: React.FC<BatteryDetailProps> = ({
 
   const [ssid, setSSID] = useState("");
   const [password, setPassword] = useState("");
-  const [autoConnect, setAutoConnect] = useState(true);
+  const [autoConnect, setAutoConnect] = useState(false);
 
   // range
   const OTC_threshold_min = 450;
