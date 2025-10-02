@@ -575,24 +575,6 @@ const BatteryDetail: React.FC<BatteryDetailProps> = ({
                       <p className="text-2xl font-semibold text-gray-900">{battery.T4} °C</p>
                       <p className="text-2xl font-semibold text-gray-900">{battery.V4} V</p>
                     </div>
-                    {/* <div>
-                      <h4 className="text-sm font-medium text-gray-500 mb-2">Capacity</h4>
-                      <p className="text-2xl font-semibold text-gray-900">{battery.capacity} kWh</p>
-                      <div className="mt-1 text-sm text-gray-500">
-                        Nominal capacity
-                      </div>
-                    </div> */}
-                    <div>
-                      <h4 className="text-sm font-medium text-gray-500 mb-2">Last Maintenance</h4>
-                      {/* <p className="text-2xl font-semibold text-gray-900">{battery.lastMaintenance}</p> */}
-                      <div className="mt-1 text-sm text-gray-500">
-                        {/* {new Date(battery.lastMaintenance) < new Date(Date.now() - 90 * 24 * 60 * 60 * 1000) ? (
-                          <span className="text-amber-600">Maintenance due</span>
-                        ) : (
-                          <span className="text-green-600">Up to date</span>
-                        )} */}
-                      </div>
-                    </div>
                   </div>
                 </div>
               </div>
@@ -847,16 +829,25 @@ const BatteryDetail: React.FC<BatteryDetailProps> = ({
             </div>
           </div>
 
-          { isFromESP32 ? (
-            <div className="bg-purple-50 p-4 rounded-lg">
-              <h3 className="text-sm font-medium text-purple-700 flex items-center mb-2">
+          <div className="bg-purple-50 p-4 rounded-lg">
+            <h3 className="text-sm font-medium text-purple-700 flex items-center mb-2">
+              { isFromESP32 ? (<>
                 <Wifi size={16} className="mr-1" /> Wi-Fi
-              </h3>
-              <div className="flex items-end space-x-2">
-                <span className="text-3xl font-bold text-purple-700">{battery.wifi? "Connected":"Not connected"}</span>
-              </div>
+              </>) : (<>
+                <Clock size={16} className="mr-1" /> Most Recent Update
+              </>)}
+            </h3>
+            <div className="flex items-end space-x-2">
+              <span className="text-3xl font-bold text-purple-700">
+                {
+                  isFromESP32 ? (
+                    battery.wifi ? "Connected" : "Not connected"
+                  ) :
+                    battery.last_updated_time
+                }
+                </span>
             </div>
-          ) : null }
+          </div>
         </div>
 
         {/* Tabs */}
