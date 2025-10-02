@@ -289,14 +289,9 @@ size_t json_to_binary(uint8_t* binary_message, cJSON* json_array) {
                 }
                 packet->request = CONNECT_WIFI;
 
-                cJSON* eduroam = cJSON_GetObjectItem(data, "eduroam");
-                if (!eduroam) {
-                    ESP_LOGE(TAG, "No \"eduroam\" key in cJSON array item");
-                    return 0;
-                }
-                cJSON* username = cJSON_GetObjectItem(data, "username");
-                if (!username) {
-                    ESP_LOGE(TAG, "No \"username\" key in cJSON array item");
+                cJSON* ssid = cJSON_GetObjectItem(data, "ssid");
+                if (!ssid) {
+                    ESP_LOGE(TAG, "No \"ssid\" key in cJSON array item");
                     return 0;
                 }
                 cJSON* password = cJSON_GetObjectItem(data, "password");
@@ -304,9 +299,14 @@ size_t json_to_binary(uint8_t* binary_message, cJSON* json_array) {
                     ESP_LOGE(TAG, "No \"password\" key in cJSON array item");
                     return 0;
                 }
-                packet->eduroam = (bool)eduroam->valueint;
-                for (size_t i=0; i<sizeof(packet->username); i++) packet->username[i] = (uint8_t)username->valuestring[i];
+                cJSON* auto_connect = cJSON_GetObjectItem(data, "auto_connect");
+                if (!auto_connect) {
+                    ESP_LOGE(TAG, "No \"auto_connect\" key in cJSON array item");
+                    return 0;
+                }
+                for (size_t i=0; i<sizeof(packet->ssid); i++) packet->ssid[i] = (uint8_t)ssid->valuestring[i];
                 for (size_t i=0; i<sizeof(packet->password); i++) packet->password[i] = (uint8_t)password->valuestring[i];
+                packet->auto_connect = (bool)auto_connect->valueint;
             }
             else if (strcmp(summary->valuestring, "reset-bms") == 0) packet->request = RESET_BMS;
             else if (strcmp(summary->valuestring, "unseal-bms") == 0) packet->request = UNSEAL_BMS;
@@ -496,10 +496,9 @@ void binary_to_json(uint8_t* binary_message, cJSON* json_array) {
             else if (packet->request == CONNECT_WIFI) {
                 cJSON_AddStringToObject(content, "summary", "connect-wifi");
 
-                cJSON_AddBoolToObject(data, "eduroam", packet->eduroam);
-
-                cJSON_AddStringToObject(data, "username", (char*)packet->username);
+                cJSON_AddStringToObject(data, "ssid", (char*)packet->ssid);
                 cJSON_AddStringToObject(data, "password", (char*)packet->password);
+                cJSON_AddBoolToObject(data, "auto_connect", packet->auto_connect);
 
                 cJSON_AddItemToObject(content, "data", data);
             }
