@@ -11,6 +11,10 @@
 
 void change_esp_id(char* name);
 
+void initialise_nvs();
+
+void initialise_spiffs();
+
 void send_fake_request();
 
 char *send_fake_login_post_request();
