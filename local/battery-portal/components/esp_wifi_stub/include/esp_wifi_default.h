@@ -7,8 +7,8 @@
 extern "C" {
 #endif
 
-static inline esp_err_t esp_netif_init(void) {
-    ESP_LOGI("[esp_netif_stub]", "esp_netif_init called");
+static inline esp_err_t esp_netif_create_default_wifi_sta(void) {
+    ESP_LOGI("[esp_wifi_stub]", "esp_netif_create_default_wifi_sta called");
     return ESP_OK;
 }
 
