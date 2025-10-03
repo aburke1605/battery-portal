@@ -14,11 +14,11 @@ void wifi_init(void) {
 
     wifi_init_config_t cfg = WIFI_INIT_CONFIG_DEFAULT();
     ESP_ERROR_CHECK(esp_wifi_init(&cfg));
-    /*
 
     // use only STA at first to scan for APs
     ESP_ERROR_CHECK(esp_wifi_set_mode(WIFI_MODE_STA));
     ESP_ERROR_CHECK(esp_wifi_start());
+    /*
     vTaskDelay(pdMS_TO_TICKS(100));
 
     // scan for other WiFi APs
