@@ -37,7 +37,7 @@ wifi_ap_record_t *wifi_scan(void) {
     // allocate memory for AP info and retrieve the list
     wifi_ap_record_t *ap_info = malloc(sizeof(wifi_ap_record_t) * ap_num);
     if (ap_info == NULL) {
-        ESP_LOGE("AP", "Failed to allocate memory for AP list");
+        ESP_LOGE(TAG, "Failed to allocate memory for AP list");
         return false;
     }
     ESP_ERROR_CHECK(esp_wifi_scan_get_ap_records(&ap_num, ap_info));

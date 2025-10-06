@@ -5,6 +5,43 @@
 #include "esp_wifi_default.h"
 #include "esp_wifi.h"
 
+static const char* TAG = "AP";
+
+wifi_ap_record_t *wifi_scan(void) {
+    /*
+    // configure Wi-Fi scan settings
+    wifi_scan_config_t scan_config = {
+        .ssid = NULL,        // all SSIDs
+        .bssid = NULL,       // all BSSIDs
+        .channel = 0,        // all channels
+        .show_hidden = false,
+        .scan_type = WIFI_SCAN_TYPE_PASSIVE,
+    };
+
+    ESP_ERROR_CHECK(esp_wifi_scan_start(&scan_config, true)); // blocking scan
+
+    // get the number of APs found
+    uint16_t ap_num = 0;
+    ESP_ERROR_CHECK(esp_wifi_scan_get_ap_num(&ap_num));
+
+    // allocate memory for AP info and retrieve the list
+    wifi_ap_record_t *ap_info = malloc(sizeof(wifi_ap_record_t) * ap_num);
+    if (ap_info == NULL) {
+        ESP_LOGE(TAG, "Failed to allocate memory for AP list");
+        return false;
+    }
+    ESP_ERROR_CHECK(esp_wifi_scan_get_ap_records(&ap_num, ap_info));
+
+    for (int i = 0; i < ap_num; i++) {
+        if (strncmp((const char*)ap_info[i].ssid, "ROOT ", 5) == 0) return &ap_info[i];
+    }
+
+    free(ap_info);
+    */
+
+    return NULL;
+}
+
 void wifi_init(void) {
     // initialize the Wi-Fi stack
     ESP_ERROR_CHECK(esp_netif_init());
@@ -18,11 +55,11 @@ void wifi_init(void) {
     // use only STA at first to scan for APs
     ESP_ERROR_CHECK(esp_wifi_set_mode(WIFI_MODE_STA));
     ESP_ERROR_CHECK(esp_wifi_start());
-    /*
     vTaskDelay(pdMS_TO_TICKS(100));
 
     // scan for other WiFi APs
     wifi_ap_record_t * AP_exists = wifi_scan();
+    /*
 
     // stop WiFi before changing mode
     ESP_ERROR_CHECK(esp_wifi_stop());
