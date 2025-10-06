@@ -2,6 +2,7 @@
 
 #include "esp_err.h"
 #include "esp_log.h"
+#include "esp_wifi_types_generic.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -14,12 +15,6 @@ static inline esp_err_t esp_wifi_init(const wifi_init_config_t *config) {
     return ESP_OK;
 }
 
-typedef enum {
-    WIFI_MODE_NULL = 0,
-    WIFI_MODE_STA,
-    WIFI_MODE_AP,
-    WIFI_MODE_APSTA
-} wifi_mode_t;
 static inline esp_err_t esp_wifi_set_mode(wifi_mode_t mode) {
     ESP_LOGI("[esp_wifi_stub]", "esp_wifi_set_mode called");
     return ESP_OK;
