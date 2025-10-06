@@ -6,6 +6,7 @@
 #include "driver/i2c_master.h"
 
 static i2c_master_bus_handle_t i2c_bus = NULL;
+static i2c_master_dev_handle_t i2c_device = NULL;
 
 static const char* TAG = "I2C";
 
@@ -18,7 +19,6 @@ esp_err_t check_device() {
 
 esp_err_t read_SBS_data(uint8_t reg, uint8_t* data, size_t data_size) {
     esp_err_t ret = check_device();
-    /*
     if (ret != ESP_OK) return ret;
 
     if (!data || data_size == 0) {
@@ -32,6 +32,6 @@ esp_err_t read_SBS_data(uint8_t reg, uint8_t* data, size_t data_size) {
 
     // receive the response data
     ret = i2c_master_receive(i2c_device, data, data_size, I2C_MASTER_TIMEOUT_MS);
-    */
+
     return ret;
 }
