@@ -1,5 +1,8 @@
 #include "include/AP.h"
 
+#include "include/global.h"
+#include "include/config.h"
+
 #include <string.h>
 #include "esp_netif.h"
 #include "esp_event.h"
@@ -58,7 +61,6 @@ void wifi_init(void) {
 
     // scan for other WiFi APs
     wifi_ap_record_t * AP_exists = wifi_scan();
-    /*
 
     // stop WiFi before changing mode
     ESP_ERROR_CHECK(esp_wifi_stop());
@@ -82,7 +84,7 @@ void wifi_init(void) {
     char buffer[5 + 8 + 2 + 5 + 1 + 1]; // "ROOT " + "BMS_255" + ": " + uint16_t, + "%" + "\0"
     if (LORA_IS_RECEIVER) {
         snprintf(buffer, sizeof(buffer), "LoRa RECEIVER");
-    } else {
+    } /*else {
         uint8_t data_SBS[2] = {0};
         read_SBS_data(I2C_RELATIVE_STATE_OF_CHARGE_ADDR, data_SBS, sizeof(data_SBS));
         snprintf(buffer, sizeof(buffer), "%sbms_%02u: %d%%", !AP_exists?"ROOT ":"", ESP_ID, data_SBS[1] << 8 | data_SBS[0]);

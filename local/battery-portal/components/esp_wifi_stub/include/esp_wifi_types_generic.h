@@ -16,6 +16,10 @@ typedef enum {
 } wifi_mode_t;
 
 typedef enum {
+    WIFI_AUTH_OPEN = 0,
+} wifi_auth_mode_t;
+
+typedef enum {
     WIFI_SCAN_TYPE_ACTIVE = 0,
     WIFI_SCAN_TYPE_PASSIVE,
 } wifi_scan_type_t;
@@ -30,6 +34,17 @@ typedef struct {
 typedef struct {
     uint8_t ssid[33];
 } wifi_ap_record_t;
+
+typedef struct {
+    uint8_t ssid[32];
+    uint8_t ssid_len;
+    uint8_t channel;
+    wifi_auth_mode_t authmode;
+    uint8_t max_connection;
+} wifi_ap_config_t;
+typedef union {
+    wifi_ap_config_t  ap;
+} wifi_config_t;
 
 #ifdef __cplusplus
 }

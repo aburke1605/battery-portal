@@ -25,6 +25,11 @@ static inline esp_err_t esp_wifi_start(void) {
     return ESP_OK;
 }
 
+static inline esp_err_t esp_wifi_stop(void) {
+    ESP_LOGI("[esp_wifi_stub]", "esp_wifi_stop called");
+    return ESP_OK;
+}
+
 static inline esp_err_t esp_wifi_scan_start(const wifi_scan_config_t *config, bool block) {
     ESP_LOGI("[esp_wifi_stub]", "esp_wifi_scan_start called");
     return ESP_OK;
