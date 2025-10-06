@@ -4,6 +4,7 @@
 #include "esp_err.h"
 #include "esp_log.h"
 #include "esp_event_base.h"
+#include "esp_interface.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -15,6 +16,10 @@ typedef enum {
     WIFI_MODE_AP,
     WIFI_MODE_APSTA
 } wifi_mode_t;
+
+typedef enum {
+    WIFI_IF_AP  = ESP_IF_WIFI_AP,
+} wifi_interface_t;
 
 typedef enum {
     WIFI_AUTH_OPEN = 0,

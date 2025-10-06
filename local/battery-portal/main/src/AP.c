@@ -11,6 +11,7 @@
 #include "esp_wifi.h"
 #include "esp_wifi_types_generic.h"
 #include "esp_mac.h"
+#include "esp_netif_types.h"
 
 static const char* TAG = "AP";
 
@@ -131,7 +132,7 @@ void wifi_init(void) {
         // keep count of number of connected clients
         ESP_ERROR_CHECK(esp_event_handler_register(WIFI_EVENT, ESP_EVENT_ANY_ID, &ap_n_clients_handler, NULL));
         is_root = true;
-    } /*else {
+    } else {
         // must change IP address from default so
         // can send messages to ROOT at 192.168.4.1
         esp_netif_ip_info_t ip_info;
@@ -143,11 +144,10 @@ void wifi_init(void) {
         esp_netif_dhcps_start(ap_netif);
     }
 
-    ESP_ERROR_CHECK(esp_wifi_set_config(ESP_IF_WIFI_AP, &wifi_ap_config));
+    ESP_ERROR_CHECK(esp_wifi_set_config(WIFI_IF_AP, &wifi_ap_config));
 
     // restart WiFi
     ESP_LOGI(TAG, "Starting WiFi AP... SSID: %s", wifi_ap_config.ap.ssid);
     ESP_ERROR_CHECK(esp_wifi_start());
     vTaskDelay(pdMS_TO_TICKS(100));
-    */
 }

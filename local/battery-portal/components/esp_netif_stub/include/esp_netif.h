@@ -12,6 +12,21 @@ static inline esp_err_t esp_netif_init(void) {
     return ESP_OK;
 }
 
+static inline esp_err_t esp_netif_set_ip_info(esp_netif_t *esp_netif, const esp_netif_ip_info_t *ip_info) {
+    ESP_LOGI("[esp_netif_stub]", "esp_netif_set_ip_info called");
+    return ESP_OK;
+}
+
+static inline esp_err_t esp_netif_dhcps_start(esp_netif_t *esp_netif) {
+    ESP_LOGI("[esp_netif_stub]", "esp_netif_dhcps_start called");
+    return ESP_OK;
+}
+
+static inline esp_err_t esp_netif_dhcps_stop(esp_netif_t *esp_netif) {
+    ESP_LOGI("[esp_netif_stub]", "esp_netif_dhcps_stop called");
+    return ESP_OK;
+}
+
 #ifdef __cplusplus
 }
 #endif
