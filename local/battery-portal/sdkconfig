@@ -79,6 +79,13 @@ CONFIG_PARTITION_TABLE_OFFSET=0x8000
 # end of Partition Table
 
 #
+# [CUSTOM] BMS Configuration
+#
+CONFIG_I2C_ADDR=0x0B
+CONFIG_RELATIVE_STATE_OF_CHARGE_ADDR=0x0D
+# end of [CUSTOM] BMS Configuration
+
+#
 # Compiler options
 #
 CONFIG_COMPILER_OPTIMIZATION_DEBUG=y

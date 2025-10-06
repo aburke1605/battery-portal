@@ -2,6 +2,7 @@
 
 #include "include/global.h"
 #include "include/config.h"
+#include "include/I2C.h"
 
 #include <string.h>
 #include "esp_netif.h"
@@ -84,12 +85,13 @@ void wifi_init(void) {
     char buffer[5 + 8 + 2 + 5 + 1 + 1]; // "ROOT " + "BMS_255" + ": " + uint16_t, + "%" + "\0"
     if (LORA_IS_RECEIVER) {
         snprintf(buffer, sizeof(buffer), "LoRa RECEIVER");
-    } /*else {
+    } else {
         uint8_t data_SBS[2] = {0};
         read_SBS_data(I2C_RELATIVE_STATE_OF_CHARGE_ADDR, data_SBS, sizeof(data_SBS));
         snprintf(buffer, sizeof(buffer), "%sbms_%02u: %d%%", !AP_exists?"ROOT ":"", ESP_ID, data_SBS[1] << 8 | data_SBS[0]);
     }
 
+    /*
     strncpy((char *)wifi_ap_config.ap.ssid, buffer, sizeof(wifi_ap_config.ap.ssid) - 1);
     wifi_ap_config.ap.ssid[sizeof(wifi_ap_config.ap.ssid) - 1] = '\0'; // ensure null-termination
     wifi_ap_config.ap.ssid_len = strlen((char *)wifi_ap_config.ap.ssid); // set SSID length
