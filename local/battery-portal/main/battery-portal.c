@@ -1,4 +1,5 @@
 #include "include/AP.h"
+#include "include/I2C.h"
 #include "include/utils.h"
 
 #include <stdint.h>
@@ -14,6 +15,8 @@ void app_main(void) {
     initialise_nvs();
 
     initialise_spiffs();
+
+    ESP_ERROR_CHECK(i2c_master_init());
 
     wifi_init();
 }

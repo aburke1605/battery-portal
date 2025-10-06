@@ -4,6 +4,26 @@ config I2C_ADDR
     default 0x0B
     help
       Set the hexadecimal address of the I2C device.
+config MASTER_SDA_PIN
+    int "I2C Serial Data (SDA) GPIO"
+    default 22
+    help
+      Set the GPIO number for the I2C SDA line.
+config MASTER_SCL_PIN
+    int "I2C Serial Clock (SCL) GPIO"
+    default 21
+    help
+      Set the GPIO number for the I2C SCL line.
+config FREQ_HZ
+    int "I2C Clock Frequency (Hz)"
+    default 50000
+    help
+      Set the clock frequency for the I2C device.
+config DELAY
+    int "I2C delay (ms)"
+    default 500
+    help
+      Set the time delay betwen successive I2C commands.
 config RELATIVE_STATE_OF_CHARGE_ADDR
     hex "BMS relative SOC Address"
     default 0x0D
