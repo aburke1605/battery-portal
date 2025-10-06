@@ -13,5 +13,7 @@ uint8_t ESP_ID = 0;
 void app_main(void) {
     initialise_nvs();
 
+    initialise_spiffs();
+
     wifi_init();
 }
