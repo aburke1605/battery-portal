@@ -3,6 +3,7 @@
 #include <stdbool.h>
 #include "esp_err.h"
 #include "esp_log.h"
+#include "esp_event_base.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -45,6 +46,23 @@ typedef struct {
 typedef union {
     wifi_ap_config_t  ap;
 } wifi_config_t;
+
+typedef enum {
+    WIFI_EVENT_STA_START,
+    WIFI_EVENT_AP_STACONNECTED,
+    WIFI_EVENT_AP_STADISCONNECTED,
+} wifi_event_t;
+
+ESP_EVENT_DEFINE_BASE(WIFI_EVENT);
+
+typedef struct {
+    uint8_t mac[6];
+    uint8_t aid;
+} wifi_event_ap_staconnected_t;
+typedef struct {
+    uint8_t mac[6];
+    uint8_t aid;
+} wifi_event_ap_stadisconnected_t;
 
 #ifdef __cplusplus
 }

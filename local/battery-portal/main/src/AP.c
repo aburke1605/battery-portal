@@ -9,6 +9,8 @@
 #include "esp_event.h"
 #include "esp_wifi_default.h"
 #include "esp_wifi.h"
+#include "esp_wifi_types_generic.h"
+#include "esp_mac.h"
 
 static const char* TAG = "AP";
 
@@ -43,6 +45,35 @@ wifi_ap_record_t *wifi_scan(void) {
     free(ap_info);
 
     return NULL;
+}
+
+void ap_n_clients_handler(void *arg, esp_event_base_t event_base, int32_t event_id, void *event_data) {
+    if (event_base == WIFI_EVENT) {
+        switch (event_id) {
+            case WIFI_EVENT_STA_START:
+                ESP_LOGI(TAG, "Wi-Fi STA started");
+                break;
+
+            case WIFI_EVENT_AP_STACONNECTED: {
+                wifi_event_ap_staconnected_t *event = (wifi_event_ap_staconnected_t *) event_data;
+                num_connected_clients++;
+                ESP_LOGI(TAG, "Station "MACSTR" joined, AID=%d. Clients: %d",
+                         MAC2STR(event->mac), event->aid, num_connected_clients);
+                break;
+            }
+
+            case WIFI_EVENT_AP_STADISCONNECTED: {
+                wifi_event_ap_stadisconnected_t *event = (wifi_event_ap_stadisconnected_t *) event_data;
+                num_connected_clients--;
+                ESP_LOGI(TAG, "Station "MACSTR" left, AID=%d. Clients: %d",
+                         MAC2STR(event->mac), event->aid, num_connected_clients);
+                break;
+            }
+
+            default:
+                break;
+        }
+    }
 }
 
 void wifi_init(void) {
@@ -91,7 +122,6 @@ void wifi_init(void) {
         snprintf(buffer, sizeof(buffer), "%sbms_%02u: %d%%", !AP_exists?"ROOT ":"", ESP_ID, data_SBS[1] << 8 | data_SBS[0]);
     }
 
-    /*
     strncpy((char *)wifi_ap_config.ap.ssid, buffer, sizeof(wifi_ap_config.ap.ssid) - 1);
     wifi_ap_config.ap.ssid[sizeof(wifi_ap_config.ap.ssid) - 1] = '\0'; // ensure null-termination
     wifi_ap_config.ap.ssid_len = strlen((char *)wifi_ap_config.ap.ssid); // set SSID length
@@ -101,7 +131,7 @@ void wifi_init(void) {
         // keep count of number of connected clients
         ESP_ERROR_CHECK(esp_event_handler_register(WIFI_EVENT, ESP_EVENT_ANY_ID, &ap_n_clients_handler, NULL));
         is_root = true;
-    } else {
+    } /*else {
         // must change IP address from default so
         // can send messages to ROOT at 192.168.4.1
         esp_netif_ip_info_t ip_info;
