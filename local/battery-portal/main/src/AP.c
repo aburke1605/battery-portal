@@ -1,5 +1,6 @@
 #include "include/AP.h"
 
+#include <string.h>
 #include "esp_netif.h"
 #include "esp_event.h"
 #include "esp_wifi_default.h"
@@ -8,7 +9,6 @@
 static const char* TAG = "AP";
 
 wifi_ap_record_t *wifi_scan(void) {
-    /*
     // configure Wi-Fi scan settings
     wifi_scan_config_t scan_config = {
         .ssid = NULL,        // all SSIDs
@@ -37,7 +37,6 @@ wifi_ap_record_t *wifi_scan(void) {
     }
 
     free(ap_info);
-    */
 
     return NULL;
 }
