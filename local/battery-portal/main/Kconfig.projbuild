@@ -1,15 +1,31 @@
 menu "[CUSTOM] BMS Configuration"
-
 config I2C_ADDR
     hex "I2C Device Address"
     default 0x0B
     help
       Set the hexadecimal address of the I2C device.
-
 config RELATIVE_STATE_OF_CHARGE_ADDR
     hex "BMS relative SOC Address"
     default 0x0D
     help
       Set the SBS address for the BMS to read the battery realtive state of charge.
+endmenu
 
+
+menu "[CUSTOM] Wi-Fi Configuration"
+config WIFI_SSID
+    string "Router SSID"
+    default "SSID"
+    help
+      The SSID of the internet conenction router.
+config WIFI_PASSWORD
+    string "Router password"
+    default "PASSWORD"
+    help
+      The password of the internet conenction router.
+config WIFI_AUTO_CONNECT
+    bool "Auto-connect"
+    default n
+    help
+      Set to true to automatically connect to router with the set SSID.
 endmenu
