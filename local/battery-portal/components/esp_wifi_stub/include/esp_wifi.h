@@ -30,6 +30,11 @@ static inline esp_err_t esp_wifi_stop(void) {
     return ESP_OK;
 }
 
+static inline esp_err_t esp_wifi_connect(void) {
+    ESP_LOGI("[esp_wifi_stub]", "esp_wifi_connect called");
+    return ESP_OK;
+}
+
 static inline esp_err_t esp_wifi_scan_start(const wifi_scan_config_t *config, bool block) {
     ESP_LOGI("[esp_wifi_stub]", "esp_wifi_scan_start called");
     return ESP_OK;
@@ -45,7 +50,12 @@ static inline esp_err_t esp_wifi_scan_get_ap_records(uint16_t *number, wifi_ap_r
     return ESP_OK;
 }
 
-static inline esp_err_t esp_wifi_set_config(wifi_interface_t interface, wifi_config_t *conf) {//993
+static inline esp_err_t esp_wifi_sta_get_ap_info(wifi_ap_record_t *ap_info) {
+    ESP_LOGI("[esp_wifi_stub]", "esp_wifi_sta_get_ap_info called");
+    return ESP_OK;
+}
+
+static inline esp_err_t esp_wifi_set_config(wifi_interface_t interface, wifi_config_t *conf) {
     ESP_LOGI("[esp_wifi_stub]", "esp_wifi_set_config called");
     return ESP_OK;
 }

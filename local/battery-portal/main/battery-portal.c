@@ -11,13 +11,21 @@
 #include "esp_netif_types.h"
 #include "esp_log.h"
 #include "freertos/FreeRTOS.h"
+#include "esp_http_server.h"
 
 esp_netif_t *ap_netif;
 bool is_root = false;
 int num_connected_clients = 0;
 uint8_t ESP_ID = 0;
+httpd_handle_t server = NULL;
+bool connected_to_WiFi = false;
+client_socket client_sockets[WS_CONFIG_MAX_CLIENTS];
+char current_auth_token[UTILS_AUTH_TOKEN_LENGTH] = "";
+QueueHandle_t ws_queue;
+LoRa_message all_messages[MESH_SIZE] = {0};
 
 TaskHandle_t websocket_task_handle = NULL;
+TaskHandle_t merge_root_task_handle = NULL;
 
 void app_main(void) {
     initialise_nvs();
@@ -49,4 +57,11 @@ void app_main(void) {
     }
 
     wifi_init();
+    vTaskDelay(pdMS_TO_TICKS(3000));
+
+    server = start_webserver();
+    if (server == NULL) {
+        ESP_LOGE("main", "Failed to start web server!");
+        return;
+    }
 }

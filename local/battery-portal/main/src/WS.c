@@ -1,0 +1,310 @@
+#include "include/WS.h"
+
+#include "include/config.h"
+#include "include/global.h"
+#include "include/utils.h"
+#include "include/BMS.h"
+#include "include/I2C.h"
+
+#include "esp_log.h"
+#include "cJSON.h"
+#include "esp_wifi.h"
+#include "esp_wifi_types_generic.h"
+#include "nvs_flash.h"
+#include "esp_netif.h"
+
+static const char* TAG = "WS";
+
+static bool reconnect = false;
+
+void add_client(int fd, const char* tkn, bool browser, uint8_t esp_id) {
+    for (int i = 0; i < WS_CONFIG_MAX_CLIENTS; i++) {
+        if (client_sockets[i].descriptor == fd) {
+            return;
+        } else if (client_sockets[i].descriptor < 0) {
+            client_sockets[i].descriptor = fd;
+            strncpy(client_sockets[i].auth_token, tkn, UTILS_AUTH_TOKEN_LENGTH);
+            client_sockets[i].auth_token[UTILS_AUTH_TOKEN_LENGTH - 1] = '\0';
+            client_sockets[i].is_browser_not_mesh = browser;
+            client_sockets[i].esp_id = browser ? 0 : esp_id;
+            ESP_LOGI(TAG, "Client %d added", fd);
+            return;
+        }
+    }
+    ESP_LOGE(TAG, "No space for client %d", fd);
+}
+
+esp_err_t client_handler(httpd_req_t *req) {
+    int fd = httpd_req_to_sockfd(req);
+
+    // register new clients...
+    bool is_browser_not_mesh = true; // arbitrary assumption
+    if (req->method == HTTP_GET) {
+        char *check_new_browser_session = strstr(req->uri, "/browser_ws?auth_token=");
+        char *check_new_mesh_session = strstr(req->uri, "/mesh_ws?auth_token=");
+        if (check_new_browser_session || check_new_mesh_session) {
+            if (!check_new_browser_session && check_new_mesh_session) is_browser_not_mesh = false;
+            char auth_token[UTILS_AUTH_TOKEN_LENGTH] = {0};
+            uint8_t esp_id = 0;
+            if (is_browser_not_mesh) {
+                sscanf(check_new_browser_session, "/browser_ws?auth_token=%50s", auth_token);
+            } else {
+                sscanf(check_new_mesh_session, "/mesh_ws?auth_token=%50[^&]", auth_token);
+                char *check_esp_id = strstr(req->uri, "esp_id=");
+                if (!check_esp_id) {
+                    ESP_LOGE(TAG, "No `esp_id` passed during attempted client WebSocket connection to mesh!");
+                    return ESP_FAIL;
+                }
+                sscanf(check_esp_id, "esp_id=%hhu", &esp_id);
+            }
+            auth_token[UTILS_AUTH_TOKEN_LENGTH - 1] = '\0';
+            if (auth_token[0] != '\0' && strcmp(auth_token, current_auth_token) == 0) {
+                add_client(fd, auth_token, is_browser_not_mesh, esp_id);
+                current_auth_token[0] = '\0';
+                ESP_LOGI(TAG, "WebSocket handshake complete for client %d", fd);
+                return ESP_OK; // WebSocket handshake happens here
+            }
+        }
+        return ESP_FAIL;
+    }
+
+    // ...otherwise listen for messages
+    httpd_ws_frame_t ws_pkt;
+    memset(&ws_pkt, 0, sizeof(httpd_ws_frame_t));
+    // first call with ws_pkt.len = 0 to determine required length
+    esp_err_t ret = httpd_ws_recv_frame(req, &ws_pkt, 0);
+    if (ret != ESP_OK) {
+        ESP_LOGE(TAG, "Failed to fetch WebSocket frame length: %s", esp_err_to_name(ret));
+        return ret;
+    }
+    if (ws_pkt.len > 0) {
+        // allocate buffer
+        ws_pkt.payload = malloc(ws_pkt.len + 1);
+        if (!ws_pkt.payload) {
+            ESP_LOGE(TAG, "Failed to allocate memory for WebSocket payload");
+            return ESP_ERR_NO_MEM;
+        }
+        // receive payload
+        ret = httpd_ws_recv_frame(req, &ws_pkt, ws_pkt.len);
+        if (ret != ESP_OK) {
+            ESP_LOGE(TAG, "Failed to receive WebSocket frame: %s", esp_err_to_name(ret));
+            free(ws_pkt.payload);
+            return ret;
+        }
+        ws_pkt.payload[ws_pkt.len] = '\0';
+    }
+
+    if (ws_pkt.type == HTTPD_WS_TYPE_TEXT) {
+        if (VERBOSE) ESP_LOGI(TAG, "Received WebSocket message: %s", (char *)ws_pkt.payload);
+
+        // read messaage data
+        cJSON *message = cJSON_Parse((char *)ws_pkt.payload);
+        if (!message) {
+            ESP_LOGE(TAG, "Failed to parse JSON");
+            free(ws_pkt.payload);
+            return ESP_FAIL;
+        }
+
+        // re-determine if browser or mesh client
+        for (int i = 0; i < WS_CONFIG_MAX_CLIENTS; i++) {
+            if (client_sockets[i].descriptor == fd) {
+                is_browser_not_mesh = client_sockets[i].is_browser_not_mesh;
+                break;
+            }
+        }
+        if (is_browser_not_mesh) {
+            // perform the request made by the local websocket client
+            cJSON *response = cJSON_CreateObject();
+            perform_request(message, response);
+        } else {
+            // queue message from mesh client to forward via LoRa
+            cJSON *esp_id_obj = cJSON_GetObjectItem(message, "esp_id");
+            if (!esp_id_obj) {
+                ESP_LOGE(TAG, "incoming LoRa queue message not formatted properly:\n  %s", cJSON_PrintUnformatted(message));
+                free(ws_pkt.payload);
+                cJSON_Delete(message);
+                return ESP_FAIL;
+            }
+            bool found = false;
+            for (int i=0; i<MESH_SIZE; i++) {
+                if (all_messages[i].esp_id == esp_id_obj->valueint) {
+                    // update existing message
+                    found = true;
+                    strcpy(all_messages[i].message, (char *)ws_pkt.payload);
+                    i = MESH_SIZE;
+                } else if (all_messages[i].esp_id == 0) {
+                    // create new message
+                    found = true;
+                    all_messages[i].esp_id = esp_id_obj->valueint;
+                    strcpy(all_messages[i].message, (char *)ws_pkt.payload);
+                    i = MESH_SIZE;
+                }
+            }
+            if (!found) ESP_LOGE(TAG, "LoRa queue full! Dropping message: %s", cJSON_PrintUnformatted(message));
+        }
+
+        cJSON_Delete(message);
+    } else {
+        ESP_LOGW(TAG, "Received unsupported WebSocket frame type: %d", ws_pkt.type);
+    }
+
+    free(ws_pkt.payload);
+
+    return ESP_OK;
+}
+
+esp_err_t perform_request(cJSON *message, cJSON *response) {
+    // construct response message
+    cJSON_AddStringToObject(response, "type", "response");
+    cJSON_AddNumberToObject(response, "esp_id", ESP_ID);
+    cJSON *response_content = cJSON_CreateObject();
+
+    cJSON *type = cJSON_GetObjectItem(message, "type");
+    cJSON *content = cJSON_GetObjectItem(message, "content");
+    if (!type || !content) {
+        ESP_LOGE(TAG, "Error in request message");
+        return ESP_FAIL;
+    }
+
+    if (strcmp(type->valuestring, "query") == 0) {
+        if (strcmp(content->valuestring, "are you still there?") == 0) {
+            cJSON_AddStringToObject(response_content, "response", "yes");
+            xQueueReset(ws_queue); // prioritise this reply(?)
+        }
+    } else if (strcmp(type->valuestring, "request") == 0) {
+        cJSON *summary = cJSON_GetObjectItem(content, "summary");
+        if (summary && strcmp(summary->valuestring, "change-settings") == 0) {
+            cJSON *data = cJSON_GetObjectItem(content, "data");
+            if (!data) {
+                ESP_LOGE(TAG, "Failed to parse JSON");
+                cJSON_AddStringToObject(response_content, "status", "error");
+                return ESP_FAIL;
+            }
+
+            cJSON *esp_id = cJSON_GetObjectItem(data, "new_esp_id");
+            if (esp_id && esp_id->valueint != 0 && esp_id->valueint != ESP_ID) {
+                ESP_LOGI(TAG, "Changing device name...");
+
+                uint8_t address[2] = {0};
+                convert_uint_to_n_bytes(I2C_DEVICE_NAME_ADDR, address, sizeof(address), true);
+
+                // construct DeviceName string from ID
+                char new_id[7];
+                snprintf(new_id, sizeof(new_id), "bms_%02u", esp_id->valueint);
+                size_t new_id_length = strlen(new_id);
+
+                // convert to data array
+                uint8_t new_id_data[1+new_id_length];
+                new_id_data[0] = new_id_length;
+                for (size_t i=0; i<new_id_length; i++)
+                    new_id_data[1 + i] = new_id[i];
+
+                // write to DataFlash
+                write_data_flash(address, sizeof(address), new_id_data, sizeof(new_id_data));
+
+                // update ESP32 memory
+                change_esp_id(new_id);
+            }
+
+            int OTC = cJSON_GetObjectItem(data, "OTC")->valueint;
+
+            uint8_t address[2] = {0};
+            convert_uint_to_n_bytes(I2C_OTC_THRESHOLD_ADDR, address, sizeof(address), true);
+            uint8_t data_flash[2] = {0};
+            read_data_flash(address, sizeof(address), data_flash, sizeof(data_flash));
+            if (OTC != (data_flash[1] << 8 | data_flash[0])) {
+                ESP_LOGI(TAG, "Changing OTC threshold...");
+                convert_uint_to_n_bytes(OTC, data_flash, sizeof(data_flash), false);
+                write_data_flash(address, sizeof(address), data_flash, sizeof(data_flash));
+            }
+
+            cJSON_AddStringToObject(response_content, "status", "success");
+        } else if (summary && strcmp(summary->valuestring, "connect-wifi") == 0) {
+            cJSON *data = cJSON_GetObjectItem(content, "data");
+            if (!data) {
+                ESP_LOGE(TAG, "Failed to parse JSON");
+                cJSON_AddStringToObject(response_content, "status", "error");
+                return ESP_FAIL;
+            }
+
+            const char* ssid = cJSON_GetObjectItem(data, "ssid")->valuestring;
+            const char* password = cJSON_GetObjectItem(data, "password")->valuestring;
+            cJSON *auto_connect = cJSON_GetObjectItem(data, "auto_connect");
+
+            int tries = 0;
+            int max_tries = 10;
+            if (!connected_to_WiFi || reconnect) {
+                if (reconnect) {
+                    connected_to_WiFi = false;
+                }
+
+                wifi_config_t *wifi_sta_config = malloc(sizeof(wifi_config_t));
+                memset(wifi_sta_config, 0, sizeof(wifi_config_t));
+
+                // overwrite stored values in NVS
+                nvs_handle_t nvs;
+                esp_err_t err = nvs_open("WIFI", NVS_READWRITE, &nvs);
+                if (err != ESP_OK) {
+                    ESP_LOGW(TAG, "Could not open NVS namespace for writing");
+                } else {
+                    nvs_set_str(nvs, "SSID", ssid);
+                    nvs_set_str(nvs, "PASSWORD", password);
+                    if (cJSON_IsBool(auto_connect) && cJSON_IsTrue(auto_connect)) nvs_set_u8(nvs, "AUTO_CONNECT", 1);
+                    else nvs_set_u8(nvs, "AUTO_CONNECT", 0);
+                    nvs_commit(nvs);
+                    nvs_close(nvs);
+                }
+
+                strncpy((char *)wifi_sta_config->sta.ssid, ssid, sizeof(wifi_sta_config->sta.ssid) - 1);
+                if (strlen(password) == 0) {
+                    wifi_sta_config->ap.authmode = WIFI_AUTH_OPEN;
+                } else {
+                    strncpy((char *)wifi_sta_config->sta.password, password, sizeof(wifi_sta_config->sta.password) - 1);
+                }
+                ESP_LOGI(TAG, "Connecting to AP... SSID: %s", wifi_sta_config->sta.ssid);
+
+                ESP_ERROR_CHECK(esp_wifi_set_config(ESP_IF_WIFI_STA, wifi_sta_config));
+                // TODO: if reconnecting, it doesn't actually seem to drop the old connection in favour of the new one
+
+                // give some time to connect
+                vTaskDelay(pdMS_TO_TICKS(5000));
+                while (true) {
+                    if (tries > max_tries) break;
+                    wifi_ap_record_t ap_info;
+                    if (esp_wifi_sta_get_ap_info(&ap_info) == ESP_OK) {
+
+                        esp_netif_t *sta_netif = esp_netif_get_handle_from_ifkey("WIFI_STA_DEF");
+                        if (sta_netif != NULL) {
+                            esp_netif_ip_info_t ip_info;
+                            esp_netif_get_ip_info(sta_netif, &ip_info);
+
+                            if (ip_info.ip.addr != IPADDR_ANY) {
+                                connected_to_WiFi = true;
+                                ESP_LOGI(TAG, "Connected to router. Signal strength: %d dBm", ap_info.rssi);
+                                cJSON_AddStringToObject(response_content, "status", "success");
+
+                                break;
+                            }
+                        }
+                    } else {
+                        if (VERBOSE) ESP_LOGI(TAG, "Not connected. Retrying... %d", tries);
+                        esp_wifi_connect();
+                    }
+                    tries++;
+
+                    vTaskDelay(pdMS_TO_TICKS(1000));
+                }
+            }
+        } else if (summary && strcmp(summary->valuestring, "reset-bms") == 0) {
+            reset();
+            cJSON_AddStringToObject(response_content, "status", "success");
+        } else if (summary && strcmp(summary->valuestring, "unseal-bms") == 0) {
+            unseal();
+            cJSON_AddStringToObject(response_content, "status", "success");
+        }
+    } else {
+        return ESP_ERR_NOT_SUPPORTED;
+    }
+    cJSON_AddItemToObject(response, "content", response_content);
+    return ESP_OK;
+}

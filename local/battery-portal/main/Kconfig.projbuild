@@ -1,3 +1,34 @@
+menu "[CUSTOM] Log-in Configuration"
+config USERNAME
+    string "Username"
+    default "admin"
+    help
+      Username to access Wi-Fi AP.
+config PASSWORD
+    string "Password"
+    default "BaTT3ryP0rta!"
+    help
+      Password to access Wi-Fi AP.
+config AUTH_TOKEN_LENGTH
+    int "Authentication token length"
+    default 32
+    help
+      WebSocket client authentication token length.
+endmenu
+
+menu "[CUSTOM] Developer options"
+config VERBOSE
+    bool "Verbose mode"
+    default n
+    help
+      Set to true to enable verbose mode.menu "[CUSTOM] BMS Configuration"
+config DEV
+    bool "Developer mode"
+    default n
+    help
+      Set to true to enable ESP32 developer mode.
+endmenu
+
 menu "[CUSTOM] BMS Configuration"
 config SCAN_I2C
     bool "Scan I2C devices"
@@ -54,6 +85,11 @@ config OPERATION_STATUS_ADDR
     default 0x0054
     help
       Set the Data Flash address to read the BMS sealed status and more.
+config OTC_THRESHOLD_ADDR
+    hex "BMS OTC Threshold Address"
+    default 0x4888
+    help
+      Set the Data Flash address to read the BMS OverTemperature Charge threshold.
 config RESET_CMD
     hex "BMS RESET command code"
     default 0x0041

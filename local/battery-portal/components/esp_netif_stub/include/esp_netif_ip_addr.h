@@ -10,7 +10,8 @@ struct esp_ip4_addr {
     uint32_t addr;
 };
 typedef struct esp_ip4_addr esp_ip4_addr_t;
-// rather than using lwip
+// rather than using lwip:
+#define IPADDR_ANY          ((uint32_t)0x00000000UL)
 #define IP4_ADDR(ipaddr, a,b,c,d) ((ipaddr)->addr = ((a)<<24)|((b)<<16)|((c)<<8)|(d))
 
 #ifdef __cplusplus

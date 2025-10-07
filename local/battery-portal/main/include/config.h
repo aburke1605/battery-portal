@@ -1,7 +1,21 @@
 #ifndef CONFIG_H
 #define CONFIG_H
 
-#define AP_MAX_STA_CONN 4
+#include "sdkconfig.h"
+
+#include <stdbool.h>
+#include <stdint.h>
+
+#ifdef CONFIG_VERBOSE
+    #define VERBOSE true
+#else
+    #define VERBOSE false
+#endif
+#ifdef CONFIG_DEV
+    #define DEV true
+#else
+    #define DEV false
+#endif
 
 // I2C
 #ifdef CONFIG_SCAN_I2C
@@ -22,6 +36,7 @@
 #define I2C_DEVICE_NAME_ADDR      CONFIG_DEVICE_NAME_ADDR
 #define UTILS_ID_LENGTH 20
 #define I2C_OPERATION_STATUS_ADDR CONFIG_OPERATION_STATUS_ADDR
+#define I2C_OTC_THRESHOLD_ADDR    CONFIG_OTC_THRESHOLD_ADDR
 #define BMS_RESET_CMD    CONFIG_RESET_CMD
 #define BMS_SEAL_CMD     CONFIG_SEAL_CMD
 #define BMS_UNSEAL_CMD_1 CONFIG_UNSEAL_CMD_1
@@ -43,6 +58,29 @@
 #else
     #define WIFI_AUTO_CONNECT false
 #endif
+#define AP_MAX_STA_CONN 4
+#define WS_MAX_N_HTML_PAGES 1
+#define WS_MAX_HTML_PAGE_NAME_LENGTH 32
+#define WS_MAX_HTML_SIZE 700
+#define WS_CONFIG_MAX_CLIENTS 3
+#define WS_USERNAME CONFIG_USERNAME
+#define WS_PASSWORD CONFIG_PASSWORD
+#define WS_MESSAGE_MAX_LEN 512
+#define UTILS_AUTH_TOKEN_LENGTH CONFIG_AUTH_TOKEN_LENGTH
+#define MESH_SIZE 5
+
+typedef struct {
+    int descriptor;
+    char auth_token[UTILS_AUTH_TOKEN_LENGTH];
+    bool is_browser_not_mesh;
+    uint8_t esp_id; // just the number following "bms_", only relevent for mesh ws clients
+} client_socket;
+
+typedef struct {
+    uint8_t esp_id;
+    char message[WS_MESSAGE_MAX_LEN];
+} LoRa_message;
+
 
 // LoRa:
 #ifdef CONFIG_IS_RECEIVER

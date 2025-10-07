@@ -127,3 +127,24 @@ void read_data_flash(uint8_t* address, size_t address_size, uint8_t* data, size_
         ESP_LOGE(TAG, "Failed to read in read_data_flash!");
     }
 }
+
+void write_data_flash(uint8_t* address, size_t address_size, uint8_t* data, size_t data_size) {
+    esp_err_t ret = check_device();
+    if (ret != ESP_OK) return;
+
+    uint8_t block[1 + 1 + address_size + data_size];
+    block[0] = I2C_MANUFACTURER_BLOCK_ACCESS;
+    block[1] = address_size + data_size;
+
+    for (uint8_t i=0; i<address_size; i++)
+        block[2 + i] = address[address_size - 1 - i]; // little-endian
+
+    for (uint8_t i=0; i<data_size; i++)
+        block[2 + address_size + i] = data[i];
+
+    ret = i2c_master_transmit(i2c_device, block, sizeof(block), I2C_MASTER_TIMEOUT_MS);
+    if (ret != ESP_OK) {
+        ESP_LOGE(TAG, "Failed to write block!");
+    }
+    vTaskDelay(pdMS_TO_TICKS(100));
+}

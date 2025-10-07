@@ -39,6 +39,7 @@ typedef struct {
 
 typedef struct {
     uint8_t ssid[33];
+    int8_t  rssi;
 } wifi_ap_record_t;
 
 typedef struct {
@@ -48,8 +49,13 @@ typedef struct {
     wifi_auth_mode_t authmode;
     uint8_t max_connection;
 } wifi_ap_config_t;
+typedef struct {
+    uint8_t ssid[32];
+    uint8_t password[64];
+} wifi_sta_config_t;
 typedef union {
     wifi_ap_config_t  ap;
+    wifi_sta_config_t sta;
 } wifi_config_t;
 
 typedef enum {
@@ -58,7 +64,7 @@ typedef enum {
     WIFI_EVENT_AP_STADISCONNECTED,
 } wifi_event_t;
 
-ESP_EVENT_DEFINE_BASE(WIFI_EVENT);
+ESP_EVENT_DECLARE_BASE(WIFI_EVENT);
 
 typedef struct {
     uint8_t mac[6];

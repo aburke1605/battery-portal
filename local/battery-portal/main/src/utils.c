@@ -8,6 +8,7 @@
 #include "esp_log.h"
 #include "nvs_flash.h"
 #include "esp_spiffs.h"
+#include "esp_random.h"
 
 void change_esp_id(char* name) {
     if (strncmp(name, "bms_", 4) != 0) {
@@ -66,7 +67,82 @@ void initialise_spiffs() {
     }
 }
 
+esp_err_t get_POST_data(httpd_req_t *req, char* content, size_t content_size) {
+    int ret, content_len = req->content_len;
+
+    // ensure the content fits in the buffer
+    if (content_len >= content_size) {
+        return ESP_ERR_INVALID_SIZE;
+    }
+
+    // read the POST data
+    ret = httpd_req_recv(req, content, content_len);
+    if (ret <= 0) {
+        return ESP_FAIL;
+    }
+    content[ret] = '\0'; // null-terminate the string
+
+    return ESP_OK;
+}
+
 void convert_uint_to_n_bytes(unsigned int input, uint8_t *output, size_t n_bytes, bool little_endian) {
     for(size_t i=0; i<n_bytes; i++)
         output[i] = (input >> ((little_endian?n_bytes-1-i:i)*8)) & 0xFF;
+}
+
+void url_decode(char *dest, const char *src) {
+    char *d = dest;
+    const char *s = src;
+
+    while (*s) {
+        if (*s == '%') {
+            if (*(s + 1) && *(s + 2)) {
+                char hex[3] = { *(s + 1), *(s + 2), '\0' };
+                *d++ = (char)strtol(hex, NULL, 16);
+                s += 3;
+            }
+        } else if (*s == '+') {
+            *d++ = ' ';
+            s++;
+        } else {
+            *d++ = *s++;
+        }
+    }
+    *d = '\0';
+}
+
+void random_token(char *key) {
+    const char charset[] = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
+    size_t charset_size = sizeof(charset) - 1;
+
+    for (size_t i = 0; i < UTILS_AUTH_TOKEN_LENGTH; i++) {
+        key[i] = charset[esp_random() % charset_size];
+    }
+    key[UTILS_AUTH_TOKEN_LENGTH - 1] = '\0';
+}
+
+char* read_file(const char* path) {
+    FILE* f = fopen(path, "r");
+    if (!f) return NULL;
+
+    fseek(f, 0, SEEK_END);
+    size_t file_size = ftell(f);
+    fseek(f, 0, SEEK_SET);
+
+    char* buffer = (char*)malloc(file_size + 1);
+    if (!buffer){
+        fclose(f);
+        return NULL;
+    }
+
+    size_t bytes_read = fread(buffer, 1, file_size, f);
+    if (bytes_read != file_size) {
+        free(buffer);
+        fclose(f);
+        return NULL;
+    }
+    buffer[bytes_read] = '\0';
+
+    fclose(f);
+    return buffer;
 }
