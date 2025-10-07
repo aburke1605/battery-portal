@@ -29,11 +29,26 @@ config DELAY
     default 500
     help
       Set the time delay betwen successive I2C commands.
+config MANUFACTURER_ACCESS
+    hex "BMS 'ManufacturerAccess()' command code"
+    default 0x00
+    help
+      Set the ManufacturerAccess() command code for the BMS.
+config MANUFACTURER_BLOCK_ACCESS
+    hex "BMS 'ManufacturerBlockAccess()' command code"
+    default 0x44
+    help
+      Set the ManufacturerBlockAccess() command code for the BMS.
 config RELATIVE_STATE_OF_CHARGE_ADDR
     hex "BMS relative SOC Address"
     default 0x0D
     help
       Set the SBS address for the BMS to read the battery realtive state of charge.
+config OPERATION_STATUS_ADDR
+    hex "BMS Operation Status Address"
+    default 0x0054
+    help
+      Set the Data Flash address to read the BMS sealed status and more.
 config RESET_CMD
     hex "BMS RESET command code"
     default 0x0041

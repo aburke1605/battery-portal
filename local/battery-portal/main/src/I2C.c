@@ -1,6 +1,7 @@
 #include "include/I2C.h"
 
 #include "include/config.h"
+#include "include/utils.h"
 
 #include <stdbool.h>
 #include "esp_log.h"
@@ -74,4 +75,55 @@ esp_err_t read_SBS_data(uint8_t reg, uint8_t* data, size_t data_size) {
     ret = i2c_master_receive(i2c_device, data, data_size, I2C_MASTER_TIMEOUT_MS);
 
     return ret;
+}
+
+void write_word(uint8_t command, uint8_t* word, size_t word_size) {
+    esp_err_t ret = check_device();
+    if (ret != ESP_OK) return;
+
+    uint8_t data[1 + word_size];
+    data[0] = command;
+    for (size_t i=0; i<word_size; i++)
+        data[1 + i] = word[word_size - 1 - i]; // assumed little-endian(?)
+
+    ret = i2c_master_transmit(i2c_device, data, sizeof(data), I2C_MASTER_TIMEOUT_MS);
+    if (ret != ESP_OK) {
+        ESP_LOGE(TAG, "Failed to write word!");
+        return;
+    }
+}
+
+void read_data_flash(uint8_t* address, size_t address_size, uint8_t* data, size_t data_size) {
+    esp_err_t ret = check_device();
+    if (ret != ESP_OK) return;
+
+    uint8_t addr[2 + address_size];
+    addr[0] = I2C_MANUFACTURER_BLOCK_ACCESS;
+    addr[1] = address_size;
+    for (int i=0; i<address_size; i++)
+        addr[2 + i] = address[address_size - 1 - i]; // little-endian
+
+    // write the number of bytes of the address of the data we want to read, and the address itself
+    ret = i2c_master_transmit(i2c_device, addr, sizeof(addr), I2C_MASTER_TIMEOUT_MS);
+    if (ret != ESP_OK) {
+        ESP_LOGE(TAG, "Failed to write in read_data_flash!");
+        return;
+    }
+    // initiate read
+    uint8_t MAC = I2C_MANUFACTURER_BLOCK_ACCESS;
+    ret = i2c_master_transmit(i2c_device, &MAC, 1, I2C_MASTER_TIMEOUT_MS);
+
+
+    uint8_t buff[1 + address_size + 32]; // each ManufacturerBlockAccess() block is maximum 32 bytes,
+                                         // plus first byte which states the number of bytes in returned block,
+                                         // plus extra bytes to echo the address
+    for (size_t i=0; i<sizeof(buff); i++) buff[i] = 0; // initialise to zeros
+
+    ret = i2c_master_receive(i2c_device, buff, sizeof(buff), I2C_MASTER_TIMEOUT_MS);
+    if (ret == ESP_OK) {
+        for (size_t i=0; i<MIN(data_size, sizeof(buff)-1-address_size); i++)
+            data[i] = buff[1 + address_size + i];
+    } else {
+        ESP_LOGE(TAG, "Failed to read in read_data_flash!");
+    }
 }
