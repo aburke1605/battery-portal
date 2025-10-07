@@ -6,6 +6,7 @@
 #include "esp_log.h"
 #include "driver/i2c_master.h"
 #include "driver/i2c_types.h"
+#include "freertos/FreeRTOS.h"
 
 static i2c_master_bus_handle_t i2c_bus = NULL;
 static i2c_master_dev_handle_t i2c_device = NULL;
@@ -39,6 +40,21 @@ esp_err_t check_device() {
     if (ret != ESP_OK) ESP_LOGE(TAG, "I2C device not found at address 0x%x.", I2C_ADDR);
 
     return ret;
+}
+
+void device_scan(void) {
+    ESP_LOGI(TAG, "Scanning for devices...");
+    uint8_t n_devices = 0;
+    for (uint8_t i = 1; i < 127; i++) {
+        esp_err_t ret = i2c_master_probe(i2c_bus, i, pdMS_TO_TICKS(1000));
+
+        if (ret == ESP_OK) {
+            ESP_LOGI(TAG, "I2C device found at address 0x%02X", i);
+            n_devices++;
+        }
+    }
+
+    if (n_devices == 0) ESP_LOGW(TAG, "No devices found.");
 }
 
 esp_err_t read_SBS_data(uint8_t reg, uint8_t* data, size_t data_size) {
