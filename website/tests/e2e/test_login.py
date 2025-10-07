@@ -5,23 +5,24 @@ from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 
-BASE_URL = os.getenv("BASE_URL", "http://localhost")  # set in Docker compose.yml
 
-# driver fixture is provided by tests/e2e/conftest.py
-
-def test_login(driver):
+def test_login(driver, base_url, wait_timeout):
     # go to login page
-    driver.get(f"{BASE_URL}/#/login")
+    driver.get(f"{base_url}/#/login")
 
     # wait for form container (or any stable parent element)
-    form = WebDriverWait(driver, 10).until(
+    form = WebDriverWait(driver, wait_timeout).until(
         EC.presence_of_element_located((By.CSS_SELECTOR, "form"))
     )
+    assert form is not None
 
     # grab elements
     email_input = form.find_element(By.CSS_SELECTOR, 'input[placeholder="info@gmail.com"]')
     password_input = form.find_element(By.CSS_SELECTOR, 'input[type="password"]')
     login_button = form.find_element(By.XPATH, '//button[contains(text(), "Sign in")]')
+    assert email_input is not None
+    assert password_input is not None
+    assert login_button is not None
 
     # send login info
     email_input.send_keys("user@admin.dev")
@@ -29,6 +30,7 @@ def test_login(driver):
     login_button.click()
 
     # wait redirect after successful login
-    WebDriverWait(driver, 5).until(
+    dashboard_link = WebDriverWait(driver, wait_timeout).until(
         EC.title_contains("Dashboard")
     )
+    assert dashboard_link is not None
