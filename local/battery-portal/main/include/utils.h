@@ -8,6 +8,8 @@
 #define MIN(a, b) ((a) < (b) ? (a) : (b))
 #define MAX(a, b) ((a) > (b) ? (a) : (b))
 
+void change_esp_id(char* name);
+
 void initialise_nvs();
 
 void initialise_spiffs();

@@ -1,10 +1,29 @@
 #include "include/utils.h"
 
 #include "include/config.h"
+#include "include/global.h"
 
+#include <string.h>
+#include <ctype.h>
 #include "esp_log.h"
 #include "nvs_flash.h"
 #include "esp_spiffs.h"
+
+void change_esp_id(char* name) {
+    if (strncmp(name, "bms_", 4) != 0) {
+        ESP_LOGE("utils", "New name not formatted correctly: \"%s\", should begin with \"bms_\"", name);
+        return;
+    }
+    char* id_str = &name[4];
+    // stop at first non-digit
+    for (char* p = id_str; *p; p++) {
+        if (!isdigit((unsigned char)*p)) {
+            *p = '\0'; // force terminate
+            break;
+        }
+    }
+    ESP_ID = atoi(id_str);
+}
 
 void initialise_nvs() {
     esp_err_t ret = nvs_flash_init();

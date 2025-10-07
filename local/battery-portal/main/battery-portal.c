@@ -7,6 +7,7 @@
 
 #include <stdint.h>
 #include <stdbool.h>
+#include <string.h>
 #include "esp_netif_types.h"
 #include "esp_log.h"
 #include "freertos/FreeRTOS.h"
@@ -37,7 +38,6 @@ void app_main(void) {
             vTaskDelay(pdMS_TO_TICKS(1000));
         }
 
-        /*
         // grab BMS DeviceName from the BMS DataFlash
         uint8_t address[2] = {0};
         convert_uint_to_n_bytes(I2C_DEVICE_NAME_ADDR, address, sizeof(address), true);
@@ -46,7 +46,6 @@ void app_main(void) {
         // store the ID in ESP32 memory
         if (strcmp((char *)data_flash, "") != 0)
             change_esp_id((char*)&data_flash[1]);
-        */
     }
 
     wifi_init();

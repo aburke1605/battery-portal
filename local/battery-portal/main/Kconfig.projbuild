@@ -44,6 +44,11 @@ config RELATIVE_STATE_OF_CHARGE_ADDR
     default 0x0D
     help
       Set the SBS address for the BMS to read the battery realtive state of charge.
+config DEVICE_NAME_ADDR
+    hex "BMS Device Name Address"
+    default 0x4085
+    help
+      Set the Data Flash address to read the BMS device name.
 config OPERATION_STATUS_ADDR
     hex "BMS Operation Status Address"
     default 0x0054
