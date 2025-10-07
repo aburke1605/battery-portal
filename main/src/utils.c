@@ -197,7 +197,7 @@ esp_err_t get_POST_data(httpd_req_t *req, char* content, size_t content_size) {
     return ESP_OK;
 }
 
-void convert_uint_to_n_bytes(uint input, uint8_t *output, size_t n_bytes, bool little_endian) {
+void convert_uint_to_n_bytes(unsigned int input, uint8_t *output, size_t n_bytes, bool little_endian) {
     for(size_t i=0; i<n_bytes; i++)
         output[i] = (input >> ((little_endian?n_bytes-1-i:i)*8)) & 0xFF;
 }

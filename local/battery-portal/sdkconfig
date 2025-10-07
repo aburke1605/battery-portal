@@ -88,6 +88,7 @@ CONFIG_MASTER_SCL_PIN=21
 CONFIG_FREQ_HZ=50000
 CONFIG_DELAY=500
 CONFIG_RELATIVE_STATE_OF_CHARGE_ADDR=0x0D
+CONFIG_RESET_CMD=0x0041
 # end of [CUSTOM] BMS Configuration
 
 #
@@ -97,6 +98,12 @@ CONFIG_WIFI_SSID="SSID"
 CONFIG_WIFI_PASSWORD="PASSWORD"
 # CONFIG_WIFI_AUTO_CONNECT is not set
 # end of [CUSTOM] Wi-Fi Configuration
+
+#
+# [CUSTOM] LoRa Configuration
+#
+# CONFIG_IS_RECEIVER is not set
+# end of [CUSTOM] LoRa Configuration
 
 #
 # Compiler options

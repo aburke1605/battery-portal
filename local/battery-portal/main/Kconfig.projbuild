@@ -34,6 +34,11 @@ config RELATIVE_STATE_OF_CHARGE_ADDR
     default 0x0D
     help
       Set the SBS address for the BMS to read the battery realtive state of charge.
+config RESET_CMD
+    hex "BMS RESET command code"
+    default 0x0041
+    help
+      Set the RESET command code for the BMS.
 endmenu
 
 
@@ -53,4 +58,12 @@ config WIFI_AUTO_CONNECT
     default n
     help
       Set to true to automatically connect to router with the set SSID.
+endmenu
+
+menu "[CUSTOM] LoRa Configuration"
+config IS_RECEIVER
+    bool "Receiver"
+    default n
+    help
+      Set to true to configure the ESP32 as receiver rather than transmitter (default).
 endmenu

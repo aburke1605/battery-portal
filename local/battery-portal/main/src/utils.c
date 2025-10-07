@@ -46,3 +46,8 @@ void initialise_spiffs() {
         return;
     }
 }
+
+void convert_uint_to_n_bytes(unsigned int input, uint8_t *output, size_t n_bytes, bool little_endian) {
+    for(size_t i=0; i<n_bytes; i++)
+        output[i] = (input >> ((little_endian?n_bytes-1-i:i)*8)) & 0xFF;
+}
