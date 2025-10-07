@@ -22,7 +22,6 @@ esp_err_t i2c_master_init(void) {
         .flags.enable_internal_pullup = true,
     };
 
-    /*
     esp_err_t err = i2c_new_master_bus(&bus_cfg, &i2c_bus);
     if (err != ESP_OK) return err;
 
@@ -33,7 +32,6 @@ esp_err_t i2c_master_init(void) {
     err |= i2c_master_bus_add_device(i2c_bus, &dev_cfg, &i2c_device);
 
     return err;
-    */return ESP_OK;
 }
 
 esp_err_t check_device() {
