@@ -54,6 +54,31 @@ config RESET_CMD
     default 0x0041
     help
       Set the RESET command code for the BMS.
+config SEAL_CMD
+    hex "BMS SEAL command code"
+    default 0x0030
+    help
+      Set the SEAL command code for the BMS.
+config UNSEAL_CMD_1
+    hex "BMS UNSEAL command code (first half)"
+    default 0x3672
+    help
+      Set the first half of the UNSEAL command code for the BMS.
+config UNSEAL_CMD_2
+    hex "BMS UNSEAL command code (second half)"
+    default 0x0414
+    help
+      Set the second half of the UNSEAL command code for the BMS.
+config FULL_ACCESS_CMD_1
+    hex "BMS FULL ACCESS command code (first half)"
+    default 0xFFFF
+    help
+      Set the first half of the FULL ACCESS command code for the BMS.
+config FULL_ACCESS_CMD_2
+    hex "BMS FULL ACCESS command code (second half)"
+    default 0xFFFF
+    help
+      Set the second half of the FULL ACCESS command code for the BMS.
 endmenu
 
 

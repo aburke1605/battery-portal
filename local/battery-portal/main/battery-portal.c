@@ -32,11 +32,11 @@ void app_main(void) {
     if (!LORA_IS_RECEIVER) {
         // do a BMS reset on boot
         reset();
-        /*
         while (get_sealed_status() != 1) {
             unseal();
             vTaskDelay(pdMS_TO_TICKS(1000));
         }
+        /*
 
         // Initialize the GPIO pin as an output for LED toggling
         gpio_config_t io_conf = {
