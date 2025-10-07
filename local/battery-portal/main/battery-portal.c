@@ -1,4 +1,5 @@
 #include "include/AP.h"
+#include "include/GPS.h"
 #include "include/I2C.h"
 #include "include/config.h"
 #include "include/utils.h"
@@ -21,6 +22,8 @@ void app_main(void) {
     ESP_ERROR_CHECK(i2c_master_init());
     ESP_LOGI("main", "I2C initialized successfully");
     if (SCAN_I2C) device_scan();
+
+    uart_init();
 
     wifi_init();
 }
