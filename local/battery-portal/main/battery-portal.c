@@ -1,5 +1,6 @@
 #include "include/AP.h"
 #include "include/BMS.h"
+#include "include/DNS.h"
 #include "include/GPS.h"
 #include "include/I2C.h"
 #include "include/config.h"
@@ -64,4 +65,7 @@ void app_main(void) {
         ESP_LOGE("main", "Failed to start web server!");
         return;
     }
+
+    TaskParams dns_server_params = {.stack_size = 2600, .task_name = "dns_server_task"};
+    xTaskCreate(&dns_server_task, dns_server_params.task_name, dns_server_params.stack_size, &dns_server_params, 2, NULL);
 }

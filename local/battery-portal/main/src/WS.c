@@ -12,6 +12,7 @@
 #include "esp_wifi_types_generic.h"
 #include "nvs_flash.h"
 #include "esp_netif.h"
+#include "lwip/ip4_addr.h"
 
 static const char* TAG = "WS";
 

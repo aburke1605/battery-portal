@@ -51,6 +51,7 @@
 #define GPS_GPIO_NUM_33 33
 
 // WiFi:
+#define DNS_PORT 53
 #define     WIFI_SSID         CONFIG_WIFI_SSID
 #define     WIFI_PASSWORD     CONFIG_WIFI_PASSWORD
 #ifdef                        CONFIG_WIFI_AUTO_CONNECT
@@ -76,17 +77,22 @@ typedef struct {
     uint8_t esp_id; // just the number following "bms_", only relevent for mesh ws clients
 } client_socket;
 
-typedef struct {
-    uint8_t esp_id;
-    char message[WS_MESSAGE_MAX_LEN];
-} LoRa_message;
-
-
 // LoRa:
 #ifdef CONFIG_IS_RECEIVER
     #define LORA_IS_RECEIVER true
 #else
     #define LORA_IS_RECEIVER false
 #endif
+
+typedef struct {
+    uint8_t esp_id;
+    char message[WS_MESSAGE_MAX_LEN];
+} LoRa_message;
+
+
+typedef struct {
+    int stack_size;
+    const char* task_name;
+} TaskParams;
 
 #endif // CONFIG_H

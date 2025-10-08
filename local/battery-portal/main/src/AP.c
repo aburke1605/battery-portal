@@ -14,7 +14,7 @@
 #include "esp_wifi.h"
 #include "esp_wifi_types_generic.h"
 #include "esp_mac.h"
-#include "esp_netif_types.h"
+#include "lwip/ip4_addr.h"
 #include "cJSON.h"
 #include "esp_system.h"
 

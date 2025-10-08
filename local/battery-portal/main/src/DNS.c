@@ -1,11 +1,15 @@
 #include "include/DNS.h"
 
 #include "include/config.h"
-#include "include/utils.h"
 
-#include <esp_log.h>
-#include <esp_wifi.h>
-#include <lwip/netdb.h>
+#include <errno.h>
+#include "esp_log.h"
+#include "lwip/sockets.h"
+#include "lwip/ip4_addr.h"
+#include "freertos/FreeRTOS.h"
+#include "esp_netif_types.h"
+#include "esp_netif.h"
+#include "esp_netif_ip_addr.h"
 
 static const char* TAG = "DNS";
 
