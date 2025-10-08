@@ -6,7 +6,7 @@ __pycache__
 cmake-build-debug
 .DS_Store
 ESP32/managed_components/**
-ESP32/dependencies.lock
+**/dependencies.lock
 website/static/plots/
 
 test/
