@@ -3,6 +3,7 @@
 #include "include/DNS.h"
 #include "include/GPS.h"
 #include "include/I2C.h"
+#include "include/LoRa.h"
 #include "include/MESH.h"
 #include "include/WS.h"
 #include "include/config.h"
@@ -93,5 +94,13 @@ void app_main(void) {
             TaskParams merge_root_params = {.stack_size = 2600, .task_name = "merge_root_task"};
             xTaskCreate(&merge_root_task, merge_root_params.task_name, merge_root_params.stack_size, &merge_root_params, 4, &merge_root_task_handle);
         }
+    }
+
+    // radio stuff
+    if (LORA_IS_RECEIVER || is_root) {
+        lora_init();
+
+        TaskParams lora_params = {.stack_size = 8700, .task_name = "lora_task"};
+        // xTaskCreate(lora_task, lora_params.task_name, lora_params.stack_size, &lora_params, 1, NULL);
     }
 }

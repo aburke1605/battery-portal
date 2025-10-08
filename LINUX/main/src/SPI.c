@@ -1,12 +1,16 @@
 #include "include/SPI.h"
 
-#include <driver/spi_master.h>
-#include <driver/gpio.h>
-#include <esp_log.h>
+#include "include/config.h"
 
-static spi_device_handle_t lora_spi;
+#include "driver/spi_common.h"
+#include "driver/spi_master.h"
+#include "driver/gpio.h"
+#include "freertos/FreeRTOS.h"
+#include "esp_system.h"
 
 static const char* TAG = "SPI";
+
+static spi_device_handle_t lora_spi;
 
 void spi_reset() {
     gpio_set_direction(PIN_NUM_RST, GPIO_MODE_OUTPUT);

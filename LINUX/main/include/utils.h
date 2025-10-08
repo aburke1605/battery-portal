@@ -36,4 +36,6 @@ char* read_file(const char* path);
 
 int compare_mac(const uint8_t *mac1, const uint8_t *mac2);
 
+float calculate_symbol_length(uint8_t spreading_factor, uint8_t bandwidth);
+
 #endif // UTILS_H

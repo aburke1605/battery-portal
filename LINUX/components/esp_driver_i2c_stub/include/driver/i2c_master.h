@@ -3,15 +3,12 @@
 #include "esp_err.h"
 #include "esp_log.h"
 #include "i2c_types.h"
+#include "driver/gpio_num.h"
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-
-typedef enum {
-    GPIO_NUM_MAX,
-} gpio_num_t;
 typedef enum {
     SOC_MOD_CLK_XTAL,
 } soc_module_clk_t;
