@@ -101,6 +101,6 @@ void app_main(void) {
         lora_init();
 
         TaskParams lora_params = {.stack_size = 8700, .task_name = "lora_task"};
-        // xTaskCreate(lora_task, lora_params.task_name, lora_params.stack_size, &lora_params, 1, NULL);
+        xTaskCreate(lora_task, lora_params.task_name, lora_params.stack_size, &lora_params, 1, NULL);
     }
 }
