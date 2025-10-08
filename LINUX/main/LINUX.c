@@ -3,6 +3,7 @@
 #include "include/DNS.h"
 #include "include/GPS.h"
 #include "include/I2C.h"
+#include "include/MESH.h"
 #include "include/WS.h"
 #include "include/config.h"
 #include "include/utils.h"
@@ -21,6 +22,7 @@ int num_connected_clients = 0;
 uint8_t ESP_ID = 0;
 httpd_handle_t server = NULL;
 bool connected_to_WiFi = false;
+bool connected_to_root = false;
 client_socket client_sockets[WS_CONFIG_MAX_CLIENTS];
 char current_auth_token[UTILS_AUTH_TOKEN_LENGTH] = "";
 QueueHandle_t ws_queue;
@@ -28,6 +30,7 @@ LoRa_message all_messages[MESH_SIZE] = {0};
 char forwarded_message[LORA_MAX_PACKET_LEN-2] = "";
 
 TaskHandle_t websocket_task_handle = NULL;
+TaskHandle_t mesh_websocket_task_handle = NULL;
 TaskHandle_t merge_root_task_handle = NULL;
 
 void app_main(void) {
@@ -77,4 +80,20 @@ void app_main(void) {
 
     TaskParams websocket_params = {.stack_size = 4600, .task_name = "websocket_task"};
     xTaskCreate(&websocket_task, websocket_params.task_name, websocket_params.stack_size, &websocket_params, 1, &websocket_task_handle);
+
+
+    if (!LORA_IS_RECEIVER) {
+        // MESH stuff
+        if (!is_root) {
+            TaskParams connect_to_root_params = {.stack_size = 2500, .task_name = "connect_to_root_task"};
+            xTaskCreate(&connect_to_root_task, connect_to_root_params.task_name, connect_to_root_params.stack_size, &connect_to_root_params, 4, NULL);
+/*
+            TaskParams mesh_websocket_params = {.stack_size = 3100, .task_name = "mesh_websocket_task"};
+            xTaskCreate(&mesh_websocket_task, mesh_websocket_params.task_name, mesh_websocket_params.stack_size, &mesh_websocket_params, 3, &mesh_websocket_task_handle);
+        } else {
+            TaskParams merge_root_params = {.stack_size = 2600, .task_name = "merge_root_task"};
+            xTaskCreate(&merge_root_task, merge_root_params.task_name, merge_root_params.stack_size, &merge_root_params, 4, &merge_root_task_handle);
+*/
+        }
+    }
 }

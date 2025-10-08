@@ -55,6 +55,11 @@ static inline esp_err_t esp_wifi_sta_get_ap_info(wifi_ap_record_t *ap_info) {
     return ESP_OK;
 }
 
+static inline esp_err_t esp_wifi_get_mac(wifi_interface_t ifx, uint8_t mac[6]) {
+    ESP_LOGI("[esp_wifi_stub]", "esp_wifi_get_mac called");
+    return ESP_OK;
+}
+
 static inline esp_err_t esp_wifi_set_config(wifi_interface_t interface, wifi_config_t *conf) {
     ESP_LOGI("[esp_wifi_stub]", "esp_wifi_set_config called");
     return ESP_OK;
