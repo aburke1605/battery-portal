@@ -2,13 +2,16 @@
 
 #include "include/config.h"
 #include "include/global.h"
+#include "include/WS.h"
 
 #include <string.h>
 #include <ctype.h>
+#include <math.h>
 #include "esp_log.h"
 #include "nvs_flash.h"
 #include "esp_spiffs.h"
 #include "esp_random.h"
+#include "cJSON.h"
 
 void change_esp_id(char* name) {
     if (strncmp(name, "bms_", 4) != 0) {
@@ -67,6 +70,50 @@ void initialise_spiffs() {
     }
 }
 
+void send_fake_request() {
+    if (!connected_to_WiFi) {
+        cJSON *message = cJSON_CreateObject();
+        cJSON_AddStringToObject(message, "type", "request");
+        cJSON *content = cJSON_CreateObject();
+        cJSON_AddStringToObject(content, "summary", "connect-wifi");
+        cJSON *data = cJSON_CreateObject();
+        cJSON_AddNumberToObject(data, "esp_id", ESP_ID);
+
+        char ssid[32];
+        strcpy(ssid, WIFI_SSID);
+        char password[64];
+        strcpy(password, WIFI_PASSWORD);
+        uint8_t auto_connect = (uint8_t)WIFI_AUTO_CONNECT;
+
+        nvs_handle_t nvs;
+        esp_err_t err = nvs_open("WIFI", NVS_READONLY, &nvs);
+        if (err != ESP_OK) {
+            ESP_LOGE("utils", "Could not open NVS namespace");
+            return;
+        }
+
+        size_t len = sizeof(ssid);
+        if (nvs_get_str(nvs, "SSID", ssid, &len) != ESP_OK) ESP_LOGW("utils", "Could not read Wi-Fi router SSID from NVS, using default");
+        len = sizeof(password);
+        if (nvs_get_str(nvs, "PASSWORD", password, &len) != ESP_OK) ESP_LOGW("utils", "Could not read Wi-Fi router password from NVS, using default");
+        if (nvs_get_u8(nvs, "AUTO_CONNECT", &auto_connect) != ESP_OK) ESP_LOGW("utils", "Could not read Wi-Fi auto-connect setting from NVS, using default");
+
+        nvs_close(nvs);
+
+        cJSON_AddStringToObject(data, "ssid", ssid);
+        cJSON_AddStringToObject(data, "password", password);
+        cJSON_AddBoolToObject(data, "auto_connect", (auto_connect!=0));
+
+        cJSON_AddItemToObject(content, "data", data);
+        cJSON_AddItemToObject(message, "content", content);
+
+        cJSON *response = cJSON_CreateObject();
+        perform_request(message, response);
+
+        vTaskDelay(pdMS_TO_TICKS(5000));
+    }
+}
+
 esp_err_t get_POST_data(httpd_req_t *req, char* content, size_t content_size) {
     int ret, content_len = req->content_len;
 
@@ -119,6 +166,16 @@ void random_token(char *key) {
         key[i] = charset[esp_random() % charset_size];
     }
     key[UTILS_AUTH_TOKEN_LENGTH - 1] = '\0';
+}
+
+int round_to_dp(float var, int ndp) {
+    char str[40];
+    // format to 0 d.p. after multiplying by 10^{ndp}
+    sprintf(str, "%.0f", var*pow(10,ndp));
+    // insert back into var
+    sscanf(str, "%f", &var);
+
+    return (int)var;
 }
 
 char* read_file(const char* path) {

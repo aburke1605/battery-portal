@@ -33,6 +33,11 @@ static inline esp_err_t esp_netif_dhcps_stop(esp_netif_t *esp_netif) {
     return ESP_OK;
 }
 
+static inline char *esp_ip4addr_ntoa(const esp_ip4_addr_t *addr, char *buf, int buflen) {
+    ESP_LOGI("[esp_netif_stub]", "esp_ip4addr_ntoa called");
+    return "";
+}
+
 static inline esp_netif_t *esp_netif_get_handle_from_ifkey(const char *if_key) {
     ESP_LOGI("[esp_netif_stub]", "esp_netif_get_handle_from_ifkey called");
     return NULL;

@@ -8,6 +8,7 @@
 #include "include/cert.h"
 #include "include/local_cert.h"
 
+#include <inttypes.h>
 #include <esp_log.h>
 #include <esp_wifi.h>
 #include <esp_websocket_client.h>
@@ -433,7 +434,7 @@ void websocket_event_handler(void *arg, esp_event_base_t event_base, int32_t eve
             break;
 
         default:
-            if (VERBOSE) ESP_LOGI(TAG, "WebSocket event ID: %ld", event_id);
+            if (VERBOSE) ESP_LOGI(TAG, "WebSocket event ID: %" PRId32, event_id);
             break;
     }
 }

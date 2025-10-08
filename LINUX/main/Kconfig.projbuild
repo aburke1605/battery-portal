@@ -27,6 +27,22 @@ config DEV
     default n
     help
       Set to true to enable ESP32 developer mode.
+config AZURE_URL
+    string "URL of Azure Web App"
+    default "batteryportal-{identifier}.{location}-01.azurewebsites.net"
+    help
+      URL of Azure Web App running Flask app online.
+config LOCAL
+    bool "Local network mode"
+    default n
+    help
+      Set to true to connect to Flask app running in local network.
+      Requires configuration of "Local Flask IP".
+config FLASK_IP
+    string "Local Flask IP"
+    default "192.168.137.1"
+    help
+      IP address of machine running Flask app in local network.
 endmenu
 
 menu "[CUSTOM] BMS Configuration"
@@ -75,6 +91,26 @@ config RELATIVE_STATE_OF_CHARGE_ADDR
     default 0x0D
     help
       Set the SBS address for the BMS to read the battery realtive state of charge.
+config STATE_OF_HEALTH_ADDR
+    hex "BMS SOH Address"
+    default 0x4F
+    help
+      Set the SBS address for the BMS to read the battery state of health.
+config TEMPERATURE_ADDR
+    hex "BMS Temperature Address"
+    default 0x08
+    help
+      Set the SBS address for the BMS to read the battery temperature.
+config VOLTAGE_ADDR
+    hex "BMS Voltage Address"
+    default 0x09
+    help
+      Set the SBS address for the BMS to read the battery voltage.
+config CURRENT_ADDR
+    hex "BMS Current Address"
+    default 0x0A
+    help
+      Set the SBS address for the BMS to read the battery average current.
 config DEVICE_NAME_ADDR
     hex "BMS Device Name Address"
     default 0x4085
@@ -85,6 +121,16 @@ config OPERATION_STATUS_ADDR
     default 0x0054
     help
       Set the Data Flash address to read the BMS sealed status and more.
+config DA_STATUS_1_ADDR
+    hex "BMS DA Status 1 Address"
+    default 0x0071
+    help
+      Set the Data Flash address to read the BMS cell voltages, currents, and more.
+config DA_STATUS_2_ADDR
+    hex "BMS DA Status 2 Address"
+    default 0x0072
+    help
+      Set the Data Flash address to read the BMS cell temperatures and more.
 config OTC_THRESHOLD_ADDR
     hex "BMS OTC Threshold Address"
     default 0x4888

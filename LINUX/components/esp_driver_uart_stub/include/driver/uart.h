@@ -34,6 +34,11 @@ static inline esp_err_t uart_param_config(uart_port_t uart_num, const uart_confi
     return ESP_OK;
 }
 
+static inline int uart_read_bytes(uart_port_t uart_num, void* buf, uint32_t length, TickType_t ticks_to_wait) {
+    ESP_LOGI("[esp_driver_uart_stub]", "uart_read_bytes called");
+    return 1;
+}
+
 #ifdef __cplusplus
 }
 #endif
