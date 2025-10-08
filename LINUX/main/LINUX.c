@@ -12,10 +12,12 @@
 #include <stdint.h>
 #include <stdbool.h>
 #include <string.h>
+#include <inttypes.h>
 #include "esp_netif_types.h"
 #include "esp_log.h"
 #include "freertos/FreeRTOS.h"
 #include "esp_http_server.h"
+#include "esp_system.h"
 
 esp_netif_t *ap_netif;
 bool is_root = false;
@@ -102,5 +104,11 @@ void app_main(void) {
 
         TaskParams lora_params = {.stack_size = 8700, .task_name = "lora_task"};
         xTaskCreate(lora_task, lora_params.task_name, lora_params.stack_size, &lora_params, 1, NULL);
+    }
+
+    while (true) {
+        if (VERBOSE) ESP_LOGI("main", "%" PRId32 " bytes available in heap", esp_get_free_heap_size());
+        if (esp_get_minimum_free_heap_size() < 2000) esp_restart();
+        vTaskDelay(pdMS_TO_TICKS(10000));
     }
 }
