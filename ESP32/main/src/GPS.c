@@ -1,9 +1,10 @@
 #include "include/GPS.h"
+#include "include/config.h"
+
+#include "esp_log.h"
+#include "driver/uart.h"
 
 #include <string.h>
-
-#include <driver/uart.h>
-#include <esp_log.h>
 
 static const char* TAG = "GPS";
 
@@ -19,13 +20,6 @@ void uart_init() {
     ESP_ERROR_CHECK(uart_param_config(GPS_UART_NUM, &uart_config));
     ESP_ERROR_CHECK(uart_set_pin(GPS_UART_NUM, GPS_GPIO_NUM_32, GPS_GPIO_NUM_33, UART_PIN_NO_CHANGE, UART_PIN_NO_CHANGE)); // TX, RX
     ESP_ERROR_CHECK(uart_driver_install(GPS_UART_NUM, GPS_BUFF_SIZE, 0, 0, NULL, 0));
-}
-
-void gps_reset() {
-    const char *cold_start_cmd = "$PMTK104*37\r\n";
-    uart_write_bytes(GPS_UART_NUM, cold_start_cmd, strlen(cold_start_cmd));
-    if (VERBOSE) ESP_LOGI(TAG, "Sent GPS reset");
-    vTaskDelay(pdMS_TO_TICKS(2500));
 }
 
 bool validate_nmea_checksum(const char *sentence) {
@@ -118,7 +112,7 @@ GPRMC* get_gps() {
                         char line[length+1];
                         strncpy(line, &((char*)buff)[i], length);
                         line[length] = '\0';
-                        
+
                         if (!validate_nmea_checksum(line)) {
                             ESP_LOGE(TAG, "Error in checksum!");
                             return NULL;

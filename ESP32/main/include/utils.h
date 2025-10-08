@@ -1,10 +1,11 @@
 #ifndef UTILS_H
 #define UTILS_H
 
-#include "include/config.h"
-
-#include <esp_err.h>
-#include <esp_http_server.h>
+#include <stdint.h>
+#include <stddef.h>
+#include <stdbool.h>
+#include "esp_err.h"
+#include "esp_http_server.h"
 
 #define MIN(a, b) ((a) < (b) ? (a) : (b))
 #define MAX(a, b) ((a) > (b) ? (a) : (b))
@@ -32,10 +33,6 @@ void random_token(char *key);
 int round_to_dp(float var, int ndp);
 
 char* read_file(const char* path);
-
-char* replace_placeholder(const char *html, const char *const placeholders[], const char*const substitutes[], size_t num_replacements);
-
-uint8_t get_block(uint8_t offset);
 
 int compare_mac(const uint8_t *mac1, const uint8_t *mac2);
 

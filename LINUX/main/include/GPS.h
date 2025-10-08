@@ -20,8 +20,6 @@ typedef struct {
 
 void uart_init();
 
-void gps_reset();
-
 bool validate_nmea_checksum(const char *sentence);
 
 double nmea_to_decimal(double coord, char hemi);

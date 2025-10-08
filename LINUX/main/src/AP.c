@@ -8,6 +8,7 @@
 
 #include <string.h>
 #include <sys/stat.h>
+#include "esp_log.h"
 #include "esp_netif.h"
 #include "esp_event.h"
 #include "esp_wifi_default.h"

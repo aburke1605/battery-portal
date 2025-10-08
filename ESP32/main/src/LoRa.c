@@ -1,17 +1,17 @@
 #include "include/LoRa.h"
 
-#include "include/BMS.h"
+#include "include/config.h"
 #include "include/global.h"
-#include "include/SPI.h"
 #include "include/utils.h"
+#include "include/BMS.h"
+#include "include/SPI.h"
 #include "include/WS.h"
 
-#include <driver/gpio.h>
-#include <esp_err.h>
-#include <esp_log.h>
-#include <esp_timer.h>
-
-extern QueueHandle_t lora_queue;
+#include <stdint.h>
+#include "esp_log.h"
+#include "driver/gpio.h"
+#include "cJSON.h"
+#include "esp_timer.h"
 
 static const char* TAG = "LoRa";
 
@@ -379,8 +379,7 @@ size_t decode_frame(const uint8_t* input, size_t input_len, uint8_t* output) {
                     output[out_len++] = FRAME_END;
                 else if (byte == ESC_ESC)
                     output[out_len++] = FRAME_ESC;
-                else
-                    ; // invalid escape, discard or handle
+                else {} // invalid escape, discard or handle
                 in_escape = false;
             } else {
                 output[out_len++] = byte;
@@ -548,7 +547,7 @@ void receive(size_t* full_message_length, bool* chunked) {
                 int rssi_dbm = -157 + rssi_raw;
 
                 uint8_t decoded_payload[*full_message_length];
-                size_t decoded_len = decode_frame(encoded_buffer, *full_message_length, decoded_payload);
+                decode_frame(encoded_buffer, *full_message_length, decoded_payload);
                 *full_message_length = 0;
 
                 ESP_LOGI(TAG, "Received radio message with RSSI: %d dBm", rssi_dbm);

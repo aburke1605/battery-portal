@@ -1,26 +1,29 @@
 #include "include/WS.h"
 
-#include "include/I2C.h"
-#include "include/BMS.h"
+#include "include/config.h"
 #include "include/global.h"
 #include "include/utils.h"
+#include "include/BMS.h"
+#include "include/I2C.h"
 
 #include "include/cert.h"
 #include "include/local_cert.h"
 
 #include <inttypes.h>
-#include <esp_log.h>
-#include <esp_wifi.h>
-#include <esp_websocket_client.h>
-#include <esp_eap_client.h>
-#include <driver/gpio.h>
-#include <nvs_flash.h>
+#include "esp_log.h"
+#include "cJSON.h"
+#include "esp_wifi.h"
+#include "esp_wifi_types_generic.h"
+#include "nvs_flash.h"
+#include "esp_netif.h"
+#include "lwip/ip4_addr.h"
+#include "esp_websocket_client.h"
+
+static const char* TAG = "WS";
 
 static bool reconnect = false;
 static char ESP_IP[16] = "xxx.xxx.xxx.xxx\0";
 static esp_websocket_client_handle_t ws_client = NULL;
-
-static const char* TAG = "WS";
 
 void add_client(int fd, const char* tkn, bool browser, uint8_t esp_id) {
     for (int i = 0; i < WS_CONFIG_MAX_CLIENTS; i++) {
@@ -199,8 +202,6 @@ esp_err_t perform_request(cJSON *message, cJSON *response) {
                 return ESP_FAIL;
             }
 
-            gpio_set_level(I2C_LED_GPIO_PIN, 1);
-
             cJSON *esp_id = cJSON_GetObjectItem(data, "new_esp_id");
             if (esp_id && esp_id->valueint != 0 && esp_id->valueint != ESP_ID) {
                 ESP_LOGI(TAG, "Changing device name...");
@@ -237,8 +238,6 @@ esp_err_t perform_request(cJSON *message, cJSON *response) {
                 convert_uint_to_n_bytes(OTC, data_flash, sizeof(data_flash), false);
                 write_data_flash(address, sizeof(address), data_flash, sizeof(data_flash));
             }
-
-            gpio_set_level(I2C_LED_GPIO_PIN, 0);
 
             cJSON_AddStringToObject(response_content, "status", "success");
         } else if (summary && strcmp(summary->valuestring, "connect-wifi") == 0) {

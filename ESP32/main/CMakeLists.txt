@@ -17,7 +17,7 @@ execute_process(
     --include=assets/AuthRequire.css
     --exclude=assets/*
     --exclude=*
-    ${CMAKE_SOURCE_DIR}/website/frontend/dist/ ${SPIFFS_BUILD_DIR}/
+    ${CMAKE_SOURCE_DIR}/../website/frontend/dist/ ${SPIFFS_BUILD_DIR}/
 )
 
 spiffs_create_partition_image(static ${SPIFFS_BUILD_DIR} FLASH_IN_PROJECT)

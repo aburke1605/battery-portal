@@ -1,21 +1,26 @@
 #include "include/MESH.h"
 
+#include "include/global.h"
+#include "include/utils.h"
 #include "include/AP.h"
 #include "include/BMS.h"
-#include "include/global.h"
 #include "include/WS.h"
-#include "include/utils.h"
 
-#include <string.h>
+#include <stdbool.h>
 #include <inttypes.h>
-#include <esp_log.h>
-#include <esp_wifi.h>
-#include <esp_websocket_client.h>
+#include "esp_log.h"
+#include "esp_wifi_types_generic.h"
+#include "esp_wifi.h"
+#include "freertos/FreeRTOS.h"
+#include "esp_system.h"
+#include "esp_websocket_client.h"
+#include "lwip/ip4_addr.h"
+#include "esp_netif.h"
+
+static const char* TAG = "MESH";
 
 static esp_websocket_client_handle_t ws_client = NULL;
 static char* mesh_ws_auth_token = "";
-
-static const char* TAG = "MESH";
 
 void connect_to_root_task(void *pvParameters) {
     while (true) {

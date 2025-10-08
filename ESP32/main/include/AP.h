@@ -3,8 +3,8 @@
 
 #include "include/config.h"
 
-#include <esp_wifi.h>
-#include <esp_http_server.h>
+#include "esp_http_server.h"
+#include "esp_wifi_types_generic.h"
 
 struct rendered_page {
     char name[WS_MAX_HTML_PAGE_NAME_LENGTH];

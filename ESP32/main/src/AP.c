@@ -1,22 +1,29 @@
 #include "include/AP.h"
 
-#include "include/global.h"
 #include "include/config.h"
+#include "include/global.h"
+#include "include/utils.h"
 #include "include/I2C.h"
 #include "include/WS.h"
-#include "include/utils.h"
 
-#include <esp_log.h>
-#include <nvs_flash.h>
-#include <esp_netif.h>
-#include <esp_wifi.h>
-#include <esp_mac.h>
-#include <esp_websocket_client.h>
+#include <string.h>
+#include <sys/stat.h>
+#include "esp_log.h"
+#include "esp_netif.h"
+#include "esp_event.h"
+#include "esp_wifi_default.h"
+#include "esp_wifi.h"
+#include "esp_wifi_types_generic.h"
+#include "esp_mac.h"
+#include "lwip/ip4_addr.h"
+#include "cJSON.h"
+#include "esp_system.h"
+
+
+static const char* TAG = "AP";
 
 static struct rendered_page rendered_html_pages[WS_MAX_N_HTML_PAGES];
 static uint8_t n_rendered_html_pages = 0;
-
-static const char* TAG = "AP";
 
 wifi_ap_record_t *wifi_scan(void) {
     // configure Wi-Fi scan settings
@@ -147,7 +154,7 @@ void wifi_init(void) {
         esp_netif_dhcps_start(ap_netif);
     }
 
-    ESP_ERROR_CHECK(esp_wifi_set_config(ESP_IF_WIFI_AP, &wifi_ap_config));
+    ESP_ERROR_CHECK(esp_wifi_set_config(WIFI_IF_AP, &wifi_ap_config));
 
     // restart WiFi
     ESP_LOGI(TAG, "Starting WiFi AP... SSID: %s", wifi_ap_config.ap.ssid);
