@@ -20,24 +20,24 @@ else()
     set(SUFFIX "")
 endif()
 set(REQUIRES
-    esp_netif${SUFFIX}
-    esp_event
-    esp_wifi${SUFFIX}
+    esp_driver_gpio${SUFFIX}
     esp_driver_i2c${SUFFIX}
+    esp_driver_spi${SUFFIX}
+    esp_driver_uart${SUFFIX}
+    esp_event
+    esp_http_client
+    esp_http_server
     esp_hw_support
+    esp_netif${SUFFIX}
+    esp_system
+    esp_timer${SUFFIX}
+    esp_websocket_client${SUFFIX}
+    esp_wifi${SUFFIX}
+    freertos
+    json
+    lwip${SUFFIX}
     nvs_flash
     spiffs${SUFFIX}
-    freertos
-    esp_driver_uart${SUFFIX}
-    esp_http_server
-    json
-    esp_system
-    lwip${SUFFIX}
-    esp_websocket_client${SUFFIX}
-    esp_http_client
-    esp_driver_spi${SUFFIX}
-    esp_driver_gpio${SUFFIX}
-    esp_timer${SUFFIX}
 )
 
 idf_component_register(
