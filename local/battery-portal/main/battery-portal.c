@@ -3,6 +3,7 @@
 #include "include/DNS.h"
 #include "include/GPS.h"
 #include "include/I2C.h"
+#include "include/WS.h"
 #include "include/config.h"
 #include "include/utils.h"
 
@@ -68,4 +69,8 @@ void app_main(void) {
 
     TaskParams dns_server_params = {.stack_size = 2600, .task_name = "dns_server_task"};
     xTaskCreate(&dns_server_task, dns_server_params.task_name, dns_server_params.stack_size, &dns_server_params, 2, NULL);
+
+    ws_queue = xQueueCreate(WS_QUEUE_SIZE, sizeof(char*));
+    TaskParams message_queue_params = {.stack_size = 3900, .task_name = "message_queue_task"};
+    xTaskCreate(&message_queue_task, message_queue_params.task_name, message_queue_params.stack_size, &message_queue_params, 5, NULL);
 }

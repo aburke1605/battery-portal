@@ -13,4 +13,6 @@ esp_err_t client_handler(httpd_req_t *req);
 
 esp_err_t perform_request(cJSON *message, cJSON *response);
 
+void message_queue_task(void *pvParameters);
+
 #endif // WS_H

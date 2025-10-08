@@ -13,10 +13,12 @@
 #include "nvs_flash.h"
 #include "esp_netif.h"
 #include "lwip/ip4_addr.h"
+#include "esp_websocket_client.h"
 
 static const char* TAG = "WS";
 
 static bool reconnect = false;
+static esp_websocket_client_handle_t ws_client = NULL;
 
 void add_client(int fd, const char* tkn, bool browser, uint8_t esp_id) {
     for (int i = 0; i < WS_CONFIG_MAX_CLIENTS; i++) {
@@ -308,4 +310,22 @@ esp_err_t perform_request(cJSON *message, cJSON *response) {
     }
     cJSON_AddItemToObject(response, "content", response_content);
     return ESP_OK;
+}
+
+void message_queue_task(void *pvParameters) {
+    char* message = NULL;
+
+    while (true) {
+        if (xQueueReceive(ws_queue, &message, portMAX_DELAY) == pdPASS) {
+            if (esp_websocket_client_is_connected(ws_client)) {
+                if (VERBOSE) ESP_LOGI(TAG, "Sending: %s", message);
+                esp_websocket_client_send_text(ws_client, message, strlen(message), portMAX_DELAY);
+            } else {
+                ESP_LOGW(TAG, "WebSocket not connected, dropping message: %s", message);
+            }
+            free(message);
+        }
+
+        vTaskDelay(pdMS_TO_TICKS(1000));
+    }
 }
