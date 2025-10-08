@@ -7,6 +7,7 @@
 #include "include/utils.h"
 
 #include <string.h>
+#include <inttypes.h>
 #include <esp_log.h>
 #include <esp_wifi.h>
 #include <esp_websocket_client.h>
@@ -282,7 +283,7 @@ void merge_root_task(void *pvParameters) {
                 esp_http_client_handle_t client = esp_http_client_init(&config);
                 esp_err_t err = esp_http_client_perform(client);
                 if (err == ESP_OK) {
-                    ESP_LOGI(TAG, "HTTP GET Status = %d, content_length = %lld",
+                    ESP_LOGI(TAG, "HTTP GET Status = %d, content_length = %" PRId64,
                             esp_http_client_get_status_code(client),
                             esp_http_client_get_content_length(client));
                 } else {

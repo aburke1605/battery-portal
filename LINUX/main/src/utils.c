@@ -293,3 +293,11 @@ char* read_file(const char* path) {
     fclose(f);
     return buffer;
 }
+
+int compare_mac(const uint8_t *mac1, const uint8_t *mac2) {
+    for (int i = 0; i < 6; i++) {
+        if (mac1[i] < mac2[i]) return -1;
+        if (mac1[i] > mac2[i]) return 1;
+    }
+    return 0;
+}

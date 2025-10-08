@@ -34,4 +34,6 @@ int round_to_dp(float var, int ndp);
 
 char* read_file(const char* path);
 
+int compare_mac(const uint8_t *mac1, const uint8_t *mac2);
+
 #endif // UTILS_H

@@ -38,6 +38,7 @@ typedef struct {
 } wifi_scan_config_t;
 
 typedef struct {
+    uint8_t bssid[6];
     uint8_t ssid[33];
     int8_t  rssi;
 } wifi_ap_record_t;

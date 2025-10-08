@@ -83,6 +83,7 @@
 #define WS_QUEUE_SIZE 10
 #define UTILS_AUTH_TOKEN_LENGTH CONFIG_AUTH_TOKEN_LENGTH
 #define MESH_SIZE 5
+#define MESH_MAX_HTTP_RECV_BUFFER 128
 
 typedef struct {
     int descriptor;
