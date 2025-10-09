@@ -3,7 +3,7 @@ import matplotlib.pyplot as plt
 
 parser = argparse.ArgumentParser()
 parser.add_argument(
-    "--in-csv",
+    "--in-file",
     type=str,
     required=True
 )
@@ -22,24 +22,22 @@ temperatures = []
 
 
 def convert_time_stamp_to_sec_elapsed():
-    with open(args.in_csv) as file:
+    with open(args.in_file) as file:
         for line in file:
-            # skip header line
-            if line[0] == "#":
+            # skip header lines
+            if line.strip() == "Data Log" or line.strip() == "" or line[:9] == "TimeStamp":
                 continue
 
-            timestamp, temperature, voltage, current  = line.strip().split(",")
+            timestamp, temperature, voltage, current, *_  = line.strip().split(",")
             date, time = timestamp.split(" ")
-            year, month, day = date.split("-")
-            if day == "24": continue
+            _, _, day = date.split("-")
 
             # skip rows with empty cells
             if timestamp == "" or voltage == "" or current == "" or temperature == "":
                 continue
 
-            if float(voltage) < 4000:
-                continue
-            
+            if float(current)<-500: continue
+
             timestamps.append(timestamp)
             voltages.append(float(voltage))
             currents.append(float(current))
@@ -55,16 +53,16 @@ def convert_time_stamp_to_sec_elapsed():
         if date_1 == None:
             date_1 = date
         elif date != date_1:
-            year_1, month_1, day_1 = date_1.split("-")
-            year, month, day = date.split("-")
-            n_days = float(day)-float(day_1) + 30*(float(month)-float(month_1)) + 365*(float(year)-float(year_1)) # TODO fix me
+            _, _, day_1 = date_1.split("-")
+            _, _, day = date.split("-")
+            n_days = float(day) - float(day_1)
 
         # calculate time passed in seconds
         time_in_secs = float(secs) + (float(mins) + float(hours) * 60) * 60 + 24 * 60 * 60 * n_days
         elapsed_times.append((time_in_secs - elapsed_times[0]) if len(elapsed_times) > 0 else time_in_secs)
     elapsed_times[0] = 0.0
 
-    with open(f"{args.output_dir}/data.csv", "w") as file:
+    with open(f"{args.output_dir}/roomtemp_rel_dis_rel.csv", "w") as file:
         for i in range(len(timestamps)):
             file.write(f"{elapsed_times[i]:.3f},{voltages[i]},{currents[i]},{temperatures[i]}\n")
 
@@ -82,7 +80,7 @@ def plot():
     ax2.tick_params(axis="y", labelcolor="b")
 
     fig.tight_layout()
-    plt.savefig(f"{args.output_dir}/GPCCHEM_2.pdf")
+    plt.savefig(f"{args.output_dir}/GPCCHEM.pdf")
 
 def main():
     convert_time_stamp_to_sec_elapsed()
