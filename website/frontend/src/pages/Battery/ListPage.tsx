@@ -272,9 +272,10 @@ export default function BatteryPage() {
         </button>
       </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 xl:grid-cols-3 gap-6"
-          style={{ display: viewMode === 'grid' ? 'block' : 'none' }}
-        >
+        <div className={
+          viewMode==="grid"?"grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 xl:grid-cols-3 gap-6"
+          :"hidden"
+        }>
           {currentBatteries.map((battery: BatteryData) => (
             <BatteryCard
               battery={battery}
@@ -282,9 +283,11 @@ export default function BatteryPage() {
             />
           ))}
         </div>
-        <div className="bg-white rounded-lg shadow overflow-hidden w-full"
-          style={{ display: viewMode !== 'grid' ? 'block' : 'none' }}
-        >
+
+        <div className={
+          viewMode==="map"?"bg-white rounded-lg shadow overflow-hidden w-full"
+          :"hidden"
+        }>
           <div ref={mapRef} className="w-full h-[700px]" />
           <div
             id="popup"
