@@ -2,19 +2,26 @@
 
 #include "include/AP.h"
 #include "include/BMS.h"
-#include "include/global.h"
 #include "include/WS.h"
+#include "include/global.h"
 #include "include/utils.h"
 
-#include <string.h>
-#include <esp_log.h>
-#include <esp_wifi.h>
-#include <esp_websocket_client.h>
+#include <inttypes.h>
+#include <stdbool.h>
+
+#include "esp_log.h"
+#include "esp_netif.h"
+#include "esp_system.h"
+#include "esp_websocket_client.h"
+#include "esp_wifi.h"
+#include "esp_wifi_types_generic.h"
+#include "freertos/FreeRTOS.h"
+#include "lwip/ip4_addr.h"
+
+static const char* TAG = "MESH";
 
 static esp_websocket_client_handle_t ws_client = NULL;
 static char* mesh_ws_auth_token = "";
-
-static const char* TAG = "MESH";
 
 void connect_to_root_task(void *pvParameters) {
     while (true) {
@@ -282,7 +289,7 @@ void merge_root_task(void *pvParameters) {
                 esp_http_client_handle_t client = esp_http_client_init(&config);
                 esp_err_t err = esp_http_client_perform(client);
                 if (err == ESP_OK) {
-                    ESP_LOGI(TAG, "HTTP GET Status = %d, content_length = %lld",
+                    ESP_LOGI(TAG, "HTTP GET Status = %d, content_length = %" PRId64,
                             esp_http_client_get_status_code(client),
                             esp_http_client_get_content_length(client));
                 } else {

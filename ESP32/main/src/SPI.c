@@ -1,12 +1,17 @@
 #include "include/SPI.h"
 
-#include <driver/spi_master.h>
-#include <driver/gpio.h>
-#include <esp_log.h>
+#include "include/config.h"
 
-static spi_device_handle_t lora_spi;
+#include "driver/gpio.h"
+#include "driver/spi_common.h"
+#include "driver/spi_master.h"
+#include "esp_log.h"
+#include "esp_system.h"
+#include "freertos/FreeRTOS.h"
 
 static const char* TAG = "SPI";
+
+static spi_device_handle_t lora_spi;
 
 void spi_reset() {
     gpio_set_direction(PIN_NUM_RST, GPIO_MODE_OUTPUT);
@@ -48,7 +53,7 @@ esp_err_t spi_init() {
         .quadwp_io_num = -1,
         .quadhd_io_num = -1,
     };
-    spi_bus_initialize(LORA_SPI_HOST, &buscfg, SPI_DMA_CH_AUTO);
+    spi_bus_initialize(SPI2_HOST, &buscfg, SPI_DMA_CH_AUTO);
 
     // SPI device configuration
     spi_device_interface_config_t devcfg = {
@@ -57,7 +62,7 @@ esp_err_t spi_init() {
         .spics_io_num = PIN_NUM_CS,
         .queue_size = 1,
     };
-    spi_bus_add_device(LORA_SPI_HOST, &devcfg, &lora_spi);
+    spi_bus_add_device(SPI2_HOST, &devcfg, &lora_spi);
 
     spi_reset();
 
