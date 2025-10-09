@@ -8,7 +8,7 @@ if [[ $# -ne 1 || ( $1 != "linux" && $1 != "esp32" ) ]]; then
 fi
 
 
-SCRIPT_DIR=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )
+SCRIPT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" &> /dev/null && pwd)"
 
 rm -r $SCRIPT_DIR/build/
 
