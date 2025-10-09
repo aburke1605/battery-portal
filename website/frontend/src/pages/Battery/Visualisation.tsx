@@ -176,15 +176,15 @@ const BatteryPack: React.FC<BatteryPackProps> = ({ cells, esp_id, connected }) =
           whiteSpace: "nowrap",
         }}
       >
+        Welcome to digital twin view!
+        <br />
         {!connected ? (
           <>
-            Welcome to digital twin view!
-            <br />
             Loading battery data...
           </>
         ) :
           <>
-          {esp_id}
+          BMS ID: {esp_id}
           </>
         }
       </Html>
@@ -198,7 +198,7 @@ interface BatteriesPageProps {
     isFromESP32?: boolean;
 }
 
-export default function DigitalTwin({ isFromESP32 = false }: BatteriesPageProps) {
+export default function Visualisation({ isFromESP32 = false }: BatteriesPageProps) {
     const { getAuthToken } = useAuth();
 
     let ws_url = apiConfig.WEBSOCKET_BROWSER;
