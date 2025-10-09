@@ -1,7 +1,7 @@
 #ifndef GPS_H
 #define GPS_H
 
-#include "include/config.h"
+#include <stdbool.h>
 
 typedef struct {
     float time;
@@ -20,13 +20,11 @@ typedef struct {
 
 void uart_init();
 
-void gps_reset();
-
 bool validate_nmea_checksum(const char *sentence);
 
-GPRMC* parse_gprmc(char* gprmc);
-
 double nmea_to_decimal(double coord, char hemi);
+
+GPRMC* parse_gprmc(char* gprmc);
 
 GPRMC* get_gps();
 
