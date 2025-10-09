@@ -1,9 +1,9 @@
 #include "include/INV.h"
 
-#include "include/config.h"
 #include "include/I2C.h"
+#include "include/config.h"
 
-#include <freertos/FreeRTOS.h>
+#include "freertos/FreeRTOS.h"
 
 void get_display_data(uint8_t* data) {
     uint8_t data_SBS[2] = {0};
