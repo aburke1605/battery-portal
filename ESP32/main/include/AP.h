@@ -3,8 +3,8 @@
 
 #include "include/config.h"
 
-#include <esp_wifi.h>
-#include <esp_http_server.h>
+#include "esp_http_server.h"
+#include "esp_wifi_types_generic.h"
 
 struct rendered_page {
     char name[WS_MAX_HTML_PAGE_NAME_LENGTH];
@@ -20,6 +20,12 @@ void wifi_init(void);
 esp_err_t redirect_handler(httpd_req_t *req);
 
 esp_err_t file_serve_handler(httpd_req_t *req);
+
+esp_err_t login_handler(httpd_req_t *req);
+
+esp_err_t num_clients_handler(httpd_req_t *req);
+
+esp_err_t restart_handler(httpd_req_t *req);
 
 httpd_handle_t start_webserver(void);
 
