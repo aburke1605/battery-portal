@@ -170,9 +170,9 @@ void write_to_unit() {
 }
 
 void read_from_unit() {
-    uint8_t data[16];
-    esp_err_t ret = i2c_master_receive(inv_device, data, sizeof(data), I2C_MASTER_TIMEOUT_MS);
-    printf("requestFrom: %u\n", sizeof(data));
+    uint8_t data[16] = {0};
+    i2c_master_receive(inv_device, data, sizeof(data), I2C_MASTER_TIMEOUT_MS);
+    printf("requestFrom: %zu\n", sizeof(data));
     for (uint8_t i=0; i<sizeof(data); i++)
         printf("0x%x ", data[i]);
     printf("\n");
