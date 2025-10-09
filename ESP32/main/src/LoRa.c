@@ -1,16 +1,17 @@
 #include "include/LoRa.h"
 
-#include "include/config.h"
-#include "include/global.h"
-#include "include/utils.h"
 #include "include/BMS.h"
 #include "include/SPI.h"
 #include "include/WS.h"
+#include "include/config.h"
+#include "include/global.h"
+#include "include/utils.h"
 
 #include <stdint.h>
-#include "esp_log.h"
-#include "driver/gpio.h"
+
 #include "cJSON.h"
+#include "driver/gpio.h"
+#include "esp_log.h"
 #include "esp_timer.h"
 
 static const char* TAG = "LoRa";

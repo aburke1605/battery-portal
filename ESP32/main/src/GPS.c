@@ -1,10 +1,11 @@
 #include "include/GPS.h"
+
 #include "include/config.h"
 
-#include "esp_log.h"
-#include "driver/uart.h"
-
 #include <string.h>
+
+#include "driver/uart.h"
+#include "esp_log.h"
 
 static const char* TAG = "GPS";
 

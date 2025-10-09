@@ -1,23 +1,24 @@
 #include "include/AP.h"
 
+#include "include/I2C.h"
+#include "include/WS.h"
 #include "include/config.h"
 #include "include/global.h"
 #include "include/utils.h"
-#include "include/I2C.h"
-#include "include/WS.h"
 
 #include <string.h>
 #include <sys/stat.h>
-#include "esp_log.h"
-#include "esp_netif.h"
-#include "esp_event.h"
-#include "esp_wifi_default.h"
-#include "esp_wifi.h"
-#include "esp_wifi_types_generic.h"
-#include "esp_mac.h"
-#include "lwip/ip4_addr.h"
+
 #include "cJSON.h"
+#include "esp_event.h"
+#include "esp_log.h"
+#include "esp_mac.h"
+#include "esp_netif.h"
 #include "esp_system.h"
+#include "esp_wifi.h"
+#include "esp_wifi_default.h"
+#include "esp_wifi_types_generic.h"
+#include "lwip/ip4_addr.h"
 
 
 static const char* TAG = "AP";

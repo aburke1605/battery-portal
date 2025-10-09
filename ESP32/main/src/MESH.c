@@ -1,21 +1,22 @@
 #include "include/MESH.h"
 
-#include "include/global.h"
-#include "include/utils.h"
 #include "include/AP.h"
 #include "include/BMS.h"
 #include "include/WS.h"
+#include "include/global.h"
+#include "include/utils.h"
 
-#include <stdbool.h>
 #include <inttypes.h>
+#include <stdbool.h>
+
 #include "esp_log.h"
-#include "esp_wifi_types_generic.h"
-#include "esp_wifi.h"
-#include "freertos/FreeRTOS.h"
+#include "esp_netif.h"
 #include "esp_system.h"
 #include "esp_websocket_client.h"
+#include "esp_wifi.h"
+#include "esp_wifi_types_generic.h"
+#include "freertos/FreeRTOS.h"
 #include "lwip/ip4_addr.h"
-#include "esp_netif.h"
 
 static const char* TAG = "MESH";
 

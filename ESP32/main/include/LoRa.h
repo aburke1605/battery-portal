@@ -1,9 +1,10 @@
 #ifndef LORA_H
 #define LORA_H
 
-#include <stdint.h>
-#include <stddef.h>
 #include <stdbool.h>
+#include <stddef.h>
+#include <stdint.h>
+
 #include "cJSON.h"
 
 enum packet_type {

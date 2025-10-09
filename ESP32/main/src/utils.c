@@ -1,18 +1,19 @@
 #include "include/utils.h"
 
+#include "include/WS.h"
 #include "include/config.h"
 #include "include/global.h"
-#include "include/WS.h"
 
-#include <string.h>
 #include <ctype.h>
 #include <math.h>
-#include "esp_log.h"
-#include "nvs_flash.h"
-#include "esp_spiffs.h"
-#include "esp_random.h"
+#include <string.h>
+
 #include "cJSON.h"
 #include "esp_http_client.h"
+#include "esp_log.h"
+#include "esp_random.h"
+#include "esp_spiffs.h"
+#include "nvs_flash.h"
 
 void change_esp_id(char* name) {
     if (strncmp(name, "bms_", 4) != 0) {

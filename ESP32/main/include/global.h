@@ -3,11 +3,12 @@
 
 #include "include/config.h"
 
-#include <stdint.h>
 #include <stdbool.h>
+#include <stdint.h>
+
+#include "esp_http_server.h"
 #include "esp_netif_types.h"
 #include "freertos/FreeRTOS.h"
-#include "esp_http_server.h"
 
 extern esp_netif_t *ap_netif;
 extern bool is_root;

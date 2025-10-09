@@ -1,23 +1,24 @@
 #include "include/WS.h"
 
+#include "include/BMS.h"
+#include "include/I2C.h"
 #include "include/config.h"
 #include "include/global.h"
 #include "include/utils.h"
-#include "include/BMS.h"
-#include "include/I2C.h"
 
 #include "include/cert.h"
 #include "include/local_cert.h"
 
 #include <inttypes.h>
-#include "esp_log.h"
+
 #include "cJSON.h"
+#include "esp_log.h"
+#include "esp_netif.h"
+#include "esp_websocket_client.h"
 #include "esp_wifi.h"
 #include "esp_wifi_types_generic.h"
-#include "nvs_flash.h"
-#include "esp_netif.h"
 #include "lwip/ip4_addr.h"
-#include "esp_websocket_client.h"
+#include "nvs_flash.h"
 
 static const char* TAG = "WS";
 

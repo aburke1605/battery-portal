@@ -9,15 +9,16 @@
 #include "include/config.h"
 #include "include/utils.h"
 
-#include <stdint.h>
-#include <stdbool.h>
-#include <string.h>
 #include <inttypes.h>
-#include "esp_netif_types.h"
-#include "esp_log.h"
-#include "freertos/FreeRTOS.h"
+#include <stdbool.h>
+#include <stdint.h>
+#include <string.h>
+
 #include "esp_http_server.h"
+#include "esp_log.h"
+#include "esp_netif_types.h"
 #include "esp_system.h"
+#include "freertos/FreeRTOS.h"
 
 esp_netif_t *ap_netif;
 bool is_root = false;
