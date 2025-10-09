@@ -3,4 +3,9 @@
 cmake_minimum_required(VERSION 3.16)
 
 include($ENV{IDF_PATH}/tools/cmake/project.cmake)
+
+if("${IDF_TARGET}" STREQUAL "linux")
+    add_subdirectory(ESP32/components_stubs)
+endif()
+
 project(ESP32)
