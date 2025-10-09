@@ -189,6 +189,9 @@ export const initialBatteries: BatteryData[] = [
     T4: 40,
     new_esp_id: 0,
     OTC: 550,
+    Q_low: 0,
+    Q_high: 100,
+    I_dschg_max: 10,
     wifi: true,
   },
   {
@@ -221,6 +224,9 @@ export const initialBatteries: BatteryData[] = [
     T4: 40,
     new_esp_id: 0,
     OTC: 550,
+    Q_low: 0,
+    Q_high: 100,
+    I_dschg_max: 10,
     wifi: true,
   },
   {
@@ -253,6 +259,9 @@ export const initialBatteries: BatteryData[] = [
     T4: 40,
     new_esp_id: 0,
     OTC: 550,
+    Q_low: 0,
+    Q_high: 100,
+    I_dschg_max: 10,
     wifi: true,
   }
 ];
