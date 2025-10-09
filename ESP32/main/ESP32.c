@@ -87,7 +87,7 @@ void app_main(void) {
     TaskParams websocket_params = {.stack_size = 4600, .task_name = "websocket_task"};
     xTaskCreate(&websocket_task, websocket_params.task_name, websocket_params.stack_size, &websocket_params, 1, &websocket_task_handle);
 
-    TaskParams inverter_params = {.stack_size = 1800, .task_name = "inverter_task"};
+    TaskParams inverter_params = {.stack_size = 1900, .task_name = "inverter_task"};
     xTaskCreate(&inverter_task, inverter_params.task_name, inverter_params.stack_size, &inverter_params, 6, &inverter_task_handle);
 
     if (!LORA_IS_RECEIVER) {
