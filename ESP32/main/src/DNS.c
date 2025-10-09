@@ -1,11 +1,16 @@
 #include "include/DNS.h"
 
 #include "include/config.h"
-#include "include/utils.h"
 
-#include <esp_log.h>
-#include <esp_wifi.h>
-#include <lwip/netdb.h>
+#include <errno.h>
+
+#include "esp_log.h"
+#include "esp_netif.h"
+#include "esp_netif_ip_addr.h"
+#include "esp_netif_types.h"
+#include "freertos/FreeRTOS.h"
+#include "lwip/ip4_addr.h"
+#include "lwip/sockets.h"
 
 static const char* TAG = "DNS";
 
@@ -36,7 +41,7 @@ void dns_server_task(void *pvParameters) {
     ESP_LOGI(TAG, "DNS server started on port %d", DNS_PORT);
 
     // Get AP IP address
-    esp_netif_ip_info_t ip_info;
+    esp_netif_ip_info_t ip_info = {0};
     esp_netif_t *netif = esp_netif_get_handle_from_ifkey("WIFI_AP_DEF");
     if (netif == NULL || esp_netif_get_ip_info(netif, &ip_info) != ESP_OK) {
         ESP_LOGE(TAG, "Failed to get AP IP address");

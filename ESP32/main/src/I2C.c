@@ -3,8 +3,12 @@
 #include "include/config.h"
 #include "include/utils.h"
 
-#include <esp_log.h>
-#include <driver/i2c_master.h>
+#include <stdbool.h>
+
+#include "driver/i2c_master.h"
+#include "driver/i2c_types.h"
+#include "esp_log.h"
+#include "freertos/FreeRTOS.h"
 
 static i2c_master_bus_handle_t i2c_bus = NULL;
 static i2c_master_dev_handle_t i2c_device = NULL;

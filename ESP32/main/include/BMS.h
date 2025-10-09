@@ -1,9 +1,7 @@
 #ifndef BMS_H
 #define BMS_H
 
-#include <stdbool.h>
-
-#include <esp_err.h>
+#include <stdint.h>
 
 void reset();
 
