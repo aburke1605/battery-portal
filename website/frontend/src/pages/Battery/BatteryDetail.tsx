@@ -1,9 +1,6 @@
-import React, {useEffect, useState} from 'react';
+import React, {useEffect, useRef, useState} from 'react';
 import { BatteryData } from '../../types';
 import { 
-  Share2, 
-  Download, 
-  Printer, 
   BatteryLow, 
   BatteryMedium, 
   BatteryFull, 
@@ -13,23 +10,20 @@ import {
   RefreshCw, 
   LockKeyholeOpen,
   Wifi, 
-  // Power, 
   BrainCircuit,
-  FileText, 
-  History, 
   BarChart3, 
-  AlertTriangle, 
-  CheckCircle,
-  ArrowLeft,
   Sliders,
-  Users,
-  Bell,
-  Shield,
   Battery,
-  PenTool as Tool, Clock,
+  Layers2,
+  ArrowBigRightDash,
+  X,
+  SquareCheckBig,
+  Clock,
 } from 'lucide-react';
 import { getStatusColor } from '../../utils/helpers';
 import { useNavigate } from 'react-router-dom';
+import axios from 'axios';
+import apiConfig from '../../apiConfig';
 
 interface BatteryDetailProps {
   battery: BatteryData;
@@ -40,6 +34,7 @@ interface BatteryDetailProps {
   sendUnseal: () => void;
   sendReset: () => void;
   isFromESP32: boolean;
+  updateRequest: () => void;
 }
 
 const BatteryDetail: React.FC<BatteryDetailProps> = ({ 
@@ -128,217 +123,6 @@ const BatteryDetail: React.FC<BatteryDetailProps> = ({
 
   const renderTabContent = () => {
     switch (activeTab) {
-      case 'performance':
-        return (
-          <div className="space-y-6">
-            <div className="bg-white border border-gray-200 rounded-lg shadow-sm">
-              <div className="px-4 py-5 sm:px-6 border-b border-gray-200">
-                <h3 className="text-lg font-medium text-gray-900 flex items-center">
-                  <Battery size={20} className="mr-2" /> Performance Metrics
-                </h3>
-              </div>
-              <div className="p-6">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  <div>
-                    <h4 className="text-sm font-medium text-gray-500 mb-2">Efficiency Rate</h4>
-                    <div className="text-2xl font-semibold text-gray-900">94%</div>
-                    <p className="mt-1 text-sm text-gray-500">Above average performance</p>
-                  </div>
-                  <div>
-                    <h4 className="text-sm font-medium text-gray-500 mb-2">Power Output</h4>
-                    <div className="text-2xl font-semibold text-gray-900">2.4 kW</div>
-                    <p className="mt-1 text-sm text-gray-500">Nominal output</p>
-                  </div>
-                  <div>
-                    <h4 className="text-sm font-medium text-gray-500 mb-2">Temperature Variance</h4>
-                    <div className="text-2xl font-semibold text-gray-900">±2.5°C</div>
-                    <p className="mt-1 text-sm text-gray-500">Within normal range</p>
-                  </div>
-                  <div>
-                    <h4 className="text-sm font-medium text-gray-500 mb-2">Response Time</h4>
-                    <div className="text-2xl font-semibold text-gray-900">50ms</div>
-                    <p className="mt-1 text-sm text-gray-500">Optimal performance</p>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            <div className="bg-white border border-gray-200 rounded-lg shadow-sm">
-              <div className="px-4 py-5 sm:px-6 border-b border-gray-200">
-                <h3 className="text-lg font-medium text-gray-900 flex items-center">
-                  <Shield size={20} className="mr-2" /> Safety Parameters
-                </h3>
-              </div>
-              <div className="p-6">
-                <div className="space-y-4">
-                  <div>
-                    <div className="flex justify-between mb-1">
-                      <span className="text-sm font-medium text-gray-500">Temperature Protection</span>
-                      <span className="text-sm font-medium text-green-600">Active</span>
-                    </div>
-                    <div className="w-full bg-gray-200 rounded-full h-2">
-                      <div className="bg-green-500 h-2 rounded-full" style={{ width: '100%' }}></div>
-                    </div>
-                  </div>
-                  <div>
-                    <div className="flex justify-between mb-1">
-                      <span className="text-sm font-medium text-gray-500">Overcharge Protection</span>
-                      <span className="text-sm font-medium text-green-600">Active</span>
-                    </div>
-                    <div className="w-full bg-gray-200 rounded-full h-2">
-                      <div className="bg-green-500 h-2 rounded-full" style={{ width: '100%' }}></div>
-                    </div>
-                  </div>
-                  <div>
-                    <div className="flex justify-between mb-1">
-                      <span className="text-sm font-medium text-gray-500">Short Circuit Protection</span>
-                      <span className="text-sm font-medium text-green-600">Active</span>
-                    </div>
-                    <div className="w-full bg-gray-200 rounded-full h-2">
-                      <div className="bg-green-500 h-2 rounded-full" style={{ width: '100%' }}></div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-        );
-
-      case 'history':
-        return (
-          <div className="space-y-6">
-            <div className="bg-white border border-gray-200 rounded-lg shadow-sm">
-              <div className="px-4 py-5 sm:px-6 border-b border-gray-200">
-                <h3 className="text-lg font-medium text-gray-900 flex items-center">
-                  <Clock size={20} className="mr-2" /> Usage History
-                </h3>
-              </div>
-              <div className="p-6">
-                <div className="space-y-6">
-                  {[
-                    {
-                      date: '2025-04-02',
-                      event: 'Charge Cycle Completed',
-                      details: 'Full charge cycle completed in 2.5 hours',
-                      type: 'success'
-                    },
-                    {
-                      date: '2025-04-01',
-                      event: 'Temperature Warning',
-                      details: 'Temperature exceeded 40°C for 15 minutes',
-                      type: 'warning'
-                    },
-                    {
-                      date: '2025-03-31',
-                      event: 'Maintenance Check',
-                      details: 'Routine maintenance check completed',
-                      type: 'info'
-                    },
-                    {
-                      date: '2025-03-30',
-                      event: 'Performance Test',
-                      details: 'Capacity test completed - 95% efficiency',
-                      type: 'success'
-                    }
-                  ].map((event, index) => (
-                    <div key={index} className="flex items-start">
-                      <div className="flex-shrink-0">
-                        <div className={`h-8 w-8 rounded-full flex items-center justify-center ${
-                          event.type === 'success' ? 'bg-green-100' :
-                          event.type === 'warning' ? 'bg-amber-100' :
-                          'bg-blue-100'
-                        }`}>
-                          {event.type === 'success' ? (
-                            <CheckCircle size={16} className="text-green-600" />
-                          ) : event.type === 'warning' ? (
-                            <AlertTriangle size={16} className="text-amber-600" />
-                          ) : (
-                            <Info size={16} className="text-blue-600" />
-                          )}
-                        </div>
-                      </div>
-                      <div className="ml-3">
-                        <p className="text-sm font-medium text-gray-900">{event.event}</p>
-                        <p className="text-sm text-gray-500">{event.details}</p>
-                        <p className="text-xs text-gray-400 mt-1">{event.date}</p>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            </div>
-          </div>
-        );
-
-      case 'maintenance':
-        return (
-          <div className="space-y-6">
-            <div className="bg-white border border-gray-200 rounded-lg shadow-sm">
-              <div className="px-4 py-5 sm:px-6 border-b border-gray-200">
-                <h3 className="text-lg font-medium text-gray-900 flex items-center">
-                  <Tool size={20} className="mr-2" /> Maintenance Schedule
-                </h3>
-              </div>
-              <div className="p-6">
-                <div className="space-y-6">
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <div>
-                      <h4 className="text-sm font-medium text-gray-500 mb-2">Next Maintenance Due</h4>
-                      <p className="text-2xl font-semibold text-gray-900">May 15, 2025</p>
-                      <p className="mt-1 text-sm text-gray-500">Regular inspection and testing</p>
-                    </div>
-                    <div>
-                      <h4 className="text-sm font-medium text-gray-500 mb-2">Last Maintenance</h4>
-                      <p className="text-2xl font-semibold text-gray-900">March 15, 2025</p>
-                      <p className="mt-1 text-sm text-gray-500">Completed by John Smith</p>
-                    </div>
-                  </div>
-
-                  <div className="mt-6">
-                    <h4 className="text-sm font-medium text-gray-500 mb-4">Upcoming Tasks</h4>
-                    <div className="space-y-4">
-                      {[
-                        {
-                          task: 'Cell Balancing Check',
-                          date: '2025-05-15',
-                          status: 'pending',
-                          priority: 'high'
-                        },
-                        {
-                          task: 'Thermal Management Inspection',
-                          date: '2025-05-15',
-                          status: 'pending',
-                          priority: 'medium'
-                        },
-                        {
-                          task: 'Connection Testing',
-                          date: '2025-05-15',
-                          status: 'pending',
-                          priority: 'low'
-                        }
-                      ].map((task, index) => (
-                        <div key={index} className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
-                          <div>
-                            <h5 className="text-sm font-medium text-gray-900">{task.task}</h5>
-                            <p className="text-sm text-gray-500">Due: {task.date}</p>
-                          </div>
-                          <span className={`px-3 py-1 rounded-full text-xs font-medium ${
-                            task.priority === 'high' ? 'bg-red-100 text-red-800' :
-                            task.priority === 'medium' ? 'bg-amber-100 text-amber-800' :
-                            'bg-green-100 text-green-800'
-                          }`}>
-                            {task.priority.charAt(0).toUpperCase() + task.priority.slice(1)} Priority
-                          </span>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-        );
-
       case 'settings':
         return (
           <div className="space-y-6">
@@ -394,48 +178,6 @@ const BatteryDetail: React.FC<BatteryDetailProps> = ({
                             )}
                           </div>
                         )}
-                      </div>
-                    </div>
-                  </div>
-
-                  <div className="pt-6">
-                    <h4 className="text-sm font-medium text-gray-900 mb-4">Alert Settings</h4>
-                    <div className="space-y-4">
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center">
-                          <Bell size={16} className="text-gray-400 mr-2" />
-                          <span className="text-sm text-gray-700">Temperature Alerts</span>
-                        </div>
-                        <label className="relative inline-flex items-center cursor-pointer">
-                          <input type="checkbox" className="sr-only peer" checked />
-                          <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
-                        </label>
-                      </div>
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center">
-                          <Bell size={16} className="text-gray-400 mr-2" />
-                          <span className="text-sm text-gray-700">Voltage Alerts</span>
-                        </div>
-                        <label className="relative inline-flex items-center cursor-pointer">
-                          <input type="checkbox" className="sr-only peer" checked />
-                          <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
-                        </label>
-                      </div>
-                    </div>
-                  </div>
-
-                  <div className="pt-6">
-                    <h4 className="text-sm font-medium text-gray-900 mb-4">Access Control</h4>
-                    <div className="space-y-4">
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center">
-                          <Users size={16} className="text-gray-400 mr-2" />
-                          <span className="text-sm text-gray-700">Technician Access</span>
-                        </div>
-                        <label className="relative inline-flex items-center cursor-pointer">
-                          <input type="checkbox" className="sr-only peer" checked />
-                          <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
-                        </label>
                       </div>
                     </div>
                   </div>
@@ -518,199 +260,226 @@ const BatteryDetail: React.FC<BatteryDetailProps> = ({
 
       default: // Overview tab
         return (
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-            {/* Left Column - Detailed Stats */}
-            <div className="lg:col-span-2 space-y-6">
-              <div className="bg-white border border-gray-200 rounded-lg shadow-sm">
-                <div className="px-4 py-5 sm:px-6 border-b border-gray-200">
-                  <h3 className="text-lg font-medium leading-6 text-gray-900 flex items-center">
-                    <BarChart3 size={20} className="mr-2" /> Performance Metrics
-                  </h3>
-                </div>
-                <div className="px-4 py-5 sm:p-6">
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-                    <div>
-                      <h4 className="text-sm font-medium text-gray-500 mb-2">Voltage</h4>
-                      <p className="text-2xl font-semibold text-gray-900">{battery.V} V</p>
-                      <div className="mt-1 text-sm text-gray-500">
-                        {battery.V < voltageThreshold ? (
-                          <span className="text-amber-600">Below threshold ({voltageThreshold}V)</span>
-                        ) : (
-                          <span className="text-green-600">Normal operating range</span>
-                        )}
+          <div className="space-y-6">
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+              {/* Left Column - Detailed Stats */}
+              <div className="lg:col-span-2 space-y-6">
+                <div className="bg-white border border-gray-200 rounded-lg shadow-sm">
+                  <div className="px-4 py-5 sm:px-6 border-b border-gray-200">
+                    <h3 className="text-lg font-medium leading-6 text-gray-900 flex items-center">
+                      <BarChart3 size={20} className="mr-2" /> Most Recent Data
+                    </h3>
+                  </div>
+                  <div className="px-4 py-5 sm:p-6">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+                      <div>
+                        <h4 className="text-sm font-medium text-gray-500 mb-2">Voltage</h4>
+                        <p className="text-2xl font-semibold text-gray-900">{battery.V} V</p>
+                        <div className="mt-1 text-sm text-gray-500">
+                          {battery.V < voltageThreshold ? (
+                            <span className="text-amber-600">Below threshold ({voltageThreshold}V)</span>
+                          ) : (
+                            <span className="text-green-600">Normal operating range</span>
+                          )}
+                        </div>
                       </div>
-                    </div>
-                    <div>
-                      <h4 className="text-sm font-medium text-gray-500 mb-2">Current</h4>
-                      <p className="text-2xl font-semibold text-gray-900">{battery.I} A</p>
-                      <div className="mt-1 text-sm text-gray-500">
-                        {/* {battery.isCharging ? (
-                          <span className="text-blue-600">Charging current</span>
-                        ) : (
-                          <span>Discharge current</span>
-                        )} */}
+                      <div>
+                        <h4 className="text-sm font-medium text-gray-500 mb-2">Current</h4>
+                        <p className="text-2xl font-semibold text-gray-900">{battery.I} A</p>
+                        <div className="mt-1 text-sm text-gray-500">
+                          {/* {battery.isCharging ? (
+                            <span className="text-blue-600">Charging current</span>
+                          ) : (
+                            <span>Discharge current</span>
+                          )} */}
+                        </div>
                       </div>
-                    </div>
-                    <div>
-                      <h4 className="text-sm font-medium text-gray-500 mb-2">Cell 1</h4>
-                      <p className="text-2xl font-semibold text-gray-900">{battery.I1} A </p>
-                      <p className="text-2xl font-semibold text-gray-900">{battery.T1} °C</p>
-                      <p className="text-2xl font-semibold text-gray-900">{battery.V1} V</p>
-                    </div>
-                    <div>
-                      <h4 className="text-sm font-medium text-gray-500 mb-2">Cell 2</h4>
-                      <p className="text-2xl font-semibold text-gray-900">{battery.I2} A</p>
-                      <p className="text-2xl font-semibold text-gray-900">{battery.T2} °C</p>
-                      <p className="text-2xl font-semibold text-gray-900">{battery.V2} V</p>
-                    </div>
-                    <div>
-                      <h4 className="text-sm font-medium text-gray-500 mb-2">Cell 3</h4>
-                      <p className="text-2xl font-semibold text-gray-900">{battery.I3} A</p>
-                      <p className="text-2xl font-semibold text-gray-900">{battery.T3} °C</p>
-                      <p className="text-2xl font-semibold text-gray-900">{battery.V3} V</p>
-                    </div>
-                    <div>
-                      <h4 className="text-sm font-medium text-gray-500 mb-2">Cell 4</h4>
-                      <p className="text-2xl font-semibold text-gray-900">{battery.I4} A</p>
-                      <p className="text-2xl font-semibold text-gray-900">{battery.T4} °C</p>
-                      <p className="text-2xl font-semibold text-gray-900">{battery.V4} V</p>
+                      <div>
+                        <h4 className="text-sm font-medium text-gray-500 mb-2">Cell 1</h4>
+                        <p className="text-2xl font-semibold text-gray-900">{battery.I1} A </p>
+                        <p className="text-2xl font-semibold text-gray-900">{battery.T1} °C</p>
+                        <p className="text-2xl font-semibold text-gray-900">{battery.V1} V</p>
+                      </div>
+                      <div>
+                        <h4 className="text-sm font-medium text-gray-500 mb-2">Cell 2</h4>
+                        <p className="text-2xl font-semibold text-gray-900">{battery.I2} A</p>
+                        <p className="text-2xl font-semibold text-gray-900">{battery.T2} °C</p>
+                        <p className="text-2xl font-semibold text-gray-900">{battery.V2} V</p>
+                      </div>
+                      <div>
+                        <h4 className="text-sm font-medium text-gray-500 mb-2">Cell 3</h4>
+                        <p className="text-2xl font-semibold text-gray-900">{battery.I3} A</p>
+                        <p className="text-2xl font-semibold text-gray-900">{battery.T3} °C</p>
+                        <p className="text-2xl font-semibold text-gray-900">{battery.V3} V</p>
+                      </div>
+                      <div>
+                        <h4 className="text-sm font-medium text-gray-500 mb-2">Cell 4</h4>
+                        <p className="text-2xl font-semibold text-gray-900">{battery.I4} A</p>
+                        <p className="text-2xl font-semibold text-gray-900">{battery.T4} °C</p>
+                        <p className="text-2xl font-semibold text-gray-900">{battery.V4} V</p>
+                      </div>
                     </div>
                   </div>
                 </div>
               </div>
 
-              <div className="bg-white border border-gray-200 rounded-lg shadow-sm">
-                <div className="px-4 py-5 sm:px-6 border-b border-gray-200">
-                  <h3 className="text-lg font-medium leading-6 text-gray-900 flex items-center">
-                    <History size={20} className="mr-2" /> Recent Activity
-                  </h3>
-                </div>
-                <div className="px-4 py-5 sm:p-6">
-                  <ul className="space-y-4">
-                    <li className="flex items-start">
-                      <div className="flex-shrink-0">
-                        <div className="h-8 w-8 rounded-full bg-blue-100 flex items-center justify-center">
-                          <RefreshCw size={16} className="text-blue-600" />
-                        </div>
-                      </div>
-                      <div className="ml-3">
-                        <p className="text-sm font-medium text-gray-900">Charge cycle completed</p>
-                        <p className="text-sm text-gray-500">Yesterday at 2:15 PM</p>
-                      </div>
-                    </li>
-                    <li className="flex items-start">
-                      <div className="flex-shrink-0">
-                        <div className="h-8 w-8 rounded-full bg-amber-100 flex items-center justify-center">
-                          <AlertTriangle size={16} className="text-amber-600" />
-                        </div>
-                      </div>
-                      <div className="ml-3">
-                        <p className="text-sm font-medium text-gray-900">Temperature spike detected</p>
-                        <p className="text-sm text-gray-500">2 days ago at 10:45 AM</p>
-                      </div>
-                    </li>
-                    <li className="flex items-start">
-                      <div className="flex-shrink-0">
-                        <div className="h-8 w-8 rounded-full bg-green-100 flex items-center justify-center">
-                          <CheckCircle size={16} className="text-green-600" />
-                        </div>
-                      </div>
-                      <div className="ml-3">
-                        <p className="text-sm font-medium text-gray-900">Maintenance check completed</p>
-                        <p className="text-sm text-gray-500">1 week ago</p>
-                      </div>
-                    </li>
-                  </ul>
+              {/* Right Column - Actions and Info */}
+              <div className="space-y-6">
+                <div className="bg-white border border-gray-200 rounded-lg shadow-sm">
+                  <div className="px-4 py-5 sm:px-6 border-b border-gray-200">
+                    <h3 className="text-lg font-medium leading-6 text-gray-900">Actions</h3>
+                  </div>
+                  <div className="px-4 py-5 sm:p-6 space-y-4">
+                    {/* <button 
+                      onClick={() => onToggleCharging(battery.esp_id)}
+                      className={`w-full flex items-center justify-center px-4 py-2 border rounded-md shadow-sm text-sm font-medium focus:outline-none focus:ring-2 focus:ring-offset-2 ${
+                        battery.isCharging 
+                          ? 'border-red-300 text-red-700 bg-red-50 hover:bg-red-100 focus:ring-red-500' 
+                          : 'border-green-300 text-green-700 bg-green-50 hover:bg-green-100 focus:ring-green-500'
+                      }`}
+                    >
+                      {battery.isCharging ? (
+                        <>
+                          <Power size={16} className="mr-2" />
+                          Stop Charging
+                        </>
+                      ) : (
+                        <>
+                          <Zap size={16} className="mr-2" />
+                          Start Charging
+                        </>
+                      )}
+                    </button> */}
+                    <button className="w-full flex items-center justify-center px-4 py-2 border border-blue-300 shadow-sm text-sm font-medium rounded-md text-blue-700 bg-blue-50 hover:bg-blue-100 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+                    onClick={() => !isFromESP32 ? viewDigitalTwin(battery) : null}>
+                      <Layers2 size={16} className="mr-2" />
+                      Visualisation {isFromESP32 ? "- UNAVAILABLE" : ""}
+                    </button>
+                    <button
+                      onClick={() => (isFromESP32 || battery.live_websocket) ? sendUnseal() : null}
+                      className="w-full flex items-center justify-center px-4 py-2 border border-orange-300 shadow-sm text-sm font-medium rounded-md text-orange-700 bg-orange-50 hover:bg-orange-100 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-orange-500">
+                      <LockKeyholeOpen size={16} className="mr-2" />
+                      Unseal BMS {(!isFromESP32 && !battery.live_websocket) ? "- OFFLINE" : ""}
+                    </button>
+                    <button
+                      onClick={() => (isFromESP32 || battery.live_websocket) ? sendReset() : null}
+                      className="w-full flex items-center justify-center px-4 py-2 border border-red-300 shadow-sm text-sm font-medium rounded-md text-red-700 bg-red-50 hover:bg-red-100 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500">
+                      <RefreshCw size={16} className="mr-2" />
+                      Reset BMS {(!isFromESP32 && !battery.live_websocket) ? "- OFFLINE" : ""}
+                    </button>
+                  </div>
                 </div>
               </div>
             </div>
 
-            {/* Right Column - Actions and Info */}
-            <div className="space-y-6">
-              <div className="bg-white border border-gray-200 rounded-lg shadow-sm">
-                <div className="px-4 py-5 sm:px-6 border-b border-gray-200">
-                  <h3 className="text-lg font-medium leading-6 text-gray-900">Actions</h3>
-                </div>
-                <div className="px-4 py-5 sm:p-6 space-y-4">
-                  {/* <button 
-                    onClick={() => onToggleCharging(battery.esp_id)}
-                    className={`w-full flex items-center justify-center px-4 py-2 border rounded-md shadow-sm text-sm font-medium focus:outline-none focus:ring-2 focus:ring-offset-2 ${
-                      battery.isCharging 
-                        ? 'border-red-300 text-red-700 bg-red-50 hover:bg-red-100 focus:ring-red-500' 
-                        : 'border-green-300 text-green-700 bg-green-50 hover:bg-green-100 focus:ring-green-500'
-                    }`}
-                  >
-                    {battery.isCharging ? (
-                      <>
-                        <Power size={16} className="mr-2" />
-                        Stop Charging
-                      </>
-                    ) : (
-                      <>
-                        <Zap size={16} className="mr-2" />
-                        Start Charging
-                      </>
-                    )}
-                  </button> */}
-                  <button className="w-full flex items-center justify-center px-4 py-2 border border-blue-300 shadow-sm text-sm font-medium rounded-md text-blue-700 bg-blue-50 hover:bg-blue-100 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
-                  onClick={() => !isFromESP32 ? viewDigitalTwin(battery) : null}>
-                    <BrainCircuit size={16} className="mr-2" />
-                    Digital Twin {isFromESP32 ? "- UNAVAILABLE" : ""}
-                  </button>
-                  <button
-                    onClick={() => (isFromESP32 || battery.live_websocket) ? sendUnseal() : null}
-                    className="w-full flex items-center justify-center px-4 py-2 border border-orange-300 shadow-sm text-sm font-medium rounded-md text-orange-700 bg-orange-50 hover:bg-orange-100 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-orange-500">
-                    <LockKeyholeOpen size={16} className="mr-2" />
-                    Unseal BMS {(!isFromESP32 && !battery.live_websocket) ? "- OFFLINE" : ""}
-                  </button>
-                  <button
-                    onClick={() => (isFromESP32 || battery.live_websocket) ? sendReset() : null}
-                    className="w-full flex items-center justify-center px-4 py-2 border border-red-300 shadow-sm text-sm font-medium rounded-md text-red-700 bg-red-50 hover:bg-red-100 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500">
-                    <RefreshCw size={16} className="mr-2" />
-                    Reset BMS {(!isFromESP32 && !battery.live_websocket) ? "- OFFLINE" : ""}
-                  </button>
-                  <button className="w-full flex items-center justify-center px-4 py-2 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
-                    <FileText size={16} className="mr-2" />
-                    Generate Report
-                  </button>
-                  <button 
-                    className="w-full flex items-center justify-center px-4 py-2 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
-                  >
-                    <ArrowLeft size={16} className="mr-2" />
-                    Back to List
-                  </button>
-                </div>
+            {/* Beneath */}
+            <div className="bg-white border border-gray-200 rounded-lg shadow-sm">
+              <div className="px-4 py-5 sm:px-6 border-b border-gray-200">
+                <h3 className="text-lg font-medium text-gray-900 flex items-center">
+                  <Battery size={20} className="mr-2" /> Digital Twin
+                </h3>
               </div>
+              <div className="p-6">
+                {/* <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+                  <div>
+                    <h4 className="text-sm font-medium text-gray-500 mb-2">Efficiency Rate</h4>
+                    <div className="text-2xl font-semibold text-gray-900">94%</div>
+                    <p className="mt-1 text-sm text-gray-500">Above average performance</p>
+                  </div>
+                  <div>
+                    <h4 className="text-sm font-medium text-gray-500 mb-2">Power Output</h4>
+                    <div className="text-2xl font-semibold text-gray-900">2.4 kW</div>
+                    <p className="mt-1 text-sm text-gray-500">Nominal output</p>
+                  </div>
+                  <div>
+                    <h4 className="text-sm font-medium text-gray-500 mb-2">Temperature Variance</h4>
+                    <div className="text-2xl font-semibold text-gray-900">±2.5°C</div>
+                    <p className="mt-1 text-sm text-gray-500">Within normal range</p>
+                  </div>
+                  <div>
+                    <h4 className="text-sm font-medium text-gray-500 mb-2">Response Time</h4>
+                    <div className="text-2xl font-semibold text-gray-900">50ms</div>
+                    <p className="mt-1 text-sm text-gray-500">Optimal performance</p>
+                  </div>
+                </div> */}
 
-              <div className="bg-white border border-gray-200 rounded-lg shadow-sm">
-                <div className="px-4 py-5 sm:px-6 border-b border-gray-200">
-                  <h3 className="text-lg font-medium leading-6 text-gray-900">Battery Information</h3>
-                </div>
-                <div className="px-4 py-5 sm:p-6">
-                  <dl className="grid grid-cols-1 gap-x-4 gap-y-6 sm:grid-cols-2">
-                    <div className="sm:col-span-1">
-                      <dt className="text-sm font-medium text-gray-500">Battery ID</dt>
-                      <dd className="mt-1 text-sm text-gray-900">{battery.esp_id}</dd>
-                    </div>
-                    {/* <div className="sm:col-span-1">
-                      <dt className="text-sm font-medium text-gray-500">Type</dt>
-                      <dd className="mt-1 text-sm text-gray-900">{battery.type}</dd>
-                    </div> */}
-                    {/* <div className="sm:col-span-1">
-                      <dt className="text-sm font-medium text-gray-500">Location</dt>
-                      <dd className="mt-1 text-sm text-gray-900">{battery.location}</dd>
-                    </div> */}
-                    <div className="sm:col-span-1">
-                      <dt className="text-sm font-medium text-gray-500">Installation Date</dt>
-                      <dd className="mt-1 text-sm text-gray-900">Jan 15, 2025</dd>
-                    </div>
-                    <div className="sm:col-span-2">
-                      <dt className="text-sm font-medium text-gray-500">Notes</dt>
-                      <dd className="mt-1 text-sm text-gray-900">
-                        Regular maintenance performed as scheduled. No issues detected during last inspection.
-                      </dd>
-                    </div>
-                  </dl>
+                <div className="space-y-4">
+                  {!isFromESP32 ? (
+                      <div>
+                        <button
+                          onClick={() => recommendationCards ? null : getRecommendations()}
+                          className="w-full flex items-center justify-center px-4 py-2 border border-blue-300 shadow-sm text-sm font-medium rounded-md text-blue-700 bg-blue-50 hover:bg-blue-100 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 mb-4"
+                        >
+                          <BrainCircuit size={16} className="mr-2" />
+                          Get Recommendations
+                        </button>
+                        {recommendationCards?.map((recommendation) => (
+                          <div className="flex items-center justify-between mb-2">
+                            <span>{ recommendation.message }</span>
+                            <div className="flex gap-2">
+                              {recommendation.implemented === false ? (
+                                <>
+                                  <button
+                                    onClick={() => implementRecommendation(recommendation)}
+                                    className="w-auto flex items-center justify-center px-4 py-2 border border-green-300 shadow-sm text-sm font-medium rounded-md text-green-700 bg-green-50 hover:bg-green-100 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500"
+                                  >
+                                    {recommendation.implementing === false ? (
+                                      <>
+                                        {recommendation.success === true ? (
+                                          <>
+                                            Implement
+                                          </>
+                                        ) : (
+                                          <>
+                                            Failed! Try again...
+                                          </>
+                                        )}
+                                        <ArrowBigRightDash size={16} className="ml-2" />
+                                      </>
+                                    ) : (
+                                      <>
+                                        Implementing...
+                                      </>
+                                    )}
+                                  </button>
+                                  <button
+                                    onClick={() => removeRecommendation(recommendation)}
+                                    className="w-auto flex items-center justify-center px-4 py-2 border border-red-300 shadow-sm text-sm font-medium rounded-md text-red-700 bg-red-50 hover:bg-red-100 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500"
+                                  >
+                                    <X size={16} />
+                                  </button>
+                                </>
+                              ) : (
+                                <>
+                                  <button
+                                    onClick={() => removeRecommendation(recommendation)}
+                                    className="w-auto flex items-center justify-center px-4 py-2 border border-green-300 shadow-sm text-sm font-medium rounded-md text-green-700 bg-green-50 hover:bg-green-100 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500"
+                                  >
+                                    Implemented
+                                    <SquareCheckBig size={16} className="ml-2" />
+                                  </button>
+                                </>
+                              )}
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    ) : (
+                      <div>
+                        <h4 className="text-sm font-medium text-gray-500 mb-2">Not available offline.</h4>
+                        <h4 className="text-sm font-medium text-gray-500 mb-2">
+                          Check out our{" "}
+                          <a
+                            href='https://batteryportal-e9czhgamgferavf7.ukwest-01.azurewebsites.net/'
+                            className="text-sm font-medium text-blue-500 mb-2"
+                          >
+                            website
+                          </a>
+                          !
+                        </h4>
+                      </div>
+                    )
+                  }
                 </div>
               </div>
             </div>
@@ -719,11 +488,123 @@ const BatteryDetail: React.FC<BatteryDetailProps> = ({
     }
   };
 
-  const navigate = useNavigate();
 
+  const navigate = useNavigate();
   const viewDigitalTwin = (battery: BatteryData) => {
-    navigate(`/digital-twin?esp_id=${battery.esp_id}`);
+    navigate(`/visualisation?esp_id=${battery.esp_id}`);
   };
+
+
+  interface Recommendation {
+    type: string;
+    message: string;
+    min?: number;
+    max?: number;
+    implementing: boolean;
+    implemented: boolean;
+    success: boolean;
+  }
+  const [recommendationCards, setRecommendationCards] = useState<Recommendation[] | null>(null);
+  async function getRecommendations() {
+    const response = await axios.get(`${apiConfig.DB_RECOMMENDATION_API}?esp_id=${battery.esp_id}`);
+
+    const recommendations: Recommendation[] = (response.data.recommendations || []).map((rec: any) => ({
+      ...rec,
+      implementing: false,
+      implemented: false,
+      success: true, // assumption
+    }));
+    setRecommendationCards(recommendations);
+  }
+
+
+  async function implementRecommendation(recommendation: Recommendation) {
+    if (recommendation.implementing) return; // already clicked the button recently
+    if (!recommendationCards) return;
+
+    switch (recommendation.type) {
+      case "charge-range":
+        await processRecommendation(
+          recommendation,
+          { Q_low: recommendation.min, Q_high: recommendation.max },
+          () => battery.Q_low === recommendation.min && battery.Q_high === recommendation.max
+        );
+        break;
+
+      case "current-dischg-limit": {
+        await processRecommendation(
+          recommendation,
+          { I_dschg_max: recommendation.max },
+          () => battery.I_dschg_max === recommendation.max
+        );
+        break;
+      }
+
+      default:
+        console.log("default");
+    }
+  }
+
+
+  function useBatteryWaiter(battery: BatteryData) {
+    // hook for waiting until next battery object update
+    const resolvers = useRef<(() => void)[]>([]);
+
+    useEffect(() => {
+      // resolve all waiting promises when battery object changes
+      resolvers.current.forEach(r => r());
+      resolvers.current = [];
+    }, [battery]);
+
+    function awaitNextUpdate(): Promise<void> {
+      return new Promise(resolve => {
+        resolvers.current.push(resolve);
+      });
+    }
+
+    return awaitNextUpdate;
+  }
+
+  const sleep = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
+  const awaitNextBatteryUpdate = useBatteryWaiter(battery);
+
+  async function processRecommendation(
+    recommendation: Recommendation,
+    values: Partial<BatteryData>,
+    check: () => boolean,
+  ) {
+    // initialise boolean flags
+    setRecommendationCards(prev =>
+      prev?.map(rec => (rec === recommendation ? { ...rec, implementing: true, success: true } : rec)) ?? null
+    );
+
+    // send the recommended changes back through WebSocket to device
+    sendBatteryUpdate(values);
+
+    // confirm completion by waitinf for new battery data...
+    await sleep(5000); // ...after a brief delay so immediate updates don't interfere
+    await awaitNextBatteryUpdate();
+
+    // update boolean flags on result
+    if (check()) {
+      setRecommendationCards(prev =>
+        prev?.map(rec => (rec.type === recommendation.type ? { ...rec, implemented: true } : rec)) ?? null
+      );
+    } else {
+      setRecommendationCards(prev =>
+        prev?.map(rec => (rec.type === recommendation.type ? { ...rec, implementing: false, success: false } : rec)) ?? null
+      );
+    }
+  }
+
+
+  function removeRecommendation(recommendation: Recommendation) {
+    setRecommendationCards(prev => {
+      const updated = prev ? prev.filter((r) => r !== recommendation) : prev;
+      return (updated && updated.length > 0) ? updated
+                                             : null; // allows button to be clicked again
+    });
+  }
 
   return (
     <div className="bg-white rounded-lg shadow-md overflow-hidden border border-gray-200">
@@ -732,29 +613,11 @@ const BatteryDetail: React.FC<BatteryDetailProps> = ({
         <div className="flex justify-between items-start">
           <div>
             <h2 className="text-2xl font-bold text-gray-800">BMS ID: {battery.esp_id}</h2>
-            <div className="flex items-center mt-1 space-x-2 text-gray-600">
-              <span>{battery.esp_id}</span>
-              <span>•</span>
-              {/* <span>{battery.type}</span> */}
-              <span>•</span>
-              {/* <span>{battery.location}</span> */}
-            </div>
           </div>
           <div className="flex items-center space-x-3">
             <span className={`px-3 py-1 rounded-full text-sm font-medium ${getStatusColor(isFromESP32 ? true : battery.live_websocket)}`}>
               { (isFromESP32 || battery.live_websocket) ? "online" : "offline" }
             </span>
-            <div className="flex space-x-2">
-              <button className="p-2 text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded-full">
-                <Share2 size={18} />
-              </button>
-              <button className="p-2 text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded-full">
-                <Download size={18} />
-              </button>
-              <button className="p-2 text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded-full">
-                <Printer size={18} />
-              </button>
-            </div>
           </div>
         </div>
       </div>
@@ -863,36 +726,6 @@ const BatteryDetail: React.FC<BatteryDetailProps> = ({
               }`}
             >
               Overview
-            </button>
-            <button
-              onClick={() => setActiveTab('performance')}
-              className={`whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm ${
-                activeTab === 'performance'
-                  ? 'border-blue-500 text-blue-600'
-                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-              }`}
-            >
-              Performance
-            </button>
-            <button
-              onClick={() => setActiveTab('history')}
-              className={`whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm ${
-                activeTab === 'history'
-                  ? 'border-blue-500 text-blue-600'
-                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-              }`}
-            >
-              History
-            </button>
-            <button
-              onClick={() => setActiveTab('maintenance')}
-              className={`whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm ${
-                activeTab === 'maintenance'
-                  ? 'border-blue-500 text-blue-600'
-                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-              }`}
-            >
-              Maintenance
             </button>
             <button
               onClick={() => setActiveTab('settings')}
