@@ -1,19 +1,25 @@
-#include "include/config.h"
-#include "include/global.h"
 #include "include/AP.h"
-#include "include/DNS.h"
-#include "include/I2C.h"
 #include "include/BMS.h"
-#include "include/MESH.h"
-#include "include/LoRa.h"
-#include "include/WS.h"
+#include "include/DNS.h"
 #include "include/GPS.h"
+#include "include/I2C.h"
+#include "include/LoRa.h"
+#include "include/MESH.h"
+#include "include/WS.h"
+#include "include/config.h"
 #include "include/utils.h"
 
-#include <esp_log.h>
-#include <driver/gpio.h>
+#include <inttypes.h>
+#include <stdbool.h>
+#include <stdint.h>
+#include <string.h>
 
-// global variables
+#include "esp_http_server.h"
+#include "esp_log.h"
+#include "esp_netif_types.h"
+#include "esp_system.h"
+#include "freertos/FreeRTOS.h"
+
 esp_netif_t *ap_netif;
 bool is_root = false;
 int num_connected_clients = 0;
@@ -28,7 +34,6 @@ LoRa_message all_messages[MESH_SIZE] = {0};
 char forwarded_message[LORA_MAX_PACKET_LEN-2] = "";
 
 TaskHandle_t websocket_task_handle = NULL;
-
 TaskHandle_t mesh_websocket_task_handle = NULL;
 TaskHandle_t merge_root_task_handle = NULL;
 
@@ -50,16 +55,6 @@ void app_main(void) {
             unseal();
             vTaskDelay(pdMS_TO_TICKS(1000));
         }
-
-        // Initialize the GPIO pin as an output for LED toggling
-        gpio_config_t io_conf = {
-            .pin_bit_mask = (1ULL << I2C_LED_GPIO_PIN),
-            .mode = GPIO_MODE_OUTPUT,
-            .pull_up_en = GPIO_PULLUP_DISABLE,
-            .pull_down_en = GPIO_PULLDOWN_DISABLE,
-            .intr_type = GPIO_INTR_DISABLE
-        };
-        gpio_config(&io_conf);
 
         // grab BMS DeviceName from the BMS DataFlash
         uint8_t address[2] = {0};
@@ -87,10 +82,6 @@ void app_main(void) {
     TaskParams message_queue_params = {.stack_size = 3900, .task_name = "message_queue_task"};
     xTaskCreate(&message_queue_task, message_queue_params.task_name, message_queue_params.stack_size, &message_queue_params, 5, NULL);
 
-    esp_log_level_set("wifi", ESP_LOG_ERROR);
-    esp_log_level_set("websocket_client", ESP_LOG_WARN);
-    esp_log_level_set("transport_ws", ESP_LOG_WARN);
-    esp_log_level_set("transport_base", ESP_LOG_WARN);
     TaskParams websocket_params = {.stack_size = 4600, .task_name = "websocket_task"};
     xTaskCreate(&websocket_task, websocket_params.task_name, websocket_params.stack_size, &websocket_params, 1, &websocket_task_handle);
 
@@ -100,7 +91,6 @@ void app_main(void) {
         if (!is_root) {
             TaskParams connect_to_root_params = {.stack_size = 2500, .task_name = "connect_to_root_task"};
             xTaskCreate(&connect_to_root_task, connect_to_root_params.task_name, connect_to_root_params.stack_size, &connect_to_root_params, 4, NULL);
-
             TaskParams mesh_websocket_params = {.stack_size = 3100, .task_name = "mesh_websocket_task"};
             xTaskCreate(&mesh_websocket_task, mesh_websocket_params.task_name, mesh_websocket_params.stack_size, &mesh_websocket_params, 3, &mesh_websocket_task_handle);
         } else {
@@ -118,7 +108,7 @@ void app_main(void) {
     }
 
     while (true) {
-        if (VERBOSE) ESP_LOGI("main", "%ld bytes available in heap", esp_get_free_heap_size());
+        if (VERBOSE) ESP_LOGI("main", "%" PRId32 " bytes available in heap", esp_get_free_heap_size());
         if (esp_get_minimum_free_heap_size() < 2000) esp_restart();
         vTaskDelay(pdMS_TO_TICKS(10000));
     }

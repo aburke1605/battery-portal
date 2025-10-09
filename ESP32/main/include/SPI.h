@@ -1,9 +1,7 @@
 #ifndef SPI_H
 #define SPI_H
 
-#include "include/config.h"
-
-#include <esp_err.h>
+#include "esp_err.h"
 
 void spi_reset();
 
