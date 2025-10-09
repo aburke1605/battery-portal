@@ -305,7 +305,10 @@ int compare_mac(const uint8_t *mac1, const uint8_t *mac2) {
 
 float calculate_symbol_length(uint8_t spreading_factor, uint8_t bandwidth) {
     float frequencies[] = {7.8, 10.4, 15.6, 20.8, 31.25, 41.7, 62.5, 125.0, 250.0, 500.0};
-    if (bandwidth < 0 || bandwidth >= sizeof(frequencies) / sizeof(frequencies[0])) {
+    if (
+        // bandwidth < 0 ||
+        bandwidth >= sizeof(frequencies) / sizeof(frequencies[0])
+    ) {
         ESP_LOGW("LoRa", "Undefined bandwidth key! Returning to default...");
         bandwidth = 7;
     }
