@@ -362,6 +362,7 @@ def import_bqStudio_log(csv_path: str):
                 continue
             rows.append({
                 "timestamp": datetime.fromisoformat(row["TimeStamp"]),
+                "lat": 0, "lon": 0,
                 "Q": int(row["Relative State of Charge"] or 0),
                 "H": 0,
                 "V": float(row["Voltage"] or 0)/1000,
