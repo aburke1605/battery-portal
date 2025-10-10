@@ -49,13 +49,6 @@ void app_main(void) {
     uart_init();
 
     if (!LORA_IS_RECEIVER) {
-        // do a BMS reset on boot
-        reset();
-        while (get_sealed_status() != 1) {
-            unseal();
-            vTaskDelay(pdMS_TO_TICKS(1000));
-        }
-
         // grab BMS DeviceName from the BMS DataFlash
         uint8_t address[2] = {0};
         convert_uint_to_n_bytes(I2C_DEVICE_NAME_ADDR, address, sizeof(address), true);
