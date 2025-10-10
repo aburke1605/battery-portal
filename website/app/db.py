@@ -287,16 +287,16 @@ def chart_data():
 
     sub_sub_query = (
         select(
-            data_table.c.t, data_table.c[column], # query timestamp and column of interest
+            data_table.c.timestamp, data_table.c[column], # query timestamp and column of interest
             func.row_number().over(
-                order_by=desc(data_table.c.t) # ordered by most recent (time-wise)
+                order_by=desc(data_table.c.timestamp) # ordered by most recent (time-wise)
             ).label("rn")
         )
         .subquery()
     )
     sub_query = (
         select(
-            sub_sub_query.c.t, sub_sub_query.c[column]
+            sub_sub_query.c.timestamp, sub_sub_query.c[column]
         )
         .where(sub_sub_query.c.rn % 75 == 0) # every 75th row so query is not too large
         .limit(250) # max 250 data points
@@ -361,7 +361,7 @@ def import_bqStudio_log(csv_path: str):
             if not row["TimeStamp"].strip():
                 continue
             rows.append({
-                "t": datetime.fromisoformat(row["TimeStamp"]),
+                "timestamp": datetime.fromisoformat(row["TimeStamp"]),
                 "Q": int(row["Relative State of Charge"] or 0),
                 "H": 0,
                 "V": float(row["Voltage"] or 0)/1000,
@@ -406,15 +406,15 @@ def recommendation():
         # select N most recent
         N = 3
         sub_query = (
-            select(data_table.c.Q, data_table.c.cT, data_table.c.t)
-            .order_by(desc(data_table.c.t))
+            select(data_table.c.Q, data_table.c.cT, data_table.c.timestamp)
+            .order_by(desc(data_table.c.timestamp))
             .limit(N)
             .subquery()
         )
         # reorder again
         query = \
             select(sub_query.c.Q, data_table.c.cT) \
-            .order_by(asc(sub_query.c.t))
+            .order_by(asc(sub_query.c.timestamp))
 
         rows = DB.session.execute(query).fetchall()
 
