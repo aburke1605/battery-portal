@@ -439,18 +439,65 @@ void websocket_event_handler(void *arg, esp_event_base_t event_base, int32_t eve
     }
 }
 
+char* convert_data_numbers_for_frontend(char* data_string) {
+        cJSON *data_json = cJSON_Parse(data_string);
+        cJSON *content = cJSON_GetObjectItem(data_json, "content");
+        if (content) {
+            cJSON *V = cJSON_GetObjectItem(content, "V");
+            if (V) cJSON_SetNumberValue(V, (float)V->valueint / 10.0);
+            cJSON *I = cJSON_GetObjectItem(content, "I");
+            if (I) cJSON_SetNumberValue(I, (float)I->valueint / 10.0);
+            cJSON *aT = cJSON_GetObjectItem(content, "aT");
+            if (aT) cJSON_SetNumberValue(aT, (float)aT->valueint / 10.0);
+            cJSON *cT = cJSON_GetObjectItem(content, "cT");
+            if (cT) cJSON_SetNumberValue(cT, (float)cT->valueint / 10.0);
+
+            cJSON *V1 = cJSON_GetObjectItem(content, "V1");
+            if (V1) cJSON_SetNumberValue(V1, (float)V1->valueint / 100.0);
+            cJSON *V2 = cJSON_GetObjectItem(content, "V2");
+            if (V2) cJSON_SetNumberValue(V2, (float)V2->valueint / 100.0);
+            cJSON *V3 = cJSON_GetObjectItem(content, "V3");
+            if (V3) cJSON_SetNumberValue(V3, (float)V3->valueint / 100.0);
+            cJSON *V4 = cJSON_GetObjectItem(content, "V4");
+            if (V4) cJSON_SetNumberValue(V4, (float)V4->valueint / 100.0);
+
+            cJSON *I1 = cJSON_GetObjectItem(content, "I1");
+            if (I1) cJSON_SetNumberValue(I1, (float)I1->valueint / 100.0);
+            cJSON *I2 = cJSON_GetObjectItem(content, "I2");
+            if (I2) cJSON_SetNumberValue(I2, (float)I2->valueint / 100.0);
+            cJSON *I3 = cJSON_GetObjectItem(content, "I3");
+            if (I3) cJSON_SetNumberValue(I3, (float)I3->valueint / 100.0);
+            cJSON *I4 = cJSON_GetObjectItem(content, "I4");
+            if (I4) cJSON_SetNumberValue(I4, (float)I4->valueint / 100.0);
+
+            cJSON *T1 = cJSON_GetObjectItem(content, "T1");
+            if (T1) cJSON_SetNumberValue(T1, (float)T1->valueint / 100.0);
+            cJSON *T2 = cJSON_GetObjectItem(content, "T2");
+            if (T2) cJSON_SetNumberValue(T2, (float)T2->valueint / 100.0);
+            cJSON *T3 = cJSON_GetObjectItem(content, "T3");
+            if (T3) cJSON_SetNumberValue(T3, (float)T3->valueint / 100.0);
+            cJSON *T4 = cJSON_GetObjectItem(content, "T4");
+            if (T4) cJSON_SetNumberValue(T4, (float)T4->valueint / 100.0);
+        }
+        char* converted_data_string = cJSON_PrintUnformatted(data_json);
+        cJSON_Delete(data_json);
+
+        return converted_data_string;
+}
+
 void websocket_task(void *pvParameters) {
     while (true) {
         // get sensor data
         char* data_string = LORA_IS_RECEIVER ? "" : get_data();
+        char* converted_data_string = LORA_IS_RECEIVER ? "" : convert_data_numbers_for_frontend(data_string);
 
-        if (data_string != NULL) {
+        if (data_string != NULL && converted_data_string != NULL) {
             // first send to all connected WebSocket clients
             for (int i = 0; i < WS_CONFIG_MAX_CLIENTS; i++) {
                 if (client_sockets[i].is_browser_not_mesh && client_sockets[i].descriptor >= 0) {
                     httpd_ws_frame_t ws_pkt = {
-                        .payload = (uint8_t *)data_string,
-                        .len = strlen(data_string),
+                        .payload = (uint8_t *)converted_data_string,
+                        .len = strlen(converted_data_string),
                         .type = HTTPD_WS_TYPE_TEXT,
                     };
 
@@ -547,7 +594,10 @@ void websocket_task(void *pvParameters) {
             }
 
             // clean up
-            if (!LORA_IS_RECEIVER) free(data_string);
+            if (!LORA_IS_RECEIVER) {
+                free(data_string);
+                free(converted_data_string);
+            }
         }
 
         // check wifi connection still exists
