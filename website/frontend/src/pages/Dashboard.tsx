@@ -1,7 +1,6 @@
 import{ useState, useEffect } from 'react';
 import PageMeta from "../components/common/PageMeta";
 import { BatteryData, AlertData } from '..//types';
-import { initialBatteries, initialAlerts } from '../mock/mockData';
 import { AlertTriangle, Info } from 'lucide-react';
 import { formatDateTime, getAlertTypeColor } from '../utils/helpers';
 import DataChart from '../components/charts/DataChart';
@@ -12,7 +11,7 @@ import { fetchBatteryData } from '../hooks/useWebSocket';
 export default function Home() {
 
 
-  const [batteries, setBatteryData] = useState<BatteryData[]>(initialBatteries);
+  const [batteries, setBatteryData] = useState<BatteryData[]>([]);
   useEffect(() => {
     const loadBatteries = async () => {
       const esps = await fetchBatteryData(-999);
@@ -22,7 +21,7 @@ export default function Home() {
     loadBatteries();
   }, []);
 
-  const [alerts] = useState<AlertData[]>(initialAlerts);
+  const [alerts] = useState<AlertData[]>([]);
 
   // Get average charge level
   const getAverageChargeLevel = () => {
