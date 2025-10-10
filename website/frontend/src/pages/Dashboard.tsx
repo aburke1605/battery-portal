@@ -7,34 +7,26 @@ import { formatDateTime, getAlertTypeColor } from '../utils/helpers';
 import DataChart from '../components/charts/DataChart';
 import axios from 'axios';
 import apiConfig from '../apiConfig';
+import { fetchBatteryData } from '../hooks/useWebSocket';
 
 export default function Home() {
 
 
   const [batteries, setBatteryData] = useState<BatteryData[]>(initialBatteries);
   useEffect(() => {
-    const fetchBatteryData = async () => {
-      try {
-        const response = await axios.get(`${apiConfig.DB_INFO_API}`);
-        setBatteryData(response.data);
-      } catch(error) {
-        console.error("Error fetching battery data:", error);
-      } finally {
-        // setLoading(false);
-      }
-    };
-
-    fetchBatteryData()
-    const interval = setInterval(fetchBatteryData, 10000)
-    return () => {
-      clearInterval(interval)
+    const loadBatteries = async () => {
+      const esps = await fetchBatteryData(-999);
+      if (esps !== null) setBatteryData(esps);
     }
-  }, [])
+
+    loadBatteries();
+  }, []);
 
   const [alerts] = useState<AlertData[]>(initialAlerts);
 
   // Get average charge level
   const getAverageChargeLevel = () => {
+    if (!(batteries.length > 0)) return 0;
     const total = batteries.reduce((sum, battery) => sum + battery.Q, 0);
     return Math.round(total / batteries.length);
   };
