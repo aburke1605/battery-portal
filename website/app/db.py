@@ -278,8 +278,8 @@ def chart_data():
         API used by frontend to fetch 250 entries from battery_data_bms_<esp_id> table for chart display.
     """
     esp_id = request.args.get("esp_id")
-    if esp_id == "unavailable!" or esp_id == "":
-        return {}, 404
+    if esp_id == "unavailable!" or esp_id == "undefined" or esp_id == "":
+        return {}, 200
 
     table_name = f"battery_data_bms_{esp_id}"
     data_table = DB.Table(table_name, DB.metadata, autoload_with=DB.engine)
