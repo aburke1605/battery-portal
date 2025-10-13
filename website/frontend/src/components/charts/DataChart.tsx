@@ -42,6 +42,8 @@ const DataChart: React.FC<DataChartProps> = ({ esp_id, column }) => {
     const fetchData = async () => {
       try {
         const response = await axios.get(`${apiConfig.DB_CHART_DATA_API}?esp_id=${esp_id}&column=${column}`);
+        if (!Array.isArray(response.data)) return;
+
         const processedData = response.data.map((point: DataPoint) => ({
           ...point,
           timeMs: new Date(point.timestamp).getTime()
@@ -49,8 +51,6 @@ const DataChart: React.FC<DataChartProps> = ({ esp_id, column }) => {
         setData(processedData);
       } catch(error) {
         console.error("Error fetching data:", error);
-      } finally {
-
       }
     };
 

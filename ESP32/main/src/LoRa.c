@@ -11,13 +11,14 @@
 
 #include "cJSON.h"
 #include "driver/gpio.h"
+#include "esp_err.h"
 #include "esp_log.h"
 #include "esp_timer.h"
 
 static const char* TAG = "LoRa";
 
 void lora_init() {
-    spi_init();
+    if (spi_init() != ESP_OK) return;
 
     // Set carrier frequency
     uint64_t frf = ((uint64_t)(LORA_FREQ * 1E6) << 19) / 32000000;
@@ -779,14 +780,16 @@ void lora_task(void *pvParameters) {
 
     // task loop
     while(true) {
-        // should only run if receiver or ROOT but not connected to Wi-Fi
-        if (LORA_IS_RECEIVER || (is_root && !connected_to_WiFi)) {
-            // enter continuous RX mode
-            spi_write_register(REG_OP_MODE, 0b10000101); // LoRa + RX mode
-            receive(&full_message_length, &chunked);
+        if (LoRa_configured) {
+            // should only run if receiver or ROOT but not connected to Wi-Fi
+            if (LORA_IS_RECEIVER || (is_root && !connected_to_WiFi)) {
+                // enter continuous RX mode
+                spi_write_register(REG_OP_MODE, 0b10000101); // LoRa + RX mode
+                receive(&full_message_length, &chunked);
 
-            transmit(&delay_transmission_until);
-            // contains a delay within, default is still RX mode
+                transmit(&delay_transmission_until);
+                // contains a delay within, default is still RX mode
+            }
         }
 
         vTaskDelay(pdMS_TO_TICKS(10));

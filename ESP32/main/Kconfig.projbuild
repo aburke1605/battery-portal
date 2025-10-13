@@ -214,7 +214,7 @@ menu "[CUSTOM] Inverter Configuration"
 
 config UNIT_I2C_ADDR
     hex "Inverter Unit I2C Address"
-    default 0x55
+    default 0x28
     help
       Set the hexadecimal address of the ESP32 controlling the inverter / unit display.
 

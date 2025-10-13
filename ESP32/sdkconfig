@@ -453,7 +453,7 @@ CONFIG_FULL_ACCESS_CMD_2=0xFFFF
 #
 # [CUSTOM] Inverter Configuration
 #
-CONFIG_UNIT_I2C_ADDR=0x55
+CONFIG_UNIT_I2C_ADDR=0x28
 # end of [CUSTOM] Inverter Configuration
 
 #

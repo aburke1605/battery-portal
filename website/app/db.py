@@ -85,21 +85,21 @@ def update_battery_data(json: list) -> None:
                 Q = content["Q"],
                 H = content["H"],
                 V = content["V"] / 10,
-                V1 = content["V1"] / 10,
-                V2 = content["V2"] / 10,
-                V3 = content["V3"] / 10,
-                V4 = content["V4"] / 10,
+                V1 = content["V1"] / 100,
+                V2 = content["V2"] / 100,
+                V3 = content["V3"] / 100,
+                V4 = content["V4"] / 100,
                 I = content["I"] / 10,
-                I1 = content["I1"] / 10,
-                I2 = content["I2"] / 10,
-                I3 = content["I3"] / 10,
-                I4 = content["I4"] / 10,
+                I1 = content["I1"] / 100,
+                I2 = content["I2"] / 100,
+                I3 = content["I3"] / 100,
+                I4 = content["I4"] / 100,
                 aT = content["aT"] / 10,
                 cT = content["cT"] / 10,
-                T1 = content["T1"] / 10,
-                T2 = content["T2"] / 10,
-                T3 = content["T3"] / 10,
-                T4 = content["T4"] / 10,
+                T1 = content["T1"] / 100,
+                T2 = content["T2"] / 100,
+                T3 = content["T3"] / 100,
+                T4 = content["T4"] / 100,
                 OTC = content["OTC"],
                 wifi = content["wifi"],
             )
@@ -278,8 +278,8 @@ def chart_data():
         API used by frontend to fetch 250 entries from battery_data_bms_<esp_id> table for chart display.
     """
     esp_id = request.args.get("esp_id")
-    if esp_id == "unavailable!":
-        return {}, 404
+    if esp_id == "unavailable!" or esp_id == "undefined" or esp_id == "":
+        return {}, 200
 
     table_name = f"battery_data_bms_{esp_id}"
     data_table = DB.Table(table_name, DB.metadata, autoload_with=DB.engine)
@@ -404,17 +404,24 @@ def recommendation():
         table_name = f"battery_data_bms_{esp_id}"
         data_table = DB.Table(table_name, DB.metadata, autoload_with=DB.engine)
 
+        # get most recent date first
+        query = select(data_table).order_by(desc(data_table.c.timestamp)).limit(1)
+        today = DB.session.execute(query).first()[0]
+
         # select N most recent
-        N = 3
+        seconds_per_day = 86400 # 24*60*60
+        update_frequency_hz = 0.2 # every 5s
+        N = int(update_frequency_hz * seconds_per_day)
         sub_query = (
             select(data_table.c.Q, data_table.c.cT, data_table.c.timestamp)
+            .where(func.date(data_table.c.timestamp) >= today.date())
             .order_by(desc(data_table.c.timestamp))
             .limit(N)
             .subquery()
         )
         # reorder again
         query = \
-            select(sub_query.c.Q, data_table.c.cT) \
+            select(sub_query.c.Q, sub_query.c.cT) \
             .order_by(asc(sub_query.c.timestamp))
 
         rows = DB.session.execute(query).fetchall()

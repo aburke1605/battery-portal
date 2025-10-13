@@ -31,7 +31,7 @@ export default function BatteryPage({ isFromESP32 = false }: BatteriesPageProps)
     ws_url = isFromESP32 ? ws_url += "?auth_token=" + getAuthToken() : ws_url += "?browser_id=" + ws_session_browser_id.current + "&esp_id=" + esp_id;
 
     const [battery, setBatteryData] = useState<BatteryData | null>(null);
-    const [voltageThreshold] = useState(46.5);
+    const [voltageThreshold] = useState(48);
 
     const sleep = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
 
