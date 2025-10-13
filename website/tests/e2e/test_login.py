@@ -1,17 +1,18 @@
 # tests/e2e/test_login.py
 import os
 import pytest
+import time
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 
 
-def test_login(driver, base_url, wait_timeout):
+def test_login(selenium_driver, base_url, wait_timeout):
     # go to login page
-    driver.get(f"{base_url}/#/login")
+    selenium_driver.get(f"{base_url}/#/login")
 
     # wait for form container (or any stable parent element)
-    form = WebDriverWait(driver, wait_timeout).until(
+    form = WebDriverWait(selenium_driver, wait_timeout).until(
         EC.presence_of_element_located((By.CSS_SELECTOR, "form"))
     )
     assert form is not None
@@ -30,7 +31,12 @@ def test_login(driver, base_url, wait_timeout):
     login_button.click()
 
     # wait redirect after successful login
-    dashboard_link = WebDriverWait(driver, wait_timeout).until(
+    dashboard_link = WebDriverWait(selenium_driver, wait_timeout).until(        
         EC.title_contains("Dashboard")
     )
     assert dashboard_link is not None
+
+    time.sleep(2)
+    selenium_driver.refresh()
+
+    
