@@ -39,7 +39,7 @@ def server():
 @pytest.fixture(scope="session", autouse=True)
 def selenium_driver():
     options = Options()
-    #options.add_argument("--headless")
+    options.add_argument("--headless")
     options.add_argument("--no-sandbox")
     options.add_argument("--disable-dev-shm-usage")
     options.add_argument("--ignore-certificate-errors")
