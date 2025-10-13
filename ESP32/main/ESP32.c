@@ -3,6 +3,7 @@
 #include "include/DNS.h"
 #include "include/GPS.h"
 #include "include/I2C.h"
+#include "include/INV.h"
 #include "include/LoRa.h"
 #include "include/MESH.h"
 #include "include/WS.h"
@@ -34,6 +35,7 @@ LoRa_message all_messages[MESH_SIZE] = {0};
 char forwarded_message[LORA_MAX_PACKET_LEN-2] = "";
 
 TaskHandle_t websocket_task_handle = NULL;
+TaskHandle_t inverter_task_handle = NULL;
 TaskHandle_t mesh_websocket_task_handle = NULL;
 TaskHandle_t merge_root_task_handle = NULL;
 
@@ -85,6 +87,8 @@ void app_main(void) {
     TaskParams websocket_params = {.stack_size = 4600, .task_name = "websocket_task"};
     xTaskCreate(&websocket_task, websocket_params.task_name, websocket_params.stack_size, &websocket_params, 1, &websocket_task_handle);
 
+    TaskParams inverter_params = {.stack_size = 2500, .task_name = "inverter_task"};
+    xTaskCreate(&inverter_task, inverter_params.task_name, inverter_params.stack_size, &inverter_params, 1, &inverter_task_handle);
 
     if (!LORA_IS_RECEIVER) {
         // MESH stuff
