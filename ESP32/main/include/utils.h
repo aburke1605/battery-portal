@@ -1,10 +1,12 @@
 #ifndef UTILS_H
 #define UTILS_H
 
-#include "include/config.h"
+#include <stdbool.h>
+#include <stddef.h>
+#include <stdint.h>
 
-#include <esp_err.h>
-#include <esp_http_server.h>
+#include "esp_err.h"
+#include "esp_http_server.h"
 
 #define MIN(a, b) ((a) < (b) ? (a) : (b))
 #define MAX(a, b) ((a) > (b) ? (a) : (b))
@@ -21,7 +23,7 @@ char *send_fake_login_post_request();
 
 esp_err_t get_POST_data(httpd_req_t *req, char* content, size_t content_size);
 
-void convert_uint_to_n_bytes(uint input, uint8_t *output, size_t n_bytes, bool little_endian);
+void convert_uint_to_n_bytes(unsigned int input, uint8_t *output, size_t n_bytes, bool little_endian);
 
 void url_decode(char *dest, const char *src);
 
@@ -32,10 +34,6 @@ void random_token(char *key);
 int round_to_dp(float var, int ndp);
 
 char* read_file(const char* path);
-
-char* replace_placeholder(const char *html, const char *const placeholders[], const char*const substitutes[], size_t num_replacements);
-
-uint8_t get_block(uint8_t offset);
 
 int compare_mac(const uint8_t *mac1, const uint8_t *mac2);
 

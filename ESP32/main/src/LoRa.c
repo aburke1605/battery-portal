@@ -1,22 +1,24 @@
 #include "include/LoRa.h"
 
 #include "include/BMS.h"
-#include "include/global.h"
 #include "include/SPI.h"
-#include "include/utils.h"
 #include "include/WS.h"
+#include "include/config.h"
+#include "include/global.h"
+#include "include/utils.h"
 
-#include <driver/gpio.h>
-#include <esp_err.h>
-#include <esp_log.h>
-#include <esp_timer.h>
+#include <stdint.h>
 
-extern QueueHandle_t lora_queue;
+#include "cJSON.h"
+#include "driver/gpio.h"
+#include "esp_err.h"
+#include "esp_log.h"
+#include "esp_timer.h"
 
 static const char* TAG = "LoRa";
 
 void lora_init() {
-    spi_init();
+    if (spi_init() != ESP_OK) return;
 
     // Set carrier frequency
     uint64_t frf = ((uint64_t)(LORA_FREQ * 1E6) << 19) / 32000000;
@@ -379,8 +381,7 @@ size_t decode_frame(const uint8_t* input, size_t input_len, uint8_t* output) {
                     output[out_len++] = FRAME_END;
                 else if (byte == ESC_ESC)
                     output[out_len++] = FRAME_ESC;
-                else
-                    ; // invalid escape, discard or handle
+                else {} // invalid escape, discard or handle
                 in_escape = false;
             } else {
                 output[out_len++] = byte;
@@ -548,7 +549,7 @@ void receive(size_t* full_message_length, bool* chunked) {
                 int rssi_dbm = -157 + rssi_raw;
 
                 uint8_t decoded_payload[*full_message_length];
-                size_t decoded_len = decode_frame(encoded_buffer, *full_message_length, decoded_payload);
+                decode_frame(encoded_buffer, *full_message_length, decoded_payload);
                 *full_message_length = 0;
 
                 ESP_LOGI(TAG, "Received radio message with RSSI: %d dBm", rssi_dbm);
@@ -779,14 +780,16 @@ void lora_task(void *pvParameters) {
 
     // task loop
     while(true) {
-        // should only run if receiver or ROOT but not connected to Wi-Fi
-        if (LORA_IS_RECEIVER || (is_root && !connected_to_WiFi)) {
-            // enter continuous RX mode
-            spi_write_register(REG_OP_MODE, 0b10000101); // LoRa + RX mode
-            receive(&full_message_length, &chunked);
+        if (LoRa_configured) {
+            // should only run if receiver or ROOT but not connected to Wi-Fi
+            if (LORA_IS_RECEIVER || (is_root && !connected_to_WiFi)) {
+                // enter continuous RX mode
+                spi_write_register(REG_OP_MODE, 0b10000101); // LoRa + RX mode
+                receive(&full_message_length, &chunked);
 
-            transmit(&delay_transmission_until);
-            // contains a delay within, default is still RX mode
+                transmit(&delay_transmission_until);
+                // contains a delay within, default is still RX mode
+            }
         }
 
         vTaskDelay(pdMS_TO_TICKS(10));

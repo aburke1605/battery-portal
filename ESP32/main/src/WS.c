@@ -1,25 +1,30 @@
 #include "include/WS.h"
 
-#include "include/I2C.h"
 #include "include/BMS.h"
+#include "include/I2C.h"
+#include "include/config.h"
 #include "include/global.h"
 #include "include/utils.h"
 
 #include "include/cert.h"
 #include "include/local_cert.h"
 
-#include <esp_log.h>
-#include <esp_wifi.h>
-#include <esp_websocket_client.h>
-#include <esp_eap_client.h>
-#include <driver/gpio.h>
-#include <nvs_flash.h>
+#include <inttypes.h>
+
+#include "cJSON.h"
+#include "esp_log.h"
+#include "esp_netif.h"
+#include "esp_websocket_client.h"
+#include "esp_wifi.h"
+#include "esp_wifi_types_generic.h"
+#include "lwip/ip4_addr.h"
+#include "nvs_flash.h"
+
+static const char* TAG = "WS";
 
 static bool reconnect = false;
 static char ESP_IP[16] = "xxx.xxx.xxx.xxx\0";
 static esp_websocket_client_handle_t ws_client = NULL;
-
-static const char* TAG = "WS";
 
 void add_client(int fd, const char* tkn, bool browser, uint8_t esp_id) {
     for (int i = 0; i < WS_CONFIG_MAX_CLIENTS; i++) {
@@ -198,8 +203,6 @@ esp_err_t perform_request(cJSON *message, cJSON *response) {
                 return ESP_FAIL;
             }
 
-            gpio_set_level(I2C_LED_GPIO_PIN, 1);
-
             cJSON *esp_id = cJSON_GetObjectItem(data, "new_esp_id");
             if (esp_id && esp_id->valueint != 0 && esp_id->valueint != ESP_ID) {
                 ESP_LOGI(TAG, "Changing device name...");
@@ -236,8 +239,6 @@ esp_err_t perform_request(cJSON *message, cJSON *response) {
                 convert_uint_to_n_bytes(OTC, data_flash, sizeof(data_flash), false);
                 write_data_flash(address, sizeof(address), data_flash, sizeof(data_flash));
             }
-
-            gpio_set_level(I2C_LED_GPIO_PIN, 0);
 
             cJSON_AddStringToObject(response_content, "status", "success");
         } else if (summary && strcmp(summary->valuestring, "connect-wifi") == 0) {
@@ -433,23 +434,70 @@ void websocket_event_handler(void *arg, esp_event_base_t event_base, int32_t eve
             break;
 
         default:
-            if (VERBOSE) ESP_LOGI(TAG, "WebSocket event ID: %ld", event_id);
+            if (VERBOSE) ESP_LOGI(TAG, "WebSocket event ID: %" PRId32, event_id);
             break;
     }
+}
+
+char* convert_data_numbers_for_frontend(char* data_string) {
+        cJSON *data_json = cJSON_Parse(data_string);
+        cJSON *content = cJSON_GetObjectItem(data_json, "content");
+        if (content) {
+            cJSON *V = cJSON_GetObjectItem(content, "V");
+            if (V) cJSON_SetNumberValue(V, (float)V->valueint / 10.0);
+            cJSON *I = cJSON_GetObjectItem(content, "I");
+            if (I) cJSON_SetNumberValue(I, (float)I->valueint / 10.0);
+            cJSON *aT = cJSON_GetObjectItem(content, "aT");
+            if (aT) cJSON_SetNumberValue(aT, (float)aT->valueint / 10.0);
+            cJSON *cT = cJSON_GetObjectItem(content, "cT");
+            if (cT) cJSON_SetNumberValue(cT, (float)cT->valueint / 10.0);
+
+            cJSON *V1 = cJSON_GetObjectItem(content, "V1");
+            if (V1) cJSON_SetNumberValue(V1, (float)V1->valueint / 100.0);
+            cJSON *V2 = cJSON_GetObjectItem(content, "V2");
+            if (V2) cJSON_SetNumberValue(V2, (float)V2->valueint / 100.0);
+            cJSON *V3 = cJSON_GetObjectItem(content, "V3");
+            if (V3) cJSON_SetNumberValue(V3, (float)V3->valueint / 100.0);
+            cJSON *V4 = cJSON_GetObjectItem(content, "V4");
+            if (V4) cJSON_SetNumberValue(V4, (float)V4->valueint / 100.0);
+
+            cJSON *I1 = cJSON_GetObjectItem(content, "I1");
+            if (I1) cJSON_SetNumberValue(I1, (float)I1->valueint / 100.0);
+            cJSON *I2 = cJSON_GetObjectItem(content, "I2");
+            if (I2) cJSON_SetNumberValue(I2, (float)I2->valueint / 100.0);
+            cJSON *I3 = cJSON_GetObjectItem(content, "I3");
+            if (I3) cJSON_SetNumberValue(I3, (float)I3->valueint / 100.0);
+            cJSON *I4 = cJSON_GetObjectItem(content, "I4");
+            if (I4) cJSON_SetNumberValue(I4, (float)I4->valueint / 100.0);
+
+            cJSON *T1 = cJSON_GetObjectItem(content, "T1");
+            if (T1) cJSON_SetNumberValue(T1, (float)T1->valueint / 100.0);
+            cJSON *T2 = cJSON_GetObjectItem(content, "T2");
+            if (T2) cJSON_SetNumberValue(T2, (float)T2->valueint / 100.0);
+            cJSON *T3 = cJSON_GetObjectItem(content, "T3");
+            if (T3) cJSON_SetNumberValue(T3, (float)T3->valueint / 100.0);
+            cJSON *T4 = cJSON_GetObjectItem(content, "T4");
+            if (T4) cJSON_SetNumberValue(T4, (float)T4->valueint / 100.0);
+        }
+        char* converted_data_string = cJSON_PrintUnformatted(data_json);
+        cJSON_Delete(data_json);
+
+        return converted_data_string;
 }
 
 void websocket_task(void *pvParameters) {
     while (true) {
         // get sensor data
         char* data_string = LORA_IS_RECEIVER ? "" : get_data();
+        char* converted_data_string = LORA_IS_RECEIVER ? "" : convert_data_numbers_for_frontend(data_string);
 
-        if (data_string != NULL) {
+        if (data_string != NULL && converted_data_string != NULL) {
             // first send to all connected WebSocket clients
             for (int i = 0; i < WS_CONFIG_MAX_CLIENTS; i++) {
                 if (client_sockets[i].is_browser_not_mesh && client_sockets[i].descriptor >= 0) {
                     httpd_ws_frame_t ws_pkt = {
-                        .payload = (uint8_t *)data_string,
-                        .len = strlen(data_string),
+                        .payload = (uint8_t *)converted_data_string,
+                        .len = strlen(converted_data_string),
                         .type = HTTPD_WS_TYPE_TEXT,
                     };
 
@@ -546,7 +594,10 @@ void websocket_task(void *pvParameters) {
             }
 
             // clean up
-            if (!LORA_IS_RECEIVER) free(data_string);
+            if (!LORA_IS_RECEIVER) {
+                free(data_string);
+                free(converted_data_string);
+            }
         }
 
         // check wifi connection still exists

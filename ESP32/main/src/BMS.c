@@ -1,13 +1,13 @@
 #include "include/BMS.h"
 
+#include "include/GPS.h"
+#include "include/I2C.h"
 #include "include/config.h"
 #include "include/global.h"
-#include "include/I2C.h"
-#include "include/GPS.h"
 #include "include/utils.h"
 
-#include <esp_log.h>
-#include <cJSON.h>
+#include "cJSON.h"
+#include "esp_log.h"
 
 static const char* TAG = "BMS";
 
@@ -133,6 +133,8 @@ int8_t get_sealed_status() {
 char* get_data() {
     // create JSON object with sensor data
     cJSON *data = cJSON_CreateObject();
+
+    cJSON_AddNumberToObject(data, "esp_id", ESP_ID);
 
     GPRMC* gprmc = get_gps();
     if (gprmc) {

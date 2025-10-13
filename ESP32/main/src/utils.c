@@ -1,16 +1,19 @@
-#include <cJSON.h>
-
 #include "include/utils.h"
-#include "include/WS.h"
 
+#include "include/WS.h"
+#include "include/config.h"
 #include "include/global.h"
 
+#include <ctype.h>
 #include <math.h>
-#include <esp_log.h>
-#include <nvs_flash.h>
-#include <esp_spiffs.h>
-#include <esp_http_client.h>
-#include <esp_random.h>
+#include <string.h>
+
+#include "cJSON.h"
+#include "esp_http_client.h"
+#include "esp_log.h"
+#include "esp_random.h"
+#include "esp_spiffs.h"
+#include "nvs_flash.h"
 
 void change_esp_id(char* name) {
     if (strncmp(name, "bms_", 4) != 0) {
@@ -197,7 +200,7 @@ esp_err_t get_POST_data(httpd_req_t *req, char* content, size_t content_size) {
     return ESP_OK;
 }
 
-void convert_uint_to_n_bytes(uint input, uint8_t *output, size_t n_bytes, bool little_endian) {
+void convert_uint_to_n_bytes(unsigned int input, uint8_t *output, size_t n_bytes, bool little_endian) {
     for(size_t i=0; i<n_bytes; i++)
         output[i] = (input >> ((little_endian?n_bytes-1-i:i)*8)) & 0xFF;
 }
@@ -292,59 +295,6 @@ char* read_file(const char* path) {
     return buffer;
 }
 
-char* replace_placeholder(const char *html, const char *const placeholders[], const char*const substitutes[], size_t num_replacements) {
-    if (!html || !placeholders || !substitutes) return NULL;
-
-    size_t new_len = strlen(html);
-    size_t i, count;
-
-    for (i = 0; i < num_replacements; i++) {
-        // count occurrences of placeholder
-        count = 0;
-        const char* tmp = html;
-        while ((tmp = strstr(tmp, placeholders[i]))) {
-            count++;
-            tmp += strlen(placeholders[i]);
-        }
-
-        new_len += count * (strlen(substitutes[i]) - strlen(placeholders[i]));
-    }
-
-    // allocate memory for new page
-    char *result = malloc(new_len + 1);
-    if (!result) return NULL;
-
-    // remove occurrences
-    char *dest = result;
-    while (*html) {
-        bool replaced = false;
-        for (i = 0; i< num_replacements; i++) {
-            if (strncmp(html, placeholders[i], strlen(placeholders[i])) == 0) {
-                memcpy(dest, substitutes[i], strlen(substitutes[i]));
-                html += strlen(placeholders[i]);
-                dest += strlen(substitutes[i]);
-
-                replaced = true;
-                break;
-            }
-        }
-
-        if (!replaced) {
-            *dest++ = *html++;
-        }
-    }
-    *dest = '\0';
-
-    return result;
-}
-
-uint8_t get_block(uint8_t offset) {
-    uint8_t block = (uint8_t)ceil((float)offset / 32.);
-    if (block != 0) block -= 1;
-    
-    return block;
-}
-
 int compare_mac(const uint8_t *mac1, const uint8_t *mac2) {
     for (int i = 0; i < 6; i++) {
         if (mac1[i] < mac2[i]) return -1;
@@ -355,7 +305,10 @@ int compare_mac(const uint8_t *mac1, const uint8_t *mac2) {
 
 float calculate_symbol_length(uint8_t spreading_factor, uint8_t bandwidth) {
     float frequencies[] = {7.8, 10.4, 15.6, 20.8, 31.25, 41.7, 62.5, 125.0, 250.0, 500.0};
-    if (bandwidth < 0 || bandwidth >= sizeof(frequencies) / sizeof(frequencies[0])) {
+    if (
+        // bandwidth < 0 ||
+        bandwidth >= sizeof(frequencies) / sizeof(frequencies[0])
+    ) {
         ESP_LOGW("LoRa", "Undefined bandwidth key! Returning to default...");
         bandwidth = 7;
     }

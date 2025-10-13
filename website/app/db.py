@@ -3,11 +3,13 @@ logger = logging.getLogger(__name__)
 
 from datetime import datetime, timedelta
 from collections import defaultdict
+import csv
+import numpy as np
 
 from flask import Blueprint, request, jsonify
 from flask_sqlalchemy import SQLAlchemy
 from flask_security import roles_required, login_required
-from sqlalchemy import inspect, insert, select, desc, text, Table
+from sqlalchemy import inspect, insert, select, desc, asc, func, text, Table
 
 from utils import process_telemetry_data
 
@@ -76,32 +78,32 @@ def update_battery_data(json: list) -> None:
         battery_data_table = get_battery_data_table(esp_id)
         try:
             process_telemetry_data(content) # first add approximate cell charges
-            statement = insert(battery_data_table).values(
+            query = insert(battery_data_table).values(
                 timestamp = datetime.fromisoformat(content["timestamp"]),
                 lat = content["lat"],
                 lon = content["lon"],
                 Q = content["Q"],
                 H = content["H"],
                 V = content["V"] / 10,
-                V1 = content["V1"] / 10,
-                V2 = content["V2"] / 10,
-                V3 = content["V3"] / 10,
-                V4 = content["V4"] / 10,
+                V1 = content["V1"] / 100,
+                V2 = content["V2"] / 100,
+                V3 = content["V3"] / 100,
+                V4 = content["V4"] / 100,
                 I = content["I"] / 10,
-                I1 = content["I1"] / 10,
-                I2 = content["I2"] / 10,
-                I3 = content["I3"] / 10,
-                I4 = content["I4"] / 10,
+                I1 = content["I1"] / 100,
+                I2 = content["I2"] / 100,
+                I3 = content["I3"] / 100,
+                I4 = content["I4"] / 100,
                 aT = content["aT"] / 10,
                 cT = content["cT"] / 10,
-                T1 = content["T1"] / 10,
-                T2 = content["T2"] / 10,
-                T3 = content["T3"] / 10,
-                T4 = content["T4"] / 10,
+                T1 = content["T1"] / 100,
+                T2 = content["T2"] / 100,
+                T3 = content["T3"] / 100,
+                T4 = content["T4"] / 100,
                 OTC = content["OTC"],
                 wifi = content["wifi"],
             )
-            DB.session.execute(statement)
+            DB.session.execute(query)
             DB.session.commit()
         except Exception as e:
             DB.session.rollback()
@@ -249,10 +251,9 @@ def data():
     data_table = DB.Table(table_name, DB.metadata, autoload_with=DB.engine)
 
     # this really is ordered by most recent and not just date or time individually
-    statement = select(data_table).order_by(desc(data_table.c.timestamp)).limit(1)
+    query = select(data_table).order_by(desc(data_table.c.timestamp)).limit(1)
 
-    with DB.engine.connect() as conn:
-        row = conn.execute(statement).first()
+    row = DB.session.execute(query).first()
 
     if row:
         return dict(row._mapping)
@@ -277,32 +278,43 @@ def chart_data():
         API used by frontend to fetch 250 entries from battery_data_bms_<esp_id> table for chart display.
     """
     esp_id = request.args.get("esp_id")
-    if esp_id == "unavailable!":
-        return {}, 404
+    if esp_id == "unavailable!" or esp_id == "undefined" or esp_id == "":
+        return {}, 200
 
     table_name = f"battery_data_bms_{esp_id}"
     data_table = DB.Table(table_name, DB.metadata, autoload_with=DB.engine)
     column = request.args.get("column")
 
-    sub_query = (select(data_table.c.t, data_table.c[column]).order_by(desc(data_table.c.t)).limit(250).subquery()) # get the 250 most recent (time-wise) entries
-    statement = select(sub_query)
+    sub_sub_query = (
+        select(
+            data_table.c.timestamp, data_table.c[column], # query timestamp and column of interest
+            func.row_number().over(
+                order_by=desc(data_table.c.timestamp) # ordered by most recent (time-wise)
+            ).label("rn")
+        )
+        .subquery()
+    )
+    sub_query = (
+        select(
+            sub_sub_query.c.timestamp, sub_sub_query.c[column]
+        )
+        .where(sub_sub_query.c.rn % 75 == 0) # every 75th row so query is not too large
+        .limit(250) # max 250 data points
+        .subquery()
+    )
+    query = select(sub_query)
 
-    with DB.engine.connect() as conn:
-        rows = conn.execute(statement)
+    rows = DB.session.execute(query).fetchall()
 
     if rows:
-        rows = rows.fetchall()
-
         previous = None
         data = []
         for row in rows:
-
             # take only data from most recent date
             if row[0].date() != rows[-1][0].date():
                 continue
-
             if previous is not None:
-                if previous - row[0] > timedelta(minutes = 5):
+                if previous - row[0] > timedelta(days = 1):
                     break
             previous = row[0]
 
@@ -313,3 +325,130 @@ def chart_data():
         return jsonify(data)
     else:
         return {}, 404
+
+
+def import_bqStudio_log(csv_path: str):
+    """
+        Creates example data for fresh website lacking real data.
+    """
+    esp_id = 999
+    name = f"battery_data_bms_{esp_id}"
+    inspector = inspect(DB.engine)
+    if inspector.has_table(name):
+        return
+
+    # create entry in battery_info table
+    battery = BatteryInfo(
+        esp_id = esp_id,
+        root_id = None,
+        last_updated_time = datetime.now(),
+        live_websocket = True,
+    )
+    DB.session.add(battery)
+    DB.session.commit()
+
+    # create new battery_data_bms_<esp_id> table
+    table = get_battery_data_table(str(esp_id))
+    with open(csv_path) as f:
+        # skip junk lines until header
+        for line in f:
+            if line.strip().startswith("TimeStamp"):
+                header = line.strip().split(",")
+                break
+        reader = csv.DictReader(f, fieldnames=header)
+        rows = []
+        for row in reader:
+            if not row["TimeStamp"].strip():
+                continue
+            rows.append({
+                "timestamp": datetime.fromisoformat(row["TimeStamp"]),
+                "lat": 0, "lon": 0,
+                "Q": int(row["Relative State of Charge"] or 0),
+                "H": 0,
+                "V": float(row["Voltage"] or 0)/1000,
+                "V1": 0, "V2": 0, "V3": 0, "V4": 0,
+                "I": float(row["Current"] or 0)/1000,
+                "I1": 0, "I2": 0, "I3": 0, "I4": 0,
+                "aT": 0,
+                "cT": float(row["Temperature"] or 0),
+                "T1": 0, "T2": 0, "T3": 0, "T4": 0,
+                "OTC": 0,
+                "wifi": False,
+            })
+    if rows:
+        DB.session.execute(table.insert(), rows)
+        DB.session.commit()
+
+
+@db.route("/example", methods=["GET"])
+@roles_required("superuser")
+def example():
+    """
+        API
+    """
+    try:
+        import_bqStudio_log("GPCCHEM.csv")
+        return {}, 200
+    except:
+        return {}, 404
+
+
+@db.route("/recommendation", methods=["GET"])
+@login_required
+def recommendation():
+    """
+        API used by frontend to fetch generated BMS optimisation recommendations based on recent telemetry.
+    """
+    try:
+        esp_id = request.args.get("esp_id")
+        table_name = f"battery_data_bms_{esp_id}"
+        data_table = DB.Table(table_name, DB.metadata, autoload_with=DB.engine)
+
+        # get most recent date first
+        query = select(data_table).order_by(desc(data_table.c.timestamp)).limit(1)
+        today = DB.session.execute(query).first()[0]
+
+        # select N most recent
+        seconds_per_day = 86400 # 24*60*60
+        update_frequency_hz = 0.2 # every 5s
+        N = int(update_frequency_hz * seconds_per_day)
+        sub_query = (
+            select(data_table.c.Q, data_table.c.cT, data_table.c.timestamp)
+            .where(func.date(data_table.c.timestamp) >= today.date())
+            .order_by(desc(data_table.c.timestamp))
+            .limit(N)
+            .subquery()
+        )
+        # reorder again
+        query = \
+            select(sub_query.c.Q, sub_query.c.cT) \
+            .order_by(asc(sub_query.c.timestamp))
+
+        rows = DB.session.execute(query).fetchall()
+
+        recommendations = []
+
+        Q = np.fromiter((r[0] for r in rows), dtype=int)
+        Q_max = int(max(Q))
+        Q_min = int(min(Q))
+        if Q_max - Q_min < 50:
+            recommendations.append({
+                "type": "charge-range",
+                "message": f"Restrict SoC range to [{Q_min},{Q_max}]%",
+                "min": Q_min,
+                "max": Q_max,
+            })
+
+        cT = np.fromiter((r[1] for r in rows), dtype=int)
+        cT_mean = np.mean(cT)
+        if cT_mean > 40.0:
+            I_max = 2.0
+            recommendations.append({
+                "type": "current-dischg-limit",
+                "message": f"Overheating detected: {cT_mean:.1f}°C. Throttle discharge current to {I_max}A",
+                "max": I_max,
+            })
+
+        return {"recommendations": recommendations}, 200
+    except Exception as e:
+        return {"Error": e}, 404

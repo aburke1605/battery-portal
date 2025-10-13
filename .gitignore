@@ -10,5 +10,6 @@ ESP32/dependencies.lock
 website/static/plots/
 
 test/
+batteries/
 
 website/frontend/node_modules/

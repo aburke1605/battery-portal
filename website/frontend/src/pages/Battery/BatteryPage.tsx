@@ -31,7 +31,7 @@ export default function BatteryPage({ isFromESP32 = false }: BatteriesPageProps)
     ws_url = isFromESP32 ? ws_url += "?auth_token=" + getAuthToken() : ws_url += "?browser_id=" + ws_session_browser_id.current + "&esp_id=" + esp_id;
 
     const [battery, setBatteryData] = useState<BatteryData | null>(null);
-    const [voltageThreshold] = useState(46.5);
+    const [voltageThreshold] = useState(48);
 
     const sleep = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
 
@@ -86,6 +86,11 @@ export default function BatteryPage({ isFromESP32 = false }: BatteriesPageProps)
     const sendReset = () =>
         sendMessage(createMessage("reset-bms", {}, esp_id));
 
+    const updateRequest = async () => {
+        const esp = await fetchBatteryData(esp_id);
+        if (esp !== null) setBatteryData(esp);
+    }
+
     return (
         <div>
             { 
@@ -110,6 +115,7 @@ export default function BatteryPage({ isFromESP32 = false }: BatteriesPageProps)
                         sendUnseal={sendUnseal}
                         sendReset={sendReset}
                         isFromESP32={isFromESP32}
+                        updateRequest={updateRequest}
                     />
                 ) : (
                     <p> Connecting to battery... </p> // fallback UI

@@ -451,6 +451,12 @@ CONFIG_FULL_ACCESS_CMD_2=0xFFFF
 # end of [CUSTOM] BMS Configuration
 
 #
+# [CUSTOM] Inverter Configuration
+#
+CONFIG_UNIT_I2C_ADDR=0x28
+# end of [CUSTOM] Inverter Configuration
+
+#
 # [CUSTOM] Wi-Fi Configuration
 #
 CONFIG_WIFI_SSID="SSID"
@@ -703,7 +709,7 @@ CONFIG_GPTIMER_ISR_HANDLER_IN_IRAM=y
 #
 # CONFIG_I2C_ISR_IRAM_SAFE is not set
 # CONFIG_I2C_ENABLE_DEBUG_LOG is not set
-# CONFIG_I2C_ENABLE_SLAVE_DRIVER_VERSION_2 is not set
+CONFIG_I2C_ENABLE_SLAVE_DRIVER_VERSION_2=y
 # end of ESP-Driver:I2C Configurations
 
 #
@@ -1948,6 +1954,7 @@ CONFIG_WIFI_PROV_STA_ALL_CHANNEL_SCAN=y
 # ESP WebSocket client
 #
 # CONFIG_ESP_WS_CLIENT_ENABLE_DYNAMIC_BUFFER is not set
+# CONFIG_ESP_WS_CLIENT_SEPARATE_TX_LOCK is not set
 # end of ESP WebSocket client
 # end of Component config
 

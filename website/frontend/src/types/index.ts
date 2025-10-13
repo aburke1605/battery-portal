@@ -32,6 +32,9 @@ export interface BatteryData extends BatteryInfoData {
   T4: number;
   new_esp_id: number;
   OTC: number;
+  Q_low: number;
+  Q_high: number;
+  I_dschg_max: number;
   wifi: boolean;
 }
 
@@ -46,24 +49,27 @@ export const parseDataOnESP32 = (raw: any): BatteryData => ({
   lon: raw?.lon || 0,
   Q: raw?.Q || 0,
   H: raw?.H || 0,
-  V: raw?.V / 10 || 0,
-  V1: raw?.V1 / 10 || 0,
-  V2: raw?.V2 / 10 || 0,
-  V3: raw?.V3 / 10 || 0,
-  V4: raw?.V4 / 10 || 0,
-  I: raw?.I / 10 || 0,
-  I1: raw?.I1 / 10 || 0,
-  I2: raw?.I2 / 10 || 0,
-  I3: raw?.I3 / 10 || 0,
-  I4: raw?.I4 / 10 || 0,
-  aT: raw?.aT / 10 || 0,
-  cT: raw?.cT / 10 || 0,
-  T1: raw?.T1 / 10 || 0,
-  T2: raw?.T2 / 10 || 0,
-  T3: raw?.T3 / 10 || 0,
-  T4: raw?.T4 / 10 || 0,
+  V: raw?.V || 0,
+  V1: raw?.V1 || 0,
+  V2: raw?.V2 || 0,
+  V3: raw?.V3 || 0,
+  V4: raw?.V4 || 0,
+  I: raw?.I || 0,
+  I1: raw?.I1 || 0,
+  I2: raw?.I2 || 0,
+  I3: raw?.I3 || 0,
+  I4: raw?.I4 || 0,
+  aT: raw?.aT || 0,
+  cT: raw?.cT || 0,
+  T1: raw?.T1 || 0,
+  T2: raw?.T2 || 0,
+  T3: raw?.T3 || 0,
+  T4: raw?.T4 || 0,
   new_esp_id: 0,
   OTC: raw?.OTC || 0,
+  Q_low: raw?.Q_low || 0,
+  Q_high: raw?.Q_high || 0,
+  I_dschg_max: raw?.I_dschg_max || 0,
   wifi: !!raw?.wifi,
 });
 
