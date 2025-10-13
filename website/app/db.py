@@ -409,7 +409,9 @@ def recommendation():
         today = DB.session.execute(query).first()[0]
 
         # select N most recent
-        N = 3
+        seconds_per_day = 86400 # 24*60*60
+        update_frequency_hz = 0.2 # every 5s
+        N = int(update_frequency_hz * seconds_per_day)
         sub_query = (
             select(data_table.c.Q, data_table.c.cT, data_table.c.timestamp)
             .where(func.date(data_table.c.timestamp) >= today.date())
