@@ -404,10 +404,15 @@ def recommendation():
         table_name = f"battery_data_bms_{esp_id}"
         data_table = DB.Table(table_name, DB.metadata, autoload_with=DB.engine)
 
+        # get most recent date first
+        query = select(data_table).order_by(desc(data_table.c.timestamp)).limit(1)
+        today = DB.session.execute(query).first()[0]
+
         # select N most recent
         N = 3
         sub_query = (
             select(data_table.c.Q, data_table.c.cT, data_table.c.timestamp)
+            .where(func.date(data_table.c.timestamp) >= today.date())
             .order_by(desc(data_table.c.timestamp))
             .limit(N)
             .subquery()
