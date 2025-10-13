@@ -5,6 +5,8 @@
 
 #include "freertos/FreeRTOS.h"
 
+static const char* TAG = "INV";
+
 void get_display_data(uint8_t* data) {
     uint8_t data_SBS[2] = {0};
 
