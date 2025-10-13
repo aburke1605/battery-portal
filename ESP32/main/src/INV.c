@@ -24,6 +24,6 @@ void get_display_data(uint8_t* data) {
 void inverter_task(void *pvParameters) {
     while (true) {
         write_to_unit();
-        vTaskDelay(pdMS_TO_TICKS(5000));
+        vTaskDelay(pdMS_TO_TICKS(1000));
     }
 }
