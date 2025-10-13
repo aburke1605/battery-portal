@@ -414,7 +414,7 @@ def recommendation():
         )
         # reorder again
         query = \
-            select(sub_query.c.Q, data_table.c.cT) \
+            select(sub_query.c.Q, sub_query.c.cT) \
             .order_by(asc(sub_query.c.timestamp))
 
         rows = DB.session.execute(query).fetchall()
