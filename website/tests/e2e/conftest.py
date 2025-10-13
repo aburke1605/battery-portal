@@ -17,7 +17,7 @@ from datetime import datetime
 Setup the test environment for the e2e tests, all these are setup in a session scope.
 1. Start the Flask server in a background process.
 2. Start the Selenium chrome driver in a background process.
-3. Start the ESP32 websocket telemetry in a background process.
+3. Start the ESP32 websocket telemetry in a thread.
 TODO:
 - Run in CI/CD pipeline
 """
@@ -49,7 +49,7 @@ def selenium_driver():
     yield driver
     driver.quit()
 
-# Start the ESP32 websocket telemetry in a background process for the duration of the test session.
+# Start the ESP32 websocket telemetry in a thread for the duration of the test session.
 @pytest.fixture(scope="session", autouse=True)
 def esp_ws_telemetry(base_url, server):
     parsed = urlparse(base_url)
