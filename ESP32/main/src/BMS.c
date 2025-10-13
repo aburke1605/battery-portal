@@ -134,6 +134,8 @@ char* get_data() {
     // create JSON object with sensor data
     cJSON *data = cJSON_CreateObject();
 
+    cJSON_AddNumberToObject(data, "esp_id", ESP_ID);
+
     GPRMC* gprmc = get_gps();
     if (gprmc) {
         cJSON_AddNumberToObject(data, "t", gprmc->time);

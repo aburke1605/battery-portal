@@ -31,6 +31,7 @@ bool connected_to_root = false;
 client_socket client_sockets[WS_CONFIG_MAX_CLIENTS];
 char current_auth_token[UTILS_AUTH_TOKEN_LENGTH] = "";
 QueueHandle_t ws_queue;
+bool LoRa_configured = false;
 LoRa_message all_messages[MESH_SIZE] = {0};
 char forwarded_message[LORA_MAX_PACKET_LEN-2] = "";
 
@@ -51,13 +52,6 @@ void app_main(void) {
     uart_init();
 
     if (!LORA_IS_RECEIVER) {
-        // do a BMS reset on boot
-        reset();
-        while (get_sealed_status() != 1) {
-            unseal();
-            vTaskDelay(pdMS_TO_TICKS(1000));
-        }
-
         // grab BMS DeviceName from the BMS DataFlash
         uint8_t address[2] = {0};
         convert_uint_to_n_bytes(I2C_DEVICE_NAME_ADDR, address, sizeof(address), true);

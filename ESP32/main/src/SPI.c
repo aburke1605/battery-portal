@@ -1,12 +1,12 @@
 #include "include/SPI.h"
 
 #include "include/config.h"
+#include "include/global.h"
 
 #include "driver/gpio.h"
 #include "driver/spi_common.h"
 #include "driver/spi_master.h"
 #include "esp_log.h"
-#include "esp_system.h"
 #include "freertos/FreeRTOS.h"
 
 static const char* TAG = "SPI";
@@ -70,8 +70,7 @@ esp_err_t spi_init() {
     uint8_t version = spi_read_register(REG_VERSION);
     ESP_LOGI(TAG, "SX127x version: 0x%02X", version);
     if (version != 0x12) {
-        ESP_LOGE(TAG, "SX127x not found");
-        esp_restart();
+        ESP_LOGE(TAG, "SX127x not found. LoRa not configured!");
         return ESP_FAIL;
     }
 
@@ -84,6 +83,8 @@ esp_err_t spi_init() {
     vTaskDelay(pdMS_TO_TICKS(10));
 
     gpio_set_direction(PIN_NUM_DIO0, GPIO_MODE_INPUT);
+
+    LoRa_configured = true;
 
     ESP_LOGI(TAG, "SX127x initialized");
 
