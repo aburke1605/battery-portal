@@ -438,7 +438,15 @@ const BatteryDetail: React.FC<BatteryDetailProps> = ({
                                       </>
                                     ) : (
                                       <>
-                                        Implementing...
+                                        {recommendation.delay === false ? (
+                                          <>
+                                            Implementing...
+                                          </>
+                                        ) : (
+                                          <>
+                                            Waiting for update...
+                                          </>
+                                        )}
                                       </>
                                     )}
                                   </button>
@@ -501,6 +509,7 @@ const BatteryDetail: React.FC<BatteryDetailProps> = ({
     min?: number;
     max?: number;
     implementing: boolean;
+    delay: boolean;
     implemented: boolean;
     success: boolean;
   }
@@ -511,6 +520,7 @@ const BatteryDetail: React.FC<BatteryDetailProps> = ({
     const recommendations: Recommendation[] = (response.data.recommendations || []).map((rec: any) => ({
       ...rec,
       implementing: false,
+      delay: false,
       implemented: false,
       success: true, // assumption
     }));
@@ -575,14 +585,17 @@ const BatteryDetail: React.FC<BatteryDetailProps> = ({
   ) {
     // initialise boolean flags
     setRecommendationCards(prev =>
-      prev?.map(rec => (rec === recommendation ? { ...rec, implementing: true, success: true } : rec)) ?? null
+      prev?.map(rec => (rec.type === recommendation.type ? { ...rec, implementing: true, delay: false, success: true } : rec)) ?? null
     );
 
     // send the recommended changes back through WebSocket to device
     sendBatteryUpdate(values);
 
-    // confirm completion by waitinf for new battery data...
+    // confirm completion by waiting for new battery data...
     await sleep(5000); // ...after a brief delay so immediate updates don't interfere
+    setRecommendationCards(prev =>
+      prev?.map(rec => (rec.type === recommendation.type ? { ...rec, delay: true } : rec)) ?? null
+    );
     await awaitNextBatteryUpdate();
 
     // update boolean flags on result
@@ -592,7 +605,7 @@ const BatteryDetail: React.FC<BatteryDetailProps> = ({
       );
     } else {
       setRecommendationCards(prev =>
-        prev?.map(rec => (rec.type === recommendation.type ? { ...rec, implementing: false, success: false } : rec)) ?? null
+        prev?.map(rec => (rec.type === recommendation.type ? { ...rec, implementing: false, delay: false, success: false } : rec)) ?? null
       );
     }
   }
