@@ -444,7 +444,7 @@ const BatteryDetail: React.FC<BatteryDetailProps> = ({
                                           </>
                                         ) : (
                                           <>
-                                            Waiting for update...
+                                            Waiting for confirmation...
                                           </>
                                         )}
                                       </>
