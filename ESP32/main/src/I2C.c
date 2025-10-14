@@ -1,8 +1,8 @@
-#include "include/I2C.h"
+#include "I2C.h"
 
-#include "include/config.h"
-#include "include/utils.h"
-#include "include/INV.h"
+#include "config.h"
+#include "utils.h"
+#include "INV.h"
 
 #include <stdbool.h>
 

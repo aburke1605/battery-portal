@@ -1,7 +1,7 @@
 #ifndef GLOBAL_H
 #define GLOBAL_H
 
-#include "include/config.h"
+#include "config.h"
 
 #include <stdbool.h>
 #include <stdint.h>

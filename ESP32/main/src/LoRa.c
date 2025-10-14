@@ -1,11 +1,11 @@
-#include "include/LoRa.h"
+#include "LoRa.h"
 
-#include "include/BMS.h"
-#include "include/SPI.h"
-#include "include/WS.h"
-#include "include/config.h"
-#include "include/global.h"
-#include "include/utils.h"
+#include "BMS.h"
+#include "SPI.h"
+#include "WS.h"
+#include "config.h"
+#include "global.h"
+#include "utils.h"
 
 #include <stdint.h>
 

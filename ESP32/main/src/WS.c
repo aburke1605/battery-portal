@@ -1,13 +1,13 @@
-#include "include/WS.h"
+#include "WS.h"
 
-#include "include/BMS.h"
-#include "include/I2C.h"
-#include "include/config.h"
-#include "include/global.h"
-#include "include/utils.h"
+#include "BMS.h"
+#include "I2C.h"
+#include "config.h"
+#include "global.h"
+#include "utils.h"
 
-#include "include/cert.h"
-#include "include/local_cert.h"
+#include "cert.h"
+#include "local_cert.h"
 
 #include <inttypes.h>
 

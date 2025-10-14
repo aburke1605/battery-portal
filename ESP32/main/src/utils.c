@@ -1,8 +1,8 @@
-#include "include/utils.h"
+#include "utils.h"
 
-#include "include/WS.h"
-#include "include/config.h"
-#include "include/global.h"
+#include "WS.h"
+#include "config.h"
+#include "global.h"
 
 #include <ctype.h>
 #include <math.h>

@@ -1,7 +1,7 @@
-#include "include/INV.h"
+#include "INV.h"
 
-#include "include/I2C.h"
-#include "include/config.h"
+#include "I2C.h"
+#include "config.h"
 
 #include "freertos/FreeRTOS.h"
 

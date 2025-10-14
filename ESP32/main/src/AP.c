@@ -1,10 +1,10 @@
-#include "include/AP.h"
+#include "AP.h"
 
-#include "include/I2C.h"
-#include "include/WS.h"
-#include "include/config.h"
-#include "include/global.h"
-#include "include/utils.h"
+#include "I2C.h"
+#include "WS.h"
+#include "config.h"
+#include "global.h"
+#include "utils.h"
 
 #include <string.h>
 #include <sys/stat.h>

@@ -1,7 +1,7 @@
 #ifndef AP_H
 #define AP_H
 
-#include "include/config.h"
+#include "config.h"
 
 #include "esp_http_server.h"
 #include "esp_wifi_types_generic.h"

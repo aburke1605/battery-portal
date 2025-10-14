@@ -1,7 +1,7 @@
-#include "include/SPI.h"
+#include "SPI.h"
 
-#include "include/config.h"
-#include "include/global.h"
+#include "config.h"
+#include "global.h"
 
 #include "driver/gpio.h"
 #include "driver/spi_common.h"

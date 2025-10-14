@@ -13,7 +13,7 @@ set(SRCS
     "src/utils.c"
 )
 
-set(INCLUDE_DIRS ".")
+set(INCLUDE_DIRS "include")
 
 if("${IDF_TARGET}" STREQUAL "linux")
     set(SUFFIX "_stub")

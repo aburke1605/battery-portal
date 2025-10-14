@@ -1,10 +1,10 @@
-#include "include/BMS.h"
+#include "BMS.h"
 
-#include "include/GPS.h"
-#include "include/I2C.h"
-#include "include/config.h"
-#include "include/global.h"
-#include "include/utils.h"
+#include "GPS.h"
+#include "I2C.h"
+#include "config.h"
+#include "global.h"
+#include "utils.h"
 
 #include "cJSON.h"
 #include "esp_log.h"

@@ -1,10 +1,10 @@
-#include "include/MESH.h"
+#include "MESH.h"
 
-#include "include/AP.h"
-#include "include/BMS.h"
-#include "include/WS.h"
-#include "include/global.h"
-#include "include/utils.h"
+#include "AP.h"
+#include "BMS.h"
+#include "WS.h"
+#include "global.h"
+#include "utils.h"
 
 #include <inttypes.h>
 #include <stdbool.h>
