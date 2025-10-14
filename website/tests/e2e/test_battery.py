@@ -1,6 +1,7 @@
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
+import time
 
 # Test battery list and detail page
 def test_batteries_list_has_detail_link(selenium_driver, base_url, wait_timeout):
@@ -51,6 +52,5 @@ def test_batteries_list_has_detail_link(selenium_driver, base_url, wait_timeout)
     )
     assert status_span is not None
 
-    
 
     

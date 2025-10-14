@@ -1,7 +1,6 @@
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
-import os
 
 def test_home(selenium_driver, base_url, wait_timeout):
     selenium_driver.get(f"{base_url}/#/")

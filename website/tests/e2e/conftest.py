@@ -41,7 +41,7 @@ def server():
 @pytest.fixture(scope="session", autouse=True)
 def selenium_driver():
     options = Options()
-    # options.add_argument("--headless")
+    options.add_argument("--headless")
     options.add_argument("--no-sandbox")
     options.add_argument("--disable-dev-shm-usage")
     options.add_argument("--ignore-certificate-errors")
@@ -179,7 +179,8 @@ def pytest_collection_modifyitems(config, items):
     priority = {
         "test_home.py": 0,
         "test_login.py": 1,
-        "test_battery_list.py": 2
+        "test_battery.py": 2,
+        "test_user.py": 3
     }
     def sort_key(item):
         # pytest>=8: item.path is a pathlib.Path
