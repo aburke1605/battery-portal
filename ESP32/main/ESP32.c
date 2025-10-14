@@ -38,8 +38,6 @@ char forwarded_message[LORA_MAX_PACKET_LEN-2] = "";
 QueueHandle_t job_queue;
 
 TaskHandle_t websocket_task_handle = NULL;
-TaskHandle_t inverter_task_handle = NULL;
-TaskHandle_t merge_root_task_handle = NULL;
 
 void app_main(void) {
     initialise_nvs();
@@ -90,8 +88,7 @@ void app_main(void) {
 
             start_mesh_websocket_timed_task();
         } else {
-            TaskParams merge_root_params = {.stack_size = 2600, .task_name = "merge_root_task"};
-            xTaskCreate(&merge_root_task, merge_root_params.task_name, merge_root_params.stack_size, &merge_root_params, 4, &merge_root_task_handle);
+            start_merge_root_timed_task();
         }
     }
 

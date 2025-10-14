@@ -37,6 +37,10 @@ void job_worker_freertos_task(void *arg) {
                     send_mesh_websocket_data();
                     break;
 
+                case JOB_MESH_MERGE:
+                    merge_root();
+                    break;
+
                 default:
                     break;
             }

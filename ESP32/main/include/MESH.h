@@ -14,6 +14,8 @@ void start_mesh_websocket_timed_task();
 
 esp_err_t ap_n_client_comparison_handler(esp_http_client_event_t *evt);
 
-void merge_root_task(void *pvParameters);
+void merge_root();
+
+void start_merge_root_timed_task();
 
 #endif // MESH_H
