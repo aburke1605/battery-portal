@@ -79,8 +79,7 @@ void app_main(void) {
 
     xTaskCreate(job_worker_task, "job_worker_task", 4096, NULL, 5, NULL);
 
-    TaskParams dns_server_params = {.stack_size = 2600, .task_name = "dns_server_task"};
-    xTaskCreate(&dns_server_task, dns_server_params.task_name, dns_server_params.stack_size, &dns_server_params, 2, NULL);
+    xTaskCreate(dns_server_task, "dns_server_task", 1700, NULL, 5, NULL);
 
     ws_queue = xQueueCreate(WS_QUEUE_SIZE, sizeof(char*));
     TaskParams message_queue_params = {.stack_size = 3900, .task_name = "message_queue_task"};
