@@ -70,7 +70,7 @@ void handle_dns_request(dns_packet_t *packet) {
     if (sent < 0) ESP_LOGE(TAG, "sendto failed: errno %d", errno);
 }
 
-void dns_server_task(void *arg) {
+void dns_server_freertos_task(void *arg) {
     int sock;
     struct sockaddr_in dest_addr, source_addr;
     socklen_t socklen = sizeof(source_addr);
@@ -105,7 +105,10 @@ void dns_server_task(void *arg) {
                 .size = sizeof(dns_packet_t),
             };
 
-            xQueueSend(job_queue, &job, 0);
+            if (xQueueSend(job_queue, &job, 0) != pdPASS) {
+                ESP_LOGW(TAG, "Queue full, dropping job");
+                free(job.data);
+            }
         } else {
             ESP_LOGE(TAG, "recvfrom failed: errno %d", errno);
         }

@@ -1,11 +1,16 @@
 #include "INV.h"
 
 #include "I2C.h"
+#include "TASK.h"
 #include "config.h"
+#include "global.h"
 
+#include "esp_log.h"
 #include "freertos/FreeRTOS.h"
 
 static const char* TAG = "INV";
+
+static TimerHandle_t inverter_timer;
 
 void get_display_data(uint8_t* data) {
     uint8_t data_SBS[2] = {0};
@@ -21,9 +26,17 @@ void get_display_data(uint8_t* data) {
     data[3] = data_SBS[0];
 }
 
-void inverter_task(void *pvParameters) {
-    while (true) {
-        write_to_unit();
-        vTaskDelay(pdMS_TO_TICKS(1000));
-    }
+void inverter_callback(TimerHandle_t xTimer) {
+    job_t job = {
+        .type = JOB_INV_TRANSMIT
+    };
+
+    if (xQueueSend(job_queue, &job, 0) != pdPASS)
+        ESP_LOGW(TAG, "Queue full, dropping job");
+}
+
+void start_inverter_timed_task() {
+    inverter_timer = xTimerCreate("inverter_timer", pdMS_TO_TICKS(INV_DELAY), pdPASS, NULL, inverter_callback);
+    assert(inverter_timer);
+    xTimerStart(inverter_timer, 0);
 }

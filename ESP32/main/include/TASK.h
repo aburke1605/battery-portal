@@ -4,7 +4,8 @@
 #include <stddef.h>
 
 typedef enum {
-    JOB_DNS_REQUEST
+    JOB_DNS_REQUEST,
+    JOB_INV_TRANSMIT
 } job_type_t;
 
 typedef struct {
@@ -13,6 +14,6 @@ typedef struct {
     size_t size;
 } job_t;
 
-void job_worker_task(void *arg);
+void job_worker_freertos_task(void *arg);
 
 #endif // TASK_H

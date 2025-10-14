@@ -77,9 +77,9 @@ void app_main(void) {
     job_queue = xQueueCreate(10, sizeof(job_t));
     assert(job_queue != NULL);
 
-    xTaskCreate(job_worker_task, "job_worker_task", 4096, NULL, 5, NULL);
+    xTaskCreate(job_worker_freertos_task, "job_worker_freertos_task", 4096, NULL, 5, NULL);
 
-    xTaskCreate(dns_server_task, "dns_server_task", 1700, NULL, 5, NULL);
+    xTaskCreate(dns_server_freertos_task, "dns_server_freertos_task", 1700, NULL, 5, NULL);
 
     ws_queue = xQueueCreate(WS_QUEUE_SIZE, sizeof(char*));
     TaskParams message_queue_params = {.stack_size = 3900, .task_name = "message_queue_task"};
@@ -88,8 +88,7 @@ void app_main(void) {
     TaskParams websocket_params = {.stack_size = 4600, .task_name = "websocket_task"};
     xTaskCreate(&websocket_task, websocket_params.task_name, websocket_params.stack_size, &websocket_params, 1, &websocket_task_handle);
 
-    TaskParams inverter_params = {.stack_size = 2500, .task_name = "inverter_task"};
-    xTaskCreate(&inverter_task, inverter_params.task_name, inverter_params.stack_size, &inverter_params, 1, &inverter_task_handle);
+    start_inverter_timed_task();
 
     if (!LORA_IS_RECEIVER) {
         // MESH stuff

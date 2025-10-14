@@ -218,6 +218,12 @@ config UNIT_I2C_ADDR
     help
       Set the hexadecimal address of the ESP32 controlling the inverter / unit display.
 
+config INV_DELAY
+    int "Message delay (ms)"
+    default 1000
+    help
+      Set the time delay between successive messages sent to inverter ESP32 (ms).
+
 endmenu
 
 

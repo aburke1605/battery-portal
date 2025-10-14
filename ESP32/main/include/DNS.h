@@ -14,6 +14,6 @@ typedef struct {
 
 void handle_dns_request(dns_packet_t *packet);
 
-void dns_server_task(void *arg);
+void dns_server_freertos_task(void *arg);
 
 #endif // DNS_H
