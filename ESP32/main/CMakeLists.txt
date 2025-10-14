@@ -9,6 +9,7 @@ set(SRCS
     "src/LoRa.c"
     "src/MESH.c"
     "src/SPI.c"
+    "src/TASK.c"
     "src/WS.c"
     "src/utils.c"
 )

@@ -6,6 +6,7 @@
 #include "INV.h"
 #include "LoRa.h"
 #include "MESH.h"
+#include "TASK.h"
 #include "WS.h"
 #include "config.h"
 #include "utils.h"
@@ -34,6 +35,8 @@ QueueHandle_t ws_queue;
 bool LoRa_configured = false;
 LoRa_message all_messages[MESH_SIZE] = {0};
 char forwarded_message[LORA_MAX_PACKET_LEN-2] = "";
+
+QueueHandle_t job_queue;
 
 TaskHandle_t websocket_task_handle = NULL;
 TaskHandle_t inverter_task_handle = NULL;
@@ -70,6 +73,11 @@ void app_main(void) {
         ESP_LOGE("main", "Failed to start web server!");
         return;
     }
+
+    job_queue = xQueueCreate(10, sizeof(job_t));
+    assert(job_queue != NULL);
+
+    xTaskCreate(job_worker_task, "job_worker_task", 4096, NULL, 5, NULL);
 
     TaskParams dns_server_params = {.stack_size = 2600, .task_name = "dns_server_task"};
     xTaskCreate(&dns_server_task, dns_server_params.task_name, dns_server_params.stack_size, &dns_server_params, 2, NULL);

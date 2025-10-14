@@ -24,6 +24,8 @@ extern bool LoRa_configured;
 extern LoRa_message all_messages[MESH_SIZE];
 extern char forwarded_message[LORA_MAX_PACKET_LEN-2];
 
+extern QueueHandle_t job_queue;
+
 extern TaskHandle_t websocket_task_handle;
 extern TaskHandle_t mesh_websocket_task_handle;
 extern TaskHandle_t merge_root_task_handle;
