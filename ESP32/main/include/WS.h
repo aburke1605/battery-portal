@@ -24,8 +24,6 @@ char* convert_data_numbers_for_frontend(char* data_string);
 
 void send_websocket_data();
 
-void websocket_callback(TimerHandle_t xTimer);
-
 void start_websocket_timed_task();
 
 #endif // WS_H

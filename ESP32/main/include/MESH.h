@@ -4,7 +4,9 @@
 #include "esp_err.h"
 #include "esp_http_client.h"
 
-void connect_to_root_task(void *pvParameters);
+void connect_to_root();
+
+void start_connect_to_root_timed_task();
 
 void mesh_websocket_task(void *pvParameters);
 

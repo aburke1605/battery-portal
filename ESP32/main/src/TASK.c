@@ -2,6 +2,7 @@
 
 #include "DNS.h"
 #include "I2C.h"
+#include "MESH.h"
 #include "WS.h"
 #include "global.h"
 
@@ -26,6 +27,10 @@ void job_worker_freertos_task(void *arg) {
 
                 case JOB_WS_SEND:
                     send_websocket_data();
+                    break;
+
+                case JOB_MESH_CONNECT:
+                    connect_to_root();
                     break;
 
                 default:
