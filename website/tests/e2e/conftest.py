@@ -76,37 +76,7 @@ def esp_ws_telemetry(base_url, server):
             t_val = float(f"{now_dt.hour:02d}{now_dt.minute:02d}{now_dt.second:02d}.{now_dt.microsecond // 1000:03d}")
             payload = [
                 {
-                    "esp_id": "bms_02",
-                    "content": {
-                        "timestamp": now,
-                        "d": d_val,
-                        "t": t_val,
-                        "lat": 37.7749 + random.uniform(-0.01, 0.01),
-                        "lon": -122.4194 + random.uniform(-0.01, 0.01),
-                        "Q": tick,
-                        "H": tick,
-                        "V": random.uniform(115, 125),           # deci-Volts (stored V = V/10)
-                        "V1": random.uniform(32, 34),            # deci-Volts per cell
-                        "V2": random.uniform(32, 34),
-                        "V3": random.uniform(32, 34),
-                        "V4": random.uniform(32, 34),
-                        "I": random.uniform(-100, 100),          # deci-Amps (stored I = I/10)
-                        "I1": random.uniform(-25, 25),
-                        "I2": random.uniform(-25, 25),
-                        "I3": random.uniform(-25, 25),
-                        "I4": random.uniform(-25, 25),
-                        "aT": random.uniform(200, 300),          # deci-°C (stored T = T/10)
-                        "cT": random.uniform(200, 300),
-                        "T1": random.uniform(200, 300),
-                        "T2": random.uniform(200, 300),
-                        "T3": random.uniform(200, 300),
-                        "T4": random.uniform(200, 300),
-                        "OTC": random.randint(0, 100),
-                        "wifi": random.choice([0, 1])
-                    }
-                },
-                {
-                    "esp_id": "bms_01", 
+                    "esp_id": "998", 
                     "content": {
                         "timestamp": now,
                         "d": d_val,
@@ -136,8 +106,6 @@ def esp_ws_telemetry(base_url, server):
                     }
                 }
             ]
-            with open("./message.txt", "a") as f:
-                f.write(json.dumps(payload))
             try:
                 ws.send(json.dumps(payload))
                 # Best-effort read to clear server responses; ignore content
