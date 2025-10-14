@@ -2,6 +2,7 @@
 
 #include "DNS.h"
 #include "I2C.h"
+#include "WS.h"
 #include "global.h"
 
 #include "esp_log.h"
@@ -21,6 +22,10 @@ void job_worker_freertos_task(void *arg) {
 
                 case JOB_INV_TRANSMIT:
                     write_to_unit();
+                    break;
+
+                case JOB_WS_SEND:
+                    send_websocket_data();
                     break;
 
                 default:

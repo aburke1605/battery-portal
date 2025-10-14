@@ -16,13 +16,14 @@
 #else
     #define DEV false
 #endif
-# define AZURE_URL CONFIG_AZURE_URL
+#define AZURE_URL CONFIG_AZURE_URL
 #ifdef CONFIG_LOCAL
     #define LOCAL true
 #else
     #define LOCAL false
 #endif
-# define FLASK_IP CONFIG_FLASK_IP
+#define FLASK_IP CONFIG_FLASK_IP
+#define WS_DELAY CONFIG_WS_DELAY
 
 // I2C
 #ifdef CONFIG_SCAN_I2C

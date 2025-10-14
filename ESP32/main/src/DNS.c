@@ -106,7 +106,7 @@ void dns_server_freertos_task(void *arg) {
             };
 
             if (xQueueSend(job_queue, &job, 0) != pdPASS) {
-                ESP_LOGW(TAG, "Queue full, dropping job");
+                if (VERBOSE) ESP_LOGW(TAG, "Queue full, dropping job");
                 free(job.data);
             }
         } else {

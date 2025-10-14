@@ -2,6 +2,7 @@
 
 #include "BMS.h"
 #include "I2C.h"
+#include "TASK.h"
 #include "config.h"
 #include "global.h"
 #include "utils.h"
@@ -25,6 +26,8 @@ static const char* TAG = "WS";
 static bool reconnect = false;
 static char ESP_IP[16] = "xxx.xxx.xxx.xxx\0";
 static esp_websocket_client_handle_t ws_client = NULL;
+
+static TimerHandle_t websocket_timer;
 
 void add_client(int fd, const char* tkn, bool browser, uint8_t esp_id) {
     for (int i = 0; i < WS_CONFIG_MAX_CLIENTS; i++) {
@@ -191,7 +194,7 @@ esp_err_t perform_request(cJSON *message, cJSON *response) {
     if (strcmp(type->valuestring, "query") == 0) {
         if (strcmp(content->valuestring, "are you still there?") == 0) {
             cJSON_AddStringToObject(response_content, "response", "yes");
-            xQueueReset(ws_queue); // prioritise this reply(?)
+            // xQueueReset(job_queue); // prioritise this reply(?)
         }
     } else if (strcmp(type->valuestring, "request") == 0) {
         cJSON *summary = cJSON_GetObjectItem(content, "summary");
@@ -332,36 +335,11 @@ esp_err_t perform_request(cJSON *message, cJSON *response) {
 }
 
 void send_message(const char *message) {
-    // make a deep copy in heap so the message isn't freed
-    // by the time it gets to `message_queue_task`
-    char *message_copy = malloc(strlen(message) + 1);
-    if (!message_copy) {
-        ESP_LOGE(TAG, "Failed to allocate memory for message");
-        return;
-    }
-    strcpy(message_copy, message);
-
-    if (xQueueSend(ws_queue, &message_copy, pdMS_TO_TICKS(100)) != pdPASS) {
-        ESP_LOGE(TAG, "WebSocket queue full! Dropping message: %s", message);
-        free(message_copy);
-    }
-}
-
-void message_queue_task(void *pvParameters) {
-    char* message = NULL;
-
-    while (true) {
-        if (xQueueReceive(ws_queue, &message, portMAX_DELAY) == pdPASS) {
-            if (esp_websocket_client_is_connected(ws_client)) {
-                if (VERBOSE) ESP_LOGI(TAG, "Sending: %s", message);
-                esp_websocket_client_send_text(ws_client, message, strlen(message), portMAX_DELAY);
-            } else {
-                ESP_LOGW(TAG, "WebSocket not connected, dropping message: %s", message);
-            }
-            free(message);
-        }
-
-        vTaskDelay(pdMS_TO_TICKS(1000));
+    if (esp_websocket_client_is_connected(ws_client)) {
+        if (VERBOSE) ESP_LOGI(TAG, "Sending: %s", message);
+        esp_websocket_client_send_text(ws_client, message, strlen(message), portMAX_DELAY);
+    } else {
+        ESP_LOGW(TAG, "WebSocket not connected, dropping message: %s", message);
     }
 }
 
@@ -485,138 +463,149 @@ char* convert_data_numbers_for_frontend(char* data_string) {
         return converted_data_string;
 }
 
-void websocket_task(void *pvParameters) {
-    while (true) {
-        // get sensor data
-        char* data_string = LORA_IS_RECEIVER ? "" : get_data();
-        char* converted_data_string = LORA_IS_RECEIVER ? "" : convert_data_numbers_for_frontend(data_string);
+void send_websocket_data() {
+    // get sensor data
+    char* data_string = LORA_IS_RECEIVER ? "" : get_data();
+    char* converted_data_string = LORA_IS_RECEIVER ? "" : convert_data_numbers_for_frontend(data_string);
 
-        if (data_string != NULL && converted_data_string != NULL) {
-            // first send to all connected WebSocket clients
-            for (int i = 0; i < WS_CONFIG_MAX_CLIENTS; i++) {
-                if (client_sockets[i].is_browser_not_mesh && client_sockets[i].descriptor >= 0) {
-                    httpd_ws_frame_t ws_pkt = {
-                        .payload = (uint8_t *)converted_data_string,
-                        .len = strlen(converted_data_string),
-                        .type = HTTPD_WS_TYPE_TEXT,
-                    };
-
-                    int tries = 0;
-                    int max_tries = 5;
-                    esp_err_t err;
-                    while (tries < max_tries) {
-                        err = httpd_ws_send_frame_async(server, client_sockets[i].descriptor, &ws_pkt);
-                        if (err == ESP_OK) break;
-                        vTaskDelay(pdMS_TO_TICKS(1000));
-                        tries++;
-                    }
-
-                    if (err != ESP_OK) {
-                        ESP_LOGE(TAG, "Failed to send frame to client %d: %s", client_sockets[i].descriptor, esp_err_to_name(err));
-                        remove_client(client_sockets[i].descriptor);  // Clean up disconnected clients
-                    }
-                }
-            }
-
-            // then to website over internet
-            if (connected_to_WiFi) {
-                // get Wi-Fi station gateway
-                esp_netif_t *sta_netif = esp_netif_get_handle_from_ifkey("WIFI_STA_DEF");
-                if (sta_netif == NULL) return;
-
-                // retrieve the IP information
-                esp_netif_ip_info_t ip_info;
-                esp_netif_get_ip_info(sta_netif, &ip_info);
-
-                // add correct ESP32 IP info to message
-                esp_ip4addr_ntoa(&ip_info.ip, ESP_IP, 16);
-
-                char s[64];
-                if (LOCAL) {
-                    snprintf(s, sizeof(s), "%s:8000", FLASK_IP);
-                } else {
-                    snprintf(s, sizeof(s), "%s", AZURE_URL);
-                }
-                char uri[128];
-                snprintf(uri, sizeof(uri), "wss://%s/api/esp_ws", s);
-
-                const esp_websocket_client_config_t websocket_cfg = {
-                    .uri = uri,
-                    .reconnect_timeout_ms = 10000,
-                    .network_timeout_ms = 10000,
-                    .cert_pem = LOCAL?(const char *)local_cert_pem:(const char *)website_cert_pem,
-                    .skip_cert_common_name_check = LOCAL,
+    if (data_string != NULL && converted_data_string != NULL) {
+        // first send to all connected WebSocket clients
+        for (int i = 0; i < WS_CONFIG_MAX_CLIENTS; i++) {
+            if (client_sockets[i].is_browser_not_mesh && client_sockets[i].descriptor >= 0) {
+                httpd_ws_frame_t ws_pkt = {
+                    .payload = (uint8_t *)converted_data_string,
+                    .len = strlen(converted_data_string),
+                    .type = HTTPD_WS_TYPE_TEXT,
                 };
 
-                if (ws_client == NULL) {
-                    ws_client = esp_websocket_client_init(&websocket_cfg);
-                    if (ws_client == NULL) {
-                        ESP_LOGE(TAG, "Failed to initialize WebSocket client");
-                        vTaskDelay(pdMS_TO_TICKS(1000));
-                        continue;
-                    }
-                    esp_websocket_register_events(ws_client, WEBSOCKET_EVENT_ANY, websocket_event_handler, NULL);
-                    if (esp_websocket_client_start(ws_client) != ESP_OK) {
-                        ESP_LOGE(TAG, "Failed to start WebSocket client");
-                        esp_websocket_client_destroy(ws_client);
-                        ws_client = NULL;
-                        vTaskDelay(pdMS_TO_TICKS(1000));
-                        continue;
-                    }
-                    vTaskDelay(pdMS_TO_TICKS(5000));
+                int tries = 0;
+                int max_tries = 5;
+                esp_err_t err;
+                while (tries < max_tries) {
+                    err = httpd_ws_send_frame_async(server, client_sockets[i].descriptor, &ws_pkt);
+                    if (err == ESP_OK) break;
+                    vTaskDelay(pdMS_TO_TICKS(1000));
+                    tries++;
                 }
 
+                if (err != ESP_OK) {
+                    ESP_LOGE(TAG, "Failed to send frame to client %d: %s", client_sockets[i].descriptor, esp_err_to_name(err));
+                    remove_client(client_sockets[i].descriptor);  // Clean up disconnected clients
+                }
+            }
+        }
 
-                if (!esp_websocket_client_is_connected(ws_client)) {
-                    esp_websocket_client_stop(ws_client);
+        // then to website over internet
+        if (connected_to_WiFi) {
+            // get Wi-Fi station gateway
+            esp_netif_t *sta_netif = esp_netif_get_handle_from_ifkey("WIFI_STA_DEF");
+            if (sta_netif == NULL) return;
+
+            // retrieve the IP information
+            esp_netif_ip_info_t ip_info;
+            esp_netif_get_ip_info(sta_netif, &ip_info);
+
+            // add correct ESP32 IP info to message
+            esp_ip4addr_ntoa(&ip_info.ip, ESP_IP, 16);
+
+            char s[64];
+            if (LOCAL) {
+                snprintf(s, sizeof(s), "%s:8000", FLASK_IP);
+            } else {
+                snprintf(s, sizeof(s), "%s", AZURE_URL);
+            }
+            char uri[128];
+            snprintf(uri, sizeof(uri), "wss://%s/api/esp_ws", s);
+
+            const esp_websocket_client_config_t websocket_cfg = {
+                .uri = uri,
+                .reconnect_timeout_ms = 10000,
+                .network_timeout_ms = 10000,
+                .cert_pem = LOCAL?(const char *)local_cert_pem:(const char *)website_cert_pem,
+                .skip_cert_common_name_check = LOCAL,
+            };
+
+            if (ws_client == NULL) {
+                ws_client = esp_websocket_client_init(&websocket_cfg);
+                if (ws_client == NULL) {
+                    ESP_LOGE(TAG, "Failed to initialize WebSocket client");
+                    vTaskDelay(pdMS_TO_TICKS(1000));
+                    return;
+                }
+                esp_websocket_register_events(ws_client, WEBSOCKET_EVENT_ANY, websocket_event_handler, NULL);
+                if (esp_websocket_client_start(ws_client) != ESP_OK) {
+                    ESP_LOGE(TAG, "Failed to start WebSocket client");
                     esp_websocket_client_destroy(ws_client);
                     ws_client = NULL;
-                } else {
-                    if (!LORA_IS_RECEIVER) {
-                        // send in json array so webserver can parse
-                        cJSON* json_array = cJSON_CreateArray();
-                        if (json_array == NULL) {
-                            ESP_LOGE(TAG, "Failed to create JSON array");
-                            return;
-                        }
-                        cJSON *item = cJSON_Parse(data_string);
-                        if (!item) {
-                            ESP_LOGE(TAG, "Failed to parse JSON");
-                            cJSON_Delete(json_array);
-                            return;
-                        }
-                        cJSON_AddItemToArray(json_array, item);
-                        send_message(cJSON_PrintUnformatted(json_array));
+                    vTaskDelay(pdMS_TO_TICKS(1000));
+                    return;
+                }
+                vTaskDelay(pdMS_TO_TICKS(5000));
+            }
 
-                        cJSON_Delete(json_array);
+
+            if (!esp_websocket_client_is_connected(ws_client)) {
+                esp_websocket_client_stop(ws_client);
+                esp_websocket_client_destroy(ws_client);
+                ws_client = NULL;
+            } else {
+                if (!LORA_IS_RECEIVER) {
+                    // send in json array so webserver can parse
+                    cJSON* json_array = cJSON_CreateArray();
+                    if (json_array == NULL) {
+                        ESP_LOGE(TAG, "Failed to create JSON array");
+                        return;
                     }
+                    cJSON *item = cJSON_Parse(data_string);
+                    if (!item) {
+                        ESP_LOGE(TAG, "Failed to parse JSON");
+                        cJSON_Delete(json_array);
+                        return;
+                    }
+                    cJSON_AddItemToArray(json_array, item);
+                    send_message(cJSON_PrintUnformatted(json_array));
+
+                    cJSON_Delete(json_array);
                 }
             }
-
-            // clean up
-            if (!LORA_IS_RECEIVER) {
-                free(data_string);
-                free(converted_data_string);
-            }
         }
 
-        // check wifi connection still exists
-        wifi_ap_record_t ap_info;
-        if (esp_wifi_sta_get_ap_info(&ap_info) != ESP_OK) {
-            connected_to_WiFi = false;
-
-            uint8_t auto_connect = (uint8_t)WIFI_AUTO_CONNECT;
-            nvs_handle_t nvs;
-            esp_err_t err = nvs_open("WIFI", NVS_READONLY, &nvs);
-            if (err != ESP_OK) {
-                ESP_LOGE(TAG, "Could not open NVS namespace");
-            } else {
-                if (nvs_get_u8(nvs, "AUTO_CONNECT", &auto_connect) != ESP_OK) ESP_LOGW(TAG, "Could not read Wi-Fi auto-connect setting from NVS, using default");
-                if (auto_connect != 0) send_fake_request();
-                nvs_close(nvs);
-            }
+        // clean up
+        if (!LORA_IS_RECEIVER) {
+            free(data_string);
+            free(converted_data_string);
         }
-
-        vTaskDelay(pdMS_TO_TICKS(1000));
     }
+
+    // check wifi connection still exists
+    wifi_ap_record_t ap_info;
+    if (esp_wifi_sta_get_ap_info(&ap_info) != ESP_OK) {
+        connected_to_WiFi = false;
+
+        uint8_t auto_connect = (uint8_t)WIFI_AUTO_CONNECT;
+        nvs_handle_t nvs;
+        esp_err_t err = nvs_open("WIFI", NVS_READONLY, &nvs);
+        if (err != ESP_OK) {
+            ESP_LOGE(TAG, "Could not open NVS namespace");
+        } else {
+            if (nvs_get_u8(nvs, "AUTO_CONNECT", &auto_connect) != ESP_OK) ESP_LOGW(TAG, "Could not read Wi-Fi auto-connect setting from NVS, using default");
+            if (auto_connect != 0) send_fake_request();
+            nvs_close(nvs);
+        }
+    }
+}
+
+void websocket_callback(TimerHandle_t xTimer) {
+    job_t job = {
+        .type = JOB_WS_SEND
+    };
+
+    if (xQueueSend(job_queue, &job, 0) != pdPASS)
+        if (VERBOSE) ESP_LOGW(TAG, "Queue full, dropping job");
+}
+
+void start_websocket_timed_task() {
+    websocket_timer = xTimerCreate("websocket_timer", pdMS_TO_TICKS(WS_DELAY), pdTRUE, NULL, websocket_callback);
+    assert(websocket_timer);
+    xTimerStart(websocket_timer, 0);
 }

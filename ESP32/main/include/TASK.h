@@ -5,6 +5,7 @@
 
 typedef enum {
     JOB_DNS_REQUEST,
+    JOB_WS_SEND,
     JOB_INV_TRANSMIT
 } job_type_t;
 

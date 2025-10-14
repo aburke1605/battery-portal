@@ -31,7 +31,6 @@ bool connected_to_WiFi = false;
 bool connected_to_root = false;
 client_socket client_sockets[WS_CONFIG_MAX_CLIENTS];
 char current_auth_token[UTILS_AUTH_TOKEN_LENGTH] = "";
-QueueHandle_t ws_queue;
 bool LoRa_configured = false;
 LoRa_message all_messages[MESH_SIZE] = {0};
 char forwarded_message[LORA_MAX_PACKET_LEN-2] = "";
@@ -79,16 +78,11 @@ void app_main(void) {
 
     xTaskCreate(job_worker_freertos_task, "job_worker_freertos_task", 4096, NULL, 5, NULL);
 
-    xTaskCreate(dns_server_freertos_task, "dns_server_freertos_task", 1700, NULL, 5, NULL);
-
-    ws_queue = xQueueCreate(WS_QUEUE_SIZE, sizeof(char*));
-    TaskParams message_queue_params = {.stack_size = 3900, .task_name = "message_queue_task"};
-    xTaskCreate(&message_queue_task, message_queue_params.task_name, message_queue_params.stack_size, &message_queue_params, 5, NULL);
-
-    TaskParams websocket_params = {.stack_size = 4600, .task_name = "websocket_task"};
-    xTaskCreate(&websocket_task, websocket_params.task_name, websocket_params.stack_size, &websocket_params, 1, &websocket_task_handle);
+    xTaskCreate(dns_server_freertos_task, "dns_server_freertos_task", 2600, NULL, 5, NULL);
 
     start_inverter_timed_task();
+
+    start_websocket_timed_task();
 
     if (!LORA_IS_RECEIVER) {
         // MESH stuff

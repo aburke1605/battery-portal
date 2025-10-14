@@ -32,11 +32,11 @@ void inverter_callback(TimerHandle_t xTimer) {
     };
 
     if (xQueueSend(job_queue, &job, 0) != pdPASS)
-        ESP_LOGW(TAG, "Queue full, dropping job");
+        if (VERBOSE) ESP_LOGW(TAG, "Queue full, dropping job");
 }
 
 void start_inverter_timed_task() {
-    inverter_timer = xTimerCreate("inverter_timer", pdMS_TO_TICKS(INV_DELAY), pdPASS, NULL, inverter_callback);
+    inverter_timer = xTimerCreate("inverter_timer", pdMS_TO_TICKS(INV_DELAY), pdTRUE, NULL, inverter_callback);
     assert(inverter_timer);
     xTimerStart(inverter_timer, 0);
 }
