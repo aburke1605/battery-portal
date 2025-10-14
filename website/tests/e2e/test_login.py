@@ -36,7 +36,7 @@ def test_login(selenium_driver, base_url, wait_timeout):
     )
     assert dashboard_link is not None
 
-    time.sleep(2)
+    time.sleep(1)
     selenium_driver.refresh()
 
     

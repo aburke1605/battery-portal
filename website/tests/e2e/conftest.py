@@ -27,10 +27,12 @@ TODO:
 def server():
     proc = mp.Process(target=_run_flask_server, daemon=True)
     proc.start()
-    ok = _wait_for_port("127.0.0.1", 5000, timeout=30)
+    host = _get_server_host()
+    port = _get_server_port()
+    ok = _wait_for_port(host, port, timeout=30)
     if not ok:
         proc.terminate()
-        raise RuntimeError("Server failed to start on 127.0.0.1:5000")
+        raise RuntimeError(f"Server failed to start on {host}:{port}")
     yield
     proc.terminate()
     proc.join(timeout=5)
@@ -39,7 +41,7 @@ def server():
 @pytest.fixture(scope="session", autouse=True)
 def selenium_driver():
     options = Options()
-    options.add_argument("--headless")
+    # options.add_argument("--headless")
     options.add_argument("--no-sandbox")
     options.add_argument("--disable-dev-shm-usage")
     options.add_argument("--ignore-certificate-errors")
@@ -51,10 +53,10 @@ def selenium_driver():
 
 # Start the ESP32 websocket telemetry in a thread for the duration of the test session.
 @pytest.fixture(scope="session", autouse=True)
-def esp_ws_telemetry(base_url, server):
-    parsed = urlparse(base_url)
-    scheme = "wss" if parsed.scheme == "https" else "ws"
-    ws_url = urlunparse((scheme, parsed.netloc, "/api/esp_ws", "", "", ""))
+def esp_ws_telemetry(server):
+    host = _get_server_host()
+    port = _get_server_port()
+    ws_url = urlunparse(("ws", f"{host}:{port}", "/api/esp_ws", "", "", ""))
     stop_event = threading.Event()
     print(f"[esp_ws] connecting to {ws_url}")
     try:
@@ -135,7 +137,10 @@ def esp_ws_telemetry(base_url, server):
 # Common test configuration
 @pytest.fixture(scope="session")
 def base_url() -> str:
-    return os.getenv("BASE_URL", "http://localhost:5000")
+    host = _get_server_host()
+    port = _get_server_port()
+    # Tests run over HTTP to avoid certificate issues
+    return f"http://{host}:{port}"
 
 @pytest.fixture(scope="session")
 def wait_timeout() -> int:
@@ -147,7 +152,7 @@ def _run_flask_server():
     # Use HTTP for tests to avoid certificate issues
     from app import create_app
     app = create_app()
-    app.run(host="127.0.0.1", port=5000, debug=False, ssl_context=None, threaded=True)
+    app.run(host=_get_server_host(), port=_get_server_port(), debug=False, ssl_context=None, threaded=True)
 
 # Wait for the server port to be open
 def _wait_for_port(host: str, port: int, timeout: int = 30) -> bool:
@@ -162,12 +167,19 @@ def _wait_for_port(host: str, port: int, timeout: int = 30) -> bool:
                 time.sleep(0.2)
     return False
 
+# Centralized host/port for the test server
+def _get_server_host() -> str:
+    return os.getenv("E2E_HOST", "127.0.0.1")
+
+def _get_server_port() -> int:
+    return int(os.getenv("E2E_PORT", "5000"))
+
 # Enforce test execution order: home -> login -> battery within this e2e suite
 def pytest_collection_modifyitems(config, items):
     priority = {
         "test_home.py": 0,
         "test_login.py": 1,
-        "test_battery.py": 2,
+        "test_battery_list.py": 2
     }
     def sort_key(item):
         # pytest>=8: item.path is a pathlib.Path
