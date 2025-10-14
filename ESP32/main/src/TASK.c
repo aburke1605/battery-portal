@@ -33,6 +33,10 @@ void job_worker_freertos_task(void *arg) {
                     connect_to_root();
                     break;
 
+                case JOB_MESH_WS_SEND:
+                    send_mesh_websocket_data();
+                    break;
+
                 default:
                     break;
             }

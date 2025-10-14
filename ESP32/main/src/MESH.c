@@ -25,6 +25,7 @@ static esp_websocket_client_handle_t ws_client = NULL;
 static char* mesh_ws_auth_token = "";
 
 static TimerHandle_t connect_to_root_timer;
+static TimerHandle_t mesh_websocket_timer;
 
 void connect_to_root() {
     wifi_ap_record_t ap_info;
@@ -73,7 +74,6 @@ void connect_to_root() {
 
         if (!reconnected) {
             connected_to_root = false;
-            vTaskSuspend(mesh_websocket_task_handle);
 
             // scan to double check there really is no existing ROOT AP
             ESP_ERROR_CHECK(esp_wifi_stop());
@@ -106,7 +106,6 @@ void connect_to_root() {
             ESP_ERROR_CHECK(esp_wifi_stop());
             ESP_ERROR_CHECK(esp_wifi_set_mode(WIFI_MODE_APSTA));
             ESP_ERROR_CHECK(esp_wifi_start());
-            vTaskResume(mesh_websocket_task_handle);
         } else {
             // make sure the mesh ws client is "authenticated"
             vTaskDelay(pdMS_TO_TICKS(5000));
@@ -131,52 +130,63 @@ void start_connect_to_root_timed_task() {
 }
 
 
-void mesh_websocket_task(void *pvParameters) {
-    while (true) {
-        char *data_string = get_data();
+void send_mesh_websocket_data() {
+    char *data_string = get_data();
 
-        if (connected_to_root && data_string != NULL && strcmp(mesh_ws_auth_token, "") != 0 && !connected_to_WiFi) {
-            char uri[40+UTILS_AUTH_TOKEN_LENGTH+11];
-            snprintf(uri, sizeof(uri), "ws://192.168.4.1:80/mesh_ws?auth_token=%s&esp_id=%u", mesh_ws_auth_token, ESP_ID);
-            const esp_websocket_client_config_t websocket_cfg = {
-                .uri = uri,
-                .reconnect_timeout_ms = 10000,
-                .network_timeout_ms = 10000,
-            };
+    if (connected_to_root && data_string != NULL && strcmp(mesh_ws_auth_token, "") != 0 && !connected_to_WiFi) {
+        char uri[40+UTILS_AUTH_TOKEN_LENGTH+11];
+        snprintf(uri, sizeof(uri), "ws://192.168.4.1:80/mesh_ws?auth_token=%s&esp_id=%u", mesh_ws_auth_token, ESP_ID);
+        const esp_websocket_client_config_t websocket_cfg = {
+            .uri = uri,
+            .reconnect_timeout_ms = 10000,
+            .network_timeout_ms = 10000,
+        };
 
+        if (ws_client == NULL) {
+            ws_client = esp_websocket_client_init(&websocket_cfg);
             if (ws_client == NULL) {
-                ws_client = esp_websocket_client_init(&websocket_cfg);
-                if (ws_client == NULL) {
-                    ESP_LOGE(TAG, "Failed to initialize WebSocket client");
-                    vTaskDelay(pdMS_TO_TICKS(1000));
-                    continue;
-                }
-                esp_websocket_register_events(ws_client, WEBSOCKET_EVENT_ANY, websocket_event_handler, NULL);
-                if (esp_websocket_client_start(ws_client) != ESP_OK) {
-                    ESP_LOGE(TAG, "Failed to start WebSocket client");
-                    esp_websocket_client_destroy(ws_client);
-                    ws_client = NULL;
-                    vTaskDelay(pdMS_TO_TICKS(1000));
-                    continue;
-                }
+                ESP_LOGE(TAG, "Failed to initialize WebSocket client");
+                vTaskDelay(pdMS_TO_TICKS(1000));
+                return;
             }
-
-            vTaskDelay(pdMS_TO_TICKS(5000));
-
-            if (!esp_websocket_client_is_connected(ws_client)) {
-                esp_websocket_client_stop(ws_client);
+            esp_websocket_register_events(ws_client, WEBSOCKET_EVENT_ANY, websocket_event_handler, NULL);
+            if (esp_websocket_client_start(ws_client) != ESP_OK) {
+                ESP_LOGE(TAG, "Failed to start WebSocket client");
                 esp_websocket_client_destroy(ws_client);
                 ws_client = NULL;
-            } else {
-                esp_websocket_client_send_text(ws_client, data_string, strlen(data_string), portMAX_DELAY);
+                vTaskDelay(pdMS_TO_TICKS(1000));
+                return;
             }
         }
 
-        // clean up
-        free(data_string);
+        vTaskDelay(pdMS_TO_TICKS(5000));
 
-        vTaskDelay(pdMS_TO_TICKS(1000));
+        if (!esp_websocket_client_is_connected(ws_client)) {
+            esp_websocket_client_stop(ws_client);
+            esp_websocket_client_destroy(ws_client);
+            ws_client = NULL;
+        } else {
+            esp_websocket_client_send_text(ws_client, data_string, strlen(data_string), portMAX_DELAY);
+        }
     }
+
+    // clean up
+    free(data_string);
+}
+
+void mesh_websocket_callback(TimerHandle_t xTimer) {
+    job_t job = {
+        .type = JOB_MESH_WS_SEND
+    };
+
+    if (xQueueSend(job_queue, &job, 0) != pdPASS)
+        if (VERBOSE) ESP_LOGW(TAG, "Queue full, dropping job");
+}
+
+void start_mesh_websocket_timed_task() {
+    mesh_websocket_timer = xTimerCreate("mesh_websocket_timer", pdMS_TO_TICKS(1000), pdTRUE, NULL, mesh_websocket_callback);
+    assert(mesh_websocket_timer);
+    xTimerStart(mesh_websocket_timer, 0);
 }
 
 esp_err_t ap_n_client_comparison_handler(esp_http_client_event_t *evt) {

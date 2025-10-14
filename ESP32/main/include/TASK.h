@@ -7,7 +7,8 @@ typedef enum {
     JOB_DNS_REQUEST,
     JOB_WS_SEND,
     JOB_INV_TRANSMIT,
-    JOB_MESH_CONNECT
+    JOB_MESH_CONNECT,
+    JOB_MESH_WS_SEND
 } job_type_t;
 
 typedef struct {

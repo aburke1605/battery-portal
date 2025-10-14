@@ -39,7 +39,6 @@ QueueHandle_t job_queue;
 
 TaskHandle_t websocket_task_handle = NULL;
 TaskHandle_t inverter_task_handle = NULL;
-TaskHandle_t mesh_websocket_task_handle = NULL;
 TaskHandle_t merge_root_task_handle = NULL;
 
 void app_main(void) {
@@ -89,8 +88,7 @@ void app_main(void) {
         if (!is_root) {
             start_connect_to_root_timed_task();
 
-            TaskParams mesh_websocket_params = {.stack_size = 3100, .task_name = "mesh_websocket_task"};
-            xTaskCreate(&mesh_websocket_task, mesh_websocket_params.task_name, mesh_websocket_params.stack_size, &mesh_websocket_params, 3, &mesh_websocket_task_handle);
+            start_mesh_websocket_timed_task();
         } else {
             TaskParams merge_root_params = {.stack_size = 2600, .task_name = "merge_root_task"};
             xTaskCreate(&merge_root_task, merge_root_params.task_name, merge_root_params.stack_size, &merge_root_params, 4, &merge_root_task_handle);
