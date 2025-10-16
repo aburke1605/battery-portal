@@ -88,10 +88,12 @@ void receive();
 
 void execute_transmission(uint8_t* message, size_t n_bytes);
 
-void transmit(int64_t* delay_transmission_until);
+void transmit();
 
 void lora_task(void *pvParameters);
 
 void start_receive_interrupt_task();
+
+void start_transmit_timed_task();
 
 #endif // LORA_H

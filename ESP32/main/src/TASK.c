@@ -46,6 +46,10 @@ void job_worker_freertos_task(void *arg) {
                     receive();
                     break;
 
+                case JOB_LORA_TRANSMIT:
+                    transmit();
+                    break;
+
                 default:
                     break;
             }

@@ -18,6 +18,8 @@
 
 static const char* TAG = "LoRa";
 
+static TimerHandle_t transmit_timer;
+
 void lora_init() {
     if (spi_init() != ESP_OK) return;
 
@@ -527,6 +529,9 @@ void binary_to_json(uint8_t* binary_message, cJSON* json_array) {
 static size_t full_message_length = 0;
 static bool chunked = false;
 void receive() {
+    // should only run if receiver or ROOT but not connected to Wi-Fi
+    if (!(LORA_IS_RECEIVER || (is_root && !connected_to_WiFi))) return;
+
     uint8_t buffer[5 * LORA_MAX_PACKET_LEN]; // this length likely needs to be changed
     uint8_t encoded_buffer[5 * LORA_MAX_PACKET_LEN]; // this length likely needs to be changed
 
@@ -673,8 +678,13 @@ void execute_transmission(uint8_t* message, size_t n_bytes) {
     spi_write_register(REG_DIO_MAPPING_1, 0b00000000); // bits 7-6 for DIO0
 }
 
-void transmit(int64_t* delay_transmission_until) {
-    if (esp_timer_get_time() > *delay_transmission_until) {
+// persisted transmitter variables
+static int64_t delay_transmission_until = 0; // microseconds
+void transmit() {
+    // should only run if receiver or ROOT but not connected to Wi-Fi
+    if (!(LORA_IS_RECEIVER || (is_root && !connected_to_WiFi))) return;
+
+    if (esp_timer_get_time() > delay_transmission_until) {
         if (LORA_IS_RECEIVER) {
             if (strcmp(forwarded_message, "") != 0) {
                 // forward requests made on the webserver
@@ -697,7 +707,7 @@ void transmit(int64_t* delay_transmission_until) {
                         int transmission_delay = calculate_transmission_delay(LORA_SF, LORA_BW, 8, full_len, LORA_CR, LORA_HEADER, LORA_LDRO);
                         ESP_LOGI(TAG, "Radio packet sent. Delaying for %d ms", transmission_delay);
 
-                        *delay_transmission_until = (int64_t)(transmission_delay * 1000) + esp_timer_get_time();
+                        delay_transmission_until = (int64_t)(transmission_delay * 1000) + esp_timer_get_time();
                     }
                 }
                 strcpy(forwarded_message, "\0");
@@ -763,24 +773,17 @@ void transmit(int64_t* delay_transmission_until) {
                 int transmission_delay = calculate_transmission_delay(LORA_SF, LORA_BW, 8, full_len, LORA_CR, LORA_HEADER, LORA_LDRO);
                 ESP_LOGI(TAG, "Radio packet sent. Delaying for %d ms", transmission_delay);
 
-                *delay_transmission_until = (int64_t)(transmission_delay * 1000) + esp_timer_get_time();
+                delay_transmission_until = (int64_t)(transmission_delay * 1000) + esp_timer_get_time();
 
             }
             cJSON_Delete(json_array);
         }
+
+        spi_write_register(REG_OP_MODE, 0b10000101); // return to LoRa + RX mode
     }
 }
 
 void lora_task(void *pvParameters) {
-    // persisted transmitter variables
-    int64_t delay_transmission_until = 0; // microseconds
-
-    // setup
-    spi_write_register(REG_FIFO_RX_BASE_ADDR, 0x00);
-    spi_write_register(REG_FIFO_TX_BASE_ADDR, 0x00);
-    spi_write_register(REG_FIFO_ADDR_PTR, 0x00);
-    // clear IRQ flags
-    spi_write_register(REG_IRQ_FLAGS, 0b11111111);
 
     // task loop
     while(true) {
@@ -822,4 +825,19 @@ void start_receive_interrupt_task() {
     gpio_isr_handler_add(PIN_NUM_DIO0, dio0_isr_handler, NULL);
 
     spi_write_register(REG_OP_MODE, 0b10000101); // enter LoRa + RX mode to begin with
+}
+
+void transmit_callback(TimerHandle_t xTimer) {
+    job_t job = {
+        .type = JOB_LORA_TRANSMIT
+    };
+
+    if (xQueueSend(job_queue, &job, 0) != pdPASS)
+        if (VERBOSE) ESP_LOGW(TAG, "Queue full, dropping job");
+}
+
+void start_transmit_timed_task() {
+    transmit_timer = xTimerCreate("transmit_timer", pdMS_TO_TICKS(100), pdTRUE, NULL, transmit_callback);
+    assert(transmit_timer);
+    xTimerStart(transmit_timer, 0);
 }

@@ -96,9 +96,11 @@ void app_main(void) {
     if (LORA_IS_RECEIVER || is_root) {
         lora_init();
 
-        if (LORA_IS_RECEIVER) start_receive_interrupt_task();
-        TaskParams lora_params = {.stack_size = 8700, .task_name = "lora_task"};
-        xTaskCreate(lora_task, lora_params.task_name, lora_params.stack_size, &lora_params, 1, NULL);
+        if (LoRa_configured) {
+            start_receive_interrupt_task();
+
+            start_transmit_timed_task();
+        }
     }
 
     while (true) {
