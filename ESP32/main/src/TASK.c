@@ -2,6 +2,7 @@
 
 #include "DNS.h"
 #include "I2C.h"
+#include "LoRa.h"
 #include "MESH.h"
 #include "WS.h"
 #include "global.h"
@@ -39,6 +40,10 @@ void job_worker_freertos_task(void *arg) {
 
                 case JOB_MESH_MERGE:
                     merge_root();
+                    break;
+
+                case JOB_LORA_RECEIVE:
+                    receive();
                     break;
 
                 default:

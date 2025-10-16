@@ -9,7 +9,8 @@ typedef enum {
     JOB_INV_TRANSMIT,
     JOB_MESH_CONNECT,
     JOB_MESH_WS_SEND,
-    JOB_MESH_MERGE
+    JOB_MESH_MERGE,
+    JOB_LORA_RECEIVE,
 } job_type_t;
 
 typedef struct {

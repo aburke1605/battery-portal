@@ -73,7 +73,7 @@ void app_main(void) {
     job_queue = xQueueCreate(10, sizeof(job_t));
     assert(job_queue != NULL);
 
-    xTaskCreate(job_worker_freertos_task, "job_worker_freertos_task", 4096, NULL, 5, NULL);
+    xTaskCreate(job_worker_freertos_task, "job_worker_freertos_task", 10000, NULL, 5, NULL);
 
     xTaskCreate(dns_server_freertos_task, "dns_server_freertos_task", 2600, NULL, 5, NULL);
 
@@ -96,6 +96,7 @@ void app_main(void) {
     if (LORA_IS_RECEIVER || is_root) {
         lora_init();
 
+        if (LORA_IS_RECEIVER) start_receive_interrupt_task();
         TaskParams lora_params = {.stack_size = 8700, .task_name = "lora_task"};
         xTaskCreate(lora_task, lora_params.task_name, lora_params.stack_size, &lora_params, 1, NULL);
     }
