@@ -75,13 +75,13 @@ void app_main(void) {
 
     xTaskCreate(job_worker_freertos_task, "job_worker_freertos_task", 10000, NULL, 5, NULL);
 
-    xTaskCreate(dns_server_freertos_task, "dns_server_freertos_task", 2600, NULL, 5, NULL);
-
-    start_inverter_timed_task();
-
     start_websocket_timed_task();
 
     if (!LORA_IS_RECEIVER) {
+        xTaskCreate(dns_server_freertos_task, "dns_server_freertos_task", 2600, NULL, 5, NULL);
+
+        start_inverter_timed_task();
+
         // MESH stuff
         if (!is_root) {
             start_connect_to_root_timed_task();
