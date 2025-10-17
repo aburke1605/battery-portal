@@ -40,15 +40,15 @@ QueueHandle_t job_queue;
 void app_main(void) {
     initialise_nvs();
 
-    initialise_spiffs();
-
-    ESP_ERROR_CHECK(i2c_master_init());
-    ESP_LOGI("main", "I2C initialized successfully");
-    if (SCAN_I2C) device_scan();
-
-    uart_init();
-
     if (!LORA_IS_RECEIVER) {
+        initialise_spiffs();
+
+        ESP_ERROR_CHECK(i2c_master_init());
+        ESP_LOGI("main", "I2C initialized successfully");
+        if (SCAN_I2C) device_scan();
+
+        uart_init();
+
         // grab BMS DeviceName from the BMS DataFlash
         uint8_t address[2] = {0};
         convert_uint_to_n_bytes(I2C_DEVICE_NAME_ADDR, address, sizeof(address), true);
