@@ -55,7 +55,7 @@ config FLASK_IP
 
 config WS_DELAY
     int "WebSocket message delay (ms)"
-    default 1000
+    default 5000
     help
       Set the time delay between successive messages sent to WebSocket clients and the web server (ms).
 
