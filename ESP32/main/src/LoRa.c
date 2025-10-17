@@ -837,7 +837,7 @@ void transmit_callback(TimerHandle_t xTimer) {
 }
 
 void start_transmit_timed_task() {
-    transmit_timer = xTimerCreate("transmit_timer", pdMS_TO_TICKS(100), pdTRUE, NULL, transmit_callback);
+    transmit_timer = xTimerCreate("transmit_timer", pdMS_TO_TICKS(5000), pdTRUE, NULL, transmit_callback);
     assert(transmit_timer);
     xTimerStart(transmit_timer, 0);
 }
