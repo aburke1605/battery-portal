@@ -37,8 +37,6 @@ char forwarded_message[LORA_MAX_PACKET_LEN-2] = "";
 
 QueueHandle_t job_queue;
 
-TaskHandle_t websocket_task_handle = NULL;
-
 void app_main(void) {
     initialise_nvs();
 

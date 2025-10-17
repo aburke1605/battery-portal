@@ -25,6 +25,4 @@ extern char forwarded_message[LORA_MAX_PACKET_LEN-2];
 
 extern QueueHandle_t job_queue;
 
-extern TaskHandle_t websocket_task_handle;
-
 #endif // GLOBAL_H
