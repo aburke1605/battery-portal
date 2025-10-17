@@ -783,22 +783,6 @@ void transmit() {
     }
 }
 
-void lora_task(void *pvParameters) {
-
-    // task loop
-    while(true) {
-        if (LoRa_configured) {
-            // should only run if receiver or ROOT but not connected to Wi-Fi
-            if (LORA_IS_RECEIVER || (is_root && !connected_to_WiFi)) {
-                transmit(&delay_transmission_until);
-                // contains a delay within, default is still RX mode
-            }
-        }
-
-        vTaskDelay(pdMS_TO_TICKS(10));
-    }
-}
-
 void dio0_isr_handler(void *arg) {
     BaseType_t woken = pdFALSE;
 

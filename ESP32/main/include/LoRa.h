@@ -90,8 +90,6 @@ void execute_transmission(uint8_t* message, size_t n_bytes);
 
 void transmit();
 
-void lora_task(void *pvParameters);
-
 void start_receive_interrupt_task();
 
 void start_transmit_timed_task();
