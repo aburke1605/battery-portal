@@ -86,11 +86,11 @@ void binary_to_json(uint8_t* binary_message, cJSON* json_array);
 
 void receive();
 
+void start_receive_interrupt_task();
+
 void execute_transmission(uint8_t* message, size_t n_bytes);
 
 void transmit();
-
-void start_receive_interrupt_task();
 
 void start_transmit_timed_task();
 

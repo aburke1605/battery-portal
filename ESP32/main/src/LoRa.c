@@ -650,6 +650,34 @@ void receive() {
     }
 }
 
+void dio0_isr_handler(void *arg) {
+    BaseType_t woken = pdFALSE;
+
+    job_t job = {
+        .type = JOB_LORA_RECEIVE
+    };
+    xQueueSendFromISR(job_queue, &job, &woken);
+
+    portYIELD_FROM_ISR(woken);
+}
+
+void start_receive_interrupt_task() {
+    gpio_config_t io_conf = {
+        .intr_type = GPIO_INTR_POSEDGE, // rising edge trigger
+        .mode = GPIO_MODE_INPUT,
+        .pin_bit_mask = 1ULL << PIN_NUM_DIO0,
+        .pull_down_en = GPIO_PULLDOWN_DISABLE,
+        .pull_up_en = GPIO_PULLUP_DISABLE,
+    };
+    gpio_config(&io_conf);
+
+    gpio_install_isr_service(0); // don't copy paste - should only be called once
+
+    gpio_isr_handler_add(PIN_NUM_DIO0, dio0_isr_handler, NULL);
+
+    spi_write_register(REG_OP_MODE, 0b10000101); // enter LoRa + RX mode to begin with
+}
+
 void execute_transmission(uint8_t* message, size_t n_bytes) {
     spi_write_register(REG_OP_MODE, 0b10000001); // LoRa + standby
 
@@ -781,34 +809,6 @@ void transmit() {
 
         spi_write_register(REG_OP_MODE, 0b10000101); // return to LoRa + RX mode
     }
-}
-
-void dio0_isr_handler(void *arg) {
-    BaseType_t woken = pdFALSE;
-
-    job_t job = {
-        .type = JOB_LORA_RECEIVE
-    };
-    xQueueSendFromISR(job_queue, &job, &woken);
-
-    portYIELD_FROM_ISR(woken);
-}
-
-void start_receive_interrupt_task() {
-    gpio_config_t io_conf = {
-        .intr_type = GPIO_INTR_POSEDGE, // rising edge trigger
-        .mode = GPIO_MODE_INPUT,
-        .pin_bit_mask = 1ULL << PIN_NUM_DIO0,
-        .pull_down_en = GPIO_PULLDOWN_DISABLE,
-        .pull_up_en = GPIO_PULLUP_DISABLE,
-    };
-    gpio_config(&io_conf);
-
-    gpio_install_isr_service(0); // don't copy paste - should only be called once
-
-    gpio_isr_handler_add(PIN_NUM_DIO0, dio0_isr_handler, NULL);
-
-    spi_write_register(REG_OP_MODE, 0b10000101); // enter LoRa + RX mode to begin with
 }
 
 void transmit_callback(TimerHandle_t xTimer) {
