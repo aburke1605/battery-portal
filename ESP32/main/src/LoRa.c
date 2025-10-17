@@ -126,19 +126,19 @@ size_t json_to_binary(uint8_t* binary_message, cJSON* json_array) {
             cJSON *obj;
 
             obj = cJSON_GetObjectItem(content, "t");
-            if (obj) packet->t = (uint8_t)obj->valuedouble;
+            if (obj) packet->t = (double)obj->valuedouble;
             obj = NULL;
 
             obj = cJSON_GetObjectItem(content, "d");
-            if (obj) packet->d = (uint8_t)obj->valueint;
+            if (obj) packet->d = (uint32_t)obj->valueint;
             obj = NULL;
 
             obj = cJSON_GetObjectItem(content, "lat");
-            if (obj) packet->lat = (uint8_t)obj->valuedouble;
+            if (obj) packet->lat = (double)obj->valuedouble;
             obj = NULL;
 
             obj = cJSON_GetObjectItem(content, "lon");
-            if (obj) packet->lon = (uint8_t)obj->valuedouble;
+            if (obj) packet->lon = (double)obj->valuedouble;
             obj = NULL;
 
             obj = cJSON_GetObjectItem(content, "Q");

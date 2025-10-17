@@ -16,10 +16,10 @@ enum packet_type {
 
 // `type` must always be first byte in each type of radio packet
 typedef struct __attribute__((packed)) {
-    float t;
-    int d;
-    float lat;
-    float lon;
+    double t;
+    uint32_t d;
+    double lat;
+    double lon;
     uint8_t type;
     uint8_t esp_id;
     uint8_t Q;
