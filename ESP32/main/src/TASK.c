@@ -15,17 +15,16 @@ static const char* TAG = "TASK";
 
 void job_worker_freertos_task(void *arg) {
     job_t job;
-    unsigned int n_jobs_before;
-    unsigned int n_jobs_after;
+    unsigned int n_jobs_remaining = 0;
+    bool received = false;
     char job_type[18];
     int64_t start_time = 0;
     int64_t end_time = 0;
 
     while (true) {
-        n_jobs_before = uxQueueMessagesWaiting(job_queue);
-        n_jobs_after = n_jobs_before;
         if (xQueueReceive(job_queue, &job, portMAX_DELAY) == pdPASS) {
-            n_jobs_after = uxQueueMessagesWaiting(job_queue);
+            n_jobs_remaining = uxQueueMessagesWaiting(job_queue);
+            received = true;
             start_time = esp_timer_get_time();
             switch (job.type) {
                 case JOB_DNS_REQUEST:
@@ -76,14 +75,15 @@ void job_worker_freertos_task(void *arg) {
             // free heap-allocated job data if needed
             if (job.data) free(job.data);
 
-            if (VERBOSE && n_jobs_before > 0) {
+            if (VERBOSE) {
                 ESP_LOGI(TAG, "JOB WORKER: Number of jobs in queue:");
-                ESP_LOGI(TAG, "  before: %d", n_jobs_before);
-                ESP_LOGI(TAG, "  after:  %d", n_jobs_after);
-                if (n_jobs_after != n_jobs_before) {
-                    ESP_LOGI(TAG, "Processed \'%s\' in %f s", job_type, (float)(end_time - start_time)/1000000.0);
-                }
+                ESP_LOGI(TAG, "  before: %d", received ? n_jobs_remaining + 1 : n_jobs_remaining);
+                ESP_LOGI(TAG, "  after:  %d", n_jobs_remaining);
+                if (received)
+                    ESP_LOGI(TAG, "Processed \'%s\' in %f s", job_type, (float)(end_time-start_time)/1000000.0);
             }
+
+            received = false;
         }
 
         vTaskDelay(pdMS_TO_TICKS(500));
