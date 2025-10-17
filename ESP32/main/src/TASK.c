@@ -8,54 +8,84 @@
 #include "global.h"
 
 #include "esp_log.h"
+#include "esp_timer.h"
 #include "freertos/FreeRTOS.h"
 
 static const char* TAG = "TASK";
 
 void job_worker_freertos_task(void *arg) {
     job_t job;
+    unsigned int n_jobs_before;
+    unsigned int n_jobs_after;
+    char job_type[18];
+    int64_t start_time = 0;
+    int64_t end_time = 0;
 
     while (true) {
+        n_jobs_before = uxQueueMessagesWaiting(job_queue);
+        n_jobs_after = n_jobs_before;
         if (xQueueReceive(job_queue, &job, portMAX_DELAY) == pdPASS) {
+            n_jobs_after = uxQueueMessagesWaiting(job_queue);
+            start_time = esp_timer_get_time();
             switch (job.type) {
                 case JOB_DNS_REQUEST:
+                    snprintf(job_type, sizeof(job_type), "JOB_DNS_REQUEST");
                     handle_dns_request(job.data);
                     break;
 
                 case JOB_INV_TRANSMIT:
+                    snprintf(job_type, sizeof(job_type), "JOB_INV_TRANSMIT");
                     write_to_unit();
                     break;
 
                 case JOB_WS_SEND:
+                    snprintf(job_type, sizeof(job_type), "JOB_WS_SEND");
                     send_websocket_data();
                     break;
 
                 case JOB_MESH_CONNECT:
+                    snprintf(job_type, sizeof(job_type), "JOB_MESH_CONNECT");
                     connect_to_root();
                     break;
 
                 case JOB_MESH_WS_SEND:
+                    snprintf(job_type, sizeof(job_type), "JOB_MESH_WS_SEND");
                     send_mesh_websocket_data();
                     break;
 
                 case JOB_MESH_MERGE:
+                    snprintf(job_type, sizeof(job_type), "JOB_MESH_MERGE");
                     merge_root();
                     break;
 
                 case JOB_LORA_RECEIVE:
+                    snprintf(job_type, sizeof(job_type), "JOB_LORA_RECEIVE");
                     receive();
                     break;
 
                 case JOB_LORA_TRANSMIT:
+                    snprintf(job_type, sizeof(job_type), "JOB_LORA_TRANSMIT");
                     transmit();
                     break;
 
                 default:
                     break;
             }
+            end_time = esp_timer_get_time();
 
             // free heap-allocated job data if needed
             if (job.data) free(job.data);
+
+            if (VERBOSE && n_jobs_before > 0) {
+                ESP_LOGI(TAG, "JOB WORKER: Number of jobs in queue:");
+                ESP_LOGI(TAG, "  before: %d", n_jobs_before);
+                ESP_LOGI(TAG, "  after:  %d", n_jobs_after);
+                if (n_jobs_after != n_jobs_before) {
+                    ESP_LOGI(TAG, "Processed \'%s\' in %f s", job_type, (float)(end_time - start_time)/1000000.0);
+                }
+            }
         }
+
+        vTaskDelay(pdMS_TO_TICKS(500));
     }
 }
