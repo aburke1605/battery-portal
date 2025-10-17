@@ -69,6 +69,7 @@ void lora_init() {
     if (LORA_POWER_BOOST) spi_write_register(REG_PA_DAC, 0x87);
     else spi_write_register(REG_PA_DAC, 0x84);
 
+    LoRa_configured = true;
     ESP_LOGI(TAG, "SX127x configured to RadioHead defaults");
 
     // final setup

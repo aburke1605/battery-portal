@@ -84,8 +84,6 @@ esp_err_t spi_init() {
 
     gpio_set_direction(PIN_NUM_DIO0, GPIO_MODE_INPUT);
 
-    LoRa_configured = true;
-
     ESP_LOGI(TAG, "SX127x initialized");
 
     return ESP_OK;
