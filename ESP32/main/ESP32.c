@@ -60,7 +60,7 @@ void app_main(void) {
     }
 
     wifi_init();
-    vTaskDelay(pdMS_TO_TICKS(3000));
+    vTaskDelay(pdMS_TO_TICKS(3000)); // TODO: is 3s really necessary?
 
     server = start_webserver();
     if (server == NULL) {
@@ -71,7 +71,7 @@ void app_main(void) {
     job_queue = xQueueCreate(10, sizeof(job_t));
     assert(job_queue != NULL);
 
-    xTaskCreate(job_worker_freertos_task, "job_worker_freertos_task", 10000, NULL, 5, NULL);
+    xTaskCreate(job_worker_freertos_task, "job_worker_freertos_task", 10000, NULL, 5, NULL); // TODO: optimise memory allocation
 
     start_websocket_timed_task();
 
