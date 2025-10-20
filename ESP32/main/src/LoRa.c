@@ -594,6 +594,7 @@ void receive() {
                     }
                     cJSON* message = NULL;
                     cJSON_ArrayForEach(message, json_array) {
+                        // should just be one message at a time from the web server
                         if (!cJSON_IsObject(message)) return;
 
                         // pop the "esp_id" key
@@ -723,8 +724,10 @@ void transmit() {
                     ESP_LOGI(TAG, "%s", forwarded_message);
                     ESP_LOGI(TAG, "by radio transmission");
                 }
-                cJSON *json_array = cJSON_Parse(forwarded_message);
-                if (json_array) {
+                cJSON *json_message = cJSON_Parse(forwarded_message);
+                cJSON* json_array = cJSON_CreateArray();
+                if (json_message && json_array) {
+                    cJSON_AddItemToArray(json_array, json_message);
                     uint8_t binary_message[5 * LORA_MAX_PACKET_LEN]; // this length likely needs to be changed
                     size_t binary_message_length = json_to_binary(binary_message, json_array);
                     if (binary_message_length > 0) {
