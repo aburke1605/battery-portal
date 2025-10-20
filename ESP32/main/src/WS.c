@@ -413,6 +413,7 @@ void websocket_event_handler(void *arg, esp_event_base_t event_base, int32_t eve
                 break;
             }
             memcpy(data, ws_event_data->data_ptr, ws_event_data->data_len);
+            data[ws_event_data->data_len] = '\0';
 
             job_t job = {
                 .type = JOB_WS_RECEIVE,
