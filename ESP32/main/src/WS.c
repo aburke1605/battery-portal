@@ -354,11 +354,13 @@ void process_event(char* data) {
     if (LORA_IS_RECEIVER) {
         cJSON* type = cJSON_GetObjectItem(message, "type");
         cJSON* content = cJSON_GetObjectItem(message, "content");
-        if (type && content) {
-            if (strcmp(type->valuestring, "response") == 0 && strcmp(content->valuestring, "Ok") == 0) {
-                if (VERBOSE) ESP_LOGI(TAG, "Receiver: ignorning acknowledgement response message from web server");
-                return;
-            }
+        if (!(type && content)) {
+            ESP_LOGE(TAG, "Couldn't parse websocket event");
+            return;
+        }
+        if (strcmp(type->valuestring, "response") == 0 && strcmp(content->valuestring, "OK") == 0) {
+            if (VERBOSE) ESP_LOGI(TAG, "Receiver: ignorning acknowledgement response message from web server");
+            return;
         } else {
             char* message_string = cJSON_PrintUnformatted(message);
             if (message_string) {
