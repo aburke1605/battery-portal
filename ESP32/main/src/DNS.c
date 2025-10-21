@@ -99,6 +99,7 @@ void dns_server_freertos_task(void *arg) {
             packet->len = len;
             packet->capacity = len + max_extra;
 
+            /*
             job_t job = {
                 .type = JOB_DNS_REQUEST,
                 .data = packet,
@@ -109,6 +110,11 @@ void dns_server_freertos_task(void *arg) {
                 if (VERBOSE) ESP_LOGW(TAG, "Queue full, dropping job");
                 free(job.data);
             }
+            */
+
+            // just handle the lightweight job immediately
+            handle_dns_request(packet);
+            free(packet);
         } else {
             ESP_LOGE(TAG, "recvfrom failed: errno %d", errno);
         }

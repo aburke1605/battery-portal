@@ -1,6 +1,7 @@
 #include "WS.h"
 
 #include "BMS.h"
+#include "GPS.h"
 #include "I2C.h"
 #include "TASK.h"
 #include "config.h"
@@ -438,6 +439,55 @@ void websocket_event_handler(void *arg, esp_event_base_t event_base, int32_t eve
             if (VERBOSE) ESP_LOGI(TAG, "WebSocket event ID: %" PRId32, event_id);
             break;
     }
+}
+
+char* get_data() {
+    // create JSON object with sensor data
+    cJSON *data = cJSON_CreateObject();
+
+    cJSON_AddNumberToObject(data, "esp_id", ESP_ID);
+
+    // get telemetry data from global struct
+    cJSON_AddNumberToObject(data, "Q", telemetry_data.Q);
+    cJSON_AddNumberToObject(data, "H", telemetry_data.H);
+    cJSON_AddNumberToObject(data, "aT", telemetry_data.aT);
+    cJSON_AddNumberToObject(data, "V", telemetry_data.V);
+    cJSON_AddNumberToObject(data, "I", telemetry_data.I);
+    cJSON_AddNumberToObject(data, "V1", telemetry_data.V1);
+    cJSON_AddNumberToObject(data, "V2", telemetry_data.V2);
+    cJSON_AddNumberToObject(data, "V3", telemetry_data.V3);
+    cJSON_AddNumberToObject(data, "V4", telemetry_data.V4);
+    cJSON_AddNumberToObject(data, "I1", telemetry_data.I1);
+    cJSON_AddNumberToObject(data, "I2", telemetry_data.I2);
+    cJSON_AddNumberToObject(data, "I3", telemetry_data.I3);
+    cJSON_AddNumberToObject(data, "I4", telemetry_data.I4);
+    cJSON_AddNumberToObject(data, "T1", telemetry_data.T1);
+    cJSON_AddNumberToObject(data, "T2", telemetry_data.T2);
+    cJSON_AddNumberToObject(data, "T3", telemetry_data.T3);
+    cJSON_AddNumberToObject(data, "T4", telemetry_data.T4);
+    cJSON_AddNumberToObject(data, "cT", telemetry_data.cT);
+    cJSON_AddNumberToObject(data, "OTC", telemetry_data.OTC);
+
+    // wifi connection status
+    cJSON_AddBoolToObject(data, "wifi", connected_to_WiFi);
+
+    // get GPS data from global struct
+    cJSON_AddNumberToObject(data, "t", gps_data.time);
+    cJSON_AddNumberToObject(data, "d", gps_data.date);
+    cJSON_AddNumberToObject(data, "lat", gps_data.latitude);
+    cJSON_AddNumberToObject(data, "lon", gps_data.longitude);
+
+
+    // construct full message
+    cJSON *message = cJSON_CreateObject();
+    cJSON_AddNumberToObject(message, "esp_id", ESP_ID);
+    cJSON_AddStringToObject(message, "type", "data");
+    cJSON_AddItemToObject(message, "content", data);
+
+    char *data_string = cJSON_PrintUnformatted(message);
+    cJSON_Delete(message);
+
+    return data_string;
 }
 
 char* convert_data_numbers_for_frontend(char* data_string) {

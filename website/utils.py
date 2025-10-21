@@ -45,6 +45,9 @@ def estimate_soc_per_cell(voltage, temperature):
     return soc
 
 def date_to_string(d: int):
+    if d == 0:
+        return "0001-01-01"
+
     full_date = f"{d:06d}"
 
     day = full_date[:2]
@@ -54,7 +57,7 @@ def date_to_string(d: int):
     return f"20{year}-{month}-{day}"
 
 def time_to_string(t: float):
-    full_time = str(t)
+    full_time = f"{t:09.2f}"
 
     hour = full_time[:2]
     minute = full_time[2:4]

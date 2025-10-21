@@ -1,7 +1,7 @@
 #include "BMS.h"
 
-#include "GPS.h"
 #include "I2C.h"
+#include "TASK.h"
 #include "config.h"
 #include "global.h"
 #include "utils.h"
@@ -10,6 +10,8 @@
 #include "esp_log.h"
 
 static const char* TAG = "BMS";
+
+static TimerHandle_t read_data_timer;
 
 void reset() {
     uint8_t word[2] = {0};
@@ -90,26 +92,7 @@ int8_t get_sealed_status() {
         return -1; // error
 }
 
-char* get_data() {
-    // create JSON object with sensor data
-    cJSON *data = cJSON_CreateObject();
-
-    cJSON_AddNumberToObject(data, "esp_id", ESP_ID);
-
-    GPRMC* gprmc = get_gps();
-    if (gprmc) {
-        cJSON_AddNumberToObject(data, "t", gprmc->time);
-        cJSON_AddNumberToObject(data, "d", gprmc->date);
-        cJSON_AddNumberToObject(data, "lat", gprmc->latitude);
-        cJSON_AddNumberToObject(data, "lon", gprmc->longitude);
-        free(gprmc);
-    } else {
-        cJSON_AddNumberToObject(data, "t", 132600.00);
-        cJSON_AddNumberToObject(data, "d", 230925);
-        cJSON_AddNumberToObject(data, "lat", 53.40680302139558);
-        cJSON_AddNumberToObject(data, "lon", -2.968465812849439);
-    }
-
+void update_telemetry_data() {
     uint8_t data_SBS[2] = {0};
     uint8_t address[2] = {0};
     uint8_t data_flash[2] = {0};
@@ -117,60 +100,57 @@ char* get_data() {
 
     // read sensor data
     read_SBS_data(I2C_RELATIVE_STATE_OF_CHARGE_ADDR, data_SBS, sizeof(data_SBS));
-    cJSON_AddNumberToObject(data, "Q", data_SBS[1] << 8 | data_SBS[0]);
+    telemetry_data.Q = data_SBS[1] << 8 | data_SBS[0];
 
     read_SBS_data(I2C_STATE_OF_HEALTH_ADDR, data_SBS, sizeof(data_SBS));
-    cJSON_AddNumberToObject(data, "H", data_SBS[1] << 8 | data_SBS[0]);
+    telemetry_data.H = data_SBS[1] << 8 | data_SBS[0];
 
     read_SBS_data(I2C_TEMPERATURE_ADDR, data_SBS, sizeof(data_SBS));
-    cJSON_AddNumberToObject(data, "aT", round_to_dp((float)(data_SBS[1] << 8 | data_SBS[0]) / 10.0 - 273.15, 1));
+    telemetry_data.aT = round_to_dp((float)(data_SBS[1] << 8 | data_SBS[0]) / 10.0 - 273.15, 1);
 
     read_SBS_data(I2C_VOLTAGE_ADDR, data_SBS, sizeof(data_SBS));
-    cJSON_AddNumberToObject(data, "V", round_to_dp((float)((int16_t)(data_SBS[1] << 8 | data_SBS[0])) / 1000.0, 1));
+    telemetry_data.V = round_to_dp((float)((int16_t)(data_SBS[1] << 8 | data_SBS[0])) / 1000.0, 1);
 
     read_SBS_data(I2C_CURRENT_ADDR, data_SBS, sizeof(data_SBS));
-    cJSON_AddNumberToObject(data, "I", round_to_dp((float)((int16_t)(data_SBS[1] << 8 | data_SBS[0])) / 1000.0, 1));
+    telemetry_data.I = round_to_dp((float)((int16_t)(data_SBS[1] << 8 | data_SBS[0])) / 1000.0, 1);
 
     convert_uint_to_n_bytes(I2C_DA_STATUS_1_ADDR, address, sizeof(address), true);
     read_data_flash(address, sizeof(address), block_data_flash, sizeof(block_data_flash));
-    cJSON_AddNumberToObject(data, "V1", round_to_dp((float)((int16_t)(block_data_flash[1] << 8 | block_data_flash[0])) / 1000.0, 2));
-    cJSON_AddNumberToObject(data, "V2", round_to_dp((float)((int16_t)(block_data_flash[3] << 8 | block_data_flash[2])) / 1000.0, 2));
-    cJSON_AddNumberToObject(data, "V3", round_to_dp((float)((int16_t)(block_data_flash[5] << 8 | block_data_flash[4])) / 1000.0, 2));
-    cJSON_AddNumberToObject(data, "V4", round_to_dp((float)((int16_t)(block_data_flash[7] << 8 | block_data_flash[6])) / 1000.0, 2));
-    cJSON_AddNumberToObject(data, "I1", round_to_dp((float)((int16_t)(block_data_flash[13] << 8 | block_data_flash[12])) / 1000.0, 2));
-    cJSON_AddNumberToObject(data, "I2", round_to_dp((float)((int16_t)(block_data_flash[15] << 8 | block_data_flash[14])) / 1000.0, 2));
-    cJSON_AddNumberToObject(data, "I3", round_to_dp((float)((int16_t)(block_data_flash[17] << 8 | block_data_flash[16])) / 1000.0, 2));
-    cJSON_AddNumberToObject(data, "I4", round_to_dp((float)((int16_t)(block_data_flash[19] << 8 | block_data_flash[18])) / 1000.0, 2));
+    telemetry_data.V1 = round_to_dp((float)((int16_t)(block_data_flash[1] << 8 | block_data_flash[0])) / 1000.0, 2);
+    telemetry_data.V2 = round_to_dp((float)((int16_t)(block_data_flash[3] << 8 | block_data_flash[2])) / 1000.0, 2);
+    telemetry_data.V3 = round_to_dp((float)((int16_t)(block_data_flash[5] << 8 | block_data_flash[4])) / 1000.0, 2);
+    telemetry_data.V4 = round_to_dp((float)((int16_t)(block_data_flash[7] << 8 | block_data_flash[6])) / 1000.0, 2);
+    telemetry_data.I1 = round_to_dp((float)((int16_t)(block_data_flash[13] << 8 | block_data_flash[12])) / 1000.0, 2);
+    telemetry_data.I2 = round_to_dp((float)((int16_t)(block_data_flash[15] << 8 | block_data_flash[14])) / 1000.0, 2);
+    telemetry_data.I3 = round_to_dp((float)((int16_t)(block_data_flash[17] << 8 | block_data_flash[16])) / 1000.0, 2);
+    telemetry_data.I4 = round_to_dp((float)((int16_t)(block_data_flash[19] << 8 | block_data_flash[18])) / 1000.0, 2);
 
     convert_uint_to_n_bytes(I2C_DA_STATUS_2_ADDR, address, sizeof(address), true);
     read_data_flash(address, sizeof(address), block_data_flash, sizeof(block_data_flash));
-    cJSON_AddNumberToObject(data, "T1", round_to_dp((float)(block_data_flash[3] << 8 | block_data_flash[2]) / 10.0 - 273.15, 2));
-    cJSON_AddNumberToObject(data, "T2", round_to_dp((float)(block_data_flash[5] << 8 | block_data_flash[4]) / 10.0 - 273.15, 2));
-    cJSON_AddNumberToObject(data, "T3", round_to_dp((float)(block_data_flash[7] << 8 | block_data_flash[6]) / 10.0 - 273.15, 2));
-    cJSON_AddNumberToObject(data, "T4", round_to_dp((float)(block_data_flash[9] << 8 | block_data_flash[8]) / 10.0 - 273.15, 2));
-    cJSON_AddNumberToObject(data, "cT", round_to_dp((float)(block_data_flash[11] << 8 | block_data_flash[10]) / 10.0 - 273.15, 1));
+    telemetry_data.T1 = round_to_dp((float)(block_data_flash[3] << 8 | block_data_flash[2]) / 10.0 - 273.15, 2);
+    telemetry_data.T2 = round_to_dp((float)(block_data_flash[5] << 8 | block_data_flash[4]) / 10.0 - 273.15, 2);
+    telemetry_data.T3 = round_to_dp((float)(block_data_flash[7] << 8 | block_data_flash[6]) / 10.0 - 273.15, 2);
+    telemetry_data.T4 = round_to_dp((float)(block_data_flash[9] << 8 | block_data_flash[8]) / 10.0 - 273.15, 2);
+    telemetry_data.cT = round_to_dp((float)(block_data_flash[11] << 8 | block_data_flash[10]) / 10.0 - 273.15, 1);
 
 
     // configurable data too
     convert_uint_to_n_bytes(I2C_OTC_THRESHOLD_ADDR, address, sizeof(address), true);
     read_data_flash(address, sizeof(address), data_flash, sizeof(data_flash));
-    cJSON_AddNumberToObject(data, "OTC", round_to_dp((float)(data_flash[1] << 8 | data_flash[0]) / 10.0, 1));
+    telemetry_data.OTC = round_to_dp((float)(data_flash[1] << 8 | data_flash[0]) / 10.0, 1);
+}
 
-    // wifi connection status
-    cJSON_AddBoolToObject(data, "wifi", connected_to_WiFi);
+void read_data_callback(TimerHandle_t xTimer) {
+    job_t job = {
+        .type = JOB_BMS_DATA
+    };
 
+    if (xQueueSend(job_queue, &job, 0) != pdPASS)
+        if (VERBOSE) ESP_LOGW(TAG, "Queue full, dropping job");
+}
 
-    // construct full message
-    cJSON *message = cJSON_CreateObject();
-
-    cJSON_AddNumberToObject(message, "esp_id", ESP_ID);
-
-    cJSON_AddStringToObject(message, "type", "data");
-
-    cJSON_AddItemToObject(message, "content", data);
-
-    char *data_string = cJSON_PrintUnformatted(message);
-    cJSON_Delete(message);
-
-    return data_string;
+void start_read_data_timed_task() {
+    read_data_timer = xTimerCreate("read_data_timer", pdMS_TO_TICKS(5000), pdTRUE, NULL, read_data_callback);
+    assert(read_data_timer);
+    xTimerStart(read_data_timer, 0);
 }

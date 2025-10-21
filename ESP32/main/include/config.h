@@ -25,6 +25,75 @@
 #define FLASK_IP CONFIG_FLASK_IP
 #define WS_DELAY CONFIG_WS_DELAY
 
+
+// components
+#ifdef CONFIG_JOBS_ENABLED
+    #define JOBS_ENABLED true
+#else
+    #define JOBS_ENABLED false
+#endif
+
+#ifdef CONFIG_READ_BMS_ENABLED
+    #define READ_BMS_ENABLED true
+#else
+    #define READ_BMS_ENABLED false
+#endif
+
+#ifdef CONFIG_READ_GPS_ENABLED
+    #define READ_GPS_ENABLED true
+#else
+    #define READ_GPS_ENABLED false
+#endif
+
+#ifdef CONFIG_WEBSOCKET_MESSAGES_ENABLED
+    #define WEBSOCKET_MESSAGES_ENABLED true
+#else
+    #define WEBSOCKET_MESSAGES_ENABLED false
+#endif
+
+#ifdef CONFIG_DNS_SERVER_ENABLED
+    #define DNS_SERVER_ENABLED true
+#else
+    #define DNS_SERVER_ENABLED false
+#endif
+
+#ifdef CONFIG_SLAVE_ESP32_ENABLED
+    #define SLAVE_ESP32_ENABLED true
+#else
+    #define SLAVE_ESP32_ENABLED false
+#endif
+
+#ifdef CONFIG_MESH_NODE_CONNECT_ENABLED
+    #define MESH_NODE_CONNECT_ENABLED true
+#else
+    #define MESH_NODE_CONNECT_ENABLED false
+#endif
+
+#ifdef CONFIG_MESH_NODE_WEBSOCKET_MESSAGES_ENABLED
+    #define MESH_NODE_WEBSOCKET_MESSAGES_ENABLED true
+#else
+    #define MESH_NODE_WEBSOCKET_MESSAGES_ENABLED false
+#endif
+
+#ifdef CONFIG_MESH_ROOT_MERGE_ENABLED
+    #define MESH_ROOT_MERGE_ENABLED true
+#else
+    #define MESH_ROOT_MERGE_ENABLED false
+#endif
+
+#ifdef CONFIG_LORA_RECEIVE_ENABLED
+    #define LORA_RECEIVE_ENABLED true
+#else
+    #define LORA_RECEIVE_ENABLED false
+#endif
+
+#ifdef CONFIG_LORA_TRANSMIT_ENABLED
+    #define LORA_TRANSMIT_ENABLED true
+#else
+    #define LORA_TRANSMIT_ENABLED false
+#endif
+
+
 // I2C
 #ifdef CONFIG_SCAN_I2C
     #define SCAN_I2C true
