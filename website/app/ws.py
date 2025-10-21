@@ -60,13 +60,13 @@ def forward_to_esp(data: dict) -> None:
         logger.error("ESP32 WebSocket forward error: could not determine node esp_id for request")
         return
 
-    for root_id, info in esp_clients.items():
+    for info in esp_clients.values():
         if node_id in info["mesh_ids"]:
             try:
                 # append node id for mesh groups
                 data["esp_id"] = node_id
-                # send as json array
-                info["ws"].send(json.dumps([data]))
+
+                info["ws"].send(json.dumps(data))
                 return
             except Exception as e:
                 logger.error(f"ESP32 WebSocket forward error: {e}")
