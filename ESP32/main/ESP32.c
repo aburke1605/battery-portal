@@ -26,6 +26,7 @@ esp_netif_t *ap_netif;
 bool is_root = false;
 int num_connected_clients = 0;
 uint8_t ESP_ID = 0;
+telemetry_data_t telemetry_data = {0};
 httpd_handle_t server = NULL;
 bool connected_to_WiFi = false;
 bool connected_to_root = false;
@@ -38,6 +39,11 @@ char forwarded_message[LORA_MAX_PACKET_LEN-2] = "";
 QueueHandle_t job_queue;
 
 void app_main(void) {
+    job_queue = xQueueCreate(10, sizeof(job_t));
+    assert(job_queue != NULL);
+
+    if (JOBS_ENABLED) xTaskCreate(job_worker_freertos_task, "job_worker_freertos_task", 10000, NULL, 5, NULL); // TODO: optimise memory allocation
+
     initialise_nvs();
 
     if (!LORA_IS_RECEIVER) {
@@ -57,6 +63,8 @@ void app_main(void) {
         // store the ID in ESP32 memory
         if (strcmp((char *)data_flash, "") != 0)
             change_esp_id((char*)&data_flash[1]);
+
+        if (READ_BMS_ENABLED) start_read_data_timed_task();
     }
 
     wifi_init();
@@ -68,10 +76,6 @@ void app_main(void) {
         return;
     }
 
-    job_queue = xQueueCreate(10, sizeof(job_t));
-    assert(job_queue != NULL);
-
-    if (JOBS_ENABLED) xTaskCreate(job_worker_freertos_task, "job_worker_freertos_task", 10000, NULL, 5, NULL); // TODO: optimise memory allocation
 
     if (WEBSOCKET_MESSAGES_ENABLED) start_websocket_timed_task();
 

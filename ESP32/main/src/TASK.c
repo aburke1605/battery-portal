@@ -1,5 +1,6 @@
 #include "TASK.h"
 
+#include "BMS.h"
 #include "DNS.h"
 #include "I2C.h"
 #include "LoRa.h"
@@ -30,6 +31,11 @@ void job_worker_freertos_task(void *arg) {
                 case JOB_DNS_REQUEST:
                     snprintf(job_type, sizeof(job_type), "JOB_DNS_REQUEST");
                     handle_dns_request(job.data);
+                    break;
+
+                case JOB_BMS_DATA:
+                    snprintf(job_type, sizeof(job_type), "JOB_BMS_DATA");
+                    read_telemetry_data();
                     break;
 
                 case JOB_INV_TRANSMIT:

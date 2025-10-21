@@ -77,6 +77,12 @@ config JOBS_ENABLED
     help
       Set to false to disable the FreeRTOS job queue processing task.
 
+config READ_BMS_ENABLED
+    bool "BMS data reading task"
+    default y
+    help
+      Set to false to disable the software-timed task which reads telemetry data from the BMS.
+
 config WEBSOCKET_MESSAGES_ENABLED
     bool "WebSocket message handling task"
     default y

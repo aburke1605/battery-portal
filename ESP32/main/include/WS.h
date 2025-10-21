@@ -22,6 +22,8 @@ void process_event(char* data);
 
 void websocket_event_handler(void *arg, esp_event_base_t event_base, int32_t event_id, void *event_data);
 
+char* get_data();
+
 char* convert_data_numbers_for_frontend(char* data_string);
 
 void send_websocket_data();
