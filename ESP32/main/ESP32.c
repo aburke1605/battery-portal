@@ -1,14 +1,15 @@
-#include "include/AP.h"
-#include "include/BMS.h"
-#include "include/DNS.h"
-#include "include/GPS.h"
-#include "include/I2C.h"
-#include "include/INV.h"
-#include "include/LoRa.h"
-#include "include/MESH.h"
-#include "include/WS.h"
-#include "include/config.h"
-#include "include/utils.h"
+#include "AP.h"
+#include "BMS.h"
+#include "DNS.h"
+#include "GPS.h"
+#include "I2C.h"
+#include "INV.h"
+#include "LoRa.h"
+#include "MESH.h"
+#include "TASK.h"
+#include "WS.h"
+#include "config.h"
+#include "utils.h"
 
 #include <inttypes.h>
 #include <stdbool.h>
@@ -30,28 +31,24 @@ bool connected_to_WiFi = false;
 bool connected_to_root = false;
 client_socket client_sockets[WS_CONFIG_MAX_CLIENTS];
 char current_auth_token[UTILS_AUTH_TOKEN_LENGTH] = "";
-QueueHandle_t ws_queue;
 bool LoRa_configured = false;
 LoRa_message all_messages[MESH_SIZE] = {0};
 char forwarded_message[LORA_MAX_PACKET_LEN-2] = "";
 
-TaskHandle_t websocket_task_handle = NULL;
-TaskHandle_t inverter_task_handle = NULL;
-TaskHandle_t mesh_websocket_task_handle = NULL;
-TaskHandle_t merge_root_task_handle = NULL;
+QueueHandle_t job_queue;
 
 void app_main(void) {
     initialise_nvs();
 
-    initialise_spiffs();
-
-    ESP_ERROR_CHECK(i2c_master_init());
-    ESP_LOGI("main", "I2C initialized successfully");
-    if (SCAN_I2C) device_scan();
-
-    uart_init();
-
     if (!LORA_IS_RECEIVER) {
+        initialise_spiffs();
+
+        ESP_ERROR_CHECK(i2c_master_init());
+        ESP_LOGI("main", "I2C initialized successfully");
+        if (SCAN_I2C) device_scan();
+
+        uart_init();
+
         // grab BMS DeviceName from the BMS DataFlash
         uint8_t address[2] = {0};
         convert_uint_to_n_bytes(I2C_DEVICE_NAME_ADDR, address, sizeof(address), true);
@@ -63,7 +60,7 @@ void app_main(void) {
     }
 
     wifi_init();
-    vTaskDelay(pdMS_TO_TICKS(3000));
+    vTaskDelay(pdMS_TO_TICKS(3000)); // TODO: is 3s really necessary?
 
     server = start_webserver();
     if (server == NULL) {
@@ -71,29 +68,25 @@ void app_main(void) {
         return;
     }
 
-    TaskParams dns_server_params = {.stack_size = 2600, .task_name = "dns_server_task"};
-    xTaskCreate(&dns_server_task, dns_server_params.task_name, dns_server_params.stack_size, &dns_server_params, 2, NULL);
+    job_queue = xQueueCreate(10, sizeof(job_t));
+    assert(job_queue != NULL);
 
-    ws_queue = xQueueCreate(WS_QUEUE_SIZE, sizeof(char*));
-    TaskParams message_queue_params = {.stack_size = 3900, .task_name = "message_queue_task"};
-    xTaskCreate(&message_queue_task, message_queue_params.task_name, message_queue_params.stack_size, &message_queue_params, 5, NULL);
+    xTaskCreate(job_worker_freertos_task, "job_worker_freertos_task", 10000, NULL, 5, NULL); // TODO: optimise memory allocation
 
-    TaskParams websocket_params = {.stack_size = 4600, .task_name = "websocket_task"};
-    xTaskCreate(&websocket_task, websocket_params.task_name, websocket_params.stack_size, &websocket_params, 1, &websocket_task_handle);
-
-    TaskParams inverter_params = {.stack_size = 2500, .task_name = "inverter_task"};
-    xTaskCreate(&inverter_task, inverter_params.task_name, inverter_params.stack_size, &inverter_params, 1, &inverter_task_handle);
+    start_websocket_timed_task();
 
     if (!LORA_IS_RECEIVER) {
+        xTaskCreate(dns_server_freertos_task, "dns_server_freertos_task", 2600, NULL, 5, NULL);
+
+        start_inverter_timed_task();
+
         // MESH stuff
         if (!is_root) {
-            TaskParams connect_to_root_params = {.stack_size = 2500, .task_name = "connect_to_root_task"};
-            xTaskCreate(&connect_to_root_task, connect_to_root_params.task_name, connect_to_root_params.stack_size, &connect_to_root_params, 4, NULL);
-            TaskParams mesh_websocket_params = {.stack_size = 3100, .task_name = "mesh_websocket_task"};
-            xTaskCreate(&mesh_websocket_task, mesh_websocket_params.task_name, mesh_websocket_params.stack_size, &mesh_websocket_params, 3, &mesh_websocket_task_handle);
+            start_connect_to_root_timed_task();
+
+            start_mesh_websocket_timed_task();
         } else {
-            TaskParams merge_root_params = {.stack_size = 2600, .task_name = "merge_root_task"};
-            xTaskCreate(&merge_root_task, merge_root_params.task_name, merge_root_params.stack_size, &merge_root_params, 4, &merge_root_task_handle);
+            start_merge_root_timed_task();
         }
     }
 
@@ -101,8 +94,11 @@ void app_main(void) {
     if (LORA_IS_RECEIVER || is_root) {
         lora_init();
 
-        TaskParams lora_params = {.stack_size = 8700, .task_name = "lora_task"};
-        xTaskCreate(lora_task, lora_params.task_name, lora_params.stack_size, &lora_params, 1, NULL);
+        if (LoRa_configured) {
+            start_receive_interrupt_task();
+
+            start_transmit_timed_task();
+        }
     }
 
     while (true) {

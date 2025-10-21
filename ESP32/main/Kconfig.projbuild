@@ -53,6 +53,12 @@ config FLASK_IP
     help
       IP address of machine running Flask app in local network.
 
+config WS_DELAY
+    int "WebSocket message delay (ms)"
+    default 5000
+    help
+      Set the time delay between successive messages sent to WebSocket clients and the web server (ms).
+
 endmenu
 
 
@@ -217,6 +223,12 @@ config UNIT_I2C_ADDR
     default 0x28
     help
       Set the hexadecimal address of the ESP32 controlling the inverter / unit display.
+
+config INV_DELAY
+    int "Message delay (ms)"
+    default 1000
+    help
+      Set the time delay between successive messages sent to inverter ESP32 (ms).
 
 endmenu
 

@@ -1,6 +1,6 @@
-#include "include/GPS.h"
+#include "GPS.h"
 
-#include "include/config.h"
+#include "config.h"
 
 #include <string.h>
 

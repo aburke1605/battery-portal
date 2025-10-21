@@ -16,10 +16,10 @@ enum packet_type {
 
 // `type` must always be first byte in each type of radio packet
 typedef struct __attribute__((packed)) {
-    float t;
-    int d;
-    float lat;
-    float lon;
+    double t;
+    uint32_t d;
+    double lat;
+    double lon;
     uint8_t type;
     uint8_t esp_id;
     uint8_t Q;
@@ -84,12 +84,14 @@ size_t decode_frame(const uint8_t* input, size_t input_len, uint8_t* output);
 
 void binary_to_json(uint8_t* binary_message, cJSON* json_array);
 
-void receive(size_t* full_message_length, bool* chunked);
+void receive();
+
+void start_receive_interrupt_task();
 
 void execute_transmission(uint8_t* message, size_t n_bytes);
 
-void transmit(int64_t* delay_transmission_until);
+void transmit();
 
-void lora_task(void *pvParameters);
+void start_transmit_timed_task();
 
 #endif // LORA_H

@@ -1,10 +1,10 @@
-#include "include/AP.h"
+#include "AP.h"
 
-#include "include/I2C.h"
-#include "include/WS.h"
-#include "include/config.h"
-#include "include/global.h"
-#include "include/utils.h"
+#include "I2C.h"
+#include "WS.h"
+#include "config.h"
+#include "global.h"
+#include "utils.h"
 
 #include <string.h>
 #include <sys/stat.h>
@@ -345,7 +345,6 @@ esp_err_t login_handler(httpd_req_t *req) {
 }
 
 esp_err_t num_clients_handler(httpd_req_t *req) {
-    vTaskSuspend(merge_root_task_handle);
     char response[64];
     snprintf(response, sizeof(response), "{\"num_connected_clients\": %d}", num_connected_clients);
 
@@ -355,7 +354,6 @@ esp_err_t num_clients_handler(httpd_req_t *req) {
     // big delay before resuming to give
     // other AP time to receive message
     vTaskDelay(pdMS_TO_TICKS(10000));
-    vTaskResume(merge_root_task_handle);
 
     return ESP_OK;
 }

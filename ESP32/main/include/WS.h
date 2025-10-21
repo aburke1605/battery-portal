@@ -18,12 +18,14 @@ esp_err_t perform_request(cJSON *message, cJSON *response);
 
 void send_message(const char *message);
 
-void message_queue_task(void *pvParameters);
+void process_event(char* data);
 
 void websocket_event_handler(void *arg, esp_event_base_t event_base, int32_t event_id, void *event_data);
 
 char* convert_data_numbers_for_frontend(char* data_string);
 
-void websocket_task(void *pvParameters);
+void send_websocket_data();
+
+void start_websocket_timed_task();
 
 #endif // WS_H

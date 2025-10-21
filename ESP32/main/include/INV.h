@@ -1,10 +1,12 @@
-#ifndef VIN_H
-#define VIN_H
+#ifndef INV_H
+#define INV_H
 
 #include <stdint.h>
 
+#include "freertos/FreeRTOS.h"
+
 void get_display_data(uint8_t* data);
 
-void inverter_task(void *pvParameters);
+void start_inverter_timed_task();
 
-#endif
+#endif // INV_H
