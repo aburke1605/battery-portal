@@ -42,6 +42,11 @@ void job_worker_freertos_task(void *arg) {
                     send_websocket_data();
                     break;
 
+                case JOB_WS_RECEIVE:
+                    snprintf(job_type, sizeof(job_type), "JOB_WS_RECEIVE");
+                    process_event(job.data);
+                    break;
+
                 case JOB_MESH_CONNECT:
                     snprintf(job_type, sizeof(job_type), "JOB_MESH_CONNECT");
                     connect_to_root();

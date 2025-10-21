@@ -343,6 +343,56 @@ void send_message(const char *message) {
     }
 }
 
+void process_event(char* data) {
+    cJSON *message = cJSON_Parse(data);
+    if (!message) {
+        ESP_LOGE(TAG, "Invalid json: \"%s\"", data);
+        cJSON_Delete(message);
+        return;
+    }
+
+    if (LORA_IS_RECEIVER) {
+        cJSON* type = cJSON_GetObjectItem(message, "type");
+        cJSON* content = cJSON_GetObjectItem(message, "content");
+        if (!(type && content)) {
+            ESP_LOGE(TAG, "Couldn't parse websocket event");
+            return;
+        }
+        if (strcmp(type->valuestring, "response") == 0 && strcmp(content->valuestring, "OK") == 0) {
+            if (VERBOSE) ESP_LOGI(TAG, "Receiver: ignorning acknowledgement response message from web server");
+            return;
+        } else {
+            char* message_string = cJSON_PrintUnformatted(message);
+            if (message_string) {
+                if (VERBOSE) {
+                    ESP_LOGI(TAG, "Receiver: received message from web server:");
+                    ESP_LOGI(TAG, "%s", message_string);
+                    ESP_LOGI(TAG, "adding to outgoing forwarded radio transmissions...");
+                }
+                strncpy(forwarded_message, message_string, strlen(message_string));
+                free(message_string);
+            }
+        }
+    } else {
+        if (VERBOSE) {
+            char* message_string = cJSON_PrintUnformatted(message);
+            if (message_string) {
+                ESP_LOGI(TAG, "WebSocket client: received message from ROOT:");
+                ESP_LOGI(TAG, "%s", message_string);
+            }
+        }
+
+        cJSON *response = cJSON_CreateObject();
+        esp_err_t err = perform_request(message, response);
+
+        char *response_str = cJSON_PrintUnformatted(response);
+        cJSON_Delete(response);
+        if (err == ESP_OK) send_message(response_str);
+        free(response_str);
+    }
+    cJSON_Delete(message);
+}
+
 void websocket_event_handler(void *arg, esp_event_base_t event_base, int32_t event_id, void *event_data) {
     esp_websocket_event_data_t *ws_event_data = (esp_websocket_event_data_t *)event_data;
 
@@ -359,51 +409,24 @@ void websocket_event_handler(void *arg, esp_event_base_t event_base, int32_t eve
         case WEBSOCKET_EVENT_DATA:
             if (ws_event_data->data_len == 0) break;
 
-            cJSON *message = cJSON_Parse((char *)ws_event_data->data_ptr);
-            if (!message) {
-                ESP_LOGE(TAG, "invalid json: \"%s\"", (char *)ws_event_data->data_ptr);
-                cJSON_Delete(message);
+            char *data = malloc(ws_event_data->data_len + 1);
+            if (!data) {
+                ESP_LOGE(TAG, "Couldn't assign memory in websocket event handler");
                 break;
             }
+            memcpy(data, ws_event_data->data_ptr, ws_event_data->data_len);
+            data[ws_event_data->data_len] = '\0';
 
-            if (LORA_IS_RECEIVER) {
-                cJSON* type = cJSON_GetObjectItem(message, "type");
-                cJSON* content = cJSON_GetObjectItem(message, "content");
-                if (type && content) {
-                    if (strcmp(type->valuestring, "response") == 0 && strcmp(content->valuestring, "Ok") == 0) {
-                        if (VERBOSE) ESP_LOGI(TAG, "Receiver: ignorning acknowledgement response message from web server");
-                        break;
-                    }
-                } else {
-                    char* message_string = cJSON_PrintUnformatted(message);
-                    if (message_string) {
-                        if (VERBOSE) {
-                            ESP_LOGI(TAG, "Receiver: received message from web server:");
-                            ESP_LOGI(TAG, "%s", message_string);
-                            ESP_LOGI(TAG, "adding to outgoing forwarded radio transmissions...");
-                        }
-                        strncpy(forwarded_message, message_string, strlen(message_string));
-                        free(message_string);
-                    }
-                }
-            } else {
-                if (VERBOSE) {
-                    char* message_string = cJSON_PrintUnformatted(message);
-                    if (message_string) {
-                        ESP_LOGI(TAG, "Mesh client: received message from ROOT:");
-                        ESP_LOGI(TAG, "%s", message_string);
-                    }
-                }
+            job_t job = {
+                .type = JOB_WS_RECEIVE,
+                .data = data,
+                .size = ws_event_data->data_len
+            };
 
-                cJSON *response = cJSON_CreateObject();
-                esp_err_t err = perform_request(message, response);
-
-                char *response_str = cJSON_PrintUnformatted(response);
-                cJSON_Delete(response);
-                if (err == ESP_OK) send_message(response_str);
-                free(response_str);
+            if (xQueueSend(job_queue, &job, 0) != pdPASS) {
+                if (VERBOSE) ESP_LOGW(TAG, "Queue full, dropping job");
+                free(job.data);
             }
-            cJSON_Delete(message);
 
             break;
 
