@@ -71,22 +71,22 @@ void app_main(void) {
     job_queue = xQueueCreate(10, sizeof(job_t));
     assert(job_queue != NULL);
 
-    xTaskCreate(job_worker_freertos_task, "job_worker_freertos_task", 10000, NULL, 5, NULL); // TODO: optimise memory allocation
+    if (JOBS_ENABLED) xTaskCreate(job_worker_freertos_task, "job_worker_freertos_task", 10000, NULL, 5, NULL); // TODO: optimise memory allocation
 
-    start_websocket_timed_task();
+    if (WEBSOCKET_MESSAGES_ENABLED) start_websocket_timed_task();
 
     if (!LORA_IS_RECEIVER) {
-        xTaskCreate(dns_server_freertos_task, "dns_server_freertos_task", 2600, NULL, 5, NULL);
+        if (DNS_SERVER_ENABLED) xTaskCreate(dns_server_freertos_task, "dns_server_freertos_task", 2600, NULL, 5, NULL);
 
-        start_inverter_timed_task();
+        if (SLAVE_ESP32_ENABLED) start_inverter_timed_task();
 
         // MESH stuff
         if (!is_root) {
-            start_connect_to_root_timed_task();
+            if (MESH_NODE_CONNECT_ENABLED) start_connect_to_root_timed_task();
 
-            start_mesh_websocket_timed_task();
+            if (MESH_NODE_WEBSOCKET_MESSAGES_ENABLED) start_mesh_websocket_timed_task();
         } else {
-            start_merge_root_timed_task();
+            if (MESH_ROOT_MERGE_ENABLED) start_merge_root_timed_task();
         }
     }
 
@@ -95,9 +95,9 @@ void app_main(void) {
         lora_init();
 
         if (LoRa_configured) {
-            start_receive_interrupt_task();
+            if (LORA_RECEIVE_ENABLED) start_receive_interrupt_task();
 
-            start_transmit_timed_task();
+            if (LORA_TRANSMIT_ENABLED) start_transmit_timed_task();
         }
     }
 

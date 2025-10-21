@@ -20,6 +20,10 @@ config AUTH_TOKEN_LENGTH
 
 endmenu
 
+
+
+
+
 menu "[CUSTOM] Developer options"
 
 config VERBOSE
@@ -60,6 +64,71 @@ config WS_DELAY
       Set the time delay between successive messages sent to WebSocket clients and the web server (ms).
 
 endmenu
+
+
+
+
+
+menu "[CUSTOM] Enabled components"
+
+config JOBS_ENABLED
+    bool "Job queue processing task"
+    default y
+    help
+      Set to false to disable the FreeRTOS job queue processing task.
+
+config WEBSOCKET_MESSAGES_ENABLED
+    bool "WebSocket message handling task"
+    default y
+    help
+      Set to false to disable the software-timed task which sends telemetry data to WebSocket clients and the web server.
+
+config DNS_SERVER_ENABLED
+    bool "DNS server task"
+    default y
+    help
+      Set to false to disable the FreeRTOS DNS server task which redirects connected devices to the detail page.
+
+config SLAVE_ESP32_ENABLED
+    bool "Slave ESP32 I2C task"
+    default y
+    help
+      Set to false to disable the software-timed task which sends the current and state of charge to the secondary slave ESP32 over I2C.
+
+config MESH_NODE_CONNECT_ENABLED
+    bool "MESH node connection task"
+    default y
+    help
+      Set to false to disable the software-timed task which connects node ESP32s to an identified root.
+
+config MESH_NODE_WEBSOCKET_MESSAGES_ENABLED
+    bool "MESH node WebSocket message handling task"
+    default y
+    help
+      Set to false to disable the software-timed task which sends telemetry data from node ESP32s to the root.
+
+config MESH_ROOT_MERGE_ENABLED
+    bool "MESH root merger task"
+    default y
+    help
+      Set to false to disable the software-timed task which automatically merges nearby MESH groups.
+
+config LORA_RECEIVE_ENABLED
+    bool "LoRa message receiver task"
+    default y
+    help
+      Set to false to disable the hardware triggered task which handles received LoRa messages.
+
+config LORA_TRANSMIT_ENABLED
+    bool "LoRa message transmitter task"
+    default y
+    help
+      Set to false to disable the software-timed task which broadcasts telemetry data via LoRa transmissions.
+
+endmenu
+
+
+
 
 
 menu "[CUSTOM] BMS Configuration"
@@ -216,6 +285,9 @@ config FULL_ACCESS_CMD_2
 endmenu
 
 
+
+
+
 menu "[CUSTOM] Inverter Configuration"
 
 config UNIT_I2C_ADDR
@@ -231,6 +303,9 @@ config INV_DELAY
       Set the time delay between successive messages sent to inverter ESP32 (ms).
 
 endmenu
+
+
+
 
 
 menu "[CUSTOM] Wi-Fi Configuration"
@@ -254,6 +329,9 @@ config WIFI_AUTO_CONNECT
       Set to true to automatically connect to router with the set SSID.
 
 endmenu
+
+
+
 
 
 menu "[CUSTOM] LoRa Configuration"
