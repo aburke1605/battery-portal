@@ -658,7 +658,7 @@ void dio0_isr_handler(void *arg) {
     job_t job = {
         .type = JOB_LORA_RECEIVE
     };
-    xQueueSendFromISR(job_queue, &job, &woken);
+    xQueueSendToFrontFromISR(job_queue, &job, &woken); // radio receive jobs prioritised
 
     portYIELD_FROM_ISR(woken);
 }
