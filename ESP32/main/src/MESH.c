@@ -125,7 +125,7 @@ void connect_to_root_callback(TimerHandle_t xTimer) {
 }
 
 void start_connect_to_root_timed_task() {
-    connect_to_root_timer = xTimerCreate("connect_to_root_timer", pdMS_TO_TICKS(1000), pdTRUE, NULL, connect_to_root_callback);
+    connect_to_root_timer = xTimerCreate("connect_to_root_timer", pdMS_TO_TICKS(5000), pdTRUE, NULL, connect_to_root_callback);
     assert(connect_to_root_timer);
     xTimerStart(connect_to_root_timer, 0);
 }
@@ -185,7 +185,7 @@ void mesh_websocket_callback(TimerHandle_t xTimer) {
 }
 
 void start_mesh_websocket_timed_task() {
-    mesh_websocket_timer = xTimerCreate("mesh_websocket_timer", pdMS_TO_TICKS(1000), pdTRUE, NULL, mesh_websocket_callback);
+    mesh_websocket_timer = xTimerCreate("mesh_websocket_timer", pdMS_TO_TICKS(5000), pdTRUE, NULL, mesh_websocket_callback);
     assert(mesh_websocket_timer);
     xTimerStart(mesh_websocket_timer, 0);
 }
