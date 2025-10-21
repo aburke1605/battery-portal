@@ -27,6 +27,12 @@ bool is_root = false;
 int num_connected_clients = 0;
 uint8_t ESP_ID = 0;
 telemetry_data_t telemetry_data = {0};
+GPRMC_t gps_data = {
+    // .time = 000000.00,
+    .date = 10100,
+    // .latitude = 0.0,
+    // .longitude = 0.0,
+};
 httpd_handle_t server = NULL;
 bool connected_to_WiFi = false;
 bool connected_to_root = false;
@@ -53,7 +59,11 @@ void app_main(void) {
         ESP_LOGI("main", "I2C initialized successfully");
         if (SCAN_I2C) device_scan();
 
+
         uart_init();
+
+        if (READ_GPS_ENABLED) start_read_gps_timed_task();
+
 
         // grab BMS DeviceName from the BMS DataFlash
         uint8_t address[2] = {0};

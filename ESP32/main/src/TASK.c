@@ -2,6 +2,7 @@
 
 #include "BMS.h"
 #include "DNS.h"
+#include "GPS.h"
 #include "I2C.h"
 #include "LoRa.h"
 #include "MESH.h"
@@ -35,7 +36,12 @@ void job_worker_freertos_task(void *arg) {
 
                 case JOB_BMS_DATA:
                     snprintf(job_type, sizeof(job_type), "JOB_BMS_DATA");
-                    read_telemetry_data();
+                    update_telemetry_data();
+                    break;
+
+                case JOB_GPS_DATA:
+                    snprintf(job_type, sizeof(job_type), "JOB_GPS_DATA");
+                    update_gps();
                     break;
 
                 case JOB_INV_TRANSMIT:

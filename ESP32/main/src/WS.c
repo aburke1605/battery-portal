@@ -447,21 +447,7 @@ char* get_data() {
 
     cJSON_AddNumberToObject(data, "esp_id", ESP_ID);
 
-    GPRMC* gprmc = get_gps();
-    if (gprmc) {
-        cJSON_AddNumberToObject(data, "t", gprmc->time);
-        cJSON_AddNumberToObject(data, "d", gprmc->date);
-        cJSON_AddNumberToObject(data, "lat", gprmc->latitude);
-        cJSON_AddNumberToObject(data, "lon", gprmc->longitude);
-        free(gprmc);
-    } else {
-        cJSON_AddNumberToObject(data, "t", 132600.00);
-        cJSON_AddNumberToObject(data, "d", 230925);
-        cJSON_AddNumberToObject(data, "lat", 53.40680302139558);
-        cJSON_AddNumberToObject(data, "lon", -2.968465812849439);
-    }
-
-    // get_telemetry data from global struct
+    // get telemetry data from global struct
     cJSON_AddNumberToObject(data, "Q", telemetry_data.Q);
     cJSON_AddNumberToObject(data, "H", telemetry_data.H);
     cJSON_AddNumberToObject(data, "aT", telemetry_data.aT);
@@ -482,18 +468,20 @@ char* get_data() {
     cJSON_AddNumberToObject(data, "cT", telemetry_data.cT);
     cJSON_AddNumberToObject(data, "OTC", telemetry_data.OTC);
 
-
     // wifi connection status
     cJSON_AddBoolToObject(data, "wifi", connected_to_WiFi);
+
+    // get GPS data from global struct
+    cJSON_AddNumberToObject(data, "t", gps_data.time);
+    cJSON_AddNumberToObject(data, "d", gps_data.date);
+    cJSON_AddNumberToObject(data, "lat", gps_data.latitude);
+    cJSON_AddNumberToObject(data, "lon", gps_data.longitude);
 
 
     // construct full message
     cJSON *message = cJSON_CreateObject();
-
     cJSON_AddNumberToObject(message, "esp_id", ESP_ID);
-
     cJSON_AddStringToObject(message, "type", "data");
-
     cJSON_AddItemToObject(message, "content", data);
 
     char *data_string = cJSON_PrintUnformatted(message);

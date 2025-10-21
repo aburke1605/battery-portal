@@ -39,6 +39,12 @@
     #define READ_BMS_ENABLED false
 #endif
 
+#ifdef CONFIG_READ_GPS_ENABLED
+    #define READ_GPS_ENABLED true
+#else
+    #define READ_GPS_ENABLED false
+#endif
+
 #ifdef CONFIG_WEBSOCKET_MESSAGES_ENABLED
     #define WEBSOCKET_MESSAGES_ENABLED true
 #else

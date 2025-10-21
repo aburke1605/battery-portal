@@ -92,7 +92,7 @@ int8_t get_sealed_status() {
         return -1; // error
 }
 
-void read_telemetry_data() {
+void update_telemetry_data() {
     uint8_t data_SBS[2] = {0};
     uint8_t address[2] = {0};
     uint8_t data_flash[2] = {0};

@@ -1,6 +1,8 @@
 #include "GPS.h"
 
+#include "TASK.h"
 #include "config.h"
+#include "global.h"
 
 #include <string.h>
 
@@ -8,6 +10,8 @@
 #include "esp_log.h"
 
 static const char* TAG = "GPS";
+
+static TimerHandle_t read_gps_timer;
 
 void uart_init() {
     const uart_config_t uart_config = {
@@ -49,7 +53,7 @@ double nmea_to_decimal(double coord, char hemi) {
     return decimal;
 }
 
-GPRMC* parse_gprmc(char* gprmc) {
+void parse_gprmc(char* gprmc) {
     // initialise empty array
     const size_t n_fields = 12;
     const size_t max_str_len = 10;
@@ -77,30 +81,28 @@ GPRMC* parse_gprmc(char* gprmc) {
     }
     if (strcmp(data[0], "V") == 0) {
         ESP_LOGE(TAG, "No fix: GPS data void!");
-        return NULL;
+        return;
     }
 
-    GPRMC* sentence = malloc(sizeof(GPRMC));
-    sentence->time = atof(data[0]);
-    sentence->status = *data[1];
-    sentence->latitude = nmea_to_decimal(atof(data[2]), *data[3]);
-    sentence->lat_dir = *data[3];
-    sentence->longitude = nmea_to_decimal(atof(data[4]), *data[5]);
-    sentence->long_dir = *data[5];
-    sentence->speed = atof(data[6]);
-    sentence->course = atof(data[7]);
-    sentence->date = atoi(data[8]);
-    sentence->magnetic_variation = atoi(data[9]);
-    sentence->magnetic_variation_dircetion = atoi(data[10]);
-    sentence->mode = *data[11];
-    if (sentence->mode != 'A') {
-        ESP_LOGE(TAG, "Mode not autonomous!");
-        return NULL;
-    }
-    return sentence;
+    gps_data.time = atof(data[0]);
+    gps_data.status = *data[1];
+    gps_data.latitude = nmea_to_decimal(atof(data[2]), *data[3]);
+    gps_data.lat_dir = *data[3];
+    gps_data.longitude = nmea_to_decimal(atof(data[4]), *data[5]);
+    gps_data.long_dir = *data[5];
+    gps_data.speed = atof(data[6]);
+    gps_data.course = atof(data[7]);
+    gps_data.date = atoi(data[8]);
+    gps_data.magnetic_variation = atoi(data[9]);
+    gps_data.magnetic_variation_dircetion = atoi(data[10]);
+    gps_data.mode = *data[11];
+
+    if (gps_data.mode != 'A') ESP_LOGE(TAG, "Mode not autonomous!");
+
+    return;
 }
 
-GPRMC* get_gps() {
+void update_gps() {
     uint8_t buff[GPS_BUFF_SIZE];
     int len = uart_read_bytes(GPS_UART_NUM, buff, GPS_BUFF_SIZE - 1, pdMS_TO_TICKS(1000));
     if (len > 0) {
@@ -116,7 +118,7 @@ GPRMC* get_gps() {
 
                         if (!validate_nmea_checksum(line)) {
                             ESP_LOGE(TAG, "Error in checksum!");
-                            return NULL;
+                            return;
                         }
 
                         char type[6];
@@ -130,8 +132,9 @@ GPRMC* get_gps() {
                             strncpy(data, &line[sizeof(type)+1], data_length);
                             data[data_length] = '\0';
 
-                            GPRMC* sentence = parse_gprmc((char*)data);
-                            return sentence;
+                            parse_gprmc((char*)data);
+
+                            return;
                         }
                         i = j;
                         j = len; // skip to end of loop
@@ -143,5 +146,20 @@ GPRMC* get_gps() {
 
     if (VERBOSE) ESP_LOGW(TAG, "No GPS lock");
 
-    return NULL;
+    return;
+}
+
+void read_gps_callback(TimerHandle_t xTimer) {
+    job_t job = {
+        .type = JOB_GPS_DATA
+    };
+
+    if (xQueueSend(job_queue, &job, 0) != pdPASS)
+        if (VERBOSE) ESP_LOGW(TAG, "Queue full, dropping job");
+}
+
+void start_read_gps_timed_task() {
+    read_gps_timer = xTimerCreate("read_gps_timer", pdMS_TO_TICKS(15000), pdTRUE, NULL, read_gps_callback);
+    assert(read_gps_timer);
+    xTimerStart(read_gps_timer, 0);
 }

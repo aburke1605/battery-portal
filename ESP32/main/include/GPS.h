@@ -16,7 +16,7 @@ typedef struct {
     int magnetic_variation;
     int magnetic_variation_dircetion;
     char mode;
-} GPRMC;
+} GPRMC_t;
 
 void uart_init();
 
@@ -24,8 +24,10 @@ bool validate_nmea_checksum(const char *sentence);
 
 double nmea_to_decimal(double coord, char hemi);
 
-GPRMC* parse_gprmc(char* gprmc);
+void parse_gprmc(char* gprmc);
 
-GPRMC* get_gps();
+void update_gps();
+
+void start_read_gps_timed_task() ;
 
 #endif

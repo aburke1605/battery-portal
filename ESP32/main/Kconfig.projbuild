@@ -83,6 +83,12 @@ config READ_BMS_ENABLED
     help
       Set to false to disable the software-timed task which reads telemetry data from the BMS.
 
+config READ_GPS_ENABLED
+    bool "GPS data reading task"
+    default y
+    help
+      Set to false to disable the software-timed task which reads GPS data.
+
 config WEBSOCKET_MESSAGES_ENABLED
     bool "WebSocket message handling task"
     default y

@@ -35,7 +35,7 @@ void full_access();
 
 int8_t get_sealed_status();
 
-void read_telemetry_data();
+void update_telemetry_data();
 
 void start_read_data_timed_task();
 

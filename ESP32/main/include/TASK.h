@@ -6,6 +6,7 @@
 typedef enum {
     JOB_DNS_REQUEST,
     JOB_BMS_DATA,
+    JOB_GPS_DATA,
     JOB_WS_SEND,
     JOB_WS_RECEIVE,
     JOB_INV_TRANSMIT,
