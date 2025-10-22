@@ -160,13 +160,13 @@ config I2C_ADDR
 
 config MASTER_SDA_PIN
     int "I2C Serial Data (SDA) GPIO"
-    default 22
+    default 47
     help
       Set the GPIO number for the I2C SDA line.
 
 config MASTER_SCL_PIN
     int "I2C Serial Clock (SCL) GPIO"
-    default 21
+    default 48
     help
       Set the GPIO number for the I2C SCL line.
 
