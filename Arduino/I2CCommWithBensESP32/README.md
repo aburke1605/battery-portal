@@ -8,3 +8,6 @@ All that needs done is therefore to translate the `master` example to ESP-IDF so
 
 For testing, we can run the `slave` example in the Arduino IDE as we don't need a working ESP-IDF version.
 In fact, ESP-IDF is yet to provide I2C slave functionality on ESP32s (it currently exists only on ESP32-S3/C3/H2 modules, apparently).
+
+Original link:\
+    https://randomnerdtutorials.com/esp32-i2c-master-slave-arduino

@@ -6,7 +6,10 @@
 
 #include "Wire.h"
 
-#define I2C_DEV_ADDR 0x55
+#define I2C_DEV_ADDR 0x28
+/*
+  The SDA should be wired to GPIO 21 and the SCL to GPIO 22
+*/
 
 uint32_t i = 0;
 
