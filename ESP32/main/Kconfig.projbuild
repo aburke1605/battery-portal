@@ -95,11 +95,11 @@ config WEBSOCKET_MESSAGES_ENABLED
     help
       Set to false to disable the software-timed task which sends telemetry data to WebSocket clients and the web server.
 
-config DNS_SERVER_ENABLED
-    bool "DNS server task"
+config HTTP_SERVER_ENABLED
+    bool "HTTP server task"
     default y
     help
-      Set to false to disable the FreeRTOS DNS server task which redirects connected devices to the detail page.
+      Set to false to disable the HTTP server and FreeRTOS DNS server task which redirects connected devices to the detail page.
 
 config SLAVE_ESP32_ENABLED
     bool "Slave ESP32 I2C task"

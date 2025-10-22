@@ -82,7 +82,7 @@ void app_main(void) {
     if (WEBSOCKET_MESSAGES_ENABLED) start_websocket_timed_task();
 
     if (!LORA_IS_RECEIVER) {
-        if (DNS_SERVER_ENABLED) xTaskCreate(dns_server_freertos_task, "dns_server_freertos_task", 2600, NULL, 5, NULL);
+        if (HTTP_SERVER_ENABLED) xTaskCreate(dns_server_freertos_task, "dns_server_freertos_task", 2600, NULL, 5, NULL);
 
         if (SLAVE_ESP32_ENABLED) start_inverter_timed_task();
 
