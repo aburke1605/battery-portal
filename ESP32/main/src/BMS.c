@@ -142,7 +142,7 @@ void update_telemetry_data() {
 
 void read_data_callback(TimerHandle_t xTimer) {
     job_t job = {
-        .type = JOB_BMS_DATA
+        .type = JOB_UPDATE_DATA
     };
 
     if (xQueueSend(job_queue, &job, 0) != pdPASS)

@@ -19,7 +19,7 @@ void job_worker_freertos_task(void *arg) {
     job_t job;
     unsigned int n_jobs_remaining = 0;
     bool received = false;
-    char job_type[18];
+    char job_type[32];
     int64_t start_time = 0;
     int64_t end_time = 0;
 
@@ -34,14 +34,18 @@ void job_worker_freertos_task(void *arg) {
                     handle_dns_request(job.data);
                     break;
 
-                case JOB_BMS_DATA:
-                    snprintf(job_type, sizeof(job_type), "JOB_BMS_DATA");
-                    update_telemetry_data();
-                    break;
-
-                case JOB_GPS_DATA:
-                    snprintf(job_type, sizeof(job_type), "JOB_GPS_DATA");
-                    update_gps();
+                case JOB_UPDATE_DATA:
+                    char bms[5] = "";
+                    char gps[5] = "";
+                    if (READ_BMS_ENABLED) {
+                        update_telemetry_data();
+                        strcpy(bms, " BMS");
+                    }
+                    if (READ_GPS_ENABLED) {
+                        update_gps();
+                        strcpy(gps, " GPS");
+                    }
+                    snprintf(job_type, sizeof(job_type), "JOB_UPDATE_DATA:%s%s", bms, gps);
                     break;
 
                 case JOB_INV_TRANSMIT:

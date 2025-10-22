@@ -28,6 +28,4 @@ void parse_gprmc(char* gprmc);
 
 void update_gps();
 
-void start_read_gps_timed_task() ;
-
 #endif

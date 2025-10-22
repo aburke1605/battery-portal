@@ -51,10 +51,10 @@
     #define WEBSOCKET_MESSAGES_ENABLED false
 #endif
 
-#ifdef CONFIG_DNS_SERVER_ENABLED
-    #define DNS_SERVER_ENABLED true
+#ifdef CONFIG_HTTP_SERVER_ENABLED
+    #define HTTP_SERVER_ENABLED true
 #else
-    #define DNS_SERVER_ENABLED false
+    #define HTTP_SERVER_ENABLED false
 #endif
 
 #ifdef CONFIG_SLAVE_ESP32_ENABLED
