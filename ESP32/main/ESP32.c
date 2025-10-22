@@ -43,7 +43,7 @@ void app_main(void) {
     job_queue = xQueueCreate(10, sizeof(job_t));
     assert(job_queue != NULL);
 
-    if (JOBS_ENABLED) xTaskCreate(job_worker_freertos_task, "job_worker_freertos_task", 10000, NULL, 5, NULL); // TODO: optimise memory allocation
+    if (JOBS_ENABLED) xTaskCreate(job_worker_freertos_task, "job_worker_freertos_task", 3700, NULL, 5, NULL);
 
     initialise_nvs();
 
