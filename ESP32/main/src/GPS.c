@@ -11,8 +11,6 @@
 
 static const char* TAG = "GPS";
 
-static TimerHandle_t read_gps_timer;
-
 void uart_init() {
     const uart_config_t uart_config = {
         .baud_rate = 9600, // typical for NEO-6M
