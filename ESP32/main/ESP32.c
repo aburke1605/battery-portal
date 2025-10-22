@@ -70,15 +70,12 @@ void app_main(void) {
             change_esp_id((char*)&data_flash[1]);
 
         if (READ_BMS_ENABLED) start_read_data_timed_task();
-    }
 
-    wifi_init();
-    vTaskDelay(pdMS_TO_TICKS(3000)); // TODO: is 3s really necessary?
 
-    server = start_webserver();
-    if (server == NULL) {
-        ESP_LOGE("main", "Failed to start web server!");
-        return;
+        // TODO: this should only be started if a task which uses `server` is enabled
+        wifi_init();
+        server = start_webserver();
+        if (server == NULL) ESP_LOGE("main", "Failed to start web server!");
     }
 
 
