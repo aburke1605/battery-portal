@@ -40,7 +40,6 @@ esp_err_t i2c_master_init(void) {
     err |= i2c_master_bus_add_device(bms_bus, &bms_cfg, &bms_device);
 
 
-
     // INV bus
     i2c_master_bus_config_t inv_bus_cfg = {
         .clk_source = I2C_CLK_SRC_DEFAULT,
@@ -51,7 +50,7 @@ esp_err_t i2c_master_init(void) {
         .flags.enable_internal_pullup = true,
     };
 
-    esp_err_t err = i2c_new_master_bus(&inv_bus_cfg, &bms_bus);
+    err = i2c_new_master_bus(&inv_bus_cfg, &bms_bus);
     if (err != ESP_OK) return err;
 
     i2c_device_config_t inv_cfg = {
