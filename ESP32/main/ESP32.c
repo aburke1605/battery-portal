@@ -50,15 +50,12 @@ void app_main(void) {
     if (!LORA_IS_RECEIVER) {
         initialise_spiffs();
 
+
         ESP_ERROR_CHECK(i2c_master_init());
         ESP_LOGI("main", "I2C initialized successfully");
         if (SCAN_I2C) device_scan();
 
-
         uart_init();
-
-        if (READ_GPS_ENABLED) start_read_gps_timed_task();
-
 
         // grab BMS DeviceName from the BMS DataFlash
         uint8_t address[2] = {0};
@@ -69,7 +66,7 @@ void app_main(void) {
         if (strcmp((char *)data_flash, "") != 0)
             change_esp_id((char*)&data_flash[1]);
 
-        if (READ_BMS_ENABLED) start_read_data_timed_task();
+        if (READ_BMS_ENABLED || READ_GPS_ENABLED) start_read_data_timed_task();
 
 
         // TODO: this should only be started if a task which uses `server` is enabled
