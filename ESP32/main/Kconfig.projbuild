@@ -300,19 +300,43 @@ endmenu
 
 
 
+menu "[CUSTOM] External I2C Device Configuration"
+
+    config EXT_SDA_PIN
+        int "I2C Serial Data (SDA) GPIO"
+        default 4
+        help
+          Set the GPIO number for the SDA line to external I2C devices.
+
+    config EXT_SCL_PIN
+        int "I2C Serial Clock (SCL) GPIO"
+        default 25
+        help
+          Set the GPIO number for the SCL line to external I2C devices.
+
+    menu "Slave ESP32"
+
+        config SLAVE_I2C_ADDR
+            hex "Slave ESP32 I2C Address"
+            default 0x28
+            help
+              Set the hexadecimal address of the ESP32 controlling the inverter / unit display.
+
+        config SLAVE_DELAY
+            int "Message delay (ms)"
+            default 1000
+            help
+              Set the time delay between successive messages sent to the ESP32 (ms).
+
+    endmenu
+
+endmenu
+
+
+
+
+
 menu "[CUSTOM] Inverter Configuration"
-
-config UNIT_I2C_ADDR
-    hex "Inverter Unit I2C Address"
-    default 0x28
-    help
-      Set the hexadecimal address of the ESP32 controlling the inverter / unit display.
-
-config INV_DELAY
-    int "Message delay (ms)"
-    default 1000
-    help
-      Set the time delay between successive messages sent to inverter ESP32 (ms).
 
 endmenu
 

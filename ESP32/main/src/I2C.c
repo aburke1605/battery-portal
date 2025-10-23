@@ -1,8 +1,8 @@
 #include "I2C.h"
 
+#include "SLAVE.h"
 #include "config.h"
 #include "utils.h"
-#include "INV.h"
 
 #include <stdbool.h>
 
@@ -11,42 +11,59 @@
 #include "esp_log.h"
 #include "freertos/FreeRTOS.h"
 
-static i2c_master_bus_handle_t i2c_bus = NULL;
+static i2c_master_bus_handle_t bms_bus = NULL;
 static i2c_master_dev_handle_t bms_device = NULL;
-static i2c_master_dev_handle_t inv_device = NULL;
+
+static i2c_master_bus_handle_t ext_bus = NULL;
+static i2c_master_dev_handle_t slave_esp32_device = NULL;
 
 static const char* TAG = "I2C";
 
 esp_err_t i2c_master_init(void) {
-    i2c_master_bus_config_t bus_cfg = {
+    // BMS bus
+    i2c_master_bus_config_t bms_bus_cfg = {
         .clk_source = I2C_CLK_SRC_DEFAULT,
-        .i2c_port = I2C_MASTER_NUM,
+        .i2c_port = I2C_NUM_0,
         .scl_io_num = I2C_MASTER_SCL_IO,
         .sda_io_num = I2C_MASTER_SDA_IO,
         .glitch_ignore_cnt = 0,
         .flags.enable_internal_pullup = true,
     };
 
-    esp_err_t err = i2c_new_master_bus(&bus_cfg, &i2c_bus);
+    esp_err_t err = i2c_new_master_bus(&bms_bus_cfg, &bms_bus);
     if (err != ESP_OK) return err;
 
     i2c_device_config_t bms_cfg = {
         .device_address = I2C_ADDR,
         .scl_speed_hz = I2C_MASTER_FREQ_HZ
     };
-    err |= i2c_master_bus_add_device(i2c_bus, &bms_cfg, &bms_device);
+    err |= i2c_master_bus_add_device(bms_bus, &bms_cfg, &bms_device);
 
-    i2c_device_config_t inv_cfg = {
-        .device_address = UNIT_I2C_ADDR,
+
+    // slave bus
+    i2c_master_bus_config_t ext_bus_cfg = {
+        .clk_source = I2C_CLK_SRC_DEFAULT,
+        .i2c_port = I2C_NUM_1,
+        .scl_io_num = EXT_SCL_PIN,
+        .sda_io_num = EXT_SDA_PIN,
+        .glitch_ignore_cnt = 0,
+        .flags.enable_internal_pullup = true,
+    };
+
+    err = i2c_new_master_bus(&ext_bus_cfg, &ext_bus);
+    if (err != ESP_OK) return err;
+
+    i2c_device_config_t slave_esp32_cfg = {
+        .device_address = SLAVE_I2C_ADDR,
         .scl_speed_hz = I2C_MASTER_FREQ_HZ
     };
-    err |= i2c_master_bus_add_device(i2c_bus, &inv_cfg, &inv_device);
+    err |= i2c_master_bus_add_device(ext_bus, &slave_esp32_cfg, &slave_esp32_device);
 
     return err;
 }
 
 esp_err_t check_device() {
-    esp_err_t ret = i2c_master_probe(i2c_bus, I2C_ADDR, I2C_MASTER_TIMEOUT_MS);
+    esp_err_t ret = i2c_master_probe(bms_bus, I2C_ADDR, I2C_MASTER_TIMEOUT_MS);
     if (ret != ESP_OK) ESP_LOGE(TAG, "I2C device not found at address 0x%x.", I2C_ADDR);
 
     return ret;
@@ -56,7 +73,7 @@ void device_scan(void) {
     ESP_LOGI(TAG, "Scanning for devices...");
     uint8_t n_devices = 0;
     for (uint8_t i = 1; i < 127; i++) {
-        esp_err_t ret = i2c_master_probe(i2c_bus, i, pdMS_TO_TICKS(1000));
+        esp_err_t ret = i2c_master_probe(bms_bus, i, pdMS_TO_TICKS(1000));
 
         if (ret == ESP_OK) {
             ESP_LOGI(TAG, "I2C device found at address 0x%02X", i);
@@ -158,20 +175,20 @@ void write_data_flash(uint8_t* address, size_t address_size, uint8_t* data, size
     vTaskDelay(pdMS_TO_TICKS(100));
 }
 
-void write_to_unit() {
-    uint8_t data[4] = {0};
+void write_to_slave_esp32() {
+    uint8_t data[3] = {0};
     get_display_data(data);
 
-    esp_err_t ret = i2c_master_transmit(inv_device, data, sizeof(data), I2C_MASTER_TIMEOUT_MS);
+    esp_err_t ret = i2c_master_transmit(slave_esp32_device, data, sizeof(data), I2C_MASTER_TIMEOUT_MS);
     if (ret != ESP_OK) {
         ESP_LOGE(TAG, "Failed to write to Ben's ESP32!");
         return;
     }
 }
 
-void read_from_unit() {
+void read_from_slave_esp32() {
     uint8_t data[16] = {0};
-    i2c_master_receive(inv_device, data, sizeof(data), I2C_MASTER_TIMEOUT_MS);
+    i2c_master_receive(slave_esp32_device, data, sizeof(data), I2C_MASTER_TIMEOUT_MS);
     printf("requestFrom: %zu\n", sizeof(data));
     for (uint8_t i=0; i<sizeof(data); i++)
         printf("0x%x ", data[i]);
