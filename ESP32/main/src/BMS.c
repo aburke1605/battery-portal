@@ -99,45 +99,45 @@ void update_telemetry_data() {
     uint8_t block_data_flash[32] = {0};
 
     // read sensor data
-    read_SBS_data(I2C_RELATIVE_STATE_OF_CHARGE_ADDR, data_SBS, sizeof(data_SBS));
-    telemetry_data.Q = data_SBS[1] << 8 | data_SBS[0];
+    read_SBS_data(I2C_RELATIVE_STATE_OF_CHARGE_ADDR, data_SBS, 1);
+    telemetry_data.Q = (uint8_t)data_SBS[0];
 
-    read_SBS_data(I2C_STATE_OF_HEALTH_ADDR, data_SBS, sizeof(data_SBS));
-    telemetry_data.H = data_SBS[1] << 8 | data_SBS[0];
+    read_SBS_data(I2C_STATE_OF_HEALTH_ADDR, data_SBS, 1);
+    telemetry_data.H = (uint8_t)data_SBS[0];
 
-    read_SBS_data(I2C_TEMPERATURE_ADDR, data_SBS, sizeof(data_SBS));
-    telemetry_data.aT = round_to_dp((float)(data_SBS[1] << 8 | data_SBS[0]) / 10.0 - 273.15, 1);
+    read_SBS_data(I2C_TEMPERATURE_ADDR, data_SBS, 2);
+    telemetry_data.aT = (uint16_t)(data_SBS[1] << 8 | data_SBS[0]);
 
-    read_SBS_data(I2C_VOLTAGE_ADDR, data_SBS, sizeof(data_SBS));
-    telemetry_data.V = round_to_dp((float)((int16_t)(data_SBS[1] << 8 | data_SBS[0])) / 1000.0, 1);
+    read_SBS_data(I2C_VOLTAGE_ADDR, data_SBS, 2);
+    telemetry_data.V = (uint16_t)(data_SBS[1] << 8 | data_SBS[0]);
 
-    read_SBS_data(I2C_CURRENT_ADDR, data_SBS, sizeof(data_SBS));
-    telemetry_data.I = round_to_dp((float)((int16_t)(data_SBS[1] << 8 | data_SBS[0])) / 1000.0, 1);
+    read_SBS_data(I2C_CURRENT_ADDR, data_SBS, 2);
+    telemetry_data.I = (int16_t)(data_SBS[1] << 8 | data_SBS[0]);
 
     convert_uint_to_n_bytes(I2C_DA_STATUS_1_ADDR, address, sizeof(address), true);
     read_data_flash(address, sizeof(address), block_data_flash, sizeof(block_data_flash));
-    telemetry_data.V1 = round_to_dp((float)((int16_t)(block_data_flash[1] << 8 | block_data_flash[0])) / 1000.0, 2);
-    telemetry_data.V2 = round_to_dp((float)((int16_t)(block_data_flash[3] << 8 | block_data_flash[2])) / 1000.0, 2);
-    telemetry_data.V3 = round_to_dp((float)((int16_t)(block_data_flash[5] << 8 | block_data_flash[4])) / 1000.0, 2);
-    telemetry_data.V4 = round_to_dp((float)((int16_t)(block_data_flash[7] << 8 | block_data_flash[6])) / 1000.0, 2);
-    telemetry_data.I1 = round_to_dp((float)((int16_t)(block_data_flash[13] << 8 | block_data_flash[12])) / 1000.0, 2);
-    telemetry_data.I2 = round_to_dp((float)((int16_t)(block_data_flash[15] << 8 | block_data_flash[14])) / 1000.0, 2);
-    telemetry_data.I3 = round_to_dp((float)((int16_t)(block_data_flash[17] << 8 | block_data_flash[16])) / 1000.0, 2);
-    telemetry_data.I4 = round_to_dp((float)((int16_t)(block_data_flash[19] << 8 | block_data_flash[18])) / 1000.0, 2);
+    telemetry_data.V1 = (uint16_t)(block_data_flash[1] << 8 | block_data_flash[0]);
+    telemetry_data.V2 = (uint16_t)(block_data_flash[3] << 8 | block_data_flash[2]);
+    telemetry_data.V3 = (uint16_t)(block_data_flash[5] << 8 | block_data_flash[4]);
+    telemetry_data.V4 = (uint16_t)(block_data_flash[7] << 8 | block_data_flash[6]);
+    telemetry_data.I1 = (int16_t)(block_data_flash[13] << 8 | block_data_flash[12]);
+    telemetry_data.I2 = (int16_t)(block_data_flash[15] << 8 | block_data_flash[14]);
+    telemetry_data.I3 = (int16_t)(block_data_flash[17] << 8 | block_data_flash[16]);
+    telemetry_data.I4 = (int16_t)(block_data_flash[19] << 8 | block_data_flash[18]);
 
     convert_uint_to_n_bytes(I2C_DA_STATUS_2_ADDR, address, sizeof(address), true);
     read_data_flash(address, sizeof(address), block_data_flash, sizeof(block_data_flash));
-    telemetry_data.T1 = round_to_dp((float)(block_data_flash[3] << 8 | block_data_flash[2]) / 10.0 - 273.15, 2);
-    telemetry_data.T2 = round_to_dp((float)(block_data_flash[5] << 8 | block_data_flash[4]) / 10.0 - 273.15, 2);
-    telemetry_data.T3 = round_to_dp((float)(block_data_flash[7] << 8 | block_data_flash[6]) / 10.0 - 273.15, 2);
-    telemetry_data.T4 = round_to_dp((float)(block_data_flash[9] << 8 | block_data_flash[8]) / 10.0 - 273.15, 2);
-    telemetry_data.cT = round_to_dp((float)(block_data_flash[11] << 8 | block_data_flash[10]) / 10.0 - 273.15, 1);
+    telemetry_data.T1 = (uint16_t)(block_data_flash[3] << 8 | block_data_flash[2]);
+    telemetry_data.T2 = (uint16_t)(block_data_flash[5] << 8 | block_data_flash[4]);
+    telemetry_data.T3 = (uint16_t)(block_data_flash[7] << 8 | block_data_flash[6]);
+    telemetry_data.T4 = (uint16_t)(block_data_flash[9] << 8 | block_data_flash[8]);
+    telemetry_data.cT = (uint16_t)(block_data_flash[11] << 8 | block_data_flash[10]);
 
 
     // configurable data too
     convert_uint_to_n_bytes(I2C_OTC_THRESHOLD_ADDR, address, sizeof(address), true);
     read_data_flash(address, sizeof(address), data_flash, sizeof(data_flash));
-    telemetry_data.OTC = round_to_dp((float)(data_flash[1] << 8 | data_flash[0]) / 10.0, 1);
+    telemetry_data.OTC = (int16_t)(data_flash[1] << 8 | data_flash[0]);
 }
 
 void read_data_callback(TimerHandle_t xTimer) {

@@ -23,7 +23,7 @@ esp_err_t i2c_master_init(void) {
     // BMS bus
     i2c_master_bus_config_t bms_bus_cfg = {
         .clk_source = I2C_CLK_SRC_DEFAULT,
-        .i2c_port = I2C_MASTER_NUM,
+        .i2c_port = I2C_NUM_0,
         .scl_io_num = I2C_MASTER_SCL_IO,
         .sda_io_num = I2C_MASTER_SDA_IO,
         .glitch_ignore_cnt = 0,
@@ -43,18 +43,18 @@ esp_err_t i2c_master_init(void) {
     // INV bus
     i2c_master_bus_config_t inv_bus_cfg = {
         .clk_source = I2C_CLK_SRC_DEFAULT,
-        .i2c_port = I2C_MASTER_NUM,
-        .scl_io_num = 8,
-        .sda_io_num = 9,
+        .i2c_port = I2C_NUM_1,
+        .scl_io_num = INV_SCL_PIN,
+        .sda_io_num = INV_SDA_PIN,
         .glitch_ignore_cnt = 0,
         .flags.enable_internal_pullup = true,
     };
 
-    err = i2c_new_master_bus(&inv_bus_cfg, &bms_bus);
+    err = i2c_new_master_bus(&inv_bus_cfg, &inv_bus);
     if (err != ESP_OK) return err;
 
     i2c_device_config_t inv_cfg = {
-        .device_address = UNIT_I2C_ADDR,
+        .device_address = INV_I2C_ADDR,
         .scl_speed_hz = I2C_MASTER_FREQ_HZ
     };
     err |= i2c_master_bus_add_device(inv_bus, &inv_cfg, &inv_device);
@@ -176,7 +176,7 @@ void write_data_flash(uint8_t* address, size_t address_size, uint8_t* data, size
 }
 
 void write_to_unit() {
-    uint8_t data[4] = {0};
+    uint8_t data[3] = {0};
     get_display_data(data);
 
     esp_err_t ret = i2c_master_transmit(inv_device, data, sizeof(data), I2C_MASTER_TIMEOUT_MS);
