@@ -44,8 +44,8 @@ esp_err_t i2c_master_init(void) {
     i2c_master_bus_config_t inv_bus_cfg = {
         .clk_source = I2C_CLK_SRC_DEFAULT,
         .i2c_port = I2C_NUM_1,
-        .scl_io_num = 25,
-        .sda_io_num = 4,
+        .scl_io_num = INV_SCL_PIN,
+        .sda_io_num = INV_SDA_PIN,
         .glitch_ignore_cnt = 0,
         .flags.enable_internal_pullup = true,
     };
@@ -54,7 +54,7 @@ esp_err_t i2c_master_init(void) {
     if (err != ESP_OK) return err;
 
     i2c_device_config_t inv_cfg = {
-        .device_address = UNIT_I2C_ADDR,
+        .device_address = INV_I2C_ADDR,
         .scl_speed_hz = I2C_MASTER_FREQ_HZ
     };
     err |= i2c_master_bus_add_device(inv_bus, &inv_cfg, &inv_device);
