@@ -6,7 +6,10 @@
 
 #include "Wire.h"
 
-#define I2C_DEV_ADDR 0x55
+#define I2C_DEV_ADDR 0x28
+/*
+  The SDA should be wired to GPIO 21 and the SCL to GPIO 22
+*/
 
 uint32_t i = 0;
 
@@ -18,11 +21,21 @@ void onRequest() {
 }
 
 void onReceive(int len) {
+  if (len != 3) return; // need 3 bytes
+
+  uint8_t buf[3];
+  for (int i = 0; i < len && i < 3; i++) buf[i] = Wire.read();
+
+  // little-endian
+  uint8_t soc = buf[0];
+  int16_t current = buf[1] | (buf[2] << 8);
+
   Serial.printf("onReceive[%d]: ", len);
-  while (Wire.available()) {
-    Serial.write(Wire.read());
-  }
+  for (int i = 0; i < len; i++) Serial.printf("0x%02X ", buf[i]);
   Serial.println();
+
+  Serial.printf("State of Charge: %u %%\n", soc);
+  Serial.printf("Current: %d mA\n", current);
 }
 
 void setup() {
