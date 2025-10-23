@@ -150,7 +150,7 @@ void read_data_callback(TimerHandle_t xTimer) {
 }
 
 void start_read_data_timed_task() {
-    read_data_timer = xTimerCreate("read_data_timer", pdMS_TO_TICKS(5000), pdTRUE, NULL, read_data_callback);
+    read_data_timer = xTimerCreate("read_data_timer", pdMS_TO_TICKS(15000), pdTRUE, NULL, read_data_callback);
     assert(read_data_timer);
     xTimerStart(read_data_timer, 0);
 }

@@ -1,4 +1,4 @@
-#include "INV.h"
+#include "SLAVE.h"
 
 #include "I2C.h"
 #include "TASK.h"
@@ -8,7 +8,7 @@
 #include "esp_log.h"
 #include "freertos/FreeRTOS.h"
 
-static const char* TAG = "INV";
+static const char* TAG = "SLAVE";
 
 static TimerHandle_t slave_esp32_timer;
 

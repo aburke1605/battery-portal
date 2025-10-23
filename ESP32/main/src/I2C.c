@@ -1,8 +1,8 @@
 #include "I2C.h"
 
+#include "SLAVE.h"
 #include "config.h"
 #include "utils.h"
-#include "INV.h"
 
 #include <stdbool.h>
 
@@ -40,7 +40,7 @@ esp_err_t i2c_master_init(void) {
     err |= i2c_master_bus_add_device(bms_bus, &bms_cfg, &bms_device);
 
 
-    // INV bus
+    // slave bus
     i2c_master_bus_config_t ext_bus_cfg = {
         .clk_source = I2C_CLK_SRC_DEFAULT,
         .i2c_port = I2C_NUM_1,
