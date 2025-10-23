@@ -450,23 +450,23 @@ char* get_data() {
     // get telemetry data from global struct
     cJSON_AddNumberToObject(data, "Q", telemetry_data.Q);
     cJSON_AddNumberToObject(data, "H", telemetry_data.H);
-    cJSON_AddNumberToObject(data, "aT", telemetry_data.aT);
-    cJSON_AddNumberToObject(data, "V", telemetry_data.V);
-    cJSON_AddNumberToObject(data, "I", telemetry_data.I);
-    cJSON_AddNumberToObject(data, "V1", telemetry_data.V1);
-    cJSON_AddNumberToObject(data, "V2", telemetry_data.V2);
-    cJSON_AddNumberToObject(data, "V3", telemetry_data.V3);
-    cJSON_AddNumberToObject(data, "V4", telemetry_data.V4);
-    cJSON_AddNumberToObject(data, "I1", telemetry_data.I1);
-    cJSON_AddNumberToObject(data, "I2", telemetry_data.I2);
-    cJSON_AddNumberToObject(data, "I3", telemetry_data.I3);
-    cJSON_AddNumberToObject(data, "I4", telemetry_data.I4);
-    cJSON_AddNumberToObject(data, "T1", telemetry_data.T1);
-    cJSON_AddNumberToObject(data, "T2", telemetry_data.T2);
-    cJSON_AddNumberToObject(data, "T3", telemetry_data.T3);
-    cJSON_AddNumberToObject(data, "T4", telemetry_data.T4);
-    cJSON_AddNumberToObject(data, "cT", telemetry_data.cT);
-    cJSON_AddNumberToObject(data, "OTC", telemetry_data.OTC);
+    cJSON_AddNumberToObject(data, "aT", round_to_dp(((float)telemetry_data.aT) / 10.0 - 273.15, 1));
+    cJSON_AddNumberToObject(data, "V", round_to_dp(((float)telemetry_data.V) / 1000.0, 1));
+    cJSON_AddNumberToObject(data, "I", round_to_dp(((float)telemetry_data.I) / 1000.0, 1));
+    cJSON_AddNumberToObject(data, "V1", round_to_dp(((float)telemetry_data.V1) / 1000.0, 2));
+    cJSON_AddNumberToObject(data, "V2", round_to_dp(((float)telemetry_data.V2) / 1000.0, 2));
+    cJSON_AddNumberToObject(data, "V3", round_to_dp(((float)telemetry_data.V3) / 1000.0, 2));
+    cJSON_AddNumberToObject(data, "V4", round_to_dp(((float)telemetry_data.V4) / 1000.0, 2));
+    cJSON_AddNumberToObject(data, "I1", round_to_dp(((float)telemetry_data.I1) / 1000.0, 2));
+    cJSON_AddNumberToObject(data, "I2", round_to_dp(((float)telemetry_data.I2) / 1000.0, 2));
+    cJSON_AddNumberToObject(data, "I3", round_to_dp(((float)telemetry_data.I3) / 1000.0, 2));
+    cJSON_AddNumberToObject(data, "I4", round_to_dp(((float)telemetry_data.I4) / 1000.0, 2));
+    cJSON_AddNumberToObject(data, "T1", round_to_dp(((float)telemetry_data.T1) / 10.0 - 273.15, 2));
+    cJSON_AddNumberToObject(data, "T2", round_to_dp(((float)telemetry_data.T2) / 10.0 - 273.15, 2));
+    cJSON_AddNumberToObject(data, "T3", round_to_dp(((float)telemetry_data.T3) / 10.0 - 273.15, 2));
+    cJSON_AddNumberToObject(data, "T4", round_to_dp(((float)telemetry_data.T4) / 10.0 - 273.15, 2));
+    cJSON_AddNumberToObject(data, "cT", round_to_dp(((float)telemetry_data.cT) / 10.0 - 273.15, 1));
+    cJSON_AddNumberToObject(data, "OTC", round_to_dp(((float)telemetry_data.OTC) / 10.0, 1));
 
     // wifi connection status
     cJSON_AddBoolToObject(data, "wifi", connected_to_WiFi);
