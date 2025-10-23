@@ -342,13 +342,13 @@ config INV_UART_RX_PIN
     int "UART RX GPIO"
     default 18
     help
-      Set the GPIO number for the INV UART RX line.
+      Set the GPIO number for the inverter UART RX line.
 
 config INV_UART_TX_PIN
     int "UART TX GPIO"
     default 17
     help
-      Set the GPIO number for the INV UART TX line.
+      Set the GPIO number for the inverter UART TX line.
 
 endmenu
 
