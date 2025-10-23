@@ -19,7 +19,7 @@ void job_worker_freertos_task(void *arg) {
     job_t job;
     unsigned int n_jobs_remaining = 0;
     bool received = false;
-    char job_type[18];
+    char job_type[32];
     int64_t start_time = 0;
     int64_t end_time = 0;
 
@@ -44,9 +44,9 @@ void job_worker_freertos_task(void *arg) {
                     update_gps();
                     break;
 
-                case JOB_INV_TRANSMIT:
-                    snprintf(job_type, sizeof(job_type), "JOB_INV_TRANSMIT");
-                    write_to_unit();
+                case JOB_SLAVE_ESP32_TRANSMIT:
+                    snprintf(job_type, sizeof(job_type), "JOB_SLAVE_ESP32_TRANSMIT");
+                    write_to_slave_esp32();
                     break;
 
                 case JOB_WS_SEND:
