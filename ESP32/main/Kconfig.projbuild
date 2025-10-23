@@ -338,7 +338,17 @@ endmenu
 
 menu "[CUSTOM] Inverter Configuration"
 
+config INV_UART_RX_PIN
+    int "UART RX GPIO"
+    default 18
+    help
+      Set the GPIO number for the INV UART RX line.
 
+config INV_UART_TX_PIN
+    int "UART TX GPIO"
+    default 17
+    help
+      Set the GPIO number for the INV UART TX line.
 
 endmenu
 
@@ -502,16 +512,16 @@ endmenu
 
 menu "[CUSTOM] GPS Configuration"
 
-config UART_RX_PIN
+config GPS_UART_RX_PIN
     int "UART RX GPIO"
     default 19
     help
-      Set the GPIO number for the UART RX line.
+      Set the GPIO number for the GPS UART RX line.
 
-config UART_TX_PIN
+config GPS_UART_TX_PIN
     int "UART TX GPIO"
     default 20
     help
-      Set the GPIO number for the UART TX line.
+      Set the GPIO number for the GPS UART TX line.
 
 endmenu
