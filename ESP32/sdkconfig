@@ -470,8 +470,8 @@ CONFIG_FULL_ACCESS_CMD_2=0xFFFF
 #
 # [CUSTOM] External I2C Device Configuration
 #
-CONFIG_EXT_SDA_PIN=9
-CONFIG_EXT_SCL_PIN=8
+CONFIG_EXT_SDA_PIN=4
+CONFIG_EXT_SCL_PIN=25
 
 #
 # Slave ESP32
@@ -487,8 +487,6 @@ CONFIG_SLAVE_DELAY=1000
 CONFIG_INV_UART_RX_PIN=18
 CONFIG_INV_UART_TX_PIN=17
 # end of [CUSTOM] Inverter Configuration
-=======
->>>>>>> 6caccc3 (properly name slave esp32 stuff)
 
 #
 # [CUSTOM] Wi-Fi Configuration
