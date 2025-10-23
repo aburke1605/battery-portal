@@ -310,13 +310,13 @@ config INV_I2C_ADDR
 
 config INV_SDA_PIN
     int "Inverter Unit I2C Serial Data (SDA) GPIO"
-    default 4
+    default 9
     help
       Set the GPIO number for the I2C SDA line to the inverter / unit display.
 
 config INV_SCL_PIN
     int "Inverter Unit I2C Serial Clock (SCL) GPIO"
-    default 25
+    default 8
     help
       Set the GPIO number for the I2C SCL line to the inverter / unit display.
 
