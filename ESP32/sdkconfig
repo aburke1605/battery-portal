@@ -507,6 +507,13 @@ CONFIG_OUTPUT_POWER=15
 # end of [CUSTOM] LoRa Configuration
 
 #
+# [CUSTOM] GPS Configuration
+#
+CONFIG_UART_RX_PIN=19
+CONFIG_UART_TX_PIN=20
+# end of [CUSTOM] GPS Configuration
+
+#
 # Compiler options
 #
 CONFIG_COMPILER_OPTIMIZATION_DEBUG=y

@@ -481,3 +481,23 @@ config POWER_BOOST
       Set to true to enable up to +20 dBm high power transmission. WARNING: ensure 1% duty cycle and adequate cooling.
 
 endmenu
+
+
+
+
+
+menu "[CUSTOM] GPS Configuration"
+
+config UART_RX_PIN
+    int "UART RX GPIO"
+    default 19
+    help
+      Set the GPIO number for the UART RX line.
+
+config UART_TX_PIN
+    int "UART TX GPIO"
+    default 20
+    help
+      Set the GPIO number for the UART TX line.
+
+endmenu
