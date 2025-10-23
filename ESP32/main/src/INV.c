@@ -13,8 +13,6 @@ static const char* TAG = "INV";
 static TimerHandle_t inverter_timer;
 
 void get_display_data(uint8_t* data) {
-    uint8_t data_SBS[2] = {0};
-
     // Q
     data[0] = telemetry_data.Q;
 
