@@ -176,7 +176,7 @@ void write_data_flash(uint8_t* address, size_t address_size, uint8_t* data, size
 }
 
 void write_to_unit() {
-    uint8_t data[4] = {0};
+    uint8_t data[3] = {0};
     get_display_data(data);
 
     esp_err_t ret = i2c_master_transmit(inv_device, data, sizeof(data), I2C_MASTER_TIMEOUT_MS);
