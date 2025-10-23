@@ -10,7 +10,7 @@
 
 static const char* TAG = "INV";
 
-static TimerHandle_t slave_esp32_timer;
+static TimerHandle_t inverter_timer;
 
 void get_display_data(uint8_t* data) {
     // Q
@@ -21,17 +21,17 @@ void get_display_data(uint8_t* data) {
     data[2] = (telemetry_data.I >> 8) & 0xff;
 }
 
-void slave_esp32_callback(TimerHandle_t xTimer) {
+void inverter_callback(TimerHandle_t xTimer) {
     job_t job = {
-        .type = JOB_SLAVE_ESP32_TRANSMIT
+        .type = JOB_INV_TRANSMIT
     };
 
     if (xQueueSend(job_queue, &job, 0) != pdPASS)
         if (VERBOSE) ESP_LOGW(TAG, "Queue full, dropping job");
 }
 
-void start_slave_esp32_timed_task() {
-    slave_esp32_timer = xTimerCreate("slave_esp32_timer", pdMS_TO_TICKS(SLAVE_DELAY), pdTRUE, NULL, slave_esp32_callback);
-    assert(slave_esp32_timer);
-    xTimerStart(slave_esp32_timer, 0);
+void start_inverter_timed_task() {
+    inverter_timer = xTimerCreate("inverter_timer", pdMS_TO_TICKS(INV_DELAY), pdTRUE, NULL, inverter_callback);
+    assert(inverter_timer);
+    xTimerStart(inverter_timer, 0);
 }

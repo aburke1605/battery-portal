@@ -14,8 +14,8 @@
 static i2c_master_bus_handle_t bms_bus = NULL;
 static i2c_master_dev_handle_t bms_device = NULL;
 
-static i2c_master_bus_handle_t ext_bus = NULL;
-static i2c_master_dev_handle_t slave_esp32_device = NULL;
+static i2c_master_bus_handle_t inv_bus = NULL;
+static i2c_master_dev_handle_t inv_device = NULL;
 
 static const char* TAG = "I2C";
 
@@ -41,23 +41,23 @@ esp_err_t i2c_master_init(void) {
 
 
     // INV bus
-    i2c_master_bus_config_t ext_bus_cfg = {
+    i2c_master_bus_config_t inv_bus_cfg = {
         .clk_source = I2C_CLK_SRC_DEFAULT,
         .i2c_port = I2C_NUM_1,
-        .scl_io_num = EXT_SCL_PIN,
-        .sda_io_num = EXT_SDA_PIN,
+        .scl_io_num = INV_SCL_PIN,
+        .sda_io_num = INV_SDA_PIN,
         .glitch_ignore_cnt = 0,
         .flags.enable_internal_pullup = true,
     };
 
-    err = i2c_new_master_bus(&ext_bus_cfg, &ext_bus);
+    err = i2c_new_master_bus(&inv_bus_cfg, &inv_bus);
     if (err != ESP_OK) return err;
 
-    i2c_device_config_t slave_esp32_cfg = {
-        .device_address = SLAVE_I2C_ADDR,
+    i2c_device_config_t inv_cfg = {
+        .device_address = INV_I2C_ADDR,
         .scl_speed_hz = I2C_MASTER_FREQ_HZ
     };
-    err |= i2c_master_bus_add_device(ext_bus, &slave_esp32_cfg, &slave_esp32_device);
+    err |= i2c_master_bus_add_device(inv_bus, &inv_cfg, &inv_device);
 
     return err;
 }
@@ -175,20 +175,20 @@ void write_data_flash(uint8_t* address, size_t address_size, uint8_t* data, size
     vTaskDelay(pdMS_TO_TICKS(100));
 }
 
-void write_to_slave_esp32() {
+void write_to_unit() {
     uint8_t data[3] = {0};
     get_display_data(data);
 
-    esp_err_t ret = i2c_master_transmit(slave_esp32_device, data, sizeof(data), I2C_MASTER_TIMEOUT_MS);
+    esp_err_t ret = i2c_master_transmit(inv_device, data, sizeof(data), I2C_MASTER_TIMEOUT_MS);
     if (ret != ESP_OK) {
         ESP_LOGE(TAG, "Failed to write to Ben's ESP32!");
         return;
     }
 }
 
-void read_from_slave_esp32() {
+void read_from_unit() {
     uint8_t data[16] = {0};
-    i2c_master_receive(slave_esp32_device, data, sizeof(data), I2C_MASTER_TIMEOUT_MS);
+    i2c_master_receive(inv_device, data, sizeof(data), I2C_MASTER_TIMEOUT_MS);
     printf("requestFrom: %zu\n", sizeof(data));
     for (uint8_t i=0; i<sizeof(data); i++)
         printf("0x%x ", data[i]);

@@ -7,6 +7,6 @@
 
 void get_display_data(uint8_t* data);
 
-void start_slave_esp32_timed_task();
+void start_inverter_timed_task();
 
 #endif // INV_H

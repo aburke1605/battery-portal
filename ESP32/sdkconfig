@@ -468,20 +468,6 @@ CONFIG_FULL_ACCESS_CMD_2=0xFFFF
 # end of [CUSTOM] BMS Configuration
 
 #
-# [CUSTOM] External I2C Device Configuration
-#
-CONFIG_EXT_SDA_PIN=9
-CONFIG_EXT_SCL_PIN=8
-
-#
-# Slave ESP32
-#
-CONFIG_SLAVE_I2C_ADDR=0x28
-CONFIG_SLAVE_DELAY=1000
-# end of Slave ESP32
-# end of [CUSTOM] External I2C Device Configuration
-
-#
 # [CUSTOM] Inverter Configuration
 #
 CONFIG_INV_UART_RX_PIN=18
