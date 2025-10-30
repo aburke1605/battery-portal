@@ -152,7 +152,7 @@ const Cell: React.FC<CellData> = ({ label, position, temperature, charge, isChar
 
 const BatteryPack: React.FC<BatteryPackProps> = ({ cells, esp_id, connected }) => {
   return (
-    <Canvas 
+    <Canvas
       camera={{ position: [-20, 20, -20], fov: 50 }}
       style={{ background: "#000033" }}
     >
@@ -243,8 +243,8 @@ export default function Visualisation({ isFromESP32 = false }: BatteriesPageProp
         url: ws_url,
         onMessage: handleMessage,
     });
-  
-  
+
+
   const cells: CellData[] = battery ?
     // websocket data
     ([

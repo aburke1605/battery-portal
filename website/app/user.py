@@ -180,11 +180,11 @@ def add():
     email = data.get("email")
     password = data.get("password")
     # role_ids = data.get("roles", [])
-    
+
     existing_user = Users.query.filter_by(email=email).first()
     if existing_user:
         return jsonify({"error": "A user with this email address already exists."}), 400
-    
+
     role_ids = [1] # can only add normal role users for now
     roles = Roles.query.filter(Roles.id.in_(role_ids)).all()
 
@@ -213,12 +213,12 @@ def edit(user_id: int):
 
     data = request.get_json()
     new_email = data.get("email", u.email)
-    
+
     if new_email != u.email: # email address is being edited
         existing_user = Users.query.filter_by(email=new_email).first()
         if existing_user:
             return jsonify({"error": "A user with this email address already exists."}), 400
-    
+
     try:
         u.first_name = data.get("first_name", u.first_name)
         u.last_name = data.get("last_name", u.last_name)
@@ -241,7 +241,7 @@ def delete(user_id: int):
     """
     if current_user.id == user_id:
         return jsonify({"error": "Cannot delete admin account."}), 400
-    
+
     u = Users.query.get_or_404(user_id)
     try:
         DB.session.delete(u)
@@ -264,7 +264,7 @@ def change_password():
     data = request.get_json()
     current_password = data.get("current_password")
     new_password = data.get("new_password")
-    
+
     if not current_password or not new_password:
         return jsonify({"error": "All password fields are required."}), 400
 
@@ -292,20 +292,20 @@ def profile():
         return jsonify({"error": "Cannot change admin account."}), 400
 
     data = request.get_json()
-    
+
     new_first_name = data.get("first_name", current_user.first_name)
     new_last_name = data.get("last_name", current_user.last_name)
     new_email = data.get("email", current_user.email)
-    
+
     # basic email format validation
     if not re.match(r"^[^\s@]+@[^\s@]+\.[^\s@]+$", new_email):
         return jsonify({"error": "Please enter a valid email address."}), 400
-    
+
     if new_email != current_user.email:
         existing_user = Users.query.filter_by(email=new_email).first()
         if existing_user:
             return jsonify({"error": "A user with this email address already exists."}), 400
-    
+
     try:
         current_user.first_name = new_first_name.strip()
         current_user.last_name = new_last_name.strip()

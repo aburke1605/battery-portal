@@ -49,7 +49,7 @@ def update_battery_data(json: list) -> None:
     for i, data in enumerate(json):
         esp_id = data["esp_id"]
         content = data["content"]
-        
+
         # first update battery_info table
         try:
             # check if the entry already exists
@@ -134,7 +134,7 @@ def get_battery_data_table(esp_id: str) -> Table:
     inspector = inspect(DB.engine)
     if inspector.has_table(name):
         table = DB.Table(name, DB.metadata, autoload_with=DB.engine)
-    
+
     # create one if not
     else:
         table = DB.Table(name,

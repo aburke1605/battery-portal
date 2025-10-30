@@ -33,7 +33,7 @@ function App() {
 
           {/* Home page */}
           <Route path="/" element={<HomePage />} />
-          
+
           {/* Dashboard Layout */}
           <Route element={<AuthRequire><AppLayout /></AuthRequire>}>
             <Route path="/dashboard" element={<Home />} />

@@ -157,23 +157,23 @@ export default function Home() {
         <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 mb-6">
           <div className="flex justify-between items-center mb-4">
             <h2 className="text-xl font-semibold text-gray-800">Recent Alerts</h2>
-            <button 
+            <button
               className="text-blue-600 hover:text-blue-800 text-sm font-medium"
-             
+
             >
               View All
             </button>
           </div>
             <div className="space-y-4">
               {alerts.slice(0, 3).map(alert => (
-                <div 
-                  key={alert.id} 
+                <div
+                  key={alert.id}
                   className={`p-4 rounded-lg ${alert.isRead ? 'bg-white border border-gray-200' : 'bg-blue-50 border border-blue-200'}`}
                 >
                   <div className="flex items-start">
                     <div className="flex-shrink-0 mt-1">
                       <div className={`h-8 w-8 rounded-full flex items-center justify-center ${
-                        alert.type === 'critical' ? 'bg-red-100' : 
+                        alert.type === 'critical' ? 'bg-red-100' :
                         alert.type === 'warning' ? 'bg-amber-100' : 'bg-blue-100'
                       }`}>
                         {getAlertIcon(alert.type)}

@@ -1,17 +1,17 @@
 import React, {useEffect, useRef, useState} from 'react';
 import { BatteryData } from '../../types';
-import { 
-  BatteryLow, 
-  BatteryMedium, 
-  BatteryFull, 
-  Zap, 
-  ThermometerSun, 
-  Info, 
-  RefreshCw, 
+import {
+  BatteryLow,
+  BatteryMedium,
+  BatteryFull,
+  Zap,
+  ThermometerSun,
+  Info,
+  RefreshCw,
   LockKeyholeOpen,
-  Wifi, 
+  Wifi,
   BrainCircuit,
-  BarChart3, 
+  BarChart3,
   Sliders,
   Battery,
   Layers2,
@@ -37,8 +37,8 @@ interface BatteryDetailProps {
   updateRequest: () => void;
 }
 
-const BatteryDetail: React.FC<BatteryDetailProps> = ({ 
-  battery, 
+const BatteryDetail: React.FC<BatteryDetailProps> = ({
+  battery,
   voltageThreshold,
   sendBatteryUpdate, // receive function from BatteryPage
   sendWiFiConnect,
@@ -46,7 +46,7 @@ const BatteryDetail: React.FC<BatteryDetailProps> = ({
   sendReset,
   isFromESP32,
 }) => {
-  
+
   const [activeTab, setActiveTab] = useState('overview');
 
   const [isEditing, setIsEditing] = useState(false);
@@ -330,11 +330,11 @@ const BatteryDetail: React.FC<BatteryDetailProps> = ({
                     <h3 className="text-lg font-medium leading-6 text-gray-900">Actions</h3>
                   </div>
                   <div className="px-4 py-5 sm:p-6 space-y-4">
-                    {/* <button 
+                    {/* <button
                       onClick={() => onToggleCharging(battery.esp_id)}
                       className={`w-full flex items-center justify-center px-4 py-2 border rounded-md shadow-sm text-sm font-medium focus:outline-none focus:ring-2 focus:ring-offset-2 ${
-                        battery.isCharging 
-                          ? 'border-red-300 text-red-700 bg-red-50 hover:bg-red-100 focus:ring-red-500' 
+                        battery.isCharging
+                          ? 'border-red-300 text-red-700 bg-red-50 hover:bg-red-100 focus:ring-red-500'
                           : 'border-green-300 text-green-700 bg-green-50 hover:bg-green-100 focus:ring-green-500'
                       }`}
                     >
@@ -668,8 +668,8 @@ const BatteryDetail: React.FC<BatteryDetailProps> = ({
             </div>
             <div className="text-3xl font-bold text-blue-700">{battery.Q}%</div>
             <div className="mt-2 bg-blue-200 rounded-full h-2.5">
-              <div 
-                className="h-2.5 rounded-full bg-blue-600" 
+              <div
+                className="h-2.5 rounded-full bg-blue-600"
                 style={{ width: `${Math.min(battery.Q, 100)}%` }}
               ></div>
             </div>

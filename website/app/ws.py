@@ -90,7 +90,7 @@ def esp_ws(ws: Sock):
             message = ws.receive()
             if not message: continue
             response = {"type": "response", "content": "error"} # default response content
-            
+
             try:
                 data_list = json.loads(message)
                 if not data_list or len(data_list) == 0: continue

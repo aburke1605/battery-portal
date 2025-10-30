@@ -78,4 +78,4 @@ declare namespace google {
       BACKWARD_OPEN_ARROW = 4
     }
   }
-} 
+}

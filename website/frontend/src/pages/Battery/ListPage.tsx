@@ -42,8 +42,8 @@ export default function BatteryPage() {
     totalPages = Math.ceil(batteries.length / itemsPerPage)
     setCurrentBatteries(batteries.slice(startIndex, endIndex));
   }, [batteries, currentPage, itemsPerPage]); // update as batteries (and other variables) do
-  
-  
+
+
 
   const [statusFilter, setStatusFilter] = useState('all');
   const [sortBy, setSortBy] = useState('status');
@@ -179,51 +179,51 @@ export default function BatteryPage() {
   const viewBatteryDetails = (battery: BatteryInfoData) => {
     navigate(`/battery-detail?esp_id=${battery.esp_id}`);
   };
-  
+
 
   return (
     <main className="container mx-auto px-4 py-8">
       <div className="flex justify-between items-center mb-6">
-     
+
         <div className="space-y-6">
             <div className="flex flex-col md:flex-row md:justify-between md:items-center mb-6 space-y-4 md:space-y-0">
             <div className="flex flex-wrap gap-2">
-              <button 
+              <button
                 className={`px-4 py-2 rounded-full text-sm font-medium ${statusFilter === 'all' ? 'bg-blue-100 text-blue-800' : 'bg-gray-100 text-gray-800 hover:bg-gray-200'}`}
                 onClick={() => setStatusFilter('all')}
               >
                 All Batteries
               </button>
-              <button 
+              <button
                 className={`px-4 py-2 rounded-full text-sm font-medium ${statusFilter === 'good' ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800 hover:bg-gray-200'}`}
                 onClick={() => setStatusFilter('good')}
               >
                 Good
               </button>
-              <button 
+              <button
                 className={`px-4 py-2 rounded-full text-sm font-medium ${statusFilter === 'warning' ? 'bg-amber-100 text-amber-800' : 'bg-gray-100 text-gray-800 hover:bg-gray-200'}`}
                 onClick={() => setStatusFilter('warning')}
               >
                 Warning
               </button>
-              <button 
+              <button
                 className={`px-4 py-2 rounded-full text-sm font-medium ${statusFilter === 'critical' ? 'bg-red-100 text-red-800' : 'bg-gray-100 text-gray-800 hover:bg-gray-200'}`}
                 onClick={() => setStatusFilter('critical')}
               >
                 Critical
               </button>
-              <button 
+              <button
                 className={`px-4 py-2 rounded-full text-sm font-medium ${statusFilter === 'offline' ? 'bg-gray-200 text-gray-800' : 'bg-gray-100 text-gray-800 hover:bg-gray-200'}`}
                 onClick={() => setStatusFilter('offline')}
               >
                 Offline
               </button>
             </div>
-            
+
             <div className="flex items-center space-x-2" style={{ display: 'none' }}>
               <span className="text-sm text-gray-600">Sort by:</span>
               <div className="relative">
-                <select 
+                <select
                   className="appearance-none bg-white border rounded-md px-4 py-2 pr-8 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm"
                   value={sortBy}
                   onChange={(e) => setSortBy(e.target.value)}
@@ -238,7 +238,7 @@ export default function BatteryPage() {
             </div>
           </div>
         </div>
-         <button 
+         <button
           onClick={() => setViewMode(viewMode === 'grid' ? 'map' : 'grid')}
           className="flex space-x-2 items-center gap-2 px-4 py-2 bg-white rounded-lg border border-gray-200 shadow-sm hover:bg-gray-50 transition-all duration-200 ease-in-out"
         >
@@ -334,7 +334,7 @@ export default function BatteryPage() {
             <div className="text-sm text-gray-600">
               Showing {startIndex + 1} to {endIndex} of {batteries.length} entries
             </div>
-            
+
             <div className="flex items-center gap-2">
               <button
                 onClick={() => handlePageChange(1)}
@@ -343,7 +343,7 @@ export default function BatteryPage() {
               >
                 First
               </button>
-              
+
               <button
                 onClick={() => handlePageChange(currentPage - 1)}
                 disabled={currentPage === 1}
@@ -419,4 +419,4 @@ if (typeof document !== 'undefined') {
   const styleSheet = document.createElement('style')
   styleSheet.textContent = styles
   document.head.appendChild(styleSheet)
-} 
+}

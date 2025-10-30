@@ -6,10 +6,10 @@ import { Modal } from "../components/ui/modal";
 import Button from "../components/ui/button/Button";
 import Input from "../components/form/input/InputField";
 import Label from "../components/form/Label";
-import { 
-  UserPlus, 
-  Edit3, 
-  Trash2, 
+import {
+  UserPlus,
+  Edit3,
+  Trash2,
   ChevronLeft,
   ChevronRight,
   AlertTriangle,
@@ -145,7 +145,7 @@ const UserList = () => {
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
     setFormData(prev => ({ ...prev, [name]: value }));
-    
+
     // Clear error for this field when user starts typing
     if (errors[name]) {
       setErrors(prev => ({ ...prev, [name]: '' }));
@@ -215,7 +215,7 @@ const UserList = () => {
 
     setDeleteLoading(true);
     setDeleteError('');
-    
+
     let unknown_error = true; // assume unknown error, change if error known or no error
     try {
       const res = await axios.delete(`${apiConfig.USER_API}/${userToDelete.id}`);
@@ -247,7 +247,7 @@ const UserList = () => {
     <>
     <div className="space-y-6">
       <PageBreadcrumb pageTitle="Users" />
-      
+
       {/* Header Section */}
       <div className="bg-white dark:bg-gray-900 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700">
         <div className="px-6 py-4 border-b border-gray-200 dark:border-gray-700">
@@ -363,7 +363,7 @@ const UserList = () => {
                     <span className="font-medium">{Math.min(currentPage * 10, users.length)}</span> of{' '}
                     <span className="font-medium">{users.length}</span> results
                   </div>
-                  
+
                   <nav className="flex items-center gap-1">
                     <button
                       onClick={handlePrev}
@@ -373,7 +373,7 @@ const UserList = () => {
                       <ChevronLeft className="w-4 h-4" />
                       Previous
                     </button>
-                    
+
                     <div className="flex items-center gap-1 mx-2">
                       {Array.from({ length: Math.min(pages, 5) }, (_, i) => {
                         const pageNumber = i + 1;
@@ -408,7 +408,7 @@ const UserList = () => {
                         </>
                       )}
                     </div>
-                    
+
                     <button
                       onClick={handleNext}
                       disabled={currentPage === pages}
@@ -425,10 +425,10 @@ const UserList = () => {
         </div>
       </div>
     </div>
-    
-         <Modal 
-       isOpen={isOpen} 
-       onClose={handleCloseModal} 
+
+         <Modal
+       isOpen={isOpen}
+       onClose={handleCloseModal}
        className="max-w-2xl m-4"
        closeOnBackdropClick={false}
        backdropOpacity="bg-gray-900/75"
@@ -450,8 +450,8 @@ const UserList = () => {
                     {isEditMode ? 'Edit User' : 'Add New User'}
                   </h3>
                   <p className="text-sm text-gray-500 dark:text-gray-400">
-                    {isEditMode 
-                      ? 'Update user account information' 
+                    {isEditMode
+                      ? 'Update user account information'
                       : 'Create a new user account with the required information'
                     }
                   </p>
@@ -517,9 +517,9 @@ const UserList = () => {
 
                 <div>
                   <Label>Last Name *</Label>
-                  <Input 
+                  <Input
                     name="last_name"
-                    type="text" 
+                    type="text"
                     value={formData.last_name}
                     onChange={handleInputChange}
                     placeholder="Enter last name"
@@ -552,7 +552,7 @@ const UserList = () => {
 
               <div>
                 <Label>Password {!isEditMode && '*'}</Label>
-                <Input 
+                <Input
                   name="password"
                   type="password"
                   value={formData.password}
@@ -579,8 +579,8 @@ const UserList = () => {
                 <Button size="sm" variant="outline" onClick={handleCloseModal}>
                   Cancel
                 </Button>
-                <Button 
-                  size="sm" 
+                <Button
+                  size="sm"
                   onClick={handleSubmit}
                   className="bg-blue-600 hover:bg-blue-700 text-white"
                 >
@@ -593,9 +593,9 @@ const UserList = () => {
       </Modal>
 
              {/* Delete Confirmation Modal */}
-       <Modal 
-         isOpen={showDeleteModal} 
-         onClose={handleDeleteCancel} 
+       <Modal
+         isOpen={showDeleteModal}
+         onClose={handleDeleteCancel}
          className="max-w-md m-4"
          closeOnBackdropClick={false}
          backdropOpacity="bg-gray-900/80"
@@ -646,7 +646,7 @@ const UserList = () => {
                 </div>
               </div>
             )}
-            
+
             <div className="text-center">
               <div className="mx-auto w-16 h-16 bg-red-100 dark:bg-red-900/20 rounded-full flex items-center justify-center mb-4">
                 <Trash2 className="w-8 h-8 text-red-600 dark:text-red-400" />
@@ -670,16 +670,16 @@ const UserList = () => {
           {/* Modal Footer */}
           <div className="px-6 py-4 border-t border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800/50">
             <div className="flex items-center justify-end gap-3">
-              <Button 
-                size="sm" 
-                variant="outline" 
+              <Button
+                size="sm"
+                variant="outline"
                 onClick={handleDeleteCancel}
                 disabled={deleteLoading}
               >
                 Cancel
               </Button>
-              <Button 
-                size="sm" 
+              <Button
+                size="sm"
                 onClick={handleDeleteConfirm}
                 disabled={deleteLoading}
                 className="bg-red-600 hover:bg-red-700 text-white"

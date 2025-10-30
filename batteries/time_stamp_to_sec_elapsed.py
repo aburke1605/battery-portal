@@ -42,7 +42,7 @@ def convert_time_stamp_to_sec_elapsed():
             voltages.append(float(voltage))
             currents.append(float(current))
             temperatures.append(float(temperature))
-    
+
     date_1 = None
     for timestamp in timestamps:
         date, time = timestamp.split(" ")

@@ -22,7 +22,7 @@ const BatteryCard: React.FC<BatteryCardProps> = ({ battery, viewBatteryDetails }
             <a
               href="#"
               onClick={(e) => {
-                e.preventDefault(); 
+                e.preventDefault();
                 viewBatteryDetails(battery);
               }}
               className="cursor-pointer px-2 py-0.5 bg-blue-600 text-white rounded hover:bg-blue-700 transition-colors text-xs"
@@ -55,7 +55,7 @@ const BatteryCard: React.FC<BatteryCardProps> = ({ battery, viewBatteryDetails }
         </div>
         <div className={`space-y-2 ${battery.nodes && battery.nodes.length > 3 ? 'max-h-[200px] overflow-y-auto pr-1 custom-scrollbar' : ''}`}>
           {battery.nodes?.map((childBattery) => (
-            <div 
+            <div
               onClick={() => viewBatteryDetails(childBattery)}
               key={childBattery.esp_id}
               className="block p-2 bg-gray-50 rounded hover:bg-gray-100 transition-colors"

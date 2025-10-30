@@ -5,7 +5,7 @@ def temperature_corrected_voltage(voltage, temp_C):
     """
     Apply basic linear temperature compensation to the cell voltage
     before SoC lookup. Cold temperatures lower voltage for a given SoC.
-    
+
     Correction factor: -1.5 mV/°C per cell below 25°C
     """
     if temp_C < 25:

@@ -5,15 +5,15 @@ import { useAuth } from "../auth/AuthContext";
 import Button from "../components/ui/button/Button";
 import Input from "../components/form/input/InputField";
 import Label from "../components/form/Label";
-import { 
-  User, 
-  Mail, 
-  Lock, 
-  Edit3, 
-  Save, 
-  X, 
+import {
+  User,
+  Mail,
+  Lock,
+  Edit3,
+  Save,
+  X,
   AlertTriangle,
-  CheckCircle 
+  CheckCircle
 } from 'lucide-react';
 import apiConfig from '../apiConfig';
 import axios from 'axios';
@@ -106,7 +106,7 @@ export default function UserProfiles() {
   const handleProfileInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
     setProfileData(prev => ({ ...prev, [name]: value }));
-    
+
     // Clear error for this field when user starts typing
     if (errors[name]) {
       setErrors(prev => ({ ...prev, [name]: '' }));
@@ -116,7 +116,7 @@ export default function UserProfiles() {
   const handlePasswordInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
     setPasswordData(prev => ({ ...prev, [name]: value }));
-    
+
     // Clear error for this field when user starts typing
     if (errors[name]) {
       setErrors(prev => ({ ...prev, [name]: '' }));
@@ -128,7 +128,7 @@ export default function UserProfiles() {
 
     setLoading(true);
     setSuccessMessage('');
-    
+
     let unknown_error = true; // assume unknown error, change if error known or no error
     try {
       const res = await axios.put(`${apiConfig.USER_API}/profile`, profileData);
@@ -162,7 +162,7 @@ export default function UserProfiles() {
 
     setLoading(true);
     setSuccessMessage('');
-    
+
     let unknown_error = true; // assume unknown error, change if error known or no error
     try {
       const res = await axios.put(`${apiConfig.USER_API}/change-password`, {
@@ -207,7 +207,7 @@ export default function UserProfiles() {
     setIsChangingPassword(false);
     setErrors({});
     setSuccessMessage('');
-    
+
     // Reset profile data
     if (user) {
       setProfileData({
@@ -216,7 +216,7 @@ export default function UserProfiles() {
         email: user.email || '',
       });
     }
-    
+
     // Reset password data
     setPasswordData({
       current_password: '',
@@ -232,7 +232,7 @@ export default function UserProfiles() {
         description="React.js Profile Dashboard Tailwind CSS Admin"
       />
       <PageBreadcrumb pageTitle="Profile" />
-      
+
       <div className="space-y-6">
         {/* Success Message */}
         {successMessage && (

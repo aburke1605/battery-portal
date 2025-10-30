@@ -24,7 +24,7 @@ export default function BatteryPage({ isFromESP32 = false }: BatteriesPageProps)
         queryString = hash.split('?')[1];  // Extract "esp_id=BMS_02"
     }
     const urlParams = new URLSearchParams(queryString);
-    
+
     const esp_id = Number(urlParams.get('esp_id'));
 
     const ws_session_browser_id = useRef(generate_random_string(32));
@@ -93,21 +93,21 @@ export default function BatteryPage({ isFromESP32 = false }: BatteriesPageProps)
 
     return (
         <div>
-            { 
-                !isFromESP32 ? 
+            {
+                !isFromESP32 ?
                 <PageMeta
                     title="Battery Dashboard"
                     description="Battery Detail Page"
                 /> : null
             }
             {
-                !isFromESP32 ? 
+                !isFromESP32 ?
                 <PageBreadcrumb pageTitle="Battery Detail" />
                 : null
             }
             <div className="space-y-6">
                 {battery ? (
-                    <BatteryDetail 
+                    <BatteryDetail
                         battery={battery}
                         voltageThreshold={voltageThreshold}
                         sendBatteryUpdate={sendBatteryUpdate} // pass function to BatteryDetail

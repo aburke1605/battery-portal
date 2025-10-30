@@ -89,7 +89,7 @@ const AppHeader: React.FC = () => {
               alt="Logo"
               style={{height: '30px'}}
             />
-           
+
           </Link>
 
           <button
@@ -112,7 +112,7 @@ const AppHeader: React.FC = () => {
             </svg>
           </button>
 
-          
+
         </div>
         <div
           className={`${
@@ -121,7 +121,7 @@ const AppHeader: React.FC = () => {
         >
           <div className="flex items-center gap-2 2xsm:gap-3">
             {/* <!-- Dark Mode Toggler --> */}
-           
+
             {/* <!-- Dark Mode Toggler --> */}
             {/* <NotificationDropdown /> */}
             {/* <!-- Notification Menu Area --> */}
