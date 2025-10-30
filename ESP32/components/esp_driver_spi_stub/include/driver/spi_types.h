@@ -5,7 +5,7 @@ extern "C" {
 #endif
 
 typedef enum {
-    SPI2_HOST=1,
+  SPI2_HOST = 1,
 } spi_host_device_t;
 
 #ifdef __cplusplus
