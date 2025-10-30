@@ -43,22 +43,19 @@ void app_main(void) {
     job_queue = xQueueCreate(10, sizeof(job_t));
     assert(job_queue != NULL);
 
-    if (JOBS_ENABLED) xTaskCreate(job_worker_freertos_task, "job_worker_freertos_task", 10000, NULL, 5, NULL); // TODO: optimise memory allocation
+    if (JOBS_ENABLED) xTaskCreate(job_worker_freertos_task, "job_worker_freertos_task", 3700, NULL, 5, NULL);
 
     initialise_nvs();
 
     if (!LORA_IS_RECEIVER) {
         initialise_spiffs();
 
+
         ESP_ERROR_CHECK(i2c_master_init());
         ESP_LOGI("main", "I2C initialized successfully");
         if (SCAN_I2C) device_scan();
 
-
         uart_init();
-
-        if (READ_GPS_ENABLED) start_read_gps_timed_task();
-
 
         // grab BMS DeviceName from the BMS DataFlash
         uint8_t address[2] = {0};
@@ -69,23 +66,20 @@ void app_main(void) {
         if (strcmp((char *)data_flash, "") != 0)
             change_esp_id((char*)&data_flash[1]);
 
-        if (READ_BMS_ENABLED) start_read_data_timed_task();
-    }
+        if (READ_BMS_ENABLED || READ_GPS_ENABLED) start_read_data_timed_task();
 
-    wifi_init();
-    vTaskDelay(pdMS_TO_TICKS(3000)); // TODO: is 3s really necessary?
 
-    server = start_webserver();
-    if (server == NULL) {
-        ESP_LOGE("main", "Failed to start web server!");
-        return;
+        // TODO: this should only be started if a task which uses `server` is enabled
+        wifi_init();
+        server = start_webserver();
+        if (server == NULL) ESP_LOGE("main", "Failed to start web server!");
     }
 
 
     if (WEBSOCKET_MESSAGES_ENABLED) start_websocket_timed_task();
 
     if (!LORA_IS_RECEIVER) {
-        if (DNS_SERVER_ENABLED) xTaskCreate(dns_server_freertos_task, "dns_server_freertos_task", 2600, NULL, 5, NULL);
+        if (HTTP_SERVER_ENABLED) xTaskCreate(dns_server_freertos_task, "dns_server_freertos_task", 2600, NULL, 5, NULL);
 
         if (SLAVE_ESP32_ENABLED) start_slave_esp32_timed_task();
 

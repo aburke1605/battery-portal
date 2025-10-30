@@ -11,8 +11,6 @@
 
 static const char* TAG = "GPS";
 
-static TimerHandle_t read_gps_timer;
-
 void uart_init() {
     const uart_config_t uart_config = {
         .baud_rate = 9600, // typical for NEO-6M
@@ -147,19 +145,4 @@ void update_gps() {
     if (VERBOSE) ESP_LOGW(TAG, "No GPS lock");
 
     return;
-}
-
-void read_gps_callback(TimerHandle_t xTimer) {
-    job_t job = {
-        .type = JOB_GPS_DATA
-    };
-
-    if (xQueueSend(job_queue, &job, 0) != pdPASS)
-        if (VERBOSE) ESP_LOGW(TAG, "Queue full, dropping job");
-}
-
-void start_read_gps_timed_task() {
-    read_gps_timer = xTimerCreate("read_gps_timer", pdMS_TO_TICKS(15000), pdTRUE, NULL, read_gps_callback);
-    assert(read_gps_timer);
-    xTimerStart(read_gps_timer, 0);
 }
