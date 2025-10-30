@@ -146,7 +146,7 @@ void wifi_init(void) {
     } else {
         // must change IP address from default so
         // can send messages to ROOT at 192.168.4.1
-        esp_netif_ip_info_t ip_info;
+        esp_netif_ip_info_t ip_info = {0};
         IP4_ADDR(&ip_info.ip, 192,168,5,1);
         IP4_ADDR(&ip_info.gw, 192,168,5,1);
         IP4_ADDR(&ip_info.netmask, 255,255,255,0);

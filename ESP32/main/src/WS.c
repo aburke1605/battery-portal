@@ -301,7 +301,7 @@ esp_err_t perform_request(cJSON *message, cJSON *response) {
 
                         esp_netif_t *sta_netif = esp_netif_get_handle_from_ifkey("WIFI_STA_DEF");
                         if (sta_netif != NULL) {
-                            esp_netif_ip_info_t ip_info;
+                            esp_netif_ip_info_t ip_info = {0};
                             esp_netif_get_ip_info(sta_netif, &ip_info);
 
                             if (ip_info.ip.addr != IPADDR_ANY) {
@@ -575,7 +575,7 @@ void send_websocket_data() {
             if (sta_netif == NULL) return;
 
             // retrieve the IP information
-            esp_netif_ip_info_t ip_info;
+            esp_netif_ip_info_t ip_info = {0};
             esp_netif_get_ip_info(sta_netif, &ip_info);
 
             // add correct ESP32 IP info to message

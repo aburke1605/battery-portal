@@ -294,7 +294,7 @@ void merge_root() {
 
             if (connected) {
                 // change to another IP so we can communicate with other ROOT AP on it's default IP
-                esp_netif_ip_info_t ip_info;
+                esp_netif_ip_info_t ip_info = {0};
                 if (my_int < 0) {
                     IP4_ADDR(&ip_info.ip, 192, 168, 10, 1);
                     IP4_ADDR(&ip_info.gw, 192, 168, 10, 1);
