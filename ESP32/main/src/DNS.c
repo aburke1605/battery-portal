@@ -58,7 +58,7 @@ void handle_dns_request(dns_packet_t *packet) {
   buffer[response_offset++] = 0x04;
 
   // add the AP IP address as the answer (4 bytes)
-  esp_netif_ip_info_t ip_info;
+  esp_netif_ip_info_t ip_info = {0};
   esp_netif_get_ip_info(esp_netif_get_handle_from_ifkey("WIFI_AP_DEF"),
                         &ip_info);
   buffer[response_offset++] = ip4_addr1(&ip_info.ip);
