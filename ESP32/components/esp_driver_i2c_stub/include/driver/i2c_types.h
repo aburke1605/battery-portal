@@ -5,8 +5,8 @@ extern "C" {
 #endif
 
 typedef enum {
-    I2C_NUM_0,
-    I2C_NUM_1,
+  I2C_NUM_0,
+  I2C_NUM_1,
 } i2c_port_t;
 
 typedef int i2c_port_num_t;

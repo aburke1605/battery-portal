@@ -5,6 +5,7 @@ Revises: e3cd1a90590b
 Create Date: 2025-08-28 15:51:12.775232
 
 """
+
 from alembic import op
 import sqlalchemy as sa
 from sqlalchemy.dialects import mysql
@@ -22,31 +23,40 @@ def upgrade():
     op.drop_table("user")
     op.drop_table("role")
 
-    op.create_table("roles",
-    sa.Column("id", sa.Integer(), nullable=False),
-    sa.Column("name", sa.String(length=80), nullable=True),
-    sa.Column("description", sa.String(length=255), nullable=True),
-    sa.PrimaryKeyConstraint("id"),
-    sa.UniqueConstraint("name")
+    op.create_table(
+        "roles",
+        sa.Column("id", sa.Integer(), nullable=False),
+        sa.Column("name", sa.String(length=80), nullable=True),
+        sa.Column("description", sa.String(length=255), nullable=True),
+        sa.PrimaryKeyConstraint("id"),
+        sa.UniqueConstraint("name"),
     )
-    op.create_table("users",
-    sa.Column("id", sa.Integer(), nullable=False),
-    sa.Column("first_name", sa.String(length=255), nullable=False),
-    sa.Column("last_name", sa.String(length=255), nullable=True),
-    sa.Column("email", sa.String(length=255), nullable=False),
-    sa.Column("password", sa.String(length=255), nullable=False),
-    sa.Column("active", sa.Boolean(), nullable=True),
-    sa.Column("confirmed_at", sa.DateTime(), nullable=True),
-    sa.Column("fs_uniquifier", sa.String(length=64), nullable=False),
-    sa.PrimaryKeyConstraint("id"),
-    sa.UniqueConstraint("email"),
-    sa.UniqueConstraint("fs_uniquifier")
+    op.create_table(
+        "users",
+        sa.Column("id", sa.Integer(), nullable=False),
+        sa.Column("first_name", sa.String(length=255), nullable=False),
+        sa.Column("last_name", sa.String(length=255), nullable=True),
+        sa.Column("email", sa.String(length=255), nullable=False),
+        sa.Column("password", sa.String(length=255), nullable=False),
+        sa.Column("active", sa.Boolean(), nullable=True),
+        sa.Column("confirmed_at", sa.DateTime(), nullable=True),
+        sa.Column("fs_uniquifier", sa.String(length=64), nullable=False),
+        sa.PrimaryKeyConstraint("id"),
+        sa.UniqueConstraint("email"),
+        sa.UniqueConstraint("fs_uniquifier"),
     )
-    op.create_table("roles_users",
-    sa.Column("user_id", sa.Integer(), nullable=True),
-    sa.Column("role_id", sa.Integer(), nullable=True),
-    sa.ForeignKeyConstraint(["role_id"], ["roles.id"], ),
-    sa.ForeignKeyConstraint(["user_id"], ["users.id"], )
+    op.create_table(
+        "roles_users",
+        sa.Column("user_id", sa.Integer(), nullable=True),
+        sa.Column("role_id", sa.Integer(), nullable=True),
+        sa.ForeignKeyConstraint(
+            ["role_id"],
+            ["roles.id"],
+        ),
+        sa.ForeignKeyConstraint(
+            ["user_id"],
+            ["users.id"],
+        ),
     )
 
     with op.batch_alter_table("battery_info", schema=None) as batch_op:
@@ -59,7 +69,14 @@ def upgrade():
         )
 
         batch_op.add_column(sa.Column("root_id", sa.String(length=7), nullable=True))
-        batch_op.add_column(sa.Column("live_websocket", sa.Boolean(), nullable=False, server_default=sa.text("0")))
+        batch_op.add_column(
+            sa.Column(
+                "live_websocket",
+                sa.Boolean(),
+                nullable=False,
+                server_default=sa.text("0"),
+            )
+        )
 
         batch_op.drop_column("voltage")
         batch_op.drop_column("temperature")
@@ -82,11 +99,15 @@ def downgrade():
             nullable=False,
         )
 
-        batch_op.add_column(sa.Column("parent_id", mysql.VARCHAR(length=64), nullable=True))
+        batch_op.add_column(
+            sa.Column("parent_id", mysql.VARCHAR(length=64), nullable=True)
+        )
         batch_op.add_column(sa.Column("lat", mysql.FLOAT(), nullable=True))
         batch_op.add_column(sa.Column("charge", mysql.FLOAT(), nullable=True))
         batch_op.add_column(sa.Column("lon", mysql.FLOAT(), nullable=True))
-        batch_op.add_column(sa.Column("name", mysql.VARCHAR(length=100), nullable=False))
+        batch_op.add_column(
+            sa.Column("name", mysql.VARCHAR(length=100), nullable=False)
+        )
         batch_op.add_column(sa.Column("temperature", mysql.FLOAT(), nullable=True))
         batch_op.add_column(sa.Column("voltage", mysql.FLOAT(), nullable=True))
 
@@ -97,30 +118,39 @@ def downgrade():
     op.drop_table("users")
     op.drop_table("roles")
 
-    op.create_table("role",
-    sa.Column("id", sa.Integer(), nullable=False),
-    sa.Column("name", sa.String(length=80), nullable=True),
-    sa.Column("description", sa.String(length=255), nullable=True),
-    sa.PrimaryKeyConstraint("id"),
-    sa.UniqueConstraint("name")
+    op.create_table(
+        "role",
+        sa.Column("id", sa.Integer(), nullable=False),
+        sa.Column("name", sa.String(length=80), nullable=True),
+        sa.Column("description", sa.String(length=255), nullable=True),
+        sa.PrimaryKeyConstraint("id"),
+        sa.UniqueConstraint("name"),
     )
-    op.create_table("user",
-    sa.Column("id", sa.Integer(), nullable=False),
-    sa.Column("first_name", sa.String(length=255), nullable=False),
-    sa.Column("last_name", sa.String(length=255), nullable=True),
-    sa.Column("email", sa.String(length=255), nullable=False),
-    sa.Column("password", sa.String(length=255), nullable=False),
-    sa.Column("active", sa.Boolean(), nullable=True),
-    sa.Column("confirmed_at", sa.DateTime(), nullable=True),
-    sa.Column("fs_uniquifier", sa.String(length=64), nullable=False),
-    sa.PrimaryKeyConstraint("id"),
-    sa.UniqueConstraint("email"),
-    sa.UniqueConstraint("fs_uniquifier")
+    op.create_table(
+        "user",
+        sa.Column("id", sa.Integer(), nullable=False),
+        sa.Column("first_name", sa.String(length=255), nullable=False),
+        sa.Column("last_name", sa.String(length=255), nullable=True),
+        sa.Column("email", sa.String(length=255), nullable=False),
+        sa.Column("password", sa.String(length=255), nullable=False),
+        sa.Column("active", sa.Boolean(), nullable=True),
+        sa.Column("confirmed_at", sa.DateTime(), nullable=True),
+        sa.Column("fs_uniquifier", sa.String(length=64), nullable=False),
+        sa.PrimaryKeyConstraint("id"),
+        sa.UniqueConstraint("email"),
+        sa.UniqueConstraint("fs_uniquifier"),
     )
-    op.create_table("roles_users",
-    sa.Column("user_id", sa.Integer(), nullable=True),
-    sa.Column("role_id", sa.Integer(), nullable=True),
-    sa.ForeignKeyConstraint(["role_id"], ["role.id"], ),
-    sa.ForeignKeyConstraint(["user_id"], ["user.id"], )
+    op.create_table(
+        "roles_users",
+        sa.Column("user_id", sa.Integer(), nullable=True),
+        sa.Column("role_id", sa.Integer(), nullable=True),
+        sa.ForeignKeyConstraint(
+            ["role_id"],
+            ["role.id"],
+        ),
+        sa.ForeignKeyConstraint(
+            ["user_id"],
+            ["user.id"],
+        ),
     )
     # ### end Alembic commands ###

@@ -3,6 +3,7 @@ from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 import time
 
+
 # Test battery list and detail page
 def test_batteries_list_has_detail_link(selenium_driver, base_url, wait_timeout):
     # Navigate to batteries list page
@@ -18,15 +19,15 @@ def test_batteries_list_has_detail_link(selenium_driver, base_url, wait_timeout)
     )
     # Verify a detail link exists under the same container
     detail_link = battery_container.find_element(
-            By.XPATH,
-            './/a[normalize-space()="Details"]',
-        )
+        By.XPATH,
+        './/a[normalize-space()="Details"]',
+    )
     assert detail_link is not None
     # Verify an online status span exists under the same container
     online_span = battery_container.find_element(
-            By.XPATH,
-            './/span[contains(translate(normalize-space(), "ONLINE", "online"), "online")]',
-        )
+        By.XPATH,
+        './/span[contains(translate(normalize-space(), "ONLINE", "online"), "online")]',
+    )
     assert online_span is not None
 
     # Click the detail link and wait for the detail page to load
@@ -51,6 +52,3 @@ def test_batteries_list_has_detail_link(selenium_driver, base_url, wait_timeout)
         )
     )
     assert status_span is not None
-
-
-    

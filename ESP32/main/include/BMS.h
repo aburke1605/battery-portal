@@ -4,25 +4,25 @@
 #include <stdint.h>
 
 typedef struct {
-    uint8_t Q;
-    uint8_t H;
-    uint16_t aT;
-    uint16_t cT;
-    uint16_t T1;
-    uint16_t T2;
-    uint16_t T3;
-    uint16_t T4;
-    uint16_t V;
-    uint16_t V1;
-    uint16_t V2;
-    uint16_t V3;
-    uint16_t V4;
-    int16_t I;
-    int16_t I1;
-    int16_t I2;
-    int16_t I3;
-    int16_t I4;
-    int16_t OTC;
+  uint8_t Q;
+  uint8_t H;
+  uint16_t aT;
+  uint16_t cT;
+  uint16_t T1;
+  uint16_t T2;
+  uint16_t T3;
+  uint16_t T4;
+  uint16_t V;
+  uint16_t V1;
+  uint16_t V2;
+  uint16_t V3;
+  uint16_t V4;
+  int16_t I;
+  int16_t I1;
+  int16_t I2;
+  int16_t I3;
+  int16_t I4;
+  int16_t OTC;
 } telemetry_data_t;
 
 void reset();

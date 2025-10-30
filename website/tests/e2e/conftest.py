@@ -22,6 +22,7 @@ TODO:
 - Run in CI/CD pipeline
 """
 
+
 # Start the Flask app in a background process for the duration of the test session.
 @pytest.fixture(scope="session", autouse=True)
 def server():
@@ -37,6 +38,7 @@ def server():
     proc.terminate()
     proc.join(timeout=5)
 
+
 # Start the Selenium chrome driver in a background process for the duration of the test session.
 @pytest.fixture(scope="session", autouse=True)
 def selenium_driver():
@@ -51,6 +53,7 @@ def selenium_driver():
     yield driver
     driver.quit()
 
+
 # Start the ESP32 websocket telemetry in a thread for the duration of the test session.
 @pytest.fixture(scope="session", autouse=True)
 def esp_ws_telemetry(server):
@@ -63,6 +66,7 @@ def esp_ws_telemetry(server):
         ws = create_connection(ws_url, timeout=5)
     except Exception as e:
         raise RuntimeError("Failed to connect to ESP32 websocket telemetry")
+
     def send_loop():
         if ws is None:
             print("[esp_ws] failed to connect; telemetry disabled")
@@ -75,10 +79,12 @@ def esp_ws_telemetry(server):
             now_dt = datetime.now()
             now = now_dt.isoformat()
             d_val = int(f"{now_dt.day:02d}{now_dt.month:02d}{now_dt.year % 100:02d}")
-            t_val = float(f"{now_dt.hour:02d}{now_dt.minute:02d}{now_dt.second:02d}.{now_dt.microsecond // 1000:03d}")
+            t_val = float(
+                f"{now_dt.hour:02d}{now_dt.minute:02d}{now_dt.second:02d}.{now_dt.microsecond // 1000:03d}"
+            )
             payload = [
                 {
-                    "esp_id": "998", 
+                    "esp_id": "998",
                     "content": {
                         "timestamp": now,
                         "d": d_val,
@@ -87,25 +93,25 @@ def esp_ws_telemetry(server):
                         "lon": -122.4194 + random.uniform(-0.01, 0.01),
                         "Q": tick + 1,
                         "H": tick + 1,
-                        "V": random.uniform(115, 125),           # deci-Volts (stored V = V/10)
-                        "V1": random.uniform(32, 34),            # deci-Volts per cell
+                        "V": random.uniform(115, 125),  # deci-Volts (stored V = V/10)
+                        "V1": random.uniform(32, 34),  # deci-Volts per cell
                         "V2": random.uniform(32, 34),
                         "V3": random.uniform(32, 34),
                         "V4": random.uniform(32, 34),
-                        "I": random.uniform(-100, 100),          # deci-Amps (stored I = I/10)
+                        "I": random.uniform(-100, 100),  # deci-Amps (stored I = I/10)
                         "I1": random.uniform(-25, 25),
                         "I2": random.uniform(-25, 25),
                         "I3": random.uniform(-25, 25),
                         "I4": random.uniform(-25, 25),
-                        "aT": random.uniform(200, 300),          # deci-°C (stored T = T/10)
+                        "aT": random.uniform(200, 300),  # deci-°C (stored T = T/10)
                         "cT": random.uniform(200, 300),
                         "T1": random.uniform(200, 300),
                         "T2": random.uniform(200, 300),
                         "T3": random.uniform(200, 300),
                         "T4": random.uniform(200, 300),
                         "OTC": random.randint(0, 100),
-                        "wifi": random.choice([0, 1])
-                    }
+                        "wifi": random.choice([0, 1]),
+                    },
                 }
             ]
             try:
@@ -122,6 +128,7 @@ def esp_ws_telemetry(server):
                 # If send fails, stop trying for this session
                 break
             time.sleep(1)
+
     thread = threading.Thread(target=send_loop, daemon=True)
     thread.start()
     # Make the WS available to tests
@@ -134,6 +141,7 @@ def esp_ws_telemetry(server):
     except Exception:
         pass
 
+
 # Common test configuration
 @pytest.fixture(scope="session")
 def base_url() -> str:
@@ -142,17 +150,27 @@ def base_url() -> str:
     # Tests run over HTTP to avoid certificate issues
     return f"http://{host}:{port}"
 
+
 @pytest.fixture(scope="session")
 def wait_timeout() -> int:
     return int(os.getenv("E2E_WAIT_TIMEOUT", "10"))
+
 
 # Start Flask app for the whole test session
 def _run_flask_server():
     os.environ.setdefault("FLASK_ENV", "development")
     # Use HTTP for tests to avoid certificate issues
     from app import create_app
+
     app = create_app()
-    app.run(host=_get_server_host(), port=_get_server_port(), debug=False, ssl_context=None, threaded=True)
+    app.run(
+        host=_get_server_host(),
+        port=_get_server_port(),
+        debug=False,
+        ssl_context=None,
+        threaded=True,
+    )
+
 
 # Wait for the server port to be open
 def _wait_for_port(host: str, port: int, timeout: int = 30) -> bool:
@@ -167,12 +185,15 @@ def _wait_for_port(host: str, port: int, timeout: int = 30) -> bool:
                 time.sleep(0.2)
     return False
 
+
 # Centralized host/port for the test server
 def _get_server_host() -> str:
     return os.getenv("E2E_HOST", "127.0.0.1")
 
+
 def _get_server_port() -> int:
     return int(os.getenv("E2E_PORT", "5000"))
+
 
 # Enforce test execution order: home -> login -> battery within this e2e suite
 def pytest_collection_modifyitems(config, items):
@@ -180,10 +201,14 @@ def pytest_collection_modifyitems(config, items):
         "test_home.py": 0,
         "test_login.py": 1,
         "test_battery.py": 2,
-        "test_user.py": 3
+        "test_user.py": 3,
     }
+
     def sort_key(item):
         # pytest>=8: item.path is a pathlib.Path
-        filename = os.path.basename(str(getattr(item, "path", getattr(item, "fspath", ""))))
+        filename = os.path.basename(
+            str(getattr(item, "path", getattr(item, "fspath", "")))
+        )
         return (priority.get(filename, 100), item.nodeid)
+
     items.sort(key=sort_key)

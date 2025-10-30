@@ -1,4 +1,5 @@
 import logging
+
 logger = logging.getLogger(__name__)
 
 from datetime import datetime, timedelta
@@ -16,32 +17,37 @@ from utils import process_telemetry_data
 db = Blueprint("db", __name__, url_prefix="/db")
 
 DB = SQLAlchemy()
+
+
 class BatteryInfo(DB.Model):
     """
-        Defines the structure of the battery_info table, which manages the individual battery_data tables.
-        Must first create the database manually in mysql command prompt:
-            $ mysql -u root -p
-            mysql> create database battery_data;
-        Then initiate with flask:
-            $ flask db init
-            $ flask db migrate -m "initiate"
-            $ flask db upgrade
-        Further changes made to the class here are then propagated with:
-            $ flask db migrate -m "add/remove ___ column"
-            $ flask db upgrade
+    Defines the structure of the battery_info table, which manages the individual battery_data tables.
+    Must first create the database manually in mysql command prompt:
+        $ mysql -u root -p
+        mysql> create database battery_data;
+    Then initiate with flask:
+        $ flask db init
+        $ flask db migrate -m "initiate"
+        $ flask db upgrade
+    Further changes made to the class here are then propagated with:
+        $ flask db migrate -m "add/remove ___ column"
+        $ flask db upgrade
     """
+
     __tablename__ = "battery_info"
 
     esp_id = DB.Column(DB.Integer, primary_key=True)
     root_id = DB.Column(DB.Integer, nullable=True)
-    last_updated_time = DB.Column(DB.DateTime, default=datetime.now, onupdate=datetime.now, nullable=False)
+    last_updated_time = DB.Column(
+        DB.DateTime, default=datetime.now, onupdate=datetime.now, nullable=False
+    )
     live_websocket = DB.Column(DB.Boolean, default=False, nullable=False)
 
 
 def update_battery_data(json: list) -> None:
     """
-        Is called when new telemetry data is received from an ESP32 WebSocket client.
-        Creates new / updates the battery_data_<esp_id> table and corresponding row in the battery_info table.
+    Is called when new telemetry data is received from an ESP32 WebSocket client.
+    Creates new / updates the battery_data_<esp_id> table and corresponding row in the battery_info table.
     """
     # first grab the esp_id of the root for later use
     root_id = json[0]["esp_id"]
@@ -49,7 +55,7 @@ def update_battery_data(json: list) -> None:
     for i, data in enumerate(json):
         esp_id = data["esp_id"]
         content = data["content"]
-        
+
         # first update battery_info table
         try:
             # check if the entry already exists
@@ -57,19 +63,21 @@ def update_battery_data(json: list) -> None:
             if not battery:
                 # create default one if not
                 battery = BatteryInfo(
-                    esp_id = 0,
-                    root_id = None,
-                    last_updated_time = datetime.now(),
-                    live_websocket = False,
+                    esp_id=0,
+                    root_id=None,
+                    last_updated_time=datetime.now(),
+                    live_websocket=False,
                 )
                 DB.session.add(battery)
                 logger.info(f"inserted new battery_info row with esp_id: {esp_id}")
             # update the entry info
             battery.esp_id = esp_id
-            battery.root_id = None if i==0 else root_id
+            battery.root_id = None if i == 0 else root_id
             battery.last_updated_time = datetime.now()
             DB.session.commit()
-            set_live_websocket(esp_id, True) # this function (`update_battery_data`) is only ever called from the /esp_ws handler, so must be True
+            set_live_websocket(
+                esp_id, True
+            )  # this function (`update_battery_data`) is only ever called from the /esp_ws handler, so must be True
         except Exception as e:
             DB.session.rollback()
             logger.error(f"DB error processing WebSocket message from {esp_id}: {e}")
@@ -77,31 +85,31 @@ def update_battery_data(json: list) -> None:
         # then update/create battery_data_bms_<esp_id> table
         battery_data_table = get_battery_data_table(esp_id)
         try:
-            process_telemetry_data(content) # first add approximate cell charges
+            process_telemetry_data(content)  # first add approximate cell charges
             query = insert(battery_data_table).values(
-                timestamp = datetime.fromisoformat(content["timestamp"]),
-                lat = content["lat"],
-                lon = content["lon"],
-                Q = content["Q"],
-                H = content["H"],
-                V = content["V"] / 10,
-                V1 = content["V1"] / 100,
-                V2 = content["V2"] / 100,
-                V3 = content["V3"] / 100,
-                V4 = content["V4"] / 100,
-                I = content["I"] / 10,
-                I1 = content["I1"] / 100,
-                I2 = content["I2"] / 100,
-                I3 = content["I3"] / 100,
-                I4 = content["I4"] / 100,
-                aT = content["aT"] / 10,
-                cT = content["cT"] / 10,
-                T1 = content["T1"] / 100,
-                T2 = content["T2"] / 100,
-                T3 = content["T3"] / 100,
-                T4 = content["T4"] / 100,
-                OTC = content["OTC"],
-                wifi = content["wifi"],
+                timestamp=datetime.fromisoformat(content["timestamp"]),
+                lat=content["lat"],
+                lon=content["lon"],
+                Q=content["Q"],
+                H=content["H"],
+                V=content["V"] / 10,
+                V1=content["V1"] / 100,
+                V2=content["V2"] / 100,
+                V3=content["V3"] / 100,
+                V4=content["V4"] / 100,
+                I=content["I"] / 10,
+                I1=content["I1"] / 100,
+                I2=content["I2"] / 100,
+                I3=content["I3"] / 100,
+                I4=content["I4"] / 100,
+                aT=content["aT"] / 10,
+                cT=content["cT"] / 10,
+                T1=content["T1"] / 100,
+                T2=content["T2"] / 100,
+                T3=content["T3"] / 100,
+                T4=content["T4"] / 100,
+                OTC=content["OTC"],
+                wifi=content["wifi"],
             )
             DB.session.execute(query)
             DB.session.commit()
@@ -112,7 +120,7 @@ def update_battery_data(json: list) -> None:
 
 def set_live_websocket(esp_id: str, live: bool) -> None:
     """
-        Simple utility function to change the live_websocket value for a given battery unit in the battery_info table.
+    Simple utility function to change the live_websocket value for a given battery unit in the battery_info table.
     """
     try:
         battery = DB.session.get(BatteryInfo, esp_id)
@@ -125,8 +133,8 @@ def set_live_websocket(esp_id: str, live: bool) -> None:
 
 def get_battery_data_table(esp_id: str) -> Table:
     """
-        Returns a handle to a specified battery_data_bms_<esp_id> table in the database.
-        A new table is created if one does not yet exist.
+    Returns a handle to a specified battery_data_bms_<esp_id> table in the database.
+    A new table is created if one does not yet exist.
     """
     name = f"battery_data_bms_{esp_id}"
 
@@ -134,11 +142,18 @@ def get_battery_data_table(esp_id: str) -> Table:
     inspector = inspect(DB.engine)
     if inspector.has_table(name):
         table = DB.Table(name, DB.metadata, autoload_with=DB.engine)
-    
+
     # create one if not
     else:
-        table = DB.Table(name,
-            DB.Column("timestamp", DB.DateTime, nullable=False, default=datetime.now, primary_key=True),
+        table = DB.Table(
+            name,
+            DB.Column(
+                "timestamp",
+                DB.DateTime,
+                nullable=False,
+                default=datetime.now,
+                primary_key=True,
+            ),
             DB.Column("lat", DB.Float, nullable=False),
             DB.Column("lon", DB.Float, nullable=False),
             DB.Column("Q", DB.Integer, nullable=False),
@@ -172,8 +187,8 @@ def get_battery_data_table(esp_id: str) -> Table:
 @roles_required("superuser")
 def execute_sql():
     """
-        API used by frontend to enable manual sql execution on database.
-        Requires login as admin.
+    API used by frontend to enable manual sql execution on database.
+    Requires login as admin.
     """
     data = request.get_json()
     query = data.get("query")
@@ -185,7 +200,10 @@ def execute_sql():
     dangerous_statements = ["drop", "delete", "update", "alter", "truncate"]
     if any(word in query.lower() for word in dangerous_statements):
         if not verified:
-            return jsonify({"confirm": "Please re-enter the query to confirm execution."}), 403
+            return (
+                jsonify({"confirm": "Please re-enter the query to confirm execution."}),
+                403,
+            )
         else:
             query = query[5:]
 
@@ -214,7 +232,7 @@ def execute_query(query: str):
 @login_required
 def info():
     """
-        API used by frontend to fetch live_websocket statuses and mesh structure from battery_info table.
+    API used by frontend to fetch live_websocket statuses and mesh structure from battery_info table.
     """
     esp_dict = defaultdict()
     nodes_dict = defaultdict(list)
@@ -244,7 +262,7 @@ def info():
 @login_required
 def data():
     """
-        API used by frontend to fetch most recent row in battery_data_bms_<esp_id> table.
+    API used by frontend to fetch most recent row in battery_data_bms_<esp_id> table.
     """
     esp_id = request.args.get("esp_id")
     table_name = f"battery_data_bms_{esp_id}"
@@ -265,7 +283,7 @@ def data():
 # @login_required # log in not required otherwise can't be used in chart data (see below)
 def esp_ids():
     """
-        API used by frontend to fetch all esp_ids from battery_info table.
+    API used by frontend to fetch all esp_ids from battery_info table.
     """
     batteries = DB.session.query(BatteryInfo).all()
     return jsonify([battery.esp_id for battery in batteries])
@@ -275,7 +293,7 @@ def esp_ids():
 # @login_required # log in not required otherwise wouldn't show in homepage
 def chart_data():
     """
-        API used by frontend to fetch 250 entries from battery_data_bms_<esp_id> table for chart display.
+    API used by frontend to fetch 250 entries from battery_data_bms_<esp_id> table for chart display.
     """
     esp_id = request.args.get("esp_id")
     if esp_id == "unavailable!" or esp_id == "undefined" or esp_id == "":
@@ -285,21 +303,19 @@ def chart_data():
     data_table = DB.Table(table_name, DB.metadata, autoload_with=DB.engine)
     column = request.args.get("column")
 
-    sub_sub_query = (
-        select(
-            data_table.c.timestamp, data_table.c[column], # query timestamp and column of interest
-            func.row_number().over(
-                order_by=desc(data_table.c.timestamp) # ordered by most recent (time-wise)
-            ).label("rn")
+    sub_sub_query = select(
+        data_table.c.timestamp,
+        data_table.c[column],  # query timestamp and column of interest
+        func.row_number()
+        .over(
+            order_by=desc(data_table.c.timestamp)  # ordered by most recent (time-wise)
         )
-        .subquery()
-    )
+        .label("rn"),
+    ).subquery()
     sub_query = (
-        select(
-            sub_sub_query.c.timestamp, sub_sub_query.c[column]
-        )
-        .where(sub_sub_query.c.rn % 75 == 0) # every 75th row so query is not too large
-        .limit(250) # max 250 data points
+        select(sub_sub_query.c.timestamp, sub_sub_query.c[column])
+        .where(sub_sub_query.c.rn % 75 == 0)  # every 75th row so query is not too large
+        .limit(250)  # max 250 data points
         .subquery()
     )
     query = select(sub_query)
@@ -314,7 +330,7 @@ def chart_data():
             if row[0].date() != rows[-1][0].date():
                 continue
             if previous is not None:
-                if previous - row[0] > timedelta(days = 1):
+                if previous - row[0] > timedelta(days=1):
                     break
             previous = row[0]
 
@@ -329,7 +345,7 @@ def chart_data():
 
 def import_bqStudio_log(csv_path: str):
     """
-        Creates example data for fresh website lacking real data.
+    Creates example data for fresh website lacking real data.
     """
     esp_id = 999
     name = f"battery_data_bms_{esp_id}"
@@ -339,10 +355,10 @@ def import_bqStudio_log(csv_path: str):
 
     # create entry in battery_info table
     battery = BatteryInfo(
-        esp_id = esp_id,
-        root_id = None,
-        last_updated_time = datetime.now(),
-        live_websocket = True,
+        esp_id=esp_id,
+        root_id=None,
+        last_updated_time=datetime.now(),
+        live_websocket=True,
     )
     DB.session.add(battery)
     DB.session.commit()
@@ -360,21 +376,33 @@ def import_bqStudio_log(csv_path: str):
         for row in reader:
             if not row["TimeStamp"].strip():
                 continue
-            rows.append({
-                "timestamp": datetime.fromisoformat(row["TimeStamp"]),
-                "lat": 0, "lon": 0,
-                "Q": int(row["Relative State of Charge"] or 0),
-                "H": 0,
-                "V": float(row["Voltage"] or 0)/1000,
-                "V1": 0, "V2": 0, "V3": 0, "V4": 0,
-                "I": float(row["Current"] or 0)/1000,
-                "I1": 0, "I2": 0, "I3": 0, "I4": 0,
-                "aT": 0,
-                "cT": float(row["Temperature"] or 0),
-                "T1": 0, "T2": 0, "T3": 0, "T4": 0,
-                "OTC": 0,
-                "wifi": False,
-            })
+            rows.append(
+                {
+                    "timestamp": datetime.fromisoformat(row["TimeStamp"]),
+                    "lat": 0,
+                    "lon": 0,
+                    "Q": int(row["Relative State of Charge"] or 0),
+                    "H": 0,
+                    "V": float(row["Voltage"] or 0) / 1000,
+                    "V1": 0,
+                    "V2": 0,
+                    "V3": 0,
+                    "V4": 0,
+                    "I": float(row["Current"] or 0) / 1000,
+                    "I1": 0,
+                    "I2": 0,
+                    "I3": 0,
+                    "I4": 0,
+                    "aT": 0,
+                    "cT": float(row["Temperature"] or 0),
+                    "T1": 0,
+                    "T2": 0,
+                    "T3": 0,
+                    "T4": 0,
+                    "OTC": 0,
+                    "wifi": False,
+                }
+            )
     if rows:
         DB.session.execute(table.insert(), rows)
         DB.session.commit()
@@ -384,7 +412,7 @@ def import_bqStudio_log(csv_path: str):
 @roles_required("superuser")
 def example():
     """
-        API
+    API
     """
     try:
         import_bqStudio_log("GPCCHEM.csv")
@@ -397,7 +425,7 @@ def example():
 @login_required
 def recommendation():
     """
-        API used by frontend to fetch generated BMS optimisation recommendations based on recent telemetry.
+    API used by frontend to fetch generated BMS optimisation recommendations based on recent telemetry.
     """
     try:
         esp_id = request.args.get("esp_id")
@@ -409,8 +437,8 @@ def recommendation():
         today = DB.session.execute(query).first()[0]
 
         # select N most recent
-        seconds_per_day = 86400 # 24*60*60
-        update_frequency_hz = 0.2 # every 5s
+        seconds_per_day = 86400  # 24*60*60
+        update_frequency_hz = 0.2  # every 5s
         N = int(update_frequency_hz * seconds_per_day)
         sub_query = (
             select(data_table.c.Q, data_table.c.cT, data_table.c.timestamp)
@@ -420,9 +448,9 @@ def recommendation():
             .subquery()
         )
         # reorder again
-        query = \
-            select(sub_query.c.Q, sub_query.c.cT) \
-            .order_by(asc(sub_query.c.timestamp))
+        query = select(sub_query.c.Q, sub_query.c.cT).order_by(
+            asc(sub_query.c.timestamp)
+        )
 
         rows = DB.session.execute(query).fetchall()
 
@@ -432,22 +460,26 @@ def recommendation():
         Q_max = int(max(Q))
         Q_min = int(min(Q))
         if Q_max - Q_min < 50:
-            recommendations.append({
-                "type": "charge-range",
-                "message": f"Restrict SoC range to [{Q_min},{Q_max}]%",
-                "min": Q_min,
-                "max": Q_max,
-            })
+            recommendations.append(
+                {
+                    "type": "charge-range",
+                    "message": f"Restrict SoC range to [{Q_min},{Q_max}]%",
+                    "min": Q_min,
+                    "max": Q_max,
+                }
+            )
 
         cT = np.fromiter((r[1] for r in rows), dtype=int)
         cT_mean = np.mean(cT)
         if cT_mean > 40.0:
             I_max = 2.0
-            recommendations.append({
-                "type": "current-dischg-limit",
-                "message": f"Overheating detected: {cT_mean:.1f}°C. Throttle discharge current to {I_max}A",
-                "max": I_max,
-            })
+            recommendations.append(
+                {
+                    "type": "current-dischg-limit",
+                    "message": f"Overheating detected: {cT_mean:.1f}°C. Throttle discharge current to {I_max}A",
+                    "max": I_max,
+                }
+            )
 
         return {"recommendations": recommendations}, 200
     except Exception as e:

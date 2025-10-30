@@ -56,13 +56,13 @@ String comp_string;
 String str1, str2, str3, str4, str5, str6, str7, str8, str9;
 
 
-//StaticJsonBuffer<300> jsonBuff;        //create a JSON buffer to store an object 
+//StaticJsonBuffer<300> jsonBuff;        //create a JSON buffer to store an object
 //StaticJsonBuffer<300> jsonBuffer;               //create a JSON buffer to store an object
-//JsonObject& root = jsonBuffer.createObject();   //create a JSON object called root   
+//JsonObject& root = jsonBuffer.createObject();   //create a JSON object called root
 //JsonObject& myData = jsonBuff.createObject();   //create a JSON object called root
 
 //JsonObject root = doc.to<JsonObject>();
-//char json[] = "{\"charge\":\100\,\"volts\":\3713\,\"amps\":13518\}"; 
+//char json[] = "{\"charge\":\100\,\"volts\":\3713\,\"amps\":13518\}";
 
 FirebaseJson json;
 //FirebaseJsonData result;
@@ -105,7 +105,7 @@ String processor(const String& var){    //this will replace placeholders with va
 
 hw_timer_t * timer = NULL;   //"timer"
 portMUX_TYPE timerMux = portMUX_INITIALIZER_UNLOCKED;   //"timerMux"
- 
+
 void IRAM_ATTR onTimer() {       //ISR for timer
   portENTER_CRITICAL_ISR(&timerMux);
   interruptCounterA = 1;
@@ -116,7 +116,7 @@ void IRAM_ATTR onTimer() {       //ISR for timer
 
 hw_timer_t * timer2 = NULL;   //"timer2"
 //portMUX_TYPE timerMux = portMUX_INITIALIZER_UNLOCKED;   //"timerMux"
- 
+
 void IRAM_ATTR onTimer2() {       //ISR for timer 2
   portENTER_CRITICAL_ISR(&timerMux);
   interruptCounterB = 1;
@@ -137,7 +137,7 @@ void handleWebSocketMessage(void *arg, uint8_t *data, size_t len) {
   if (info->final && info->index == 0 && info->len == len && info->opcode == WS_TEXT) {
     data[len] = 0;
     if (strcmp((char*)data, "toggleblue") == 0) {    //if "toggleblue" string was received
-      
+
       if(blueledState==1){
         digitalWrite(2, LOW);
         blueledState = 0;
@@ -150,7 +150,7 @@ void handleWebSocketMessage(void *arg, uint8_t *data, size_t len) {
 
     }
     else if (strcmp((char*)data, "togglered") == 0) {    //if "togglered" string was received
-      
+
       if(redledState==3){
         digitalWrite(4, LOW);
         redledState = 2;
@@ -202,7 +202,7 @@ public:
   }
 
   void handleRequest(AsyncWebServerRequest *request) {
-    request->send_P(200, "text/html", index_html); 
+    request->send_P(200, "text/html", index_html);
   }
 };
 
@@ -262,7 +262,7 @@ float get_temp() {
 
 
 void setupServer(){
-  
+
   server.on("/", HTTP_GET, [](AsyncWebServerRequest *request){    //when requested by connecting to esp32 wi-fi
 
     if(lock_login_page==0){
@@ -274,7 +274,7 @@ void setupServer(){
 
 
   server.on("/about", HTTP_GET, [](AsyncWebServerRequest *request){    //when requested by pressing about aceon button
-  
+
       if(time_out==0){
         request->send_P(200, "text/html", about_aceon);     //this sends the about aceon page
       }
@@ -287,7 +287,7 @@ void setupServer(){
 
 
   server.on("/unit image", HTTP_GET, [](AsyncWebServerRequest *request){    //when requested by pressing about aceon button
-  
+
       if(time_out==0){
         request->send_P(200, "text/html", device_image);     //this sends the unit image page
       }
@@ -297,10 +297,10 @@ void setupServer(){
         request->send(200, "text/html", "This connection has timed out <br>");//<a href=\"/\">Return to Home Page</a>");
       }
     });
-    
-      
+
+
   server.on("/return", HTTP_GET, [](AsyncWebServerRequest *request){    //when requested by pressing back button
-  
+
       if(time_out==0){
         request->send_P(200, "text/html", display_page, processor);    //request display page and processor functions
       }
@@ -312,12 +312,12 @@ void setupServer(){
     });
 
 
-  server.on("/get", HTTP_GET, [] (AsyncWebServerRequest *request) {    //when requested by form action (/get) 
-      String inputMessage;                                            
+  server.on("/get", HTTP_GET, [] (AsyncWebServerRequest *request) {    //when requested by form action (/get)
+      String inputMessage;
       String inputParam;
-      
+
       if (request->hasParam("username")) {      //if a username has been entered
-        inputMessage = request->getParam("username")->value();   
+        inputMessage = request->getParam("username")->value();
         inputParam = "username";
         user_name = inputMessage;
         if(user_name=="user"){                //if username is correct
@@ -325,7 +325,7 @@ void setupServer(){
           name_received = true;
         }
       }
-    
+
       if (request->hasParam("password")) {     //if a password has been entered
         inputMessage = request->getParam("password")->value();
         inputParam = "password";
@@ -333,7 +333,7 @@ void setupServer(){
         if(proficiency=="pass"){           //if password is correct
           Serial.println(inputMessage);
           proficiency_received = true;
-          
+
         }
       }
 
@@ -348,9 +348,9 @@ void setupServer(){
         temp_string = String(temp);
         request->send_P(200, "text/html", display_page, processor);    //request display page and processor functions
         lock_login_page = 1;
-        device_connected = 1;   
+        device_connected = 1;
         timerRestart(timer);
-        
+
       }
       else if(name_received && proficiency_received and time_out==1){
         lock_login_page = 0;
@@ -363,7 +363,7 @@ void setupServer(){
   });
 
 
-  
+
     server.on("/aceon", HTTP_GET, [](AsyncWebServerRequest *request){
       // request->send(SPIFFS, "/aceon.png", "image/png");
       request->send(LittleFS, "/aceon.png", "image/png");
@@ -371,7 +371,7 @@ void setupServer(){
     server.on("/aceon2", HTTP_GET, [](AsyncWebServerRequest *request){
       // request->send(SPIFFS, "/aceon2.png", "image/png");
       request->send(LittleFS, "/aceon2.png", "image/png");
-    }); 
+    });
 }
 
 void initLittleFS() {
@@ -387,7 +387,7 @@ void test() {
   Wire.beginTransmission(BQ34Z100);
   Wire.write(0x21); // Send register address
   Wire.endTransmission(false); // Send repeated start condition
-  
+
   Wire.requestFrom(BQ34Z100, 21); // Request the ASCII block
   char deviceName[21 + 1]; // Create buffer to store device name
   int i = 0;
@@ -420,7 +420,7 @@ void print_16bit(uint16_t x) {
 }
 
 void setup(){
-  
+
   pinMode(2, OUTPUT);
   pinMode(4, OUTPUT);
   Wire.begin(22,21,100000);  //connect I2C
@@ -438,10 +438,10 @@ void setup(){
   }
 
 
-  WiFi.mode(WIFI_AP); 
+  WiFi.mode(WIFI_AP);
   SOC = get_SOC();                                      //read SOC from BMS
   SOC_string = String(SOC);                             //convert SOC to string
-  device_title = mytitle + SOC_string + percent; 
+  device_title = mytitle + SOC_string + percent;
   WiFi.softAP(device_title);
   initWebSocket();
   setupServer();
@@ -455,13 +455,13 @@ void setup(){
   timer = timerBegin(0, 80, true);                //using timer 0, prescaler of 80, count up
   timerAttachInterrupt(timer, &onTimer, true);    //  hardware timer, address of ISR, edge type
   timerAlarmWrite(timer, 180000000, true);        // use timer, count up to (180000000 u seconds = 3 mins), reload
-  timerAlarmEnable(timer);  
+  timerAlarmEnable(timer);
 
   // 1 second timer to "refresh" the info on the page
   timer2 = timerBegin(1, 80, true);                //using timer 1, prescaler of 80, count up
   timerAttachInterrupt(timer2, &onTimer2, true);    //  hardware timer, address of ISR, edge type
   timerAlarmWrite(timer2, 1000000, true);        // use timer, count up to (1000000 u seconds = 1 sec), reload
-  timerAlarmEnable(timer2);                 
+  timerAlarmEnable(timer2);
 }
 
 
@@ -476,19 +476,19 @@ void loop(){
     portEXIT_CRITICAL(&timerMux);
 
     if(device_connected==0){
-       
+
       SOC = get_SOC();                                      //read SOC from BMS
       SOC_string = String(SOC);                             //convert SOC to string
       device_title = mytitle + SOC_string + percent;        //create title with SOC in it
       WiFi.softAP(device_title);                            //update title
-      
+
     }
     else{
 
       time_out = 1;    //stop page from reloading if requested
       device_connected = 0;
       ws.closeAll();   //close websocket
-      
+
     }
   }
 
@@ -504,21 +504,21 @@ void loop(){
     temp = get_temp();
 
     if(SOC != old_SOC or voltage != old_voltage or current != old_current or temp != old_temp){   //if any BMS readings have changed
-            
+
       str1 = "{\"charge\":";
       str2 = String(SOC);
       str3 = ", \"volts\":";
-      str4 = String(voltage);    //build up string allowing placement of variables 
+      str4 = String(voltage);    //build up string allowing placement of variables
       str5 = ", \"amps\":";
       str6 = String(current);
       str7 = ", \"temp\":";
       str8 = String(temp);
       str9 = "}";
       comp_string = str1 + str2 + str3 + str4 + str5 + str6 + str7 + str8 + str9;   //put all bits together
-      
+
       json.setJsonData(comp_string);
       json.toString(JSON_string, false);//, true /* prettify option */);
-      
+
       ws.textAll(JSON_string);   //send string of JSON data through websocket
       //Serial.print(JSON_string);
       old_SOC = SOC;
@@ -527,16 +527,16 @@ void loop(){
       old_temp = temp;
     }
   }
-  
+
 
   ws.cleanupClients();
-  
+
   dnsServer.processNextRequest();
   if(name_received && proficiency_received){
-      
+
       name_received = false;
       proficiency_received = false;
-           
+
     }
-    
+
 }

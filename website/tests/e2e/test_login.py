@@ -18,7 +18,9 @@ def test_login(selenium_driver, base_url, wait_timeout):
     assert form is not None
 
     # grab elements
-    email_input = form.find_element(By.CSS_SELECTOR, 'input[placeholder="info@gmail.com"]')
+    email_input = form.find_element(
+        By.CSS_SELECTOR, 'input[placeholder="info@gmail.com"]'
+    )
     password_input = form.find_element(By.CSS_SELECTOR, 'input[type="password"]')
     login_button = form.find_element(By.XPATH, '//button[contains(text(), "Sign in")]')
     assert email_input is not None
@@ -31,12 +33,10 @@ def test_login(selenium_driver, base_url, wait_timeout):
     login_button.click()
 
     # wait redirect after successful login
-    dashboard_link = WebDriverWait(selenium_driver, wait_timeout).until(        
+    dashboard_link = WebDriverWait(selenium_driver, wait_timeout).until(
         EC.title_contains("Dashboard")
     )
     assert dashboard_link is not None
 
     time.sleep(1)
     selenium_driver.refresh()
-
-    
