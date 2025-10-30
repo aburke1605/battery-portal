@@ -8,9 +8,9 @@ extern "C" {
 #endif
 
 static inline int64_t esp_timer_get_time(void) {
-    struct timeval tv;
-    gettimeofday(&tv, NULL);
-    return (int64_t)tv.tv_sec * 1000000LL + tv.tv_usec;
+  struct timeval tv;
+  gettimeofday(&tv, NULL);
+  return (int64_t)tv.tv_sec * 1000000LL + tv.tv_usec;
 }
 
 #ifdef __cplusplus
