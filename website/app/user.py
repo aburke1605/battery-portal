@@ -1,11 +1,20 @@
 import logging
+
 logger = logging.getLogger(__name__)
 import os
 from uuid import uuid4
 import re
 
 from flask import Flask, Blueprint, request, jsonify
-from flask_security import UserMixin, RoleMixin, SQLAlchemyUserDatastore, login_user, logout_user, login_required, roles_required
+from flask_security import (
+    UserMixin,
+    RoleMixin,
+    SQLAlchemyUserDatastore,
+    login_user,
+    logout_user,
+    login_required,
+    roles_required,
+)
 from flask_security.utils import hash_password
 from flask_login import current_user
 from sqlalchemy import inspect
@@ -13,26 +22,33 @@ from sqlalchemy import inspect
 user = Blueprint("user", __name__, url_prefix="/user")
 
 from app.db import DB
+
+
 class Roles(DB.Model, RoleMixin):
     """
-        Defines the structure of the roles table, which defines types of users.
+    Defines the structure of the roles table, which defines types of users.
     """
+
     __tablename__ = "roles"
 
     id = DB.Column(DB.Integer, primary_key=True)
     name = DB.Column(DB.String(80), unique=True)
     description = DB.Column(DB.String(255))
 
+
 # simple association table to link User(s) and Role(s)
-roles_users = DB.Table("roles_users",
+roles_users = DB.Table(
+    "roles_users",
     DB.Column("user_id", DB.Integer, DB.ForeignKey("users.id")),
-    DB.Column("role_id", DB.Integer, DB.ForeignKey("roles.id"))
+    DB.Column("role_id", DB.Integer, DB.ForeignKey("roles.id")),
 )
+
 
 class Users(DB.Model, UserMixin):
     """
-        Defines the structure of the users table.
+    Defines the structure of the users table.
     """
+
     __tablename__ = "users"
 
     id = DB.Column(DB.Integer, primary_key=True)
@@ -42,16 +58,20 @@ class Users(DB.Model, UserMixin):
     password = DB.Column(DB.String(255), nullable=False)
     active = DB.Column(DB.Boolean())
     confirmed_at = DB.Column(DB.DateTime())
-    fs_uniquifier = DB.Column(DB.String(64), unique=True, nullable=False, default=lambda: str(uuid4()))
-    roles = DB.relationship("Roles", secondary=roles_users,
-                            backref=DB.backref("users", lazy="dynamic"))
+    fs_uniquifier = DB.Column(
+        DB.String(64), unique=True, nullable=False, default=lambda: str(uuid4())
+    )
+    roles = DB.relationship(
+        "Roles", secondary=roles_users, backref=DB.backref("users", lazy="dynamic")
+    )
+
 
 users = SQLAlchemyUserDatastore(DB, Users, Roles)
 
 
 def create_admin(app: Flask):
     """
-        Builds initial role data in the database and creates the admin user for basic functionality.
+    Builds initial role data in the database and creates the admin user for basic functionality.
     """
     with app.app_context():
         inspector = inspect(DB.engine)
@@ -62,7 +82,6 @@ def create_admin(app: Flask):
         admin_email = os.getenv("ADMIN_EMAIL", "user@admin.dev")
         admin_password = os.getenv("ADMIN_PASSWORD", "password")
 
-
         # first ensure basic roles exist
         role_names = ["user", "superuser"]
         roles = {}
@@ -71,7 +90,7 @@ def create_admin(app: Flask):
             if not role:
                 role = Roles(name=role_name)
                 DB.session.add(role)
-                logger.info(f"creating new role \"{role_name}\"")
+                logger.info(f'creating new role "{role_name}"')
             roles[role_name] = role
         DB.session.commit()
 
@@ -82,17 +101,17 @@ def create_admin(app: Flask):
             first_name=admin_name,
             email=admin_email,
             password=hash_password(admin_password),
-            roles=[roles["user"], roles["superuser"]]
+            roles=[roles["user"], roles["superuser"]],
             # are the other columns of Users therefore not needed?
         )
-        logger.info(f"creating admin user \"{admin_email}\"")
+        logger.info(f'creating admin user "{admin_email}"')
         DB.session.commit()
 
 
 @user.route("/login", methods=["POST"])
 def login():
     """
-        API to verify user login requests, works in conjunction with AuthContext.tsx.
+    API to verify user login requests, works in conjunction with AuthContext.tsx.
     """
     data = request.get_json()
     email = data.get("email")
@@ -101,11 +120,13 @@ def login():
     u = users.find_user(email=email)
     if u and u.verify_and_update_password(password):
         login_user(u)
-        return jsonify({
-            "loggedIn": True,
-            "email": u.email,
-            "roles": [role.name for role in u.roles]
-        })
+        return jsonify(
+            {
+                "loggedIn": True,
+                "email": u.email,
+                "roles": [role.name for role in u.roles],
+            }
+        )
     return jsonify({"success": False}), 401
 
 
@@ -113,22 +134,24 @@ def login():
 @login_required
 def check_auth():
     """
-        API to check for already logged-in users, works in conjunction with AuthContext.tsx.
+    API to check for already logged-in users, works in conjunction with AuthContext.tsx.
     """
-    return jsonify({
-        "loggedIn": True,
-        "email": current_user.email,
-        "first_name": current_user.first_name,
-        "last_name": current_user.last_name,
-        "roles": [role.name for role in current_user.roles]
-    })
+    return jsonify(
+        {
+            "loggedIn": True,
+            "email": current_user.email,
+            "first_name": current_user.first_name,
+            "last_name": current_user.last_name,
+            "roles": [role.name for role in current_user.roles],
+        }
+    )
 
 
 @user.route("/logout", methods=["POST"])
 @login_required
 def logout():
     """
-        API to perform user logout requests, works in conjunction with AuthContext.tsx.
+    API to perform user logout requests, works in conjunction with AuthContext.tsx.
     """
     logout_user()
     return jsonify({"success": "Logged out"}), 200
@@ -138,7 +161,7 @@ def logout():
 @login_required
 def list():
     """
-        API to list users already existing in the database, works in conjunction with list.tsx.
+    API to list users already existing in the database, works in conjunction with list.tsx.
     """
     page = request.args.get("page", default=1, type=int)
     per_page = request.args.get("per_page", default=10, type=int)
@@ -152,27 +175,29 @@ def list():
             "first_name": u.first_name,
             "last_name": u.last_name,
             "email": u.email,
-            "roles": [role.name for role in u.roles]
+            "roles": [role.name for role in u.roles],
         }
         for u in users
     ]
 
-    return jsonify({
-        "users": user_list,
-        "total": pagination.total,
-        "pages": pagination.pages,
-        "current_page": pagination.page,
-        "per_page": pagination.per_page,
-        "has_next": pagination.has_next,
-        "has_prev": pagination.has_prev
-    })
+    return jsonify(
+        {
+            "users": user_list,
+            "total": pagination.total,
+            "pages": pagination.pages,
+            "current_page": pagination.page,
+            "per_page": pagination.per_page,
+            "has_next": pagination.has_next,
+            "has_prev": pagination.has_prev,
+        }
+    )
 
 
 @user.route("/add", methods=["POST"])
 @roles_required("superuser")
 def add():
     """
-        API to add new user to the database, works in conjunction with list.tsx
+    API to add new user to the database, works in conjunction with list.tsx
     """
     data = request.get_json()
     first_name = data.get("first_name")
@@ -185,7 +210,7 @@ def add():
     if existing_user:
         return jsonify({"error": "A user with this email address already exists."}), 400
 
-    role_ids = [1] # can only add normal role users for now
+    role_ids = [1]  # can only add normal role users for now
     roles = Roles.query.filter(Roles.id.in_(role_ids)).all()
 
     try:
@@ -194,7 +219,7 @@ def add():
             last_name=last_name,
             email=email,
             password=hash_password(password),
-            roles=roles
+            roles=roles,
         )
         DB.session.commit()
         return jsonify({"success": "User added successfully"}), 201
@@ -207,24 +232,29 @@ def add():
 @roles_required("superuser")
 def edit(user_id: int):
     """
-        API to edit existing user in the database, works in conjunction with list.tsx
+    API to edit existing user in the database, works in conjunction with list.tsx
     """
     u = Users.query.get_or_404(user_id)
 
     data = request.get_json()
     new_email = data.get("email", u.email)
 
-    if new_email != u.email: # email address is being edited
+    if new_email != u.email:  # email address is being edited
         existing_user = Users.query.filter_by(email=new_email).first()
         if existing_user:
-            return jsonify({"error": "A user with this email address already exists."}), 400
+            return (
+                jsonify({"error": "A user with this email address already exists."}),
+                400,
+            )
 
     try:
         u.first_name = data.get("first_name", u.first_name)
         u.last_name = data.get("last_name", u.last_name)
         u.email = new_email
         new_password = data.get("password")
-        if new_password: # and new_password.strip(): # TODO add function to check all user entered stuff
+        if (
+            new_password
+        ):  # and new_password.strip(): # TODO add function to check all user entered stuff
             u.password = hash_password(new_password)
         DB.session.commit()
         return jsonify({"success": "User updated successfully"}), 200
@@ -237,7 +267,7 @@ def edit(user_id: int):
 @roles_required("superuser")
 def delete(user_id: int):
     """
-        API to delete existing user from the database, works in conjunction with list.tsx
+    API to delete existing user from the database, works in conjunction with list.tsx
     """
     if current_user.id == user_id:
         return jsonify({"error": "Cannot delete admin account."}), 400
@@ -256,7 +286,7 @@ def delete(user_id: int):
 @login_required
 def change_password():
     """
-        API to change the current user's password.
+    API to change the current user's password.
     """
     if Roles.query.filter_by(name="superuser").first() in current_user.roles:
         return jsonify({"error": "Cannot change admin account."}), 400
@@ -272,7 +302,10 @@ def change_password():
         return jsonify({"error": "Current password is incorrect."}), 400
 
     if len(new_password) < 8:
-        return jsonify({"error": "New password must be at least 8 characters long."}), 400
+        return (
+            jsonify({"error": "New password must be at least 8 characters long."}),
+            400,
+        )
 
     try:
         current_user.password = hash_password(new_password.strip())
@@ -281,12 +314,14 @@ def change_password():
     except Exception as e:
         DB.session.rollback()
         return jsonify({"error": f"Failed to change password: {e}."}), 500
+
+
 # TODO: merge these (above and below)
 @user.route("/profile", methods=["PUT"])
 @login_required
 def profile():
     """
-        API to update the current user's profile information.
+    API to update the current user's profile information.
     """
     if Roles.query.filter_by(name="superuser").first() in current_user.roles:
         return jsonify({"error": "Cannot change admin account."}), 400
@@ -304,7 +339,10 @@ def profile():
     if new_email != current_user.email:
         existing_user = Users.query.filter_by(email=new_email).first()
         if existing_user:
-            return jsonify({"error": "A user with this email address already exists."}), 400
+            return (
+                jsonify({"error": "A user with this email address already exists."}),
+                400,
+            )
 
     try:
         current_user.first_name = new_first_name.strip()
