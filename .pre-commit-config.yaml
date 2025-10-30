@@ -11,6 +11,15 @@ repos:
         language_version: python3
         files: \.py$
 
+  # C
+  - repo: local
+    hooks:
+      - id: clang-format
+        name: clang-format
+        entry: clang-format -i
+        language: system
+        files: \.(c|h)$
+
   # basic hygiene
   - repo: https://github.com/pre-commit/pre-commit-hooks
     rev: v3.2.0

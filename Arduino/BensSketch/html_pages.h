@@ -74,10 +74,6 @@ button {
 </html>
 </html>)rawliteral";
 
-
-
-
-
 const char display_page[] PROGMEM = R"rawliteral(
 <!DOCTYPE HTML><html><head>
   <!DOCTYPE HTML><html>
@@ -266,10 +262,6 @@ button {
 </html>
 </html>)rawliteral";
 
-
-
-
-
 const char about_aceon[] PROGMEM = R"rawliteral(
 <!DOCTYPE HTML><html><head>
   <!DOCTYPE HTML><html>
@@ -328,9 +320,6 @@ button {
 </body>
 </html>
 </html>)rawliteral";
-
-
-
 
 const char device_image[] PROGMEM = R"rawliteral(
 <!DOCTYPE HTML><html><head>
