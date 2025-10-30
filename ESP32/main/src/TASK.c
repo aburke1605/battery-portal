@@ -48,9 +48,9 @@ void job_worker_freertos_task(void *arg) {
                     snprintf(job_type, sizeof(job_type), "JOB_UPDATE_DATA:%s%s", bms, gps);
                     break;
 
-                case JOB_INV_TRANSMIT:
-                    snprintf(job_type, sizeof(job_type), "JOB_INV_TRANSMIT");
-                    write_to_unit();
+                case JOB_SLAVE_ESP32_TRANSMIT:
+                    snprintf(job_type, sizeof(job_type), "JOB_SLAVE_ESP32_TRANSMIT");
+                    write_to_slave_esp32();
                     break;
 
                 case JOB_WS_SEND:

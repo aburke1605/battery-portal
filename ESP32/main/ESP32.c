@@ -3,9 +3,9 @@
 #include "DNS.h"
 #include "GPS.h"
 #include "I2C.h"
-#include "INV.h"
 #include "LoRa.h"
 #include "MESH.h"
+#include "SLAVE.h"
 #include "TASK.h"
 #include "WS.h"
 #include "config.h"
@@ -81,7 +81,7 @@ void app_main(void) {
     if (!LORA_IS_RECEIVER) {
         if (HTTP_SERVER_ENABLED) xTaskCreate(dns_server_freertos_task, "dns_server_freertos_task", 2600, NULL, 5, NULL);
 
-        if (SLAVE_ESP32_ENABLED) start_inverter_timed_task();
+        if (SLAVE_ESP32_ENABLED) start_slave_esp32_timed_task();
 
         // MESH stuff
         if (!is_root) {
