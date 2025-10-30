@@ -11,6 +11,13 @@ repos:
         language_version: python3
         files: \.py$
 
+  # TypeScript
+  - repo: https://github.com/biomejs/pre-commit
+    rev: v1.9.4
+    hooks:
+      - id: biome-format
+        files: '\.tsx?$'
+
   # C
   - repo: local
     hooks:
