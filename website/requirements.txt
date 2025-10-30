@@ -7,3 +7,7 @@ mysql-connector-python
 python-dotenv
 scipy
 gunicorn
+pytest
+selenium
+websocket-client
+gevent-websocket
