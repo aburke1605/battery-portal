@@ -65,7 +65,7 @@ void handleWebSocketMessage(void *arg, uint8_t *data, size_t len) {
   /*if (info->final && info->index == 0 && info->len == len && info->opcode == WS_TEXT) {
     data[len] = 0;
     if (strcmp((char*)data, "toggleblue") == 0) {    //if "toggleblue" string was received
-      
+
       if(blueledState==1){
         digitalWrite(2, LOW);
         blueledState = 0;
@@ -78,7 +78,7 @@ void handleWebSocketMessage(void *arg, uint8_t *data, size_t len) {
 
     }
     else if (strcmp((char*)data, "togglered") == 0) {    //if "togglered" string was received
-      
+
       if(redledState==3){
         digitalWrite(4, LOW);
         redledState = 2;
@@ -125,7 +125,7 @@ public:
   }
 
   void handleRequest(AsyncWebServerRequest *request) {
-    request->send_P(200, "text/html", index_html); 
+    request->send_P(200, "text/html", index_html);
   }
 };
 
@@ -151,21 +151,21 @@ void setupServer(){
 
 
 void setup(){
-  
+
   pinMode(2, OUTPUT);
   pinMode(4, OUTPUT);
   Serial.begin(115200);
 
 
-  WiFi.mode(WIFI_AP); 
+  WiFi.mode(WIFI_AP);
   WiFi.softAP(ssid); //, password);
 
-  
+
   ws.onEvent(eventHandler);
   server.addHandler(&ws);
 
   setupServer();
-  
+
   dnsServer.start(53, "*", WiFi.softAPIP());
   server.addHandler(new CaptiveRequestHandler()).setFilter(ON_AP_FILTER);//only when requested from AP
   server.begin();
@@ -176,13 +176,13 @@ void setup(){
   hw_timer_t *timer = timerBegin(0, 80, true);                //using timer 0, prescaler of 80, count up
   timerAttachInterrupt(timer, &onTimer, true);    //  hardware timer, address of ISR, edge type
   timerAlarmWrite(timer, 180000000, true);        // use timer, count up to (180000000 u seconds = 3 mins), reload
-  timerAlarmEnable(timer);  
+  timerAlarmEnable(timer);
 
   // 1 second timer to "refresh" the info on the page
   hw_timer_t *timer2 = timerBegin(1, 80, true);                //using timer 1, prescaler of 80, count up
   timerAttachInterrupt(timer2, &onTimer2, true);    //  hardware timer, address of ISR, edge type
   timerAlarmWrite(timer2, 1000000, true);        // use timer, count up to (1000000 u seconds = 1 sec), reload
-  timerAlarmEnable(timer2);                 
+  timerAlarmEnable(timer2);
 }
 
 
@@ -226,29 +226,29 @@ void loop(){
       str1 = "{\"Q\":";
       str2 = String(1);
       str3 = ", \"V\":";
-      str4 = String(2);    //build up string allowing placement of variables 
+      str4 = String(2);    //build up string allowing placement of variables
       str5 = ", \"I\":";
       str6 = String(3);
       str7 = ", \"T\":";
       str8 = String(4);
       str9 = "}";
       comp_string = str1 + str2 + str3 + str4 + str5 + str6 + str7 + str8 + str9;   //put all bits together
-      
+
       json.setJsonData(comp_string);
       json.toString(JSON_string, false);//, true /* prettify option */);
-      
+
       // Serial.print(JSON_string);
       ws.textAll(JSON_string);   //send string of JSON data through websocket
     }
   }
-  
+
 
   ws.cleanupClients();
-  
+
   dnsServer.processNextRequest();
   if(name_received && proficiency_received){
       name_received = false;
       proficiency_received = false;
     }
-    
+
 }

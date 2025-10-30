@@ -25,7 +25,7 @@ extern client_socket client_sockets[WS_CONFIG_MAX_CLIENTS];
 extern char current_auth_token[UTILS_AUTH_TOKEN_LENGTH];
 extern bool LoRa_configured;
 extern LoRa_message all_messages[MESH_SIZE];
-extern char forwarded_message[LORA_MAX_PACKET_LEN-2];
+extern char forwarded_message[LORA_MAX_PACKET_LEN - 2];
 
 extern QueueHandle_t job_queue;
 

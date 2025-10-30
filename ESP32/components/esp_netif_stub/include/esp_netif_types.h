@@ -7,9 +7,9 @@ extern "C" {
 #endif
 
 typedef struct {
-    esp_ip4_addr_t ip;
-    esp_ip4_addr_t netmask;
-    esp_ip4_addr_t gw;
+  esp_ip4_addr_t ip;
+  esp_ip4_addr_t netmask;
+  esp_ip4_addr_t gw;
 } esp_netif_ip_info_t;
 
 struct esp_netif_obj;
