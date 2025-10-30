@@ -1,7 +1,7 @@
-#include "include/SPI.h"
+#include "SPI.h"
 
-#include "include/config.h"
-#include "include/global.h"
+#include "config.h"
+#include "global.h"
 
 #include "driver/gpio.h"
 #include "driver/spi_common.h"
@@ -83,8 +83,6 @@ esp_err_t spi_init() {
     vTaskDelay(pdMS_TO_TICKS(10));
 
     gpio_set_direction(PIN_NUM_DIO0, GPIO_MODE_INPUT);
-
-    LoRa_configured = true;
 
     ESP_LOGI(TAG, "SX127x initialized");
 

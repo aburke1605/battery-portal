@@ -1,11 +1,12 @@
-#include "include/LoRa.h"
+#include "LoRa.h"
 
-#include "include/BMS.h"
-#include "include/SPI.h"
-#include "include/WS.h"
-#include "include/config.h"
-#include "include/global.h"
-#include "include/utils.h"
+#include "BMS.h"
+#include "SPI.h"
+#include "TASK.h"
+#include "WS.h"
+#include "config.h"
+#include "global.h"
+#include "utils.h"
 
 #include <stdint.h>
 
@@ -16,6 +17,8 @@
 #include "esp_timer.h"
 
 static const char* TAG = "LoRa";
+
+static TimerHandle_t transmit_timer;
 
 void lora_init() {
     if (spi_init() != ESP_OK) return;
@@ -66,7 +69,15 @@ void lora_init() {
     if (LORA_POWER_BOOST) spi_write_register(REG_PA_DAC, 0x87);
     else spi_write_register(REG_PA_DAC, 0x84);
 
+    LoRa_configured = true;
     ESP_LOGI(TAG, "SX127x configured to RadioHead defaults");
+
+    // final setup
+    spi_write_register(REG_FIFO_RX_BASE_ADDR, 0x00);
+    spi_write_register(REG_FIFO_TX_BASE_ADDR, 0x00);
+    spi_write_register(REG_FIFO_ADDR_PTR, 0x00);
+
+    spi_write_register(REG_IRQ_FLAGS, 0b11111111); // clear IRQ flags
 }
 
 size_t json_to_binary(uint8_t* binary_message, cJSON* json_array) {
@@ -115,19 +126,19 @@ size_t json_to_binary(uint8_t* binary_message, cJSON* json_array) {
             cJSON *obj;
 
             obj = cJSON_GetObjectItem(content, "t");
-            if (obj) packet->t = (uint8_t)obj->valuedouble;
+            if (obj) packet->t = (double)obj->valuedouble;
             obj = NULL;
 
             obj = cJSON_GetObjectItem(content, "d");
-            if (obj) packet->d = (uint8_t)obj->valueint;
+            if (obj) packet->d = (uint32_t)obj->valueint;
             obj = NULL;
 
             obj = cJSON_GetObjectItem(content, "lat");
-            if (obj) packet->lat = (uint8_t)obj->valuedouble;
+            if (obj) packet->lat = (double)obj->valuedouble;
             obj = NULL;
 
             obj = cJSON_GetObjectItem(content, "lon");
-            if (obj) packet->lon = (uint8_t)obj->valuedouble;
+            if (obj) packet->lon = (double)obj->valuedouble;
             obj = NULL;
 
             obj = cJSON_GetObjectItem(content, "Q");
@@ -416,10 +427,10 @@ void binary_to_json(uint8_t* binary_message, cJSON* json_array) {
                 cJSON_Delete(json_array);
                 return;
             }
-            cJSON_AddNumberToObject(content, "t", packet->t);
-            cJSON_AddNumberToObject(content, "d", packet->d);
-            cJSON_AddNumberToObject(content, "lat", packet->lat);
-            cJSON_AddNumberToObject(content, "lon", packet->lon);
+            cJSON_AddNumberToObject(content, "t", packet->t);      // TODO: these are wrong while the rest below are correct
+            cJSON_AddNumberToObject(content, "d", packet->d);      // TODO: these are wrong while the rest below are correct
+            cJSON_AddNumberToObject(content, "lat", packet->lat);  // TODO: these are wrong while the rest below are correct
+            cJSON_AddNumberToObject(content, "lon", packet->lon);  // TODO: these are wrong while the rest below are correct
             cJSON_AddNumberToObject(content, "Q", packet->Q);
             cJSON_AddNumberToObject(content, "H", packet->H);
             cJSON_AddNumberToObject(content, "V", packet->V);
@@ -515,126 +526,158 @@ void binary_to_json(uint8_t* binary_message, cJSON* json_array) {
     }
 }
 
-void receive(size_t* full_message_length, bool* chunked) {
+// persisted receiver variables
+static size_t full_message_length = 0;
+static bool chunked = false;
+void receive() {
+    // should only run if receiver or ROOT but not connected to Wi-Fi
+    if (!(LORA_IS_RECEIVER || (is_root && !connected_to_WiFi))) return;
+
     uint8_t buffer[5 * LORA_MAX_PACKET_LEN]; // this length likely needs to be changed
     uint8_t encoded_buffer[5 * LORA_MAX_PACKET_LEN]; // this length likely needs to be changed
 
-    // wait for RX done (DIO0 goes high)
-    if (gpio_get_level(PIN_NUM_DIO0) == 1) {
-        uint8_t irq_flags = spi_read_register(REG_IRQ_FLAGS);
-        if (irq_flags & 0x40) {  // RX_DONE
-            uint8_t len = spi_read_register(0x13);  // RX bytes
-            uint8_t fifo_rx_current = spi_read_register(0x10);
-            spi_write_register(REG_FIFO_ADDR_PTR, fifo_rx_current);
+    uint8_t irq_flags = spi_read_register(REG_IRQ_FLAGS);
+    if (irq_flags & 0x40) {  // RX_DONE
+        uint8_t len = spi_read_register(0x13);  // RX bytes
+        uint8_t fifo_rx_current = spi_read_register(0x10);
+        spi_write_register(REG_FIFO_ADDR_PTR, fifo_rx_current);
 
-            for (int i = 0; i < len; i++)
-                buffer[i] = spi_read_register(0x00); // 0x00 = REG_FIFO ?
+        for (int i = 0; i < len; i++)
+            buffer[i] = spi_read_register(0x00); // 0x00 = REG_FIFO ?
 
 
-            if (!*chunked) {
-                if (buffer[0] == FRAME_END) {
-                    if (buffer[len - 1] != FRAME_END) *chunked = true;
-                }
-                else {
-                    // bogus message received
-                    spi_write_register(REG_IRQ_FLAGS, 0b11111111);
-                    return;
-                }
-            } else if (*chunked && buffer[len - 1] == FRAME_END) *chunked = false;
-            memcpy(&encoded_buffer[*full_message_length], buffer, len);
-            *full_message_length += len;
+        if (!chunked) {
+            if (buffer[0] == FRAME_END) {
+                if (buffer[len - 1] != FRAME_END) chunked = true;
+            }
+            else {
+                // bogus message received
+                spi_write_register(REG_IRQ_FLAGS, 0b11111111);
+                return;
+            }
+        } else if (chunked && buffer[len - 1] == FRAME_END) chunked = false;
+        memcpy(&encoded_buffer[full_message_length], buffer, len);
+        full_message_length += len;
 
-            if (!*chunked) {
-                uint8_t rssi_raw = spi_read_register(0x1A);
-                int rssi_dbm = -157 + rssi_raw;
+        if (!chunked) {
+            uint8_t rssi_raw = spi_read_register(0x1A);
+            int rssi_dbm = -157 + rssi_raw;
 
-                uint8_t decoded_payload[*full_message_length];
-                decode_frame(encoded_buffer, *full_message_length, decoded_payload);
-                *full_message_length = 0;
+            uint8_t decoded_payload[full_message_length];
+            decode_frame(encoded_buffer, full_message_length, decoded_payload);
+            full_message_length = 0;
 
-                ESP_LOGI(TAG, "Received radio message with RSSI: %d dBm", rssi_dbm);
-                cJSON* json_array = cJSON_CreateArray();
-                if (json_array == NULL) {
-                    ESP_LOGE(TAG, "Failed to create JSON array");
-                    return;
-                }
-                binary_to_json(decoded_payload, json_array);
-                char* message_string = malloc(WS_MESSAGE_MAX_LEN);
-                snprintf(message_string, WS_MESSAGE_MAX_LEN, "%s", cJSON_PrintUnformatted(json_array));
-                if (message_string == NULL) {
-                    ESP_LOGE(TAG, "Failed to print cJSON to string\n");
-                    return;
+            ESP_LOGI(TAG, "Received radio message with RSSI: %d dBm", rssi_dbm);
+            cJSON* json_array = cJSON_CreateArray();
+            if (json_array == NULL) {
+                ESP_LOGE(TAG, "Failed to create JSON array");
+                return;
+            }
+            binary_to_json(decoded_payload, json_array);
+            char* message_string = malloc(WS_MESSAGE_MAX_LEN);
+            snprintf(message_string, WS_MESSAGE_MAX_LEN, "%s", cJSON_PrintUnformatted(json_array));
+            if (message_string == NULL) {
+                ESP_LOGE(TAG, "Failed to print cJSON to string\n");
+                return;
+            } else {
+                if (LORA_IS_RECEIVER) {
+                    if (VERBOSE) {
+                        ESP_LOGI(TAG, "Forwarding message:");
+                        ESP_LOGI(TAG, "%s", message_string);
+                        ESP_LOGI(TAG, "on to web server");
+                    }
+                    send_message(message_string);
                 } else {
-                    if (LORA_IS_RECEIVER) {
-                        if (VERBOSE) {
-                            ESP_LOGI(TAG, "Forwarding message:");
-                            ESP_LOGI(TAG, "%s", message_string);
-                            ESP_LOGI(TAG, "on to web server");
-                        }
-                        send_message(message_string);
-                    } else {
-                        if (VERBOSE) {
-                            ESP_LOGI(TAG, "Processing messaged received from web server:");
-                            ESP_LOGI(TAG, "%s", message_string);
-                        }
-                        cJSON* message = NULL;
-                        cJSON_ArrayForEach(message, json_array) {
-                            if (!cJSON_IsObject(message)) return;
+                    if (VERBOSE) {
+                        ESP_LOGI(TAG, "Processing messaged received from web server:");
+                        ESP_LOGI(TAG, "%s", message_string);
+                    }
+                    cJSON* message = NULL;
+                    cJSON_ArrayForEach(message, json_array) {
+                        // should just be one message at a time from the web server
+                        if (!cJSON_IsObject(message)) return;
 
-                            // pop the "esp_id" key
-                            cJSON* esp_id = cJSON_DetachItemFromObject(message, "esp_id");
-                            if (esp_id) {
-                                uint8_t id_int = esp_id->valueint;
-                                if (id_int == ESP_ID) {
-                                    if (VERBOSE) ESP_LOGI(TAG, "This request is for me, the mesh ROOT");
-                                    cJSON *response = cJSON_CreateObject();
-                                    perform_request(message, response);
-                                } else {
-                                    if (VERBOSE) ESP_LOGI(TAG, "This request is for mesh client bms_%u:", id_int);
-                                    char* remainder_string = cJSON_PrintUnformatted(message);
-                                    if (remainder_string != NULL) {
-                                        if (VERBOSE) ESP_LOGI(TAG, "%s", remainder_string);
-                                        // send to correct WebSocket client
-                                        for (int i = 0; i < WS_CONFIG_MAX_CLIENTS; i++) {
-                                            if (!client_sockets[i].is_browser_not_mesh && client_sockets[i].descriptor >= 0 && client_sockets[i].esp_id == id_int) {
-                                                httpd_ws_frame_t ws_pkt = {
-                                                    .payload = (uint8_t *)remainder_string,
-                                                    .len = strlen(remainder_string),
-                                                    .type = HTTPD_WS_TYPE_TEXT,
-                                                };
+                        // pop the "esp_id" key
+                        cJSON* esp_id = cJSON_DetachItemFromObject(message, "esp_id");
+                        if (esp_id) {
+                            uint8_t id_int = esp_id->valueint;
+                            if (id_int == ESP_ID) {
+                                if (VERBOSE) ESP_LOGI(TAG, "This request is for me, the mesh ROOT");
+                                cJSON *response = cJSON_CreateObject();
+                                perform_request(message, response);
+                            } else {
+                                if (VERBOSE) ESP_LOGI(TAG, "This request is for mesh client bms_%u:", id_int);
+                                char* remainder_string = cJSON_PrintUnformatted(message);
+                                if (remainder_string != NULL) {
+                                    if (VERBOSE) ESP_LOGI(TAG, "%s", remainder_string);
+                                    // send to correct WebSocket client
+                                    for (int i = 0; i < WS_CONFIG_MAX_CLIENTS; i++) {
+                                        if (!client_sockets[i].is_browser_not_mesh && client_sockets[i].descriptor >= 0 && client_sockets[i].esp_id == id_int) {
+                                            httpd_ws_frame_t ws_pkt = {
+                                                .payload = (uint8_t *)remainder_string,
+                                                .len = strlen(remainder_string),
+                                                .type = HTTPD_WS_TYPE_TEXT,
+                                            };
 
-                                                int tries = 0;
-                                                int max_tries = 5;
-                                                esp_err_t err;
-                                                while (tries < max_tries) {
-                                                    err = httpd_ws_send_frame_async(server, client_sockets[i].descriptor, &ws_pkt);
-                                                    if (err == ESP_OK) break;
-                                                    vTaskDelay(pdMS_TO_TICKS(1000));
-                                                    tries++;
-                                                }
+                                            int tries = 0;
+                                            int max_tries = 5;
+                                            esp_err_t err;
+                                            while (tries < max_tries) {
+                                                err = httpd_ws_send_frame_async(server, client_sockets[i].descriptor, &ws_pkt);
+                                                if (err == ESP_OK) break;
+                                                vTaskDelay(pdMS_TO_TICKS(1000));
+                                                tries++;
+                                            }
 
-                                                if (err != ESP_OK) {
-                                                    ESP_LOGE(TAG, "Failed to send frame to client %d: %s", client_sockets[i].descriptor, esp_err_to_name(err));
-                                                    remove_client(client_sockets[i].descriptor);  // Clean up disconnected clients
-                                                }
+                                            if (err != ESP_OK) {
+                                                ESP_LOGE(TAG, "Failed to send frame to client %d: %s", client_sockets[i].descriptor, esp_err_to_name(err));
+                                                remove_client(client_sockets[i].descriptor);  // Clean up disconnected clients
                                             }
                                         }
-                                        free(remainder_string);
                                     }
+                                    free(remainder_string);
                                 }
-                                cJSON_Delete(esp_id);
                             }
+                            cJSON_Delete(esp_id);
                         }
                     }
-                    free(message_string);
                 }
-                cJSON_Delete(json_array);
+                free(message_string);
             }
+            cJSON_Delete(json_array);
         }
 
         // Clear IRQ flags again
         spi_write_register(REG_IRQ_FLAGS, 0b11111111);
     }
+}
+
+void dio0_isr_handler(void *arg) {
+    BaseType_t woken = pdFALSE;
+
+    job_t job = {
+        .type = JOB_LORA_RECEIVE
+    };
+    xQueueSendToFrontFromISR(job_queue, &job, &woken); // radio receive jobs prioritised
+
+    portYIELD_FROM_ISR(woken);
+}
+
+void start_receive_interrupt_task() {
+    gpio_config_t io_conf = {
+        .intr_type = GPIO_INTR_POSEDGE, // rising edge trigger
+        .mode = GPIO_MODE_INPUT,
+        .pin_bit_mask = 1ULL << PIN_NUM_DIO0,
+        .pull_down_en = GPIO_PULLDOWN_DISABLE,
+        .pull_up_en = GPIO_PULLUP_DISABLE,
+    };
+    gpio_config(&io_conf);
+
+    gpio_install_isr_service(0); // don't copy paste - should only be called once
+
+    gpio_isr_handler_add(PIN_NUM_DIO0, dio0_isr_handler, NULL);
+
+    spi_write_register(REG_OP_MODE, 0b10000101); // enter LoRa + RX mode to begin with
 }
 
 void execute_transmission(uint8_t* message, size_t n_bytes) {
@@ -665,8 +708,13 @@ void execute_transmission(uint8_t* message, size_t n_bytes) {
     spi_write_register(REG_DIO_MAPPING_1, 0b00000000); // bits 7-6 for DIO0
 }
 
-void transmit(int64_t* delay_transmission_until) {
-    if (esp_timer_get_time() > *delay_transmission_until) {
+// persisted transmitter variables
+static int64_t delay_transmission_until = 0; // microseconds
+void transmit() {
+    // should only run if receiver or ROOT but not connected to Wi-Fi
+    if (!(LORA_IS_RECEIVER || (is_root && !connected_to_WiFi))) return;
+
+    if (esp_timer_get_time() > delay_transmission_until) {
         if (LORA_IS_RECEIVER) {
             if (strcmp(forwarded_message, "") != 0) {
                 // forward requests made on the webserver
@@ -676,8 +724,10 @@ void transmit(int64_t* delay_transmission_until) {
                     ESP_LOGI(TAG, "%s", forwarded_message);
                     ESP_LOGI(TAG, "by radio transmission");
                 }
-                cJSON *json_array = cJSON_Parse(forwarded_message);
-                if (json_array) {
+                cJSON *json_message = cJSON_Parse(forwarded_message);
+                cJSON* json_array = cJSON_CreateArray();
+                if (json_message && json_array) {
+                    cJSON_AddItemToArray(json_array, json_message);
                     uint8_t binary_message[5 * LORA_MAX_PACKET_LEN]; // this length likely needs to be changed
                     size_t binary_message_length = json_to_binary(binary_message, json_array);
                     if (binary_message_length > 0) {
@@ -689,7 +739,7 @@ void transmit(int64_t* delay_transmission_until) {
                         int transmission_delay = calculate_transmission_delay(LORA_SF, LORA_BW, 8, full_len, LORA_CR, LORA_HEADER, LORA_LDRO);
                         ESP_LOGI(TAG, "Radio packet sent. Delaying for %d ms", transmission_delay);
 
-                        *delay_transmission_until = (int64_t)(transmission_delay * 1000) + esp_timer_get_time();
+                        delay_transmission_until = (int64_t)(transmission_delay * 1000) + esp_timer_get_time();
                     }
                 }
                 strcpy(forwarded_message, "\0");
@@ -755,43 +805,27 @@ void transmit(int64_t* delay_transmission_until) {
                 int transmission_delay = calculate_transmission_delay(LORA_SF, LORA_BW, 8, full_len, LORA_CR, LORA_HEADER, LORA_LDRO);
                 ESP_LOGI(TAG, "Radio packet sent. Delaying for %d ms", transmission_delay);
 
-                *delay_transmission_until = (int64_t)(transmission_delay * 1000) + esp_timer_get_time();
+                delay_transmission_until = (int64_t)(transmission_delay * 1000) + esp_timer_get_time();
 
             }
             cJSON_Delete(json_array);
         }
+
+        spi_write_register(REG_OP_MODE, 0b10000101); // return to LoRa + RX mode
     }
 }
 
-void lora_task(void *pvParameters) {
-    // persisted receiver variables
-    size_t full_message_length = 0;
-    bool chunked = false;
+void transmit_callback(TimerHandle_t xTimer) {
+    job_t job = {
+        .type = JOB_LORA_TRANSMIT
+    };
 
-    // persisted transmitter variables
-    int64_t delay_transmission_until = 0; // microseconds
+    if (xQueueSend(job_queue, &job, 0) != pdPASS)
+        if (VERBOSE) ESP_LOGW(TAG, "Queue full, dropping job");
+}
 
-    // setup
-    spi_write_register(REG_FIFO_RX_BASE_ADDR, 0x00);
-    spi_write_register(REG_FIFO_TX_BASE_ADDR, 0x00);
-    spi_write_register(REG_FIFO_ADDR_PTR, 0x00);
-    // clear IRQ flags
-    spi_write_register(REG_IRQ_FLAGS, 0b11111111);
-
-    // task loop
-    while(true) {
-        if (LoRa_configured) {
-            // should only run if receiver or ROOT but not connected to Wi-Fi
-            if (LORA_IS_RECEIVER || (is_root && !connected_to_WiFi)) {
-                // enter continuous RX mode
-                spi_write_register(REG_OP_MODE, 0b10000101); // LoRa + RX mode
-                receive(&full_message_length, &chunked);
-
-                transmit(&delay_transmission_until);
-                // contains a delay within, default is still RX mode
-            }
-        }
-
-        vTaskDelay(pdMS_TO_TICKS(10));
-    }
+void start_transmit_timed_task() {
+    transmit_timer = xTimerCreate("transmit_timer", pdMS_TO_TICKS(5000), pdTRUE, NULL, transmit_callback);
+    assert(transmit_timer);
+    xTimerStart(transmit_timer, 0);
 }
