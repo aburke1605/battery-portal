@@ -414,8 +414,6 @@ httpd_handle_t start_webserver(void) {
     httpd_register_uri_handler(server, &redirect_uri);
     redirect_uri.uri = "/connecttest.txt";
     httpd_register_uri_handler(server, &redirect_uri);
-    redirect_uri.uri = "/favicon.ico";
-    httpd_register_uri_handler(server, &redirect_uri);
     redirect_uri.uri = "/redirect";
     httpd_register_uri_handler(server, &redirect_uri);
     redirect_uri.uri = "/wpad.dat";
@@ -460,10 +458,10 @@ httpd_handle_t start_webserver(void) {
     mesh_uri.handler = restart_handler,
     httpd_register_uri_handler(server, &mesh_uri);
 
-    httpd_uri_t favicon_uri = {.uri = "/favicon.png",
+    httpd_uri_t favicon_uri = {.uri = "/favicon.ico",
                                .method = HTTP_GET,
                                .handler = file_serve_handler,
-                               .user_ctx = "/static/favicon.png"};
+                               .user_ctx = "/static/favicon.ico"};
     httpd_register_uri_handler(server, &favicon_uri);
 
     httpd_uri_t js_uri = {

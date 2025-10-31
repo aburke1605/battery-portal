@@ -3,9 +3,9 @@
 : <<'END'
     SCRIPT TO SETUP AND RUN NGINX LOCALLY, WITHOUT DOCKER
     ENSURE FRONTEND IS BUILT:
-        $ cd website/frontend && npm run build
+        $ cd frontend && npm run build
     AND BACKEND APP IS RUNNING:
-        $ cd website && FLASK_ENV=production gunicorn -k gevent run:app -b 127.0.0.1:8000
+        $ cd backend && FLASK_ENV=production gunicorn -k gevent run:app -b 127.0.0.1:8000
 
     THEN:
         $ sudo chmod +x nginx/local_setup.sh && sudo ./nginx/local_setup.sh
@@ -36,11 +36,11 @@ server {
     listen 443 ssl;
     server_name localhost;
 
-    ssl_certificate $PWD/website/cert/local_cert.pem;
-    ssl_certificate_key $PWD/website/cert/local_key.pem;
+    ssl_certificate $PWD/backend/cert/local_cert.pem;
+    ssl_certificate_key $PWD/backend/cert/local_key.pem;
 
     # serve React frontend build directly
-    root $PWD/website/frontend/dist;
+    root $PWD/frontend/dist;
     index index.html;
     location = / { # built html entry file
         try_files /index.html =404;

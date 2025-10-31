@@ -34,7 +34,7 @@ jobs:
           source venv/bin/activate
 
       - name: Install dependencies
-        working-directory: ./website
+        working-directory: ./backend
         run: pip install -r requirements.txt
 
       - name: Set up Node.js
@@ -43,11 +43,11 @@ jobs:
           node-version: '18'
 
       - name: Install npm dependencies
-        working-directory: ./website/frontend
+        working-directory: ./frontend
         run: npm install
 
       - name: Build frontend assets
-        working-directory: ./website/frontend
+        working-directory: ./frontend
         run: npm run build
 
       # Optional: Add step to run tests here (PyTest, Django test suites, etc.)
@@ -89,4 +89,4 @@ jobs:
           app-name: 'BatteryPortal'
           slot-name: 'Production'
           publish-profile: ${{ secrets.AZUREAPPSERVICE_PUBLISHPROFILE_961B555B3A254B308372AF29982CA753 }}
-          package: ./website
+          package: ./backend
