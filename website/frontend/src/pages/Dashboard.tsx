@@ -7,6 +7,7 @@ import DataChart from "../components/charts/DataChart";
 import axios from "axios";
 import apiConfig from "../apiConfig";
 import { fetchBatteryData } from "../hooks/useWebSocket";
+import StripeModal from "../components/payment/Checkout";
 
 export default function Home() {
 	const [batteries, setBatteryData] = useState<BatteryData[]>([]);
@@ -234,6 +235,8 @@ export default function Home() {
 						))}
 					</div>
 				</div>
+
+				<StripeModal />
 			</div>
 		</>
 	);
