@@ -14,7 +14,7 @@ def create_payment_intent():
     try:
         intent = stripe.PaymentIntent.create(
             amount=int(data["amount"] * 100),
-            currency="usd",
+            currency="gbp",
             automatic_payment_methods={"enabled": True},
         )
         return jsonify({"clientSecret": intent.client_secret})

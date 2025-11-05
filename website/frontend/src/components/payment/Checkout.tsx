@@ -10,7 +10,10 @@ import apiConfig from "../../apiConfig";
 
 const stripePromise = loadStripe(apiConfig.PAY_PUBLIC_KEY);
 
-function CheckoutForm({ onClose }: { onClose: () => void }) {
+function CheckoutForm({
+	price,
+	onClose,
+}: { price: number; onClose: () => void }) {
 	const stripe = useStripe();
 	const elements = useElements();
 	const [loading, setLoading] = useState(false);
@@ -72,7 +75,7 @@ function CheckoutForm({ onClose }: { onClose: () => void }) {
 					✕
 				</button>
 
-				<h2 style={{ textAlign: "center" }}>Pay $10.00</h2>
+				<h2 style={{ textAlign: "center" }}>£{price.toFixed(2)}</h2>
 
 				<form onSubmit={handleSubmit} style={{ marginTop: 20 }}>
 					<PaymentElement />
@@ -103,21 +106,21 @@ function CheckoutForm({ onClose }: { onClose: () => void }) {
 	);
 }
 
-export default function StripeButton() {
-	const [showButton, setShowButton] = useState(false);
+export default function StripeButton({ price }: { price: number }) {
+	const [showCheckout, setShowCheckout] = useState(false);
 	const [clientSecret, setClientSecret] = useState<string | null>(null);
 	const [loadingIntent, setLoadingIntent] = useState(false);
 	const [error, setError] = useState<string | null>(null);
 
 	useEffect(() => {
-		if (showButton) {
+		if (showCheckout) {
 			setLoadingIntent(true);
 			setError(null);
 
 			fetch("/api/pay/create-payment-intent", {
 				method: "POST",
 				headers: { "Content-Type": "application/json" },
-				body: JSON.stringify({ amount: 10.0 }),
+				body: JSON.stringify({ amount: price }),
 			})
 				.then(async (res) => {
 					if (!res.ok) throw new Error(`Server returned ${res.status}`);
@@ -131,20 +134,20 @@ export default function StripeButton() {
 		} else {
 			setClientSecret(null);
 		}
-	}, [showButton]);
+	}, [showCheckout]);
 
 	const options = clientSecret ? { clientSecret } : undefined;
 
 	return (
 		<>
 			<button
-				onClick={() => setShowButton(true)}
+				onClick={() => setShowCheckout(true)}
 				style={{ padding: "10px 20px", cursor: "pointer" }}
 			>
-				Pay $10
+				Pay £{price.toFixed(2)}
 			</button>
 
-			{showButton && (
+			{showCheckout && (
 				<>
 					{loadingIntent && (
 						<div
@@ -187,7 +190,7 @@ export default function StripeButton() {
 							<div style={{ textAlign: "center" }}>
 								<p>Error: {error}</p>
 								<button
-									onClick={() => setShowButton(false)}
+									onClick={() => setShowCheckout(false)}
 									style={{
 										marginTop: 10,
 										padding: "8px 16px",
@@ -202,7 +205,10 @@ export default function StripeButton() {
 
 					{clientSecret && options && (
 						<Elements stripe={stripePromise} options={options}>
-							<CheckoutForm onClose={() => setShowButton(false)} />
+							<CheckoutForm
+								price={price}
+								onClose={() => setShowCheckout(false)}
+							/>
 						</Elements>
 					)}
 				</>
