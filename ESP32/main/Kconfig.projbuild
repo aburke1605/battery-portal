@@ -20,6 +20,10 @@ config AUTH_TOKEN_LENGTH
 
 endmenu
 
+
+
+
+
 menu "[CUSTOM] Developer options"
 
 config VERBOSE
@@ -53,7 +57,90 @@ config FLASK_IP
     help
       IP address of machine running Flask app in local network.
 
+config WS_DELAY
+    int "WebSocket message delay (ms)"
+    default 5000
+    help
+      Set the time delay between successive messages sent to WebSocket clients and the web server (ms).
+
 endmenu
+
+
+
+
+
+menu "[CUSTOM] Enabled components"
+
+config JOBS_ENABLED
+    bool "Job queue processing task"
+    default y
+    help
+      Set to false to disable the FreeRTOS job queue processing task.
+
+config READ_BMS_ENABLED
+    bool "BMS data reading task"
+    default y
+    help
+      Set to false to disable the software-timed task which reads telemetry data from the BMS.
+
+config READ_GPS_ENABLED
+    bool "GPS data reading task"
+    default y
+    help
+      Set to false to disable the software-timed task which reads GPS data.
+
+config WEBSOCKET_MESSAGES_ENABLED
+    bool "WebSocket message handling task"
+    default y
+    help
+      Set to false to disable the software-timed task which sends telemetry data to WebSocket clients and the web server.
+
+config HTTP_SERVER_ENABLED
+    bool "HTTP server task"
+    default y
+    help
+      Set to false to disable the HTTP server and FreeRTOS DNS server task which redirects connected devices to the detail page.
+
+config SLAVE_ESP32_ENABLED
+    bool "Slave ESP32 I2C task"
+    default y
+    help
+      Set to false to disable the software-timed task which sends the current and state of charge to the secondary slave ESP32 over I2C.
+
+config MESH_NODE_CONNECT_ENABLED
+    bool "MESH node connection task"
+    default y
+    help
+      Set to false to disable the software-timed task which connects node ESP32s to an identified root.
+
+config MESH_NODE_WEBSOCKET_MESSAGES_ENABLED
+    bool "MESH node WebSocket message handling task"
+    default y
+    help
+      Set to false to disable the software-timed task which sends telemetry data from node ESP32s to the root.
+
+config MESH_ROOT_MERGE_ENABLED
+    bool "MESH root merger task"
+    default y
+    help
+      Set to false to disable the software-timed task which automatically merges nearby MESH groups.
+
+config LORA_RECEIVE_ENABLED
+    bool "LoRa message receiver task"
+    default y
+    help
+      Set to false to disable the hardware triggered task which handles received LoRa messages.
+
+config LORA_TRANSMIT_ENABLED
+    bool "LoRa message transmitter task"
+    default y
+    help
+      Set to false to disable the software-timed task which broadcasts telemetry data via LoRa transmissions.
+
+endmenu
+
+
+
 
 
 menu "[CUSTOM] BMS Configuration"
@@ -73,13 +160,13 @@ config I2C_ADDR
 
 config MASTER_SDA_PIN
     int "I2C Serial Data (SDA) GPIO"
-    default 22
+    default 21
     help
       Set the GPIO number for the I2C SDA line.
 
 config MASTER_SCL_PIN
     int "I2C Serial Clock (SCL) GPIO"
-    default 21
+    default 22
     help
       Set the GPIO number for the I2C SCL line.
 
@@ -210,15 +297,51 @@ config FULL_ACCESS_CMD_2
 endmenu
 
 
-menu "[CUSTOM] Inverter Configuration"
 
-config UNIT_I2C_ADDR
-    hex "Inverter Unit I2C Address"
-    default 0x28
-    help
-      Set the hexadecimal address of the ESP32 controlling the inverter / unit display.
+
+
+menu "[CUSTOM] External I2C Device Configuration"
+
+    config EXT_SDA_PIN
+        int "I2C Serial Data (SDA) GPIO"
+        default 4
+        help
+          Set the GPIO number for the SDA line to external I2C devices.
+
+    config EXT_SCL_PIN
+        int "I2C Serial Clock (SCL) GPIO"
+        default 25
+        help
+          Set the GPIO number for the SCL line to external I2C devices.
+
+    menu "Slave ESP32"
+
+        config SLAVE_I2C_ADDR
+            hex "Slave ESP32 I2C Address"
+            default 0x28
+            help
+              Set the hexadecimal address of the ESP32 controlling the inverter / unit display.
+
+        config SLAVE_DELAY
+            int "Message delay (ms)"
+            default 1000
+            help
+              Set the time delay between successive messages sent to the ESP32 (ms).
+
+    endmenu
 
 endmenu
+
+
+
+
+
+menu "[CUSTOM] Inverter Configuration"
+
+endmenu
+
+
+
 
 
 menu "[CUSTOM] Wi-Fi Configuration"
@@ -242,6 +365,9 @@ config WIFI_AUTO_CONNECT
       Set to true to automatically connect to router with the set SSID.
 
 endmenu
+
+
+
 
 
 menu "[CUSTOM] LoRa Configuration"

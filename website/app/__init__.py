@@ -13,8 +13,11 @@ from app.user import user, users, create_admin
 from app.ws import ws
 from app.pay import pay
 
+
 def create_app():
-    if not logging.getLogger().handlers: # only configure if root logger has no handlers (avoids duplicate setup under Gunicorn)
+    if (
+        not logging.getLogger().handlers
+    ):  # only configure if root logger has no handlers (avoids duplicate setup under Gunicorn)
         logging.basicConfig(
             level=logging.INFO,
             format="%(asctime)s [%(levelname)s] %(name)s: %(message)s",
@@ -32,6 +35,7 @@ def create_app():
     if os.getenv("FLASK_ENV") == "development":
         # nginx handles frontend service in production
         from app.main import main
+
         app.register_blueprint(main)
 
     # then eveything else at /api
@@ -49,10 +53,14 @@ def create_app():
     with app.app_context():
         inspector = inspect(DB.engine)
         if inspector.has_table(BatteryInfo.__tablename__):
-            columns = [col["name"] for col in inspector.get_columns(BatteryInfo.__tablename__)]
+            columns = [
+                col["name"] for col in inspector.get_columns(BatteryInfo.__tablename__)
+            ]
             if "live_websocket" in columns:
                 # reset the status of all websockets existing in database on startup
-                DB.session.query(BatteryInfo).filter_by(live_websocket=True).update({BatteryInfo.live_websocket: False})
+                DB.session.query(BatteryInfo).filter_by(live_websocket=True).update(
+                    {BatteryInfo.live_websocket: False}
+                )
                 DB.session.commit()
     api.register_blueprint(ws)
 

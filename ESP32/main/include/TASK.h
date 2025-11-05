@@ -1,0 +1,27 @@
+#ifndef TASK_H
+#define TASK_H
+
+#include <stddef.h>
+
+typedef enum {
+  JOB_DNS_REQUEST,
+  JOB_UPDATE_DATA,
+  JOB_WS_SEND,
+  JOB_WS_RECEIVE,
+  JOB_SLAVE_ESP32_TRANSMIT,
+  JOB_MESH_CONNECT,
+  JOB_MESH_WS_SEND,
+  JOB_MESH_MERGE,
+  JOB_LORA_RECEIVE,
+  JOB_LORA_TRANSMIT
+} job_type_t;
+
+typedef struct {
+  job_type_t type;
+  void *data;
+  size_t size;
+} job_t;
+
+void job_worker_freertos_task(void *arg);
+
+#endif // TASK_H
