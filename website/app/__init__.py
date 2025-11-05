@@ -11,6 +11,7 @@ from sqlalchemy import inspect
 from app.db import db, DB, BatteryInfo
 from app.user import user, users, create_admin
 from app.ws import ws
+from app.pay import pay
 
 def create_app():
     if not logging.getLogger().handlers: # only configure if root logger has no handlers (avoids duplicate setup under Gunicorn)
@@ -54,6 +55,8 @@ def create_app():
                 DB.session.query(BatteryInfo).filter_by(live_websocket=True).update({BatteryInfo.live_websocket: False})
                 DB.session.commit()
     api.register_blueprint(ws)
+
+    api.register_blueprint(pay)
 
     # finally, register eveything at /api with main app
     app.register_blueprint(api)

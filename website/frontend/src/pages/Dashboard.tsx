@@ -7,6 +7,7 @@ import DataChart from '../components/charts/DataChart';
 import axios from 'axios';
 import apiConfig from '../apiConfig';
 import { fetchBatteryData } from '../hooks/useWebSocket';
+import CheckoutOverlay from '../components/payment/Checkout';
 
 export default function Home() {
 
@@ -68,6 +69,8 @@ export default function Home() {
       : [...prev, option]
   );
 };
+
+  const [open, setOpen] = useState(false);
 
   return (
     <>
@@ -198,6 +201,12 @@ export default function Home() {
               ))}
             </div>
         </div>
+
+        <>
+          <button onClick={() => setOpen(true)}>Buy now</button>
+          <CheckoutOverlay open={open} onClose={() => setOpen(false)} />
+        </>
+
       </div>
     </>
   );
