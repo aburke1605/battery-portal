@@ -36,70 +36,29 @@ function CheckoutForm({
 	};
 
 	return (
-		<div
-			style={{
-				position: "fixed",
-				top: 0,
-				left: 0,
-				width: "100vw",
-				height: "100vh",
-				backgroundColor: "rgba(0,0,0,0.6)",
-				display: "flex",
-				justifyContent: "center",
-				alignItems: "center",
-				zIndex: 1000,
-			}}
-		>
-			<div
-				style={{
-					backgroundColor: "white",
-					padding: 20,
-					borderRadius: 8,
-					width: 400,
-					maxWidth: "90%",
-					position: "relative",
-				}}
-			>
+		<div className="fixed inset-0 bg-black/60 flex justify-center items-center z-[1000]">
+			<div className="bg-white p-5 rounded-lg w-96 max-w-[90%] relative">
 				<button
 					onClick={onClose}
-					style={{
-						position: "absolute",
-						top: 10,
-						right: 10,
-						background: "none",
-						border: "none",
-						fontSize: 18,
-						cursor: "pointer",
-					}}
+					className="absolute top-2.5 right-2.5 text-lg bg-none border-none cursor-pointer"
 				>
 					✕
 				</button>
 
-				<h2 style={{ textAlign: "center" }}>£{price.toFixed(2)}</h2>
+				<h2 className="text-center text-xl font-semibold">
+					£{price.toFixed(2)}
+				</h2>
 
-				<form onSubmit={handleSubmit} style={{ marginTop: 20 }}>
+				<form onSubmit={handleSubmit} className="mt-5">
 					<PaymentElement />
 					<button
 						type="submit"
 						disabled={!stripe || loading}
-						style={{
-							marginTop: 20,
-							width: "100%",
-							padding: 10,
-							backgroundColor: "#0070f3",
-							color: "white",
-							border: "none",
-							borderRadius: 4,
-							cursor: "pointer",
-						}}
+						className="w-full flex items-center justify-center px-4 py-2 border border-blue-300 shadow-sm text-sm font-medium rounded-md text-blue-700 bg-blue-50 hover:bg-blue-100 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 mt-4 mb-4"
 					>
 						{loading ? "Processing..." : "Pay now"}
 					</button>
-					{message && (
-						<p style={{ color: "red", marginTop: 10, fontSize: 14 }}>
-							{message}
-						</p>
-					)}
+					{message && <p className="text-red-500 mt-2 text-sm">{message}</p>}
 				</form>
 			</div>
 		</div>
@@ -141,7 +100,7 @@ export default function StripeButton({ price }: { price: number }) {
 		<>
 			<button
 				onClick={() => setShowCheckout(true)}
-				style={{ padding: "10px 20px", cursor: "pointer" }}
+				className="w-full flex items-center justify-center px-4 py-2 border border-blue-300 shadow-sm text-sm font-medium rounded-md text-blue-700 bg-blue-50 hover:bg-blue-100 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 mt-4 mb-4"
 			>
 				Pay £{price.toFixed(2)}
 			</button>
@@ -149,52 +108,18 @@ export default function StripeButton({ price }: { price: number }) {
 			{showCheckout && (
 				<>
 					{loadingIntent && (
-						<div
-							style={{
-								position: "fixed",
-								top: 0,
-								left: 0,
-								width: "100vw",
-								height: "100vh",
-								backgroundColor: "rgba(0,0,0,0.6)",
-								display: "flex",
-								justifyContent: "center",
-								alignItems: "center",
-								zIndex: 1000,
-								color: "white",
-								fontSize: 18,
-							}}
-						>
+						<div className="fixed inset-0 bg-black/60 flex justify-center items-center z-[1000] text-white text-lg">
 							Loading payment form...
 						</div>
 					)}
 
 					{error && (
-						<div
-							style={{
-								position: "fixed",
-								top: 0,
-								left: 0,
-								width: "100vw",
-								height: "100vh",
-								backgroundColor: "rgba(255,0,0,0.8)",
-								display: "flex",
-								justifyContent: "center",
-								alignItems: "center",
-								zIndex: 1000,
-								color: "white",
-								padding: 20,
-							}}
-						>
-							<div style={{ textAlign: "center" }}>
+						<div className="fixed inset-0 bg-red-800/80 flex justify-center items-center z-[1000] p-5">
+							<div className="text-center text-white">
 								<p>Error: {error}</p>
 								<button
 									onClick={() => setShowCheckout(false)}
-									style={{
-										marginTop: 10,
-										padding: "8px 16px",
-										cursor: "pointer",
-									}}
+									className="mt-2 px-4 py-2 border rounded-md cursor-pointer bg-white text-red-800 hover:bg-red-100"
 								>
 									Close
 								</button>
