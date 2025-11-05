@@ -13,25 +13,25 @@ import { AuthProvider } from "./auth/AuthContext.tsx";
 import SignIn from "./pages/SignIn.tsx";
 
 createRoot(document.getElementById("root")!).render(
-	<ThemeProvider>
-		<AppWrapper>
-			<Router>
-				<AuthProvider isFromESP32={true}>
-					<ScrollToTop />
-					<Routes>
-						<Route
-							index
-							path="/"
-							element={
-								<AuthRequire isFromESP32={true}>
-									<BatteryPage isFromESP32={true} />
-								</AuthRequire>
-							}
-						/>
-						<Route path="/login" element={<SignIn />} />
-					</Routes>
-				</AuthProvider>
-			</Router>
-		</AppWrapper>
-	</ThemeProvider>,
+  <ThemeProvider>
+    <AppWrapper>
+      <Router>
+        <AuthProvider isFromESP32={true}>
+          <ScrollToTop />
+          <Routes>
+            <Route
+              index
+              path="/"
+              element={
+                <AuthRequire isFromESP32={true}>
+                  <BatteryPage isFromESP32={true} />
+                </AuthRequire>
+              }
+            />
+            <Route path="/login" element={<SignIn />} />
+          </Routes>
+        </AuthProvider>
+      </Router>
+    </AppWrapper>
+  </ThemeProvider>,
 );
