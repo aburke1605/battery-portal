@@ -127,7 +127,6 @@ export default function StripeButton({ price }: { price: number }) {
 					const data = await res.json();
 					if (!data.clientSecret) throw new Error("No clientSecret returned");
 					setClientSecret(data.clientSecret);
-					console.log("SUCCESS");
 				})
 				.catch((err: Error) => setError(err.message))
 				.finally(() => setLoadingIntent(false));
