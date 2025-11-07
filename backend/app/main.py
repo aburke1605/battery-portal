@@ -15,3 +15,8 @@ def serve_react_frontend():
 @main.route("/<path:file>", methods=["GET"])
 def serve_react_static(file: str):
     return send_from_directory(build_dir, file)
+
+
+@main.route("/favicon.ico")
+def favicon():
+    return send_from_directory(build_dir, "favicon.ico")
