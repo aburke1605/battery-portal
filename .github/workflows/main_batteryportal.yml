@@ -33,8 +33,9 @@ jobs:
           python -m venv venv
           source venv/bin/activate
 
+      - name: Copy backend requirements to root
+        run: cp backend/requirements.txt ./requirements.txt
       - name: Install dependencies
-        working-directory: ./website
         run: pip install -r requirements.txt
 
       - name: Set up Node.js
@@ -43,17 +44,17 @@ jobs:
           node-version: '18'
 
       - name: Install npm dependencies
-        working-directory: ./website/frontend
+        working-directory: ./frontend
         run: npm install
 
       - name: Build frontend assets
-        working-directory: ./website/frontend
+        working-directory: ./frontend
         run: npm run build
 
-      # Optional: Add step to run tests here (PyTest, Django test suites, etc.)
+      # add step to run tests here (PyTest etc)
 
       - name: Zip artifact for deployment
-        run: zip release.zip ./* -r
+        run: zip -r release.zip backend frontend requirements.txt
 
       - name: Upload artifact for deployment jobs
         if: ${{ !env.ACT }}
@@ -89,4 +90,4 @@ jobs:
           app-name: 'BatteryPortal'
           slot-name: 'Production'
           publish-profile: ${{ secrets.AZUREAPPSERVICE_PUBLISHPROFILE_961B555B3A254B308372AF29982CA753 }}
-          package: ./website
+          package: .
