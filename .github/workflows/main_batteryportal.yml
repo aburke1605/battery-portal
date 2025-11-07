@@ -33,8 +33,9 @@ jobs:
           python -m venv venv
           source venv/bin/activate
 
+      - name: Copy backend requirements to root
+        run: cp backend/requirements.txt ./requirements.txt
       - name: Install dependencies
-        working-directory: ./backend
         run: pip install -r requirements.txt
 
       - name: Set up Node.js
