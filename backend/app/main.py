@@ -4,6 +4,22 @@ from flask import Blueprint, send_from_directory
 
 main = Blueprint("main", __name__, url_prefix="/")
 
+import logging
+
+logger = logging.getLogger(__name__)
+logger.info(
+    f"os.path.dirname(__file__):                           {os.path.dirname(__file__)}"
+)
+logger.info(
+    f"os.listdir(f'{{os.path.dirname(__file__)}}/../..'):    {os.listdir(f'{os.path.dirname(__file__)}/../..')}"
+)
+logger.info(
+    f"os.listdir(f'{{os.path.dirname(__file__)}}/..'):       {os.listdir(f'{os.path.dirname(__file__)}/..')}"
+)
+logger.info(
+    f"os.listdir(f'{{os.path.dirname(__file__)}}'):          {os.listdir(f'{os.path.dirname(__file__)}')}"
+)
+
 build_dir = os.path.join(os.path.dirname(__file__), "../../frontend/dist")
 
 
