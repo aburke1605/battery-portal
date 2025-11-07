@@ -4,7 +4,7 @@ from flask import Blueprint, send_from_directory
 
 main = Blueprint("main", __name__, url_prefix="/")
 
-build_dir = os.path.join(os.path.dirname(__file__), "../frontend/dist")
+build_dir = os.path.join(os.path.dirname(__file__), "../../frontend/dist")
 
 
 @main.route("/", methods=["GET"])
