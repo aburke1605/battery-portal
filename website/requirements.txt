@@ -6,6 +6,7 @@ flask-sock
 mysql-connector-python
 python-dotenv
 scipy
+gevent
 gunicorn
 pytest
 selenium
