@@ -8,3 +8,7 @@ python-dotenv
 scipy
 gevent
 gunicorn
+pytest
+selenium
+websocket-client
+gevent-websocket
