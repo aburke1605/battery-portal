@@ -193,7 +193,7 @@ void write_to_slave_esp32() {
   get_display_data(data);
 
   esp_err_t ret = i2c_master_transmit(slave_esp32_device, data, sizeof(data),
-                                      I2C_MASTER_TIMEOUT_MS);
+                                      I2C_SLAVE_TIMEOUT_MS);
   if (ret != ESP_OK) {
     ESP_LOGE(TAG, "Failed to write to Ben's ESP32!");
     return;
@@ -203,7 +203,7 @@ void write_to_slave_esp32() {
 void read_from_slave_esp32() {
   uint8_t data[16] = {0};
   i2c_master_receive(slave_esp32_device, data, sizeof(data),
-                     I2C_MASTER_TIMEOUT_MS);
+                     I2C_SLAVE_TIMEOUT_MS);
   printf("requestFrom: %zu\n", sizeof(data));
   for (uint8_t i = 0; i < sizeof(data); i++)
     printf("0x%x ", data[i]);
