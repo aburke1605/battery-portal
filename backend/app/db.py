@@ -59,21 +59,10 @@ def update_battery_data(json: list) -> None:
         # first update battery_info table
         try:
             # check if the entry already exists
-            battery = DB.session.get(BatteryInfo, esp_id)
-            if not battery:
-                # create default one if not
-                battery = BatteryInfo(
-                    esp_id=0,
-                    root_id=None,
-                    last_updated_time=datetime.now(),
-                    live_websocket=False,
-                )
-                DB.session.add(battery)
-                logger.info(f"inserted new battery_info row with esp_id: {esp_id}")
+            battery = get_battery_info_entry(esp_id)
             # update the entry info
             battery.esp_id = esp_id
             battery.root_id = None if i == 0 else root_id
-            battery.last_updated_time = datetime.now()
             DB.session.commit()
             set_live_websocket(
                 esp_id, True
@@ -116,6 +105,24 @@ def update_battery_data(json: list) -> None:
         except Exception as e:
             DB.session.rollback()
             logger.error(f"DB error inserting data from {esp_id} into table: {e}")
+
+
+def get_battery_info_entry(esp_id: str) -> BatteryInfo:
+    # check if the entry already exists
+    battery = DB.session.get(BatteryInfo, esp_id)
+
+    if not battery:
+        # create default one if not
+        battery = BatteryInfo(
+            esp_id=0,
+            root_id=None,
+            last_updated_time=datetime.now(),
+            live_websocket=False,
+        )
+        DB.session.add(battery)
+        logger.info(f"inserted new battery_info row with esp_id: {esp_id}")
+
+    return battery
 
 
 def set_live_websocket(esp_id: str, live: bool) -> None:
@@ -354,14 +361,13 @@ def import_bqStudio_log(csv_path: str):
         return
 
     # create entry in battery_info table
-    battery = BatteryInfo(
-        esp_id=esp_id,
-        root_id=None,
-        last_updated_time=datetime.now(),
-        live_websocket=True,
-    )
-    DB.session.add(battery)
-    DB.session.commit()
+    try:
+        battery = get_battery_info_entry(esp_id)
+        battery.esp_id = esp_id
+        DB.session.commit()
+    except Exception as e:
+        DB.session.rollback()
+        logger.error(f"DB error processing data import for {esp_id}: {e}")
 
     # create new battery_data_bms_<esp_id> table
     table = get_battery_data_table(str(esp_id))
