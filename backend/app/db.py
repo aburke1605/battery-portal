@@ -350,14 +350,13 @@ def chart_data():
         return {}, 404
 
 
-def import_bqStudio_log(csv_path: str):
+def import_data(csv_path: str, esp_id: int):
     """
     Creates example data for fresh website lacking real data.
     """
-    esp_id = 999
     name = f"battery_data_bms_{esp_id}"
     inspector = inspect(DB.engine)
-    if inspector.has_table(name):
+    if esp_id == 999 and inspector.has_table(name):
         return
 
     # create entry in battery_info table
@@ -421,7 +420,7 @@ def example():
     API
     """
     try:
-        import_bqStudio_log("GPCCHEM.csv")
+        import_data("GPCCHEM.csv", 999)
         return {}, 200
     except:
         return {}, 404
