@@ -321,7 +321,7 @@ def chart_data():
     ).subquery()
     sub_query = (
         select(sub_sub_query.c.timestamp, sub_sub_query.c[column])
-        .where(sub_sub_query.c.rn % 75 == 0)  # every 75th row so query is not too large
+        .where(sub_sub_query.c.rn % 1 == 0)  # every 1th row so query is not too large
         .limit(250)  # max 250 data points
         .subquery()
     )
@@ -421,6 +421,22 @@ def example():
     """
     try:
         import_data("GPCCHEM.csv", 999)
+        return {}, 200
+    except:
+        return {}, 404
+
+
+@db.route("/simulation", methods=["GET"])
+@roles_required("superuser")
+def simulations():
+    """
+    API
+    """
+    try:
+        for i in range(24):
+            import_data(f"../simulation/data/normal/data_{i+1}.csv", 996)
+            import_data(f"../simulation/data/low_power/data_{i+1}.csv", 997)
+            import_data(f"../simulation/data/short_duration/data_{i+1}.csv", 998)
         return {}, 200
     except:
         return {}, 404
