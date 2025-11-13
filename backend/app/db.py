@@ -56,6 +56,9 @@ def update_battery_data(json: list) -> None:
         esp_id = data["esp_id"]
         content = data["content"]
 
+        if content["I"] == 0:
+            continue
+
         # first update battery_info table
         try:
             # check if the entry already exists
