@@ -527,9 +527,8 @@ def low_power_check(esp_id: str, power_threshold: float) -> bool:
 
             # prepare for next batch loop
             last_timestamp = timestamps[0]
-            query_size -= 1
-            # because
-            # first time in batch i == last time in batch i-1 (see `where(data_table.c.timestamp <= last_timestamp)` in inital query)
+            query_size -= 1  # because first time in batch i == last time in batch i-1
+            # (see `where(data_table.c.timestamp <= last_timestamp)` in inital query)
             if len(timestamps) < batch_size:
                 break  # no more data in table
 
