@@ -397,6 +397,8 @@ def import_data(csv_path: str, esp_id: int):
         for row in reader:
             if not row["TimeStamp"].strip():
                 continue
+            if float(row["Current"]) == 0:
+                continue
             rows.append(
                 {
                     "timestamp": datetime.fromisoformat(row["TimeStamp"]),
