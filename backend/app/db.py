@@ -276,7 +276,13 @@ def data():
     data_table = DB.Table(table_name, DB.metadata, autoload_with=DB.engine)
 
     # this really is ordered by most recent and not just date or time individually
-    query = select(data_table).order_by(desc(data_table.c.timestamp)).limit(1)
+    # fmt: off
+    query = (
+        select(data_table)
+        .order_by(desc(data_table.c.timestamp))
+        .limit(1)
+    )
+    # fmt: on
 
     row = DB.session.execute(query).first()
 
@@ -310,22 +316,32 @@ def chart_data():
     data_table = DB.Table(table_name, DB.metadata, autoload_with=DB.engine)
     column = request.args.get("column")
 
-    sub_sub_query = select(
-        data_table.c.timestamp,
-        data_table.c[column],  # query timestamp and column of interest
-        func.row_number()
-        .over(
-            order_by=desc(data_table.c.timestamp)  # ordered by most recent (time-wise)
+    # fmt: off
+    sub_sub_query = (
+        select(
+            data_table.c.timestamp,
+            data_table.c[column],  # query timestamp and column of interest
+            func.row_number()
+            .over(
+                order_by=desc(data_table.c.timestamp)  # ordered by most recent (time-wise)
+            )
+            .label("rn")
         )
-        .label("rn"),
-    ).subquery()
+        .subquery()
+    )
     sub_query = (
-        select(sub_sub_query.c.timestamp, sub_sub_query.c[column])
+        select(
+            sub_sub_query.c.timestamp,
+            sub_sub_query.c[column]
+        )
         .where(sub_sub_query.c.rn % 1 == 0)  # every 1th row so query is not too large
         .limit(250)  # max 250 data points
         .subquery()
     )
-    query = select(sub_query)
+    query = (
+        select(sub_query)
+    )
+    # fmt: on
 
     rows = DB.session.execute(query).fetchall()
 
@@ -454,25 +470,40 @@ def recommendation():
         data_table = DB.Table(table_name, DB.metadata, autoload_with=DB.engine)
 
         # get most recent date first
-        query = select(data_table).order_by(desc(data_table.c.timestamp)).limit(1)
+        # fmt: off
+        query = (
+            select(data_table)
+            .order_by(desc(data_table.c.timestamp))
+            .limit(1)
+        )
         today = DB.session.execute(query).first()[0]
+        # fmt: on
 
         # select N most recent
         seconds_per_day = 86400  # 24*60*60
         update_frequency_hz = 0.2  # every 5s
         N = int(update_frequency_hz * seconds_per_day)
+        # fmt: off
         sub_query = (
-            select(data_table.c.Q, data_table.c.cT, data_table.c.timestamp)
+            select(
+                data_table.c.timestamp,
+                data_table.c.Q,
+                data_table.c.cT
+            )
             .where(func.date(data_table.c.timestamp) >= today.date())
             .order_by(desc(data_table.c.timestamp))
             .limit(N)
             .subquery()
         )
         # reorder again
-        query = select(sub_query.c.Q, sub_query.c.cT).order_by(
-            asc(sub_query.c.timestamp)
+        query = (
+            select(
+                sub_query.c.Q,
+                sub_query.c.cT
+            )
+            .order_by(asc(sub_query.c.timestamp))
         )
-
+        # fmt: on
         rows = DB.session.execute(query).fetchall()
 
         recommendations = []
