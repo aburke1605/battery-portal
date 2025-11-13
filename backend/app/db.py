@@ -491,9 +491,9 @@ def low_power_check(esp_id: str, power_threshold: float) -> bool:
             # fmt: off
             sub_query = (
                 select(data_table.c.timestamp)
-                .order_by(desc(data_table.c.timestamp))         # order by most recent
+                .order_by(desc(data_table.c.timestamp))          # order by most recent
                 .where(data_table.c.timestamp <= last_timestamp) # skip previously queried batches
-                .limit(batch_size)                              # query in batches to avoid large queries
+                .limit(batch_size)                               # query in batches to avoid large queries
             )
             query = (
                 select(sub_query.c.timestamp)
