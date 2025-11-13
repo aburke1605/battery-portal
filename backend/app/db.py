@@ -460,6 +460,104 @@ def simulations():
         return {}, 404
 
 
+def low_power_check(esp_id: str, power_threshold: float) -> bool:
+    """
+    Measures the average power in the last 12h worth of discharge data to check for low power usage.
+    Since data is recorded only when the current is not zero, the data may be 'chunked', with lengthy periods of downtime separating each.
+    The 12h therefore must be acquired cumulatively, where we define some minimum downtime period (e.g. 5m) which separates consecutive chunks
+    The bulk of the function is therefore to query tables in batches using this logic, followed then by a simple power check.
+
+    TODO:
+        Assuming any connected battery unit sends data on average every one minute, it would be simpler to just do a `.limit(12h*60)`.
+        So, check if the assumption is true!
+    """
+
+    try:
+        table_name = f"battery_data_bms_{esp_id}"
+        data_table = DB.Table(table_name, DB.metadata, autoload_with=DB.engine)
+
+        target_duration = timedelta(hours=12)
+        min_downtime = timedelta(minutes=5)
+        batch_size = 60
+
+        last_timestamp = datetime.now()
+        cumulative_duration = timedelta(0)
+
+        query_size = 1  # at least
+
+        # step 1: progressively fetch timestamps until get >=12h of collected time
+        while cumulative_duration < target_duration:
+            # initial query
+            # fmt: off
+            sub_query = (
+                select(data_table.c.timestamp)
+                .order_by(desc(data_table.c.timestamp))         # order by most recent
+                .where(data_table.c.timestamp <= last_timestamp) # skip previously queried batches
+                .limit(batch_size)                              # query in batches to avoid large queries
+            )
+            query = (
+                select(sub_query.c.timestamp)
+                .order_by(asc(sub_query.c.timestamp)) # reorder
+            )
+            # fmt: on
+            timestamps = DB.session.execute(query).scalars().all()
+            if not timestamps:
+                break
+
+            # measure accurate cumulative time by splitting into chunks
+            chunks = []  # will be 2D array; list of lists of timestamps
+            current_chunk = [timestamps[0]]  # first chunk, starts from the beginning
+            for previous_timestamp, next_timestamp in zip(timestamps, timestamps[1:]):
+                if (next_timestamp - previous_timestamp) < min_downtime:
+                    current_chunk.append(next_timestamp)
+                else:
+                    chunks.append(current_chunk)  # chunk complete
+                    current_chunk = [next_timestamp]  # start new chunk for next loop
+            chunks.append(current_chunk)  # final chunk
+
+            number_chunks = len(chunks)
+            reversed_chunks = reversed(chunks)
+
+            # increment cumulative time by chunk time periods and number of data points
+            for j, chunk in zip(range(number_chunks), reversed_chunks):
+                cumulative_duration += chunk[-1] - chunk[0]
+                query_size += len(chunk)
+                if cumulative_duration >= target_duration:
+                    break  # break early, no need to continue to next chunk or batch
+
+            # prepare for next batch loop
+            last_timestamp = timestamps[0]
+            query_size -= 1
+            # because
+            # first time in batch i == last time in batch i-1 (see `where(data_table.c.timestamp <= last_timestamp)` in inital query)
+            if len(timestamps) < batch_size:
+                break  # no more data in table
+
+        # step 2: query current and voltage data for the 12h period
+        # fmt: off
+        query = (
+            select(
+                data_table.c.I,
+                data_table.c.V
+            )
+            .order_by(desc(data_table.c.timestamp)) # order by most recent
+            .where(data_table.c.I < 0)              # discharge only
+            .limit(query_size)                      # limit to determined size
+        )
+        # fmt: on
+        data = np.array(DB.session.execute(query).fetchall())
+
+        # step 3: compare average power with threshold
+        average_power = np.mean(-data[:, 0] * data[:, 1])
+        return average_power < power_threshold
+        # TODO:
+        #     can we instead return the recommended SoC limits??
+
+    except Exception as e:
+        logger.error(f"Error: {e}")
+        return False
+
+
 @db.route("/recommendation", methods=["GET"])
 @login_required
 def recommendation():
@@ -532,6 +630,17 @@ def recommendation():
                     "type": "current-dischg-limit",
                     "message": f"Overheating detected: {cT_mean:.1f}°C. Throttle discharge current to {I_max}A",
                     "max": I_max,
+                }
+            )
+
+        power_threshold = 2  # W
+        if low_power_check(esp_id, power_threshold):
+            recommendations.append(
+                {
+                    "type": "soc-window",
+                    "message": f"Low average power usage (< {power_threshold} W) over last 12 hours of usage. Restrict SoC range to [{40},{60}]%",
+                    "min": 40,
+                    "max": 60,
                 }
             )
 
