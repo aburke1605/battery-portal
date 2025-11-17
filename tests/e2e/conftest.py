@@ -12,6 +12,13 @@ from selenium import webdriver
 from selenium.webdriver.chrome.options import Options
 from websocket import create_connection
 from datetime import datetime
+import sys
+from pathlib import Path
+
+# Ensure backend package is importable when running tests from repo root
+_BACKEND_DIR = Path(__file__).resolve().parents[2] / "backend"
+if str(_BACKEND_DIR) not in sys.path:
+    sys.path.insert(0, str(_BACKEND_DIR))
 
 """
 Setup the test environment for the e2e tests, all these are setup in a session scope.
