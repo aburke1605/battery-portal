@@ -518,11 +518,10 @@ def low_power_check(esp_id: str, power_threshold: float) -> bool:
                     current_chunk = [next_timestamp]  # start new chunk for next loop
             chunks.append(current_chunk)  # final chunk
 
-            number_chunks = len(chunks)
             reversed_chunks = reversed(chunks)
 
             # increment cumulative time by chunk time periods and number of data points
-            for j, chunk in zip(range(number_chunks), reversed_chunks):
+            for chunk in reversed_chunks:
                 cumulative_duration += chunk[-1] - chunk[0]
                 query_size += len(chunk)
                 if cumulative_duration >= target_duration:
