@@ -463,23 +463,8 @@ def simulations():
         return {}, 404
 
 
-def low_power_check(esp_id: str, power_threshold: float) -> bool:
-    """
-    Measures the average power in the last 12h worth of discharge data to check for low power usage.
-    Since data is recorded only when the current is not zero, the data may be 'chunked', with lengthy periods of downtime separating each.
-    The 12h therefore must be acquired cumulatively, where we define some minimum downtime period (e.g. 5m) which separates consecutive chunks
-    The bulk of the function is therefore to query tables in batches using this logic, followed then by a simple power check.
-
-    TODO:
-        Assuming any connected battery unit sends data on average every one minute, it would be simpler to just do a `.limit(12h*60)`.
-        So, check if the assumption is true!
-    """
-
-    try:
-        table_name = f"battery_data_bms_{esp_id}"
-        data_table = DB.Table(table_name, DB.metadata, autoload_with=DB.engine)
-
-        target_duration = timedelta(hours=12)
+def get_query_size(data_table: Table, hours: int) -> int:
+        target_duration = timedelta(hours=hours)
         min_downtime = timedelta(minutes=5)
         batch_size = 60
 
@@ -488,7 +473,7 @@ def low_power_check(esp_id: str, power_threshold: float) -> bool:
 
         query_size = 1  # at least
 
-        # step 1: progressively fetch timestamps until get >=12h of collected time
+        # progressively fetch timestamps until get >=hours of collected time
         while cumulative_duration < target_duration:
             # initial query
             # fmt: off
@@ -533,6 +518,28 @@ def low_power_check(esp_id: str, power_threshold: float) -> bool:
             # (see `where(data_table.c.timestamp <= last_timestamp)` in inital query)
             if len(timestamps) < batch_size:
                 break  # no more data in table
+
+        return query_size
+
+
+def low_power_check(esp_id: str, power_threshold: float) -> bool:
+    """
+    Measures the average power in the last 12h worth of discharge data to check for low power usage.
+    Since data is recorded only when the current is not zero, the data may be 'chunked', with lengthy periods of downtime separating each.
+    The 12h therefore must be acquired cumulatively, where we define some minimum downtime period (e.g. 5m) which separates consecutive chunks
+    The bulk of the function is therefore to query tables in batches using this logic, followed then by a simple power check.
+
+    TODO:
+        Assuming any connected battery unit sends data on average every one minute, it would be simpler to just do a `.limit(12h*60)`.
+        So, check if the assumption is true!
+    """
+
+    try:
+        table_name = f"battery_data_bms_{esp_id}"
+        data_table = DB.Table(table_name, DB.metadata, autoload_with=DB.engine)
+
+        # step 1: get query sie corresponding to 12h worth of data
+        query_size = get_query_size(data_table, 12)
 
         # step 2: query current and voltage data for the 12h period
         # fmt: off
