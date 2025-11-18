@@ -464,15 +464,25 @@ def simulations():
 
 
 def get_query_size(data_table: Table, hours: int) -> int:
-        target_duration = timedelta(hours=hours)
-        min_downtime = timedelta(minutes=5)
-        batch_size = 60
+    """
+    Since data is recorded only when the current is not zero, the data may be 'chunked', with lengthy periods of downtime separating each.
+    The 12h therefore must be acquired cumulatively, where we define some minimum downtime period (e.g. 5m) which separates consecutive chunks.
 
-        last_timestamp = datetime.now()
-        cumulative_duration = timedelta(0)
+    TODO:
+        Assuming any connected battery unit sends data on average every one minute, it would be simpler to just do a `.limit(hours*60)`.
+        So, check if the assumption is true!
+    """
 
-        query_size = 1  # at least
+    target_duration = timedelta(hours=hours)
+    min_downtime = timedelta(minutes=5)
+    batch_size = 60
 
+    last_timestamp = datetime.now()
+    cumulative_duration = timedelta(0)
+
+    query_size = 1  # at least
+
+    try:
         # progressively fetch timestamps until get >=hours of collected time
         while cumulative_duration < target_duration:
             # initial query
@@ -519,19 +529,15 @@ def get_query_size(data_table: Table, hours: int) -> int:
             if len(timestamps) < batch_size:
                 break  # no more data in table
 
-        return query_size
+    except Exception as e:
+        logger.error(f"Error: {e}")
+
+    return query_size
 
 
 def low_power_check(esp_id: str, power_threshold: float) -> bool:
     """
     Measures the average power in the last 12h worth of discharge data to check for low power usage.
-    Since data is recorded only when the current is not zero, the data may be 'chunked', with lengthy periods of downtime separating each.
-    The 12h therefore must be acquired cumulatively, where we define some minimum downtime period (e.g. 5m) which separates consecutive chunks
-    The bulk of the function is therefore to query tables in batches using this logic, followed then by a simple power check.
-
-    TODO:
-        Assuming any connected battery unit sends data on average every one minute, it would be simpler to just do a `.limit(12h*60)`.
-        So, check if the assumption is true!
     """
 
     try:
