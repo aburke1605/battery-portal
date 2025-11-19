@@ -583,7 +583,6 @@ def low_depth_of_discharge_check(esp_id: str):
         logger.error(f"Error: {e}")
 
 
-
 @db.route("/recommendation", methods=["GET"])
 @login_required
 def recommendation():
