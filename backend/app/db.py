@@ -569,14 +569,16 @@ def low_power_check(esp_id: str, power_threshold: float) -> bool:
 
     except Exception as e:
         logger.error(f"Error: {e}")
-        return False
+
+    return False
 
 
 import matplotlib.pyplot as plt
 
 
-def low_depth_of_discharge_check(esp_id: str):
+def low_depth_of_discharge_check(esp_id: str) -> bool:
     min_downtime = timedelta(minutes=5)
+    depths_of_discharge = []
 
     try:
         table_name = f"battery_data_bms_{esp_id}"
@@ -604,16 +606,15 @@ def low_depth_of_discharge_check(esp_id: str):
         )
         # fmt: on
         data = np.array(DB.session.execute(query).fetchall())
-        fig, ax = plt.subplots(figsize=(16, 10))
-        ax.plot(data[:, 2], data[:, 0], linewidth=5, color="g")
-        ax.plot(data[:, 2], data[:, 1], linewidth=5, color="b")
+        fig, ax = plt.subplots(figsize=(10, 6))
+        ax.plot(data[:, 2], data[:, 0], marker=".", color="b")
+        ax.plot(data[:, 2], data[:, 1], marker=".", color="g")
 
         discharge_cycles = []
-        depths_of_discharge = []
         clean_start = False
         start = None
         stop = None
-        for i, (current, voltage, timestamp) in enumerate(data):
+        for i, (current, *_) in enumerate(data):
             # the below if clauses are in reverse logical order
 
             if start != None:
@@ -624,7 +625,7 @@ def low_depth_of_discharge_check(esp_id: str):
                         data[j + 1][2] - data[j][2] > min_downtime
                         for j in range(start, stop - 1)
                     ):
-                        discharge_cycles.append(data[start:stop, [0, 2]])
+                        discharge_cycles.append(data[start:stop, [1, 2]])
                         depths_of_discharge.append(data[start][1] - data[stop][1])
                     start = None
                     stop = None
@@ -646,10 +647,16 @@ def low_depth_of_discharge_check(esp_id: str):
 
         for cycle in discharge_cycles:
             ax.plot(cycle[:, 1], cycle[:, 0], color="k")
-        fig.savefig("I.pdf")
+        fig.savefig("V.pdf")
+
+        print(len(depths_of_discharge), depths_of_discharge)
+        if len(depths_of_discharge) > 4 and np.mean(depths_of_discharge) < 1.0:
+            return True
 
     except Exception as e:
         logger.error(f"Error: {e}")
+
+    return False
 
 
 @db.route("/recommendation", methods=["GET"])
