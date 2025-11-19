@@ -576,7 +576,9 @@ def low_power_check(esp_id: str, power_threshold: float) -> bool:
 import matplotlib.pyplot as plt
 
 
-def low_depth_of_discharge_check(esp_id: str) -> bool:
+def low_depth_of_discharge_check(
+    esp_id: str, depth_of_discharge_threshold: float
+) -> bool:
     min_downtime = timedelta(minutes=5)
     depths_of_discharge = []
 
@@ -650,7 +652,10 @@ def low_depth_of_discharge_check(esp_id: str) -> bool:
         fig.savefig("V.pdf")
 
         print(len(depths_of_discharge), depths_of_discharge)
-        if len(depths_of_discharge) > 4 and np.mean(depths_of_discharge) < 1.0:
+        if (
+            len(depths_of_discharge) > 4
+            and np.mean(depths_of_discharge) < depth_of_discharge_threshold
+        ):
             return True
 
     except Exception as e:
@@ -716,7 +721,7 @@ def recommendation():
             recommendations.append(
                 {
                     "type": "charge-range",
-                    "message": f"Restrict SoC range to [{Q_min},{Q_max}]%",
+                    "message": f"Restrict SoC range to [{Q_min},{Q_max}]%.",
                     "min": Q_min,
                     "max": Q_max,
                 }
@@ -729,7 +734,7 @@ def recommendation():
             recommendations.append(
                 {
                     "type": "current-dischg-limit",
-                    "message": f"Overheating detected: {cT_mean:.1f}°C. Throttle discharge current to {I_max}A",
+                    "message": f"Overheating detected: {cT_mean:.1f}°C. Throttle discharge current to {I_max}A.",
                     "max": I_max,
                 }
             )
@@ -739,9 +744,19 @@ def recommendation():
             recommendations.append(
                 {
                     "type": "soc-window",
-                    "message": f"Low average power usage (< {power_threshold} W) over last 12 hours of usage. Restrict SoC range to [{40},{60}]%",
+                    "message": f"Low average power usage (< {power_threshold}W) over last 12 hours of usage. Restrict SoC range to [{40},{60}]%.",
                     "min": 40,
                     "max": 60,
+                }
+            )
+
+        depth_of_discharge_threshold = 1  # V
+        if low_depth_of_discharge_check(esp_id, depth_of_discharge_threshold):
+            recommendations.append(
+                {
+                    "type": "operating-voltage",
+                    "message": f"Frequently low depth of discharge (ΔV < {depth_of_discharge_threshold}V) over last 12 hours of usage. Reduce operating voltage to {2.7 + depth_of_discharge_threshold}V.",
+                    "max": 2.7 + depth_of_discharge_threshold,  # minimum + threshold
                 }
             )
 
