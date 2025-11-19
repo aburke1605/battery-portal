@@ -572,12 +572,79 @@ def low_power_check(esp_id: str, power_threshold: float) -> bool:
         return False
 
 
+import matplotlib.pyplot as plt
+
+
 def low_depth_of_discharge_check(esp_id: str):
     try:
         table_name = f"battery_data_bms_{esp_id}"
         data_table = DB.Table(table_name, DB.metadata, autoload_with=DB.engine)
 
         query_size = get_query_size(data_table, 12)
+        # fmt: off
+        sub_query = (
+            select(
+                data_table.c.I,
+                data_table.c.V,
+                data_table.c.timestamp
+            )
+            .order_by(desc(data_table.c.timestamp)) # order by most recent
+            .limit(query_size)                      # limit to determined size
+            .subquery()
+        )
+        query = (
+            select(
+                sub_query.c.I,
+                sub_query.c.V,
+                                                        sub_query.c.timestamp
+            )
+            .order_by(asc(sub_query.c.timestamp)) # reorder
+        )
+        # fmt: on
+        data = np.array(DB.session.execute(query).fetchall())
+        fig, ax = plt.subplots(figsize=(16, 10))
+        ax.plot(data[:, 2], data[:, 0], linewidth=5, color="g")
+        ax.plot(data[:, 2], data[:, 1], linewidth=5, color="b")
+
+        discharge_cycles = []
+        depths_of_discharge = []
+        start = None
+        stop = None
+        for i, (current, voltage, timestamp) in enumerate(data):
+            # the below if clauses are in reverse logical order
+
+            if start != None:
+                # (end of data check)
+                if i + 1 == len(data):
+                    stop = i
+
+                # step 3: append
+                if stop != None:
+                    discharge_cycles.append(data[start:stop, [0, 2]])
+                    print(data[start][1], data[stop][1])
+                    depths_of_discharge.append(data[start][1] - data[stop][1])
+                    start = None
+                    stop = None
+                    continue
+
+                # step 2: find the stop point only after we've found the start point
+                else:
+                    if current > 0:
+                        stop = i - 1
+
+            # step 1: find the start point
+            else:
+                if current < 0:
+                    start = i
+            print(
+                f"i={i}: current={current}    start={start}    stop={stop}    timestamp={timestamp}"
+            )
+
+        for cycle in discharge_cycles:
+            ax.plot(cycle[:, 1], cycle[:, 0], color="k")
+            print(cycle[0, :], cycle[-1, :])
+        print(depths_of_discharge)
+        fig.savefig("I.pdf")
 
     except Exception as e:
         logger.error(f"Error: {e}")
