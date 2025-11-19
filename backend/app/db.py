@@ -492,6 +492,7 @@ def get_query_size(data_table: Table, hours: int) -> int:
                 .order_by(desc(data_table.c.timestamp))          # order by most recent
                 .where(data_table.c.timestamp <= last_timestamp) # skip previously queried batches
                 .limit(batch_size)                               # query in batches to avoid large queries
+                .subquery()
             )
             query = (
                 select(sub_query.c.timestamp)
@@ -573,9 +574,6 @@ def low_power_check(esp_id: str, power_threshold: float) -> bool:
     return False
 
 
-import matplotlib.pyplot as plt
-
-
 def low_depth_of_discharge_check(
     esp_id: str, depth_of_discharge_threshold: float
 ) -> bool:
@@ -602,17 +600,13 @@ def low_depth_of_discharge_check(
             select(
                 sub_query.c.I,
                 sub_query.c.V,
-                                                        sub_query.c.timestamp
+                sub_query.c.timestamp
             )
             .order_by(asc(sub_query.c.timestamp)) # reorder
         )
         # fmt: on
         data = np.array(DB.session.execute(query).fetchall())
-        fig, ax = plt.subplots(figsize=(10, 6))
-        ax.plot(data[:, 2], data[:, 0], marker=".", color="b")
-        ax.plot(data[:, 2], data[:, 1], marker=".", color="g")
 
-        discharge_cycles = []
         clean_start = False
         start = None
         stop = None
@@ -627,7 +621,6 @@ def low_depth_of_discharge_check(
                         data[j + 1][2] - data[j][2] > min_downtime
                         for j in range(start, stop - 1)
                     ):
-                        discharge_cycles.append(data[start:stop, [1, 2]])
                         depths_of_discharge.append(data[start][1] - data[stop][1])
                     start = None
                     stop = None
@@ -647,11 +640,6 @@ def low_depth_of_discharge_check(
                     if clean_start:
                         start = i
 
-        for cycle in discharge_cycles:
-            ax.plot(cycle[:, 1], cycle[:, 0], color="k")
-        fig.savefig("V.pdf")
-
-        print(len(depths_of_discharge), depths_of_discharge)
         if (
             len(depths_of_discharge) > 4
             and np.mean(depths_of_discharge) < depth_of_discharge_threshold
