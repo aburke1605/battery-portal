@@ -576,6 +576,8 @@ import matplotlib.pyplot as plt
 
 
 def low_depth_of_discharge_check(esp_id: str):
+    min_downtime = timedelta(minutes=5)
+
     try:
         table_name = f"battery_data_bms_{esp_id}"
         data_table = DB.Table(table_name, DB.metadata, autoload_with=DB.engine)
@@ -608,21 +610,22 @@ def low_depth_of_discharge_check(esp_id: str):
 
         discharge_cycles = []
         depths_of_discharge = []
+        clean_start = False
         start = None
         stop = None
         for i, (current, voltage, timestamp) in enumerate(data):
             # the below if clauses are in reverse logical order
 
             if start != None:
-                # (end of data check)
-                if i + 1 == len(data):
-                    stop = i
-
                 # step 3: append
                 if stop != None:
-                    discharge_cycles.append(data[start:stop, [0, 2]])
-                    print(data[start][1], data[stop][1])
-                    depths_of_discharge.append(data[start][1] - data[stop][1])
+                    # check for breaks within a cycle
+                    if not any(
+                        data[j + 1][2] - data[j][2] > min_downtime
+                        for j in range(start, stop - 1)
+                    ):
+                        discharge_cycles.append(data[start:stop, [0, 2]])
+                        depths_of_discharge.append(data[start][1] - data[stop][1])
                     start = None
                     stop = None
                     continue
@@ -634,16 +637,15 @@ def low_depth_of_discharge_check(esp_id: str):
 
             # step 1: find the start point
             else:
-                if current < 0:
-                    start = i
-            print(
-                f"i={i}: current={current}    start={start}    stop={stop}    timestamp={timestamp}"
-            )
+                if current > 0:
+                    # if the data begins in a discharge cycle, skip that segment
+                    clean_start = True
+                else:
+                    if clean_start:
+                        start = i
 
         for cycle in discharge_cycles:
             ax.plot(cycle[:, 1], cycle[:, 0], color="k")
-            print(cycle[0, :], cycle[-1, :])
-        print(depths_of_discharge)
         fig.savefig("I.pdf")
 
     except Exception as e:
