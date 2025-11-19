@@ -463,7 +463,7 @@ def simulations():
         return {}, 404
 
 
-def get_query_size(data_table: Table, hours: int) -> int:
+def get_query_size(data_table: Table, hours: float) -> int:
     """
     Since data is recorded only when the current is not zero, the data may be 'chunked', with lengthy periods of downtime separating each.
     The 12h therefore must be acquired cumulatively, where we define some minimum downtime period (e.g. 5m) which separates consecutive chunks.
