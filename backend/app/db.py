@@ -572,6 +572,18 @@ def low_power_check(esp_id: str, power_threshold: float) -> bool:
         return False
 
 
+def low_depth_of_discharge_check(esp_id: str):
+    try:
+        table_name = f"battery_data_bms_{esp_id}"
+        data_table = DB.Table(table_name, DB.metadata, autoload_with=DB.engine)
+
+        query_size = get_query_size(data_table, 12)
+
+    except Exception as e:
+        logger.error(f"Error: {e}")
+
+
+
 @db.route("/recommendation", methods=["GET"])
 @login_required
 def recommendation():
