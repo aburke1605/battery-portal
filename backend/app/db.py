@@ -536,6 +536,39 @@ def get_query_size(data_table: Table, hours: float) -> int:
     return query_size
 
 
+def high_temperature_check(esp_id: str, high_temperature_threshold: float) -> bool:
+    try:
+        table_name = f"battery_data_bms_{esp_id}"
+        data_table = DB.Table(table_name, DB.metadata, autoload_with=DB.engine)
+
+        query_size = get_query_size(data_table, 12)
+        # fmt: off
+        sub_query = (
+            select(
+                data_table.c.cT,
+                data_table.c.timestamp
+            )
+            .order_by(desc(data_table.c.timestamp)) # order by most recent
+            .limit(query_size)                      # limit to determined size
+            .subquery()
+        )
+        query = (
+            select(
+                sub_query.c.cT,
+            )
+            .order_by(asc(sub_query.c.timestamp)) # reorder
+        )
+        # fmt: on
+        data = np.array(DB.session.execute(query).scalars().all())
+
+        return np.mean(data) > high_temperature_threshold
+
+    except Exception as e:
+        logger.error(f"Error: {e}")
+
+    return False
+
+
 def low_power_check(esp_id: str, power_threshold: float) -> bool:
     """
     Measures the average power in the last 12h worth of discharge data to check for low power usage.
@@ -660,69 +693,15 @@ def recommendation():
     """
     try:
         esp_id = request.args.get("esp_id")
-        table_name = f"battery_data_bms_{esp_id}"
-        data_table = DB.Table(table_name, DB.metadata, autoload_with=DB.engine)
-
-        # get most recent date first
-        # fmt: off
-        query = (
-            select(data_table)
-            .order_by(desc(data_table.c.timestamp))
-            .limit(1)
-        )
-        today = DB.session.execute(query).first()[0]
-        # fmt: on
-
-        # select N most recent
-        seconds_per_day = 86400  # 24*60*60
-        update_frequency_hz = 0.2  # every 5s
-        N = int(update_frequency_hz * seconds_per_day)
-        # fmt: off
-        sub_query = (
-            select(
-                data_table.c.timestamp,
-                data_table.c.Q,
-                data_table.c.cT
-            )
-            .where(func.date(data_table.c.timestamp) >= today.date())
-            .order_by(desc(data_table.c.timestamp))
-            .limit(N)
-            .subquery()
-        )
-        # reorder again
-        query = (
-            select(
-                sub_query.c.Q,
-                sub_query.c.cT
-            )
-            .order_by(asc(sub_query.c.timestamp))
-        )
-        # fmt: on
-        rows = DB.session.execute(query).fetchall()
-
         recommendations = []
 
-        Q = np.fromiter((r[0] for r in rows), dtype=int)
-        Q_max = int(max(Q))
-        Q_min = int(min(Q))
-        if Q_max - Q_min < 50:
-            recommendations.append(
-                {
-                    "type": "charge-range",
-                    "message": f"Restrict SoC range to [{Q_min},{Q_max}]%.",
-                    "min": Q_min,
-                    "max": Q_max,
-                }
-            )
-
-        cT = np.fromiter((r[1] for r in rows), dtype=int)
-        cT_mean = np.mean(cT)
-        if cT_mean > 40.0:
+        high_temperature_threshold = 40  # °C
+        if high_temperature_check(esp_id, high_temperature_threshold):
             I_max = 2.0
             recommendations.append(
                 {
                     "type": "current-dischg-limit",
-                    "message": f"Overheating detected: {cT_mean:.1f}°C. Throttle discharge current to {I_max}A.",
+                    "message": f"Overheating detected (> {high_temperature_threshold:.1f}°C). Throttle discharge current to {I_max}A.",
                     "max": I_max,
                 }
             )
@@ -749,5 +728,6 @@ def recommendation():
             )
 
         return {"recommendations": recommendations}, 200
+
     except Exception as e:
         return {"Error": e}, 404
