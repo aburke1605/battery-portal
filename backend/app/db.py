@@ -56,24 +56,16 @@ def update_battery_data(json: list) -> None:
         esp_id = data["esp_id"]
         content = data["content"]
 
+        if content["I"] == 0:
+            continue
+
         # first update battery_info table
         try:
             # check if the entry already exists
-            battery = DB.session.get(BatteryInfo, esp_id)
-            if not battery:
-                # create default one if not
-                battery = BatteryInfo(
-                    esp_id=0,
-                    root_id=None,
-                    last_updated_time=datetime.now(),
-                    live_websocket=False,
-                )
-                DB.session.add(battery)
-                logger.info(f"inserted new battery_info row with esp_id: {esp_id}")
+            battery = get_battery_info_entry(esp_id)
             # update the entry info
             battery.esp_id = esp_id
             battery.root_id = None if i == 0 else root_id
-            battery.last_updated_time = datetime.now()
             DB.session.commit()
             set_live_websocket(
                 esp_id, True
@@ -116,6 +108,24 @@ def update_battery_data(json: list) -> None:
         except Exception as e:
             DB.session.rollback()
             logger.error(f"DB error inserting data from {esp_id} into table: {e}")
+
+
+def get_battery_info_entry(esp_id: str) -> BatteryInfo:
+    # check if the entry already exists
+    battery = DB.session.get(BatteryInfo, esp_id)
+
+    if not battery:
+        # create default one if not
+        battery = BatteryInfo(
+            esp_id=0,
+            root_id=None,
+            last_updated_time=datetime.now(),
+            live_websocket=False,
+        )
+        DB.session.add(battery)
+        logger.info(f"inserted new battery_info row with esp_id: {esp_id}")
+
+    return battery
 
 
 def set_live_websocket(esp_id: str, live: bool) -> None:
@@ -269,7 +279,13 @@ def data():
     data_table = DB.Table(table_name, DB.metadata, autoload_with=DB.engine)
 
     # this really is ordered by most recent and not just date or time individually
-    query = select(data_table).order_by(desc(data_table.c.timestamp)).limit(1)
+    # fmt: off
+    query = (
+        select(data_table)
+        .order_by(desc(data_table.c.timestamp))
+        .limit(1)
+    )
+    # fmt: on
 
     row = DB.session.execute(query).first()
 
@@ -303,22 +319,32 @@ def chart_data():
     data_table = DB.Table(table_name, DB.metadata, autoload_with=DB.engine)
     column = request.args.get("column")
 
-    sub_sub_query = select(
-        data_table.c.timestamp,
-        data_table.c[column],  # query timestamp and column of interest
-        func.row_number()
-        .over(
-            order_by=desc(data_table.c.timestamp)  # ordered by most recent (time-wise)
+    # fmt: off
+    sub_sub_query = (
+        select(
+            data_table.c.timestamp,
+            data_table.c[column],  # query timestamp and column of interest
+            func.row_number()
+            .over(
+                order_by=desc(data_table.c.timestamp)  # ordered by most recent (time-wise)
+            )
+            .label("rn")
         )
-        .label("rn"),
-    ).subquery()
+        .subquery()
+    )
     sub_query = (
-        select(sub_sub_query.c.timestamp, sub_sub_query.c[column])
-        .where(sub_sub_query.c.rn % 75 == 0)  # every 75th row so query is not too large
+        select(
+            sub_sub_query.c.timestamp,
+            sub_sub_query.c[column]
+        )
+        .where(sub_sub_query.c.rn % 1 == 0)  # every 1th row so query is not too large
         .limit(250)  # max 250 data points
         .subquery()
     )
-    query = select(sub_query)
+    query = (
+        select(sub_query)
+    )
+    # fmt: on
 
     rows = DB.session.execute(query).fetchall()
 
@@ -343,25 +369,23 @@ def chart_data():
         return {}, 404
 
 
-def import_bqStudio_log(csv_path: str):
+def import_data(csv_path: str, esp_id: int):
     """
     Creates example data for fresh website lacking real data.
     """
-    esp_id = 999
     name = f"battery_data_bms_{esp_id}"
     inspector = inspect(DB.engine)
-    if inspector.has_table(name):
+    if esp_id == 999 and inspector.has_table(name):
         return
 
     # create entry in battery_info table
-    battery = BatteryInfo(
-        esp_id=esp_id,
-        root_id=None,
-        last_updated_time=datetime.now(),
-        live_websocket=True,
-    )
-    DB.session.add(battery)
-    DB.session.commit()
+    try:
+        battery = get_battery_info_entry(esp_id)
+        battery.esp_id = esp_id
+        DB.session.commit()
+    except Exception as e:
+        DB.session.rollback()
+        logger.error(f"DB error processing data import for {esp_id}: {e}")
 
     # create new battery_data_bms_<esp_id> table
     table = get_battery_data_table(str(esp_id))
@@ -375,6 +399,8 @@ def import_bqStudio_log(csv_path: str):
         rows = []
         for row in reader:
             if not row["TimeStamp"].strip():
+                continue
+            if float(row["Current"]) == 0:
                 continue
             rows.append(
                 {
@@ -415,10 +441,248 @@ def example():
     API
     """
     try:
-        import_bqStudio_log("GPCCHEM.csv")
+        import_data("GPCCHEM.csv", 999)
         return {}, 200
     except:
         return {}, 404
+
+
+@db.route("/simulation", methods=["GET"])
+@roles_required("superuser")
+def simulation():
+    """
+    API
+    """
+    try:
+        for i in range(24):
+            import_data(f"../simulation/data/normal/data_{i+1}.csv", 996)
+            import_data(f"../simulation/data/low_power/data_{i+1}.csv", 997)
+            import_data(f"../simulation/data/short_duration/data_{i+1}.csv", 998)
+        return {}, 200
+    except:
+        return {}, 404
+
+
+def get_query_size(data_table: Table, hours: float) -> int:
+    """
+    Since data is recorded only when the current is not zero, the data may be 'chunked', with lengthy periods of downtime separating each.
+    The 12h therefore must be acquired cumulatively, where we define some minimum downtime period (e.g. 5m) which separates consecutive chunks.
+
+    TODO:
+        Assuming any connected battery unit sends data on average every one minute, it would be simpler to just do a `.limit(hours*60)`.
+        So, check if the assumption is true!
+    """
+
+    target_duration = timedelta(hours=hours)
+    min_downtime = timedelta(minutes=5)
+    batch_size = 60
+
+    last_timestamp = datetime.now()
+    cumulative_duration = timedelta(0)
+
+    query_size = 1  # at least
+
+    try:
+        # progressively fetch timestamps until get >=hours of collected time
+        while cumulative_duration < target_duration:
+            # initial query
+            # fmt: off
+            sub_query = (
+                select(data_table.c.timestamp)
+                .order_by(desc(data_table.c.timestamp))          # order by most recent
+                .where(data_table.c.timestamp <= last_timestamp) # skip previously queried batches
+                .limit(batch_size)                               # query in batches to avoid large queries
+                .subquery()
+            )
+            query = (
+                select(sub_query.c.timestamp)
+                .order_by(asc(sub_query.c.timestamp)) # reorder
+            )
+            # fmt: on
+            timestamps = DB.session.execute(query).scalars().all()
+            if not timestamps:
+                break
+
+            # measure accurate cumulative time by splitting into chunks
+            chunks = []  # will be 2D array; list of lists of timestamps
+            current_chunk = [timestamps[0]]  # first chunk, starts from the beginning
+            for previous_timestamp, next_timestamp in zip(timestamps, timestamps[1:]):
+                if (next_timestamp - previous_timestamp) < min_downtime:
+                    current_chunk.append(next_timestamp)
+                else:
+                    chunks.append(current_chunk)  # chunk complete
+                    current_chunk = [next_timestamp]  # start new chunk for next loop
+            chunks.append(current_chunk)  # final chunk
+
+            reversed_chunks = reversed(chunks)
+
+            # increment cumulative time by chunk time periods and number of data points
+            for chunk in reversed_chunks:
+                cumulative_duration += chunk[-1] - chunk[0]
+                query_size += len(chunk)
+                if cumulative_duration >= target_duration:
+                    break  # break early, no need to continue to next chunk or batch
+
+            # prepare for next batch loop
+            last_timestamp = timestamps[0]
+            query_size -= 1  # because first time in batch i == last time in batch i-1
+            # (see `where(data_table.c.timestamp <= last_timestamp)` in inital query)
+            if len(timestamps) < batch_size:
+                break  # no more data in table
+
+    except Exception as e:
+        logger.error(f"Error: {e}")
+
+    return query_size
+
+
+def high_temperature_check(esp_id: str, high_temperature_threshold: float) -> bool:
+    try:
+        table_name = f"battery_data_bms_{esp_id}"
+        data_table = DB.Table(table_name, DB.metadata, autoload_with=DB.engine)
+
+        query_size = get_query_size(data_table, 12)
+        # fmt: off
+        sub_query = (
+            select(
+                data_table.c.cT,
+                data_table.c.timestamp
+            )
+            .order_by(desc(data_table.c.timestamp)) # order by most recent
+            .limit(query_size)                      # limit to determined size
+            .subquery()
+        )
+        query = (
+            select(
+                sub_query.c.cT,
+            )
+            .order_by(asc(sub_query.c.timestamp)) # reorder
+        )
+        # fmt: on
+        data = np.array(DB.session.execute(query).scalars().all())
+
+        return np.mean(data) > high_temperature_threshold
+
+    except Exception as e:
+        logger.error(f"Error: {e}")
+
+    return False
+
+
+def low_power_check(esp_id: str, power_threshold: float) -> bool:
+    """
+    Measures the average power in the last 12h worth of discharge data to check for low power usage.
+    """
+
+    try:
+        table_name = f"battery_data_bms_{esp_id}"
+        data_table = DB.Table(table_name, DB.metadata, autoload_with=DB.engine)
+
+        # step 1: get query sie corresponding to 12h worth of data
+        query_size = get_query_size(data_table, 12)
+
+        # step 2: query current and voltage data for the 12h period
+        # fmt: off
+        query = (
+            select(
+                data_table.c.I,
+                data_table.c.V
+            )
+            .order_by(desc(data_table.c.timestamp)) # order by most recent
+            .where(data_table.c.I < 0)              # discharge only
+            .limit(query_size)                      # limit to determined size
+        )
+        # fmt: on
+        data = np.array(DB.session.execute(query).fetchall())
+
+        # step 3: compare average power with threshold
+        average_power = np.mean(-data[:, 0] * data[:, 1])
+        return average_power < power_threshold
+        # TODO:
+        #     can we instead return the recommended SoC limits??
+
+    except Exception as e:
+        logger.error(f"Error: {e}")
+
+    return False
+
+
+def low_depth_of_discharge_check(
+    esp_id: str, depth_of_discharge_threshold: float
+) -> bool:
+    min_downtime = timedelta(minutes=5)
+    depths_of_discharge = []
+
+    try:
+        table_name = f"battery_data_bms_{esp_id}"
+        data_table = DB.Table(table_name, DB.metadata, autoload_with=DB.engine)
+
+        query_size = get_query_size(data_table, 12)
+        # fmt: off
+        sub_query = (
+            select(
+                data_table.c.I,
+                data_table.c.V,
+                data_table.c.timestamp
+            )
+            .order_by(desc(data_table.c.timestamp)) # order by most recent
+            .limit(query_size)                      # limit to determined size
+            .subquery()
+        )
+        query = (
+            select(
+                sub_query.c.I,
+                sub_query.c.V,
+                sub_query.c.timestamp
+            )
+            .order_by(asc(sub_query.c.timestamp)) # reorder
+        )
+        # fmt: on
+        data = np.array(DB.session.execute(query).fetchall())
+
+        clean_start = False
+        start = None
+        stop = None
+        for i, (current, *_) in enumerate(data):
+            # the below if clauses are in reverse logical order
+
+            if start != None:
+                # step 3: append
+                if stop != None:
+                    # check for breaks within a cycle
+                    if not any(
+                        data[j + 1][2] - data[j][2] > min_downtime
+                        for j in range(start, stop - 1)
+                    ):
+                        depths_of_discharge.append(data[start][1] - data[stop][1])
+                    start = None
+                    stop = None
+                    continue
+
+                # step 2: find the stop point only after we've found the start point
+                else:
+                    if current > 0:
+                        stop = i - 1
+
+            # step 1: find the start point
+            else:
+                if current > 0:
+                    # if the data begins in a discharge cycle, skip that segment
+                    clean_start = True
+                else:
+                    if clean_start:
+                        start = i
+
+        if (
+            len(depths_of_discharge) > 4
+            and np.mean(depths_of_discharge) < depth_of_discharge_threshold
+        ):
+            return True
+
+    except Exception as e:
+        logger.error(f"Error: {e}")
+
+    return False
 
 
 @db.route("/recommendation", methods=["GET"])
@@ -429,58 +693,41 @@ def recommendation():
     """
     try:
         esp_id = request.args.get("esp_id")
-        table_name = f"battery_data_bms_{esp_id}"
-        data_table = DB.Table(table_name, DB.metadata, autoload_with=DB.engine)
-
-        # get most recent date first
-        query = select(data_table).order_by(desc(data_table.c.timestamp)).limit(1)
-        today = DB.session.execute(query).first()[0]
-
-        # select N most recent
-        seconds_per_day = 86400  # 24*60*60
-        update_frequency_hz = 0.2  # every 5s
-        N = int(update_frequency_hz * seconds_per_day)
-        sub_query = (
-            select(data_table.c.Q, data_table.c.cT, data_table.c.timestamp)
-            .where(func.date(data_table.c.timestamp) >= today.date())
-            .order_by(desc(data_table.c.timestamp))
-            .limit(N)
-            .subquery()
-        )
-        # reorder again
-        query = select(sub_query.c.Q, sub_query.c.cT).order_by(
-            asc(sub_query.c.timestamp)
-        )
-
-        rows = DB.session.execute(query).fetchall()
-
         recommendations = []
 
-        Q = np.fromiter((r[0] for r in rows), dtype=int)
-        Q_max = int(max(Q))
-        Q_min = int(min(Q))
-        if Q_max - Q_min < 50:
-            recommendations.append(
-                {
-                    "type": "charge-range",
-                    "message": f"Restrict SoC range to [{Q_min},{Q_max}]%",
-                    "min": Q_min,
-                    "max": Q_max,
-                }
-            )
-
-        cT = np.fromiter((r[1] for r in rows), dtype=int)
-        cT_mean = np.mean(cT)
-        if cT_mean > 40.0:
+        high_temperature_threshold = 40  # °C
+        if high_temperature_check(esp_id, high_temperature_threshold):
             I_max = 2.0
             recommendations.append(
                 {
                     "type": "current-dischg-limit",
-                    "message": f"Overheating detected: {cT_mean:.1f}°C. Throttle discharge current to {I_max}A",
+                    "message": f"Overheating detected (> {high_temperature_threshold:.1f}°C). Throttle discharge current to {I_max}A.",
                     "max": I_max,
                 }
             )
 
+        power_threshold = 2  # W
+        if low_power_check(esp_id, power_threshold):
+            recommendations.append(
+                {
+                    "type": "soc-window",
+                    "message": f"Low average power usage (< {power_threshold}W) over last 12 hours of usage. Restrict SoC range to [{40},{60}]%.",
+                    "min": 40,
+                    "max": 60,
+                }
+            )
+
+        depth_of_discharge_threshold = 1  # V
+        if low_depth_of_discharge_check(esp_id, depth_of_discharge_threshold):
+            recommendations.append(
+                {
+                    "type": "operating-voltage",
+                    "message": f"Frequently low depth of discharge (ΔV < {depth_of_discharge_threshold}V) over last 12 hours of usage. Reduce operating voltage to {2.7 + depth_of_discharge_threshold}V.",
+                    "max": 2.7 + depth_of_discharge_threshold,  # minimum + threshold
+                }
+            )
+
         return {"recommendations": recommendations}, 200
+
     except Exception as e:
         return {"Error": e}, 404
