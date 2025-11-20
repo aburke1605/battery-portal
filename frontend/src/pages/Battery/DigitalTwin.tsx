@@ -400,7 +400,7 @@ const BatteryPack: React.FC<BatteryPackProps> = ({
 				style={{ width: `${shift}px` }}
 			>
 				<div className="flex flex-col items-center justify-center mb-2">
-					<h1>Welcome to digital twin view!</h1>
+					<h1 className="text-2xl font-bold">Welcome to digital twin view!</h1>
 					<p>BMS ID: {battery.esp_id}</p>
 				</div>
 				<div>
