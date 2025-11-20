@@ -13,3 +13,5 @@ batteries/
 
 frontend/node_modules/
 frontend/dist/
+
+simulation/data/
