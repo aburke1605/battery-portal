@@ -1,4 +1,5 @@
 import argparse
+from pathlib import Path
 import matplotlib.pyplot as plt
 
 parser = argparse.ArgumentParser()
@@ -65,7 +66,9 @@ def convert_time_stamp_to_sec_elapsed():
         )
     elapsed_times[0] = 0.0
 
-    with open(f"{args.output_dir}/roomtemp_rel_dis_rel.csv", "w") as file:
+    output_dir = Path(args.output_dir)
+    output_dir.mkdir(parents=True, exist_ok=True)
+    with open(f"{output_dir}/roomtemp_rel_dis_rel.csv", "w") as file:
         for i in range(len(timestamps)):
             file.write(
                 f"{elapsed_times[i]:.3f},{voltages[i]},{currents[i]},{temperatures[i]}\n"
