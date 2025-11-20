@@ -2,29 +2,29 @@
 import { useEffect } from "react";
 
 const PageMeta = ({
-	title,
-	description,
+  title,
+  description,
 }: {
-	title: string;
-	description: string;
+  title: string;
+  description: string;
 }) => {
-	useEffect(() => {
-		document.title = title;
+  useEffect(() => {
+    document.title = title;
 
-		let meta = document.querySelector("meta[name='description']");
-		if (!meta) {
-			meta = document.createElement("meta");
-			// meta.name = "description";
-			document.head.appendChild(meta);
-		}
-		meta.setAttribute("content", description);
-	}, [title, description]);
+    let meta = document.querySelector("meta[name='description']");
+    if (!meta) {
+      meta = document.createElement("meta");
+      // meta.name = "description";
+      document.head.appendChild(meta);
+    }
+    meta.setAttribute("content", description);
+  }, [title, description]);
 
-	return null;
+  return null;
 };
 
 export const AppWrapper = ({ children }: { children: React.ReactNode }) => (
-	<>{children}</>
+  <>{children}</>
 );
 
 export default PageMeta;
