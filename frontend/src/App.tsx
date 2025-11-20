@@ -20,7 +20,7 @@ import UserList from "./pages/Users";
 import AuthRequire from "./auth/AuthRequire.tsx";
 import { AuthProvider } from "./auth/AuthContext.tsx";
 import Db from "./pages/Db";
-import Visualisation from "./pages/Battery/Visualisation.tsx";
+import DigitalTwin from "./pages/Battery/Visualisation.tsx";
 import HomePage from "./home.tsx";
 
 function App() {
@@ -52,7 +52,7 @@ function App() {
 							<Route path="/settings" element={<SystemSettings />} />
 							<Route path="/batteries" element={<ListPage />} />
 							<Route path="/battery-detail" element={<BatteryPage />} />
-							<Route path="/visualisation" element={<Visualisation />} />
+							<Route path="/digital-twin" element={<DigitalTwin />} />
 
 							<Route path="/db" element={<Db />} />
 						</Route>
