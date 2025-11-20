@@ -20,7 +20,7 @@ import UserList from "./pages/Users";
 import AuthRequire from "./auth/AuthRequire.tsx";
 import { AuthProvider } from "./auth/AuthContext.tsx";
 import Db from "./pages/Db";
-import DigitalTwin from "./pages/Battery/Visualisation.tsx";
+import DigitalTwin from "./pages/Battery/DigitalTwin.tsx";
 import HomePage from "./home.tsx";
 
 function App() {
