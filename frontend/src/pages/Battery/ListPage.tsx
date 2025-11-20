@@ -89,7 +89,8 @@ export default function BatteryPage() {
       const popupEl = document.getElementById("popup")!;
       overlayRef.current = new Overlay({
         element: popupEl,
-        positioning: "bottom-center",
+        positioning: "bottom-left",
+        offset: [8, -8],
         stopEvent: true,
       });
 
