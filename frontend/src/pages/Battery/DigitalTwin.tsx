@@ -368,12 +368,17 @@ const BatteryPack: React.FC<BatteryPackProps> = ({
 
 	const shift = 450;
 
+	const [isDragging, setIsDragging] = useState(false);
+
 	return (
 		<div
 			className="relative w-full h-full"
 			style={{ paddingRight: `${shift}px` }} // space reserved for overlay
 		>
 			<Canvas
+				className={isDragging ? "cursor-grabbing" : "cursor-grab"}
+				onPointerDown={() => setIsDragging(true)}
+				onPointerUp={() => setIsDragging(false)}
 				camera={{ position: [-20, 20, -20], fov: 50 }}
 				style={{ background: "#000033" }}
 			>
