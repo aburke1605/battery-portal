@@ -48,8 +48,6 @@ export type { CellData };
 
 type BatteryPackProps = {
 	cells: CellData[];
-	esp_id: number;
-	connected: boolean;
 	battery: BatteryData;
 	sendBatteryUpdate: (updatedValues: Partial<BatteryData>) => void;
 };
@@ -214,8 +212,6 @@ const Cell: React.FC<CellData> = ({
 
 const BatteryPack: React.FC<BatteryPackProps> = ({
 	cells,
-	esp_id,
-	connected,
 	battery,
 	sendBatteryUpdate, // receive function from BatteryDetail
 }) => {
@@ -397,29 +393,16 @@ const BatteryPack: React.FC<BatteryPackProps> = ({
 					/>
 				))}
 
-				<Html
-					position={[0, 3 * cellFrameHeight, 0]}
-					center
-					style={{
-						pointerEvents: "none",
-						fontSize: "20px",
-						color: "white",
-						fontWeight: "bolder",
-						textAlign: "center",
-						whiteSpace: "nowrap",
-					}}
-				>
-					Welcome to digital twin view!
-					<br />
-					{!connected ? <>Loading battery data...</> : <>BMS ID: {esp_id}</>}
-				</Html>
-
 				<Thermometer />
 			</Canvas>
 			<div
 				className="absolute top-0 right-0 h-full bg-white text-black p-4 shadow-xl"
 				style={{ width: `${shift}px` }}
 			>
+				<div className="flex flex-col items-center justify-center mb-2">
+					<h1>Welcome to digital twin view!</h1>
+					<p>BMS ID: {battery.esp_id}</p>
+				</div>
 				<div>
 					<button
 						onClick={() => (recommendationCards ? null : getRecommendations())}
@@ -713,8 +696,6 @@ export default function DigitalTwin({
 			{battery ? (
 				<BatteryPack
 					cells={cells}
-					esp_id={battery ? battery.esp_id : 0}
-					connected={battery ? true : false}
 					battery={battery}
 					sendBatteryUpdate={sendBatteryUpdate} // pass function to BatteryPack
 				/>
