@@ -404,13 +404,6 @@ const BatteryPack: React.FC<BatteryPackProps> = ({
 					<p>BMS ID: {battery.esp_id}</p>
 				</div>
 				<div>
-					<button
-						onClick={() => (recommendationCards ? null : getRecommendations())}
-						className="w-full flex items-center justify-center px-4 py-2 border border-blue-300 shadow-sm text-sm font-medium rounded-md text-blue-700 bg-blue-50 hover:bg-blue-100 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 mb-4"
-					>
-						<BrainCircuit size={16} className="mr-2" />
-						Get Recommendations
-					</button>
 					{recommendationCards?.map((recommendation) => (
 						<div className="flex items-center justify-between mb-2">
 							<span>{recommendation.message}</span>
@@ -461,6 +454,13 @@ const BatteryPack: React.FC<BatteryPackProps> = ({
 							</div>
 						</div>
 					))}
+					<button
+						onClick={() => (recommendationCards ? null : getRecommendations())}
+						className="w-full flex items-center justify-center px-4 py-2 border border-blue-300 shadow-sm text-sm font-medium rounded-md text-blue-700 bg-blue-50 hover:bg-blue-100 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 mb-4"
+					>
+						<BrainCircuit size={16} className="mr-2" />
+						Get Recommendations
+					</button>
 				</div>
 			</div>
 		</div>
