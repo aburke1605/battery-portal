@@ -78,7 +78,7 @@ def convert_time_stamp_to_sec_elapsed():
 def plot():
     fig, ax1 = plt.subplots()
 
-    ax1.plot(elapsed_times, voltages, color="r", linewidth=0.5, label="Voltage")
+    ax1.plot(elapsed_times, voltages, color="r", label="Voltage")
     ax1.set_xlabel("Time elapsed (s)")
     ax1.set_ylabel("Voltage (mV)", color="r")
     ax1.tick_params(axis="y", labelcolor="r")
@@ -88,7 +88,6 @@ def plot():
         elapsed_times,
         currents,
         color="b",
-        linewidth=0.5,
         linestyle="--",
         label="Current",
     )
