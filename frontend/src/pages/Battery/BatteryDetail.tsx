@@ -636,7 +636,16 @@ const BatteryDetail: React.FC<BatteryDetailProps> = ({
 		if (!recommendationCards) return;
 
 		switch (recommendation.type) {
-			case "charge-range":
+			case "current-dischg-limit": {
+				await processRecommendation(
+					recommendation,
+					{ I_dschg_max: recommendation.max },
+					() => battery.I_dschg_max === recommendation.max,
+				);
+				break;
+			}
+
+			case "soc-window":
 				await processRecommendation(
 					recommendation,
 					{ Q_low: recommendation.min, Q_high: recommendation.max },
@@ -646,14 +655,13 @@ const BatteryDetail: React.FC<BatteryDetailProps> = ({
 				);
 				break;
 
-			case "current-dischg-limit": {
+			case "operating-voltage":
 				await processRecommendation(
 					recommendation,
-					{ I_dschg_max: recommendation.max },
-					() => battery.I_dschg_max === recommendation.max,
+					{ V_max: recommendation.max },
+					() => battery.V_max === recommendation.max,
 				);
 				break;
-			}
 
 			default:
 				console.log("default");
