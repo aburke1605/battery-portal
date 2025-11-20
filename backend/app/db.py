@@ -449,7 +449,7 @@ def example():
 
 @db.route("/simulation", methods=["GET"])
 @roles_required("superuser")
-def simulations():
+def simulation():
     """
     API
     """
