@@ -19,7 +19,7 @@ const apiConfig = {
 	DB_ESP_ID_API: `${HTTP_PROTOCOL}//${HOST}/api/db/esp_ids`,
 	DB_DATA_API: `${HTTP_PROTOCOL}//${HOST}/api/db/data`,
 	DB_CHART_DATA_API: `${HTTP_PROTOCOL}//${HOST}/api/db/chart_data`,
-	DB_RECOMMENDATION_API: `${HTTP_PROTOCOL}//${HOST}/api/db/recommendation`,
+	DB_RECOMMENDATION_API: `${HTTP_PROTOCOL}//${HOST}/api/twin/recommendation`,
 };
 
 export default apiConfig;
