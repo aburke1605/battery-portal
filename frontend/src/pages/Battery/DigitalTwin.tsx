@@ -401,7 +401,7 @@ const BatteryPack: React.FC<BatteryPackProps> = ({
 			>
 				<div className="flex flex-col items-center justify-center mb-2">
 					<h1 className="text-2xl font-bold">Welcome to digital twin view!</h1>
-					<p>BMS ID: {battery.esp_id}</p>
+					<p className="underline">BMS ID: {battery.esp_id}</p>
 				</div>
 				<div>
 					{recommendationCards?.map((recommendation) => (
