@@ -99,8 +99,10 @@
 #define SCAN_I2C false
 #endif
 #define I2C_MASTER_TIMEOUT_MS 5000 // time delay to allow for BMS response
-#define I2C_MASTER_NUM I2C_NUM_0   // I2C port number for master dev
-#define I2C_ADDR CONFIG_I2C_ADDR   // 7-bit I2C address of the battery
+#define I2C_SLAVE_TIMEOUT_MS                                                   \
+  1000                           // time delay to allow for Ben's ESP32 response
+#define I2C_MASTER_NUM I2C_NUM_0 // I2C port number for master dev
+#define I2C_ADDR CONFIG_I2C_ADDR // 7-bit I2C address of the battery
 #define I2C_MASTER_SDA_IO                                                      \
   CONFIG_MASTER_SDA_PIN // GPIO number for I2C master data
 #define I2C_MASTER_SCL_IO                                                      \
