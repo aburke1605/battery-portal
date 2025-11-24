@@ -407,7 +407,7 @@ def import_data(csv_path: str, esp_id: int):
                     "lat": 0,
                     "lon": 0,
                     "Q": int(row["Relative State of Charge"] or 0),
-                    "H": 0,
+                    "H": int(row["State of Health"] or 0),
                     "V": float(row["Voltage"] or 0) / 1000,
                     "V1": 0,
                     "V2": 0,

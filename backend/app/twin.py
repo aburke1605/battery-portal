@@ -21,7 +21,7 @@ def simulation():
     API
     """
     try:
-        for i in range(24):
+        for i in range(900):
             import_data(f"../simulation/data/normal/data_{i+1}.csv", 996)
             import_data(f"../simulation/data/low_power/data_{i+1}.csv", 997)
             import_data(f"../simulation/data/short_duration/data_{i+1}.csv", 998)
