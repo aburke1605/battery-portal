@@ -408,7 +408,7 @@ def import_data(csv_path: str, esp_id: int):
                     "lat": 0,
                     "lon": 0,
                     "Q": int(row["Relative State of Charge"] or 0),
-                    "H": 0,
+                    "H": int(row["State of Health"] or 0),
                     "V": float(row["Voltage"] or 0) / 1000,
                     "V1": 0,
                     "V2": 0,
@@ -454,7 +454,7 @@ def simulation():
     API
     """
     try:
-        for i in range(24):
+        for i in range(900):
             import_data(f"../simulation/data/normal/data_{i+1}.csv", 996)
             import_data(f"../simulation/data/low_power/data_{i+1}.csv", 997)
             import_data(f"../simulation/data/short_duration/data_{i+1}.csv", 998)
