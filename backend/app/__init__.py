@@ -11,6 +11,7 @@ from sqlalchemy import inspect
 from app.db import db, DB, BatteryInfo
 from app.user import user, users, create_admin
 from app.ws import ws
+from app.twin import twin
 
 
 def create_app():
@@ -66,6 +67,8 @@ def create_app():
                 )
                 DB.session.commit()
     api.register_blueprint(ws)
+
+    api.register_blueprint(twin)
 
     # finally, register eveything at /api with main app
     app.register_blueprint(api)

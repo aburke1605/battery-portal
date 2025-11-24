@@ -20,59 +20,59 @@ import UserList from "./pages/Users";
 import AuthRequire from "./auth/AuthRequire.tsx";
 import { AuthProvider } from "./auth/AuthContext.tsx";
 import Db from "./pages/Db";
-import Visualisation from "./pages/Battery/Visualisation.tsx";
+import DigitalTwin from "./pages/Battery/DigitalTwin.tsx";
 import HomePage from "./home.tsx";
 
 function App() {
-	return (
-		<>
-			<HashRouter>
-				<AuthProvider>
-					<ScrollToTop />
-					<Routes>
-						{/* Home page */}
-						<Route path="/" element={<HomePage />} />
+  return (
+    <>
+      <HashRouter>
+        <AuthProvider>
+          <ScrollToTop />
+          <Routes>
+            {/* Home page */}
+            <Route path="/" element={<HomePage />} />
 
-						{/* Dashboard Layout */}
-						<Route
-							element={
-								<AuthRequire>
-									<AppLayout />
-								</AuthRequire>
-							}
-						>
-							<Route path="/dashboard" element={<Home />} />
+            {/* Dashboard Layout */}
+            <Route
+              element={
+                <AuthRequire>
+                  <AppLayout />
+                </AuthRequire>
+              }
+            >
+              <Route path="/dashboard" element={<Home />} />
 
-							{/* Others Page */}
-							<Route path="/profile" element={<UserProfiles />} />
-							<Route path="/userlist" element={<UserList />} />
-							<Route path="/blank" element={<Blank />} />
+              {/* Others Page */}
+              <Route path="/profile" element={<UserProfiles />} />
+              <Route path="/userlist" element={<UserList />} />
+              <Route path="/blank" element={<Blank />} />
 
-							{/* Forms */}
-							<Route path="/settings" element={<SystemSettings />} />
-							<Route path="/batteries" element={<ListPage />} />
-							<Route path="/battery-detail" element={<BatteryPage />} />
-							<Route path="/visualisation" element={<Visualisation />} />
+              {/* Forms */}
+              <Route path="/settings" element={<SystemSettings />} />
+              <Route path="/batteries" element={<ListPage />} />
+              <Route path="/battery-detail" element={<BatteryPage />} />
+              <Route path="/digital-twin" element={<DigitalTwin />} />
 
-							<Route path="/db" element={<Db />} />
-						</Route>
+              <Route path="/db" element={<Db />} />
+            </Route>
 
-						{/* Auth Layout */}
-						<Route path="/login" element={<SignIn />} />
+            {/* Auth Layout */}
+            <Route path="/login" element={<SignIn />} />
 
-						{/* Fallback Route */}
-						<Route path="*" element={<NotFound />} />
-					</Routes>
-				</AuthProvider>
-			</HashRouter>
-		</>
-	);
+            {/* Fallback Route */}
+            <Route path="*" element={<NotFound />} />
+          </Routes>
+        </AuthProvider>
+      </HashRouter>
+    </>
+  );
 }
 
 createRoot(document.getElementById("root")!).render(
-	<ThemeProvider>
-		<AppWrapper>
-			<App />
-		</AppWrapper>
-	</ThemeProvider>,
+  <ThemeProvider>
+    <AppWrapper>
+      <App />
+    </AppWrapper>
+  </ThemeProvider>,
 );
