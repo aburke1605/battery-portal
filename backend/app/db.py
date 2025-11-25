@@ -185,6 +185,7 @@ def get_battery_data_table(esp_id: str) -> Table:
             DB.Column("T4", DB.Float, nullable=False),
             DB.Column("OTC", DB.Integer, nullable=False),
             DB.Column("wifi", DB.Boolean, nullable=False),
+            DB.Column("cycle", DB.Integer, nullable=False),
         )
         table.create(bind=DB.engine, checkfirst=True)
         logger.info(f"created new table: {name}")
@@ -426,6 +427,7 @@ def import_data(csv_path: str, esp_id: int):
                     "T4": 0,
                     "OTC": 0,
                     "wifi": False,
+                    "cycle": int(row["Cycle"] or 0),
                 }
             )
     if rows:
