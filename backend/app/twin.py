@@ -4,6 +4,8 @@ logger = logging.getLogger(__name__)
 
 from datetime import timedelta
 import numpy as np
+from sklearn.gaussian_process import GaussianProcessRegressor
+from sklearn.gaussian_process.kernels import RBF
 
 from flask import Blueprint, request
 from flask_security import roles_required, login_required
@@ -177,6 +179,169 @@ def low_depth_of_discharge_check(
         logger.error(f"Error: {e}")
 
     return False
+
+
+@twin.route("/test", methods=["GET"])
+def test():
+    predict_soh(request.args.get("esp_id"))
+    return {}, 200
+
+
+def extract_features(discharge_cycles, charge_cycles):
+    TIECVD = []
+    TIEDVD = []
+    for discharge_cycle, charge_cycle in zip(discharge_cycles, charge_cycles):
+        if len(discharge_cycle) > 1:
+            dv = np.diff(discharge_cycle[:, 1])
+            dt = np.diff(discharge_cycle[:, 2])
+            dt = np.array([x.total_seconds() for x in dt])
+            TIECVD.append(np.sum(np.abs(dv) * dt))
+        else:
+            TIECVD.append(np.nan)
+
+        if len(charge_cycle) > 1:
+            dv = np.diff(charge_cycle[:, 1])
+            dt = np.diff(charge_cycle[:, 2])
+            dt = np.array([x.total_seconds() for x in dt])
+            TIEDVD.append(np.sum(np.abs(dv) * dt))
+        else:
+            TIEDVD.append(np.nan)
+
+    return np.array(TIECVD), np.array(TIEDVD)
+
+
+def predict_soh(esp_id: str) -> None:
+    table_name = f"battery_data_bms_{esp_id}"
+    data_table = DB.Table(table_name, DB.metadata, autoload_with=DB.engine)
+
+    cycles = {}
+
+    # fmt: off
+    sub_query = (
+        select(
+            data_table.c.I,
+            data_table.c.V,
+            data_table.c.CC,
+            data_table.c.timestamp
+        )
+        .subquery()
+    )
+    # fmt: on
+    N_cycles = 91
+    for cycle_count in range(1, N_cycles + 1):
+        cycles[cycle_count] = {"charge": [], "discharge": []}
+        for cycle_type, negative_current in zip(["charge", "discharge"], [False, True]):
+            # fmt: off
+            query = (
+                select(
+                    sub_query.c.I,
+                    sub_query.c.V,
+                    sub_query.c.timestamp
+                )
+                .where(sub_query.c.CC == cycle_count)
+                .where((sub_query.c.I < 0) == negative_current)
+                .limit(10)                                      # remove me
+            )
+            # fmt: on
+            data = DB.session.execute(query).fetchall()
+            if len(data) > 0:
+                cycles[cycle_count][cycle_type] = data
+
+    # remove cycles with missing charge or discharge data
+    new_N_cycles = N_cycles
+    for cycle_count in range(1, N_cycles + 1):
+        if (
+            len(cycles[cycle_count]["charge"]) == 0
+            or len(cycles[cycle_count]["discharge"]) == 0
+        ):
+            cycles.pop(cycle_count)
+            new_N_cycles -= 1
+    N_cycles = new_N_cycles
+
+    charge_cycles = []
+    discharge_cycles = []
+    capacity_per_cycle = []
+
+    for cycle in sorted(cycles.keys()):
+        charge_cycle = np.array(cycles[cycle]["charge"])
+        discharge_cycle = np.array(cycles[cycle]["discharge"])
+
+        if len(discharge_cycle) > 1:
+            dt = np.diff(discharge_cycle[:, 2])
+            dt = np.array([x.total_seconds() for x in dt])
+            I = discharge_cycle[:-1, 0].astype(float)
+            capacity = -np.sum(I * dt) / (60**2)  # convert to Amp-hours
+        else:
+            capacity = np.nan
+
+        charge_cycles.append(charge_cycle)
+        discharge_cycles.append(discharge_cycle)
+        capacity_per_cycle.append(capacity)
+
+    charge_cycles = np.array(charge_cycles)
+    discharge_cycles = np.array(discharge_cycles)
+    capacity_per_cycle = np.array(capacity_per_cycle)
+    # print(charge_cycles)
+    # print(charge_cycles.shape)
+    print(discharge_cycles)
+    print(discharge_cycles.shape)
+    print("capacities:", capacity_per_cycle)
+    import matplotlib.pyplot as plt
+
+    # fig, ax = plt.subplots()
+    # ax.plot([i for i in range(N_cycles)], capacity_per_cycle)
+    # plt.show()
+
+    print("\n\n")
+
+    rated_capacity = np.mean(capacity_per_cycle[:5])
+    N = len(discharge_cycles)
+    n = int(N / 2)
+
+    # first life
+    discharge_cycles_FL = discharge_cycles[:n]
+    charge_cycles_FL = charge_cycles[:n]
+    capacity_per_cycle_FL = capacity_per_cycle[:n]
+    state_of_health_FL = capacity_per_cycle_FL / rated_capacity
+    TIECVD_FL, TIEDVD_FL = extract_features(discharge_cycles_FL, charge_cycles_FL)
+
+    X_FL = np.column_stack([TIECVD_FL, TIEDVD_FL])
+    mask_FL = np.isfinite(X_FL).all(axis=1) & np.isfinite(state_of_health_FL)
+    X_FL = X_FL[mask_FL]
+    y_FL = state_of_health_FL[mask_FL]
+
+    kernel = RBF(length_scale=1.0)
+    gpr = GaussianProcessRegressor(kernel=kernel, alpha=1e-4, normalize_y=True)
+    gpr.fit(X_FL, y_FL)
+
+    # second life
+    discharge_cycles_SL = discharge_cycles[n:]
+    charge_cycles_SL = charge_cycles[n:]
+    capacity_per_cycle_SL = capacity_per_cycle[n:]
+    state_of_health_SL = capacity_per_cycle_SL / rated_capacity
+    TIECVD_SL, TIEDVD_SL = extract_features(discharge_cycles_SL, charge_cycles_SL)
+
+    X_SL = np.column_stack([TIECVD_SL, TIEDVD_SL])
+    mask_SL = np.isfinite(X_SL).all(axis=1) & np.isfinite(state_of_health_SL)
+    X_SL = X_SL[mask_SL]
+    y_SL = state_of_health_SL[mask_SL]
+
+    cyc_SL = np.arange(n, n + len(y_SL))
+    mean_pred, std_pred = gpr.predict(X_SL, return_std=True)
+    rmse = np.sqrt(np.mean((mean_pred - y_SL) ** 2))
+    z = 1.96
+    lower = np.clip(mean_pred - z * std_pred, 0, 1)
+    upper = np.clip(mean_pred + z * std_pred, 0, 1)
+
+    plt.figure()
+    plt.fill_between(cyc_SL, lower, upper, alpha=0.3)
+    plt.plot(cyc_SL, y_SL)
+    plt.plot(cyc_SL, mean_pred)
+    plt.xlabel("Cycle Number")
+    plt.ylabel("SoH")
+    plt.title(f"Second-life SoH (RMSE={rmse:.4f})")
+    plt.legend(["Actual", "GP Mean", "95% CI"])
+    plt.show()
 
 
 @twin.route("/recommendation", methods=["GET"])
