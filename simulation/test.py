@@ -11,8 +11,11 @@ def simulate_data(
     design_capacity=2.0,  # Amp hours
     R0=0.05,  # ohms (internal resistance)
     dR=0.0005,  # ohms (per cycle increase)
+    SoH=1.0,  # as fraction
     dSoH=0.001,  # as fraction (per cycle decrease)
     dt=1.0,  # seconds
+    V_stop=None,
+    SoC_stop=0.0,
 ):
     capacity = []
 
@@ -20,7 +23,8 @@ def simulate_data(
         return V_min + (V_max - V_min) * SoC
 
     R_int = R0
-    SoH = 1.0
+    if V_stop == None:
+        V_stop = V_min
 
     for cycle in range(N_cycles):
         available_capacity = design_capacity * SoH
@@ -35,7 +39,7 @@ def simulate_data(
             # calculate new voltage
             V_OCV = OCV(SoC)
             V = V_OCV - I * R_int
-            if V < V_min or SoC <= 0:
+            if V < V_stop or SoC <= SoC_stop:
                 break
 
             # update cell
