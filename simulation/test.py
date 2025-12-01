@@ -7,6 +7,7 @@ def simulate_data(
     V_max=4.2,  # volts
     V_min=2.7,  # volts
     I=2.0,  # Amps
+    k=10,  # for OCV curve
     N_cycles=20,
     design_capacity=2.0,  # Amp hours
     R0=0.05,  # ohms (internal resistance)
@@ -20,7 +21,7 @@ def simulate_data(
     capacity = []
 
     def OCV(SoC):
-        return V_min + (V_max - V_min) * SoC
+        return V_min + (V_max - V_min) * (1 / (1 + np.exp(-k * (SoC - 0.5))))
 
     R_int = R0
     if V_stop == None:
