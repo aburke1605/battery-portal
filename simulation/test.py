@@ -13,7 +13,7 @@ def simulate_data(
     dR=0.0005,  # ohms (per cycle increase)
     SoH=1.0,  # as fraction
     dSoH=0.001,  # as fraction (per cycle decrease)
-    dt=1.0,  # seconds
+    dt=1.0,  # minutes
     V_stop=None,
     SoC_stop=0.0,
 ):
@@ -44,7 +44,7 @@ def simulate_data(
 
             # update cell
             dQ = I * dt
-            dC = dQ / 3600.0  # Amp hours
+            dC = dQ / 60.0  # Amp hours
             SoC -= dC / available_capacity  # as fraction
             Q += dQ
             t += dt
@@ -58,7 +58,7 @@ def simulate_data(
             axs[0].plot(ts, Is, marker=".")
 
         # age the cell for next cycle
-        delivered = Q / 3600.0  # Amp hours
+        delivered = Q / 60.0  # Amp hours
         SoH = max(0.0, SoH - dSoH * (delivered / design_capacity))
         R_int += dR
 
