@@ -1,9 +1,11 @@
 import numpy as np
 import matplotlib.pyplot as plt
+from pathlib import Path
 
 
 def simulate_data(
     ax,
+    path,
     V_max=4.2,  # volts
     V_min=2.7,  # volts
     I=2.0,  # Amps
@@ -31,6 +33,12 @@ def simulate_data(
 
     i = 0
     while True:
+        Path(path).mkdir(parents=True, exist_ok=True)
+        file = open(f"{path}/data_{i}.csv", "w")
+        file.write(
+            "TimeStamp,Temperature,Voltage,Current,Relative State of Charge,State of Health,Cycle\n"
+        )
+
         available_capacity = design_capacity * SoH
         capacities.append(available_capacity)
         SoHs.append(SoH)
@@ -39,13 +47,19 @@ def simulate_data(
         Q = 0.0
         t = 0.0
 
-        Vs, Is, ts = [], [], []
+        ts, Vs, Is = [], [], []
         while True:
             # calculate new voltage
             V_OCV = OCV(SoC)
             V = V_OCV - I * R_int
             if V < V_stop or SoC <= SoC_stop:
                 break
+
+            Vs.append(V)
+            Is.append(I)
+            ts.append(t)
+
+            file.write(f"{t},25.0,{V},{I},{int(SoC*100)},{int(SoH*100)},{i}\n")
 
             # update cell
             dQ = I * dt
@@ -54,9 +68,7 @@ def simulate_data(
             Q += dQ
             t += dt
 
-            Vs.append(V)
-            Is.append(I)
-            ts.append(t)
+        file.write(f"{t},25.0,{V},{I},{int(SoC*100)},{int(SoH*100)},{i}\n")
 
         # age the cell for next cycle
         delivered = Q / 60.0  # Amp hours
@@ -85,5 +97,5 @@ def simulate_data(
 
 n = 1
 fig, axs = plt.subplots(n, 2, figsize=(8, n * 3))
-simulate_data(axs)
+simulate_data(axs, "data")
 fig.savefig("plot.pdf")
