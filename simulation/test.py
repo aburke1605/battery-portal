@@ -70,6 +70,9 @@ def simulate_data(
         SoH = max(0.0, SoH - dSoH * stress * (delivered / design_capacity))
         R_int += dR
 
+        if SoH <= 0.8:
+            break
+
     axs[1].plot(range(len(capacities)), capacities, marker=".")
     axs[1].plot(range(len(SoHs)), SoHs, marker=".")
     axs[1].set_ylim(0, max(1.0, design_capacity))
