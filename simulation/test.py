@@ -7,7 +7,8 @@ def simulate_data(
     V_max=4.2,  # volts
     V_min=2.7,  # volts
     I=2.0,  # Amps
-    k=10,  # for OCV curve
+    k=14,  # for OCV curve
+    m=0.3,  # for OCV curve
     N_cycles=20,
     design_capacity=2.0,  # Amp hours
     R0=0.05,  # ohms (internal resistance)
@@ -21,7 +22,7 @@ def simulate_data(
     capacity = []
 
     def OCV(SoC):
-        return V_min + (V_max - V_min) * (1 / (1 + np.exp(-k * (SoC - 0.5))))
+        return V_min + (V_max - V_min) * (1 / (1 + np.exp(-k * (SoC - m))))
 
     R_int = R0
     if V_stop == None:
@@ -66,6 +67,7 @@ def simulate_data(
     axs[1].plot(range(N_cycles), capacity, marker=".")
 
 
-fig, axs = plt.subplots(1, 2, figsize=(8, 3))
+n = 1
+fig, axs = plt.subplots(n, 2, figsize=(8, n * 3))
 simulate_data(axs)
 fig.savefig("plot.pdf")
