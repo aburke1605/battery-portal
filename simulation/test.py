@@ -11,6 +11,7 @@ def simulate_data(
     design_capacity=2.0,  # Amp hours
     R0=0.05,  # ohms (internal resistance)
     dR=0.0005,  # ohms (per cycle increase)
+    dSoH=0.001,  # as fraction (per cycle decrease)
     dt=1.0,  # seconds
 ):
     capacity = []
@@ -19,8 +20,10 @@ def simulate_data(
         return V_min + (V_max - V_min) * SoC
 
     R_int = R0
+    SoH = 1.0
 
     for cycle in range(N_cycles):
+        available_capacity = design_capacity * SoH
         SoC = 1.0  # start fully charged
         Q = 0.0
         t = 0.0
@@ -36,7 +39,7 @@ def simulate_data(
             # update cell
             dQ = I * dt
             dC = dQ / 3600.0  # Amp hours
-            SoC -= dC / design_capacity  # as fraction
+            SoC -= dC / available_capacity  # as fraction
             Q += dQ
             t += dt
 
@@ -50,6 +53,8 @@ def simulate_data(
             axs[0].plot(ts, Vs, marker=".")
             axs[0].plot(ts, Is, marker=".")
 
+        # age the cell for next cycle
+        SoH = max(0.0, SoH - dSoH)
         R_int += dR
 
     axs[1].plot(range(N_cycles), capacity, marker=".")
