@@ -29,7 +29,7 @@ def simulate_data(
 
     R_int = R0
     if V_stop == None:
-        V_stop = V_min
+        V_stop = V_min - 0.1
 
     i = 0
     while True:
