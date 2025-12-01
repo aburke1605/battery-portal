@@ -13,6 +13,7 @@ def simulate_data(
     design_capacity=2.0,  # Amp hours
     R0=0.05,  # ohms (internal resistance)
     dR=0.0005,  # ohms (per cycle increase)
+    a=10.0,  # for stress ageing
     SoH=1.0,  # as fraction
     dSoH=0.001,  # as fraction (per cycle decrease)
     dt=1.0,  # minutes
@@ -61,7 +62,10 @@ def simulate_data(
 
         # age the cell for next cycle
         delivered = Q / 60.0  # Amp hours
-        SoH = max(0.0, SoH - dSoH * (delivered / design_capacity))
+        stress = 1 + a * (
+            R_int - R0
+        )  # a controls how strongly resistance speeds ageing
+        SoH = max(0.0, SoH - dSoH * stress * (delivered / design_capacity))
         R_int += dR
 
     axs[1].plot(range(N_cycles), capacity, marker=".")
