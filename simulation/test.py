@@ -3,19 +3,18 @@ import matplotlib.pyplot as plt
 
 
 def simulate_data(
-    axs,
+    ax,
     V_max=4.2,  # volts
     V_min=2.7,  # volts
     I=2.0,  # Amps
     k=14,  # for OCV curve
     m=0.3,  # for OCV curve
-    N_cycles=20,
     design_capacity=2.0,  # Amp hours
     R0=0.05,  # ohms (internal resistance)
     dR=0.0005,  # ohms (per cycle increase)
     a=10.0,  # for stress ageing
     SoH=1.0,  # as fraction
-    dSoH=0.001,  # as fraction (per cycle decrease)
+    dSoH=0.0001,  # as fraction (per cycle decrease)
     dt=1.0,  # minutes
     V_stop=None,
     SoC_stop=0.0,
@@ -30,7 +29,8 @@ def simulate_data(
     if V_stop == None:
         V_stop = V_min
 
-    for cycle in range(N_cycles):
+    i = 0
+    while True:
         available_capacity = design_capacity * SoH
         capacities.append(available_capacity)
         SoHs.append(SoH)
@@ -58,10 +58,6 @@ def simulate_data(
             Is.append(I)
             ts.append(t)
 
-        if cycle == 0:
-            axs[0].plot(ts, Vs, marker=".")
-            axs[0].plot(ts, Is, marker=".")
-
         # age the cell for next cycle
         delivered = Q / 60.0  # Amp hours
         stress = 1 + a * (
@@ -70,12 +66,21 @@ def simulate_data(
         SoH = max(0.0, SoH - dSoH * stress * (delivered / design_capacity))
         R_int += dR
 
-        if SoH <= 0.8:
+        if i == 0:
+            ax[0].plot(ts, Vs, marker=".")
+            for V_lim in [V_min, V_max]:
+                ax[0].hlines(
+                    V_lim, ts[0], ts[-1], linestyle="--", linewidth=0.5, color="k"
+                )
+            ax[0].plot(ts, Is, marker=".")
+
+        i += 1
+        if SoH <= 0.8 or i >= 1000:
             break
 
-    axs[1].plot(range(len(capacities)), capacities, marker=".")
-    axs[1].plot(range(len(SoHs)), SoHs, marker=".")
-    axs[1].set_ylim(0, max(1.0, design_capacity))
+    ax[1].plot(range(len(capacities)), capacities, marker=".")
+    ax[1].plot(range(len(SoHs)), SoHs, marker=".")
+    ax[1].set_ylim(0, max(1.0, design_capacity))
 
 
 n = 1
