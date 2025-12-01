@@ -1,5 +1,7 @@
 import numpy as np
 import matplotlib.pyplot as plt
+import matplotlib.cm as cm
+import matplotlib.colors as mcolors
 from pathlib import Path
 
 
@@ -21,6 +23,8 @@ def simulate_data(
     V_stop=None,
     SoC_stop=0.0,
 ):
+    plot_data = {"t": [], "V": [], "I": []}
+
     capacities = []
     SoHs = []
 
@@ -78,17 +82,26 @@ def simulate_data(
         SoH = max(0.0, SoH - dSoH * stress * (delivered / design_capacity))
         R_int += dR
 
-        if i == 0:
-            ax[0].plot(ts, Vs, marker=".")
-            for V_lim in [V_min, V_max]:
-                ax[0].hlines(
-                    V_lim, ts[0], ts[-1], linestyle="--", linewidth=0.5, color="k"
-                )
-            ax[0].plot(ts, Is, marker=".")
+        plot_data["t"].append(ts)
+        plot_data["V"].append(Vs)
+        plot_data["I"].append(Is)
 
         i += 1
         if SoH <= 0.8 or i >= 1000:
             break
+
+    n_plots = len(plot_data["t"])
+    norm = mcolors.Normalize(vmin=-0.5 * (n_plots - 1), vmax=n_plots - 1)
+    for i in range(n_plots):
+        ax[0].plot(
+            plot_data["t"][i],
+            plot_data["V"][i],
+            color=cm.Greens(norm(i)),
+            label=i + 1 if i == 0 or i == n_plots - 1 else None,
+        )
+    for V_lim in [V_min, V_max]:
+        ax[0].hlines(V_lim, *ax[0].get_xlim(), linestyle="--", linewidth=0.5, color="k")
+    ax[0].legend(title="Cycle number")
 
     ax[1].plot(range(len(capacities)), capacities, marker=".")
     ax[1].plot(range(len(SoHs)), SoHs, marker=".")
