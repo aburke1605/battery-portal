@@ -24,6 +24,8 @@ def simulate_data(
 
     for cycle in range(N_cycles):
         available_capacity = design_capacity * SoH
+        capacity.append(available_capacity)
+
         SoC = 1.0  # start fully charged
         Q = 0.0
         t = 0.0
@@ -46,8 +48,6 @@ def simulate_data(
             Vs.append(V)
             Is.append(I)
             ts.append(t)
-
-        capacity.append(Q / 3600.0)  # Amp hours
 
         if cycle == 0:
             axs[0].plot(ts, Vs, marker=".")
