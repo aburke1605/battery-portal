@@ -92,16 +92,29 @@ def simulate_data(
 
     n_plots = len(plot_data["t"])
     norm = mcolors.Normalize(vmin=-0.5 * (n_plots - 1), vmax=n_plots - 1)
+    ax1 = ax[0]
+    ax2 = ax1.twinx()
     for i in range(n_plots):
-        ax[0].plot(
+        ax1.plot(
             plot_data["t"][i],
             plot_data["V"][i],
+            marker=".",
             color=cm.Greens(norm(i)),
             label=i + 1 if i == 0 or i == n_plots - 1 else None,
         )
+        ax2.plot(
+            plot_data["t"][i],
+            plot_data["I"][i],
+            marker=".",
+            color=cm.Oranges(norm(i)),
+            label=i + 1 if i == 0 or i == n_plots - 1 else None,
+        )
     for V_lim in [V_min, V_max]:
-        ax[0].hlines(V_lim, *ax[0].get_xlim(), linestyle="--", linewidth=0.5, color="k")
-    ax[0].legend(title="Cycle number")
+        ax1.hlines(V_lim, *ax1.get_xlim(), linestyle="--", linewidth=0.5, color="k")
+    ax1.legend(title="Voltage for cycle number:", loc="upper right")
+    ax2.legend(title="Current for cycle number:", loc="lower left")
+    ax1.set_ylabel("Voltage", color=cm.Greens(norm(n_plots - 1)))
+    ax2.set_ylabel("Current", color=cm.Oranges(norm(n_plots - 1)))
 
     ax[1].plot(range(len(capacities)), capacities, marker=".")
     ax[1].plot(range(len(SoHs)), SoHs, marker=".")
@@ -109,6 +122,7 @@ def simulate_data(
 
 
 n = 1
-fig, axs = plt.subplots(n, 2, figsize=(8, n * 3))
-simulate_data(axs, "data")
+fig, axs = plt.subplots(n, 2, figsize=(16, n * 5))
+simulate_data(axs, "data", dSoH=0.025)
+fig.subplots_adjust(wspace=0.3)
 fig.savefig("plot.pdf")
