@@ -20,7 +20,8 @@ def simulate_data(
     V_stop=None,
     SoC_stop=0.0,
 ):
-    capacity = []
+    capacities = []
+    SoHs = []
 
     def OCV(SoC):
         return V_min + (V_max - V_min) * (1 / (1 + np.exp(-k * (SoC - m))))
@@ -31,7 +32,8 @@ def simulate_data(
 
     for cycle in range(N_cycles):
         available_capacity = design_capacity * SoH
-        capacity.append(available_capacity)
+        capacities.append(available_capacity)
+        SoHs.append(SoH)
 
         SoC = 1.0  # start fully charged
         Q = 0.0
@@ -68,7 +70,9 @@ def simulate_data(
         SoH = max(0.0, SoH - dSoH * stress * (delivered / design_capacity))
         R_int += dR
 
-    axs[1].plot(range(N_cycles), capacity, marker=".")
+    axs[1].plot(range(len(capacities)), capacities, marker=".")
+    axs[1].plot(range(len(SoHs)), SoHs, marker=".")
+    axs[1].set_ylim(0, max(1.0, design_capacity))
 
 
 n = 1
