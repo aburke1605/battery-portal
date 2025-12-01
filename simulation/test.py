@@ -58,7 +58,8 @@ def simulate_data(
             axs[0].plot(ts, Is, marker=".")
 
         # age the cell for next cycle
-        SoH = max(0.0, SoH - dSoH)
+        delivered = Q / 3600.0  # Amp hours
+        SoH = max(0.0, SoH - dSoH * (delivered / design_capacity))
         R_int += dR
 
     axs[1].plot(range(N_cycles), capacity, marker=".")
