@@ -15,8 +15,8 @@ def simulate_data(
     k=14,  # for OCV curve
     m=0.3,  # for OCV curve
     design_capacity=2.0,  # Amp hours
-    R0=0.05,  # ohms (internal resistance)
-    dR=0.0005,  # ohms (per cycle increase)
+    R0=0.001,  # ohms (internal resistance)
+    dR=0.0001,  # ohms (per cycle increase)
     a=10.0,  # for stress ageing
     SoH=1.0,  # as fraction
     dSoH=0.0001,  # as fraction (per cycle decrease)
@@ -87,21 +87,15 @@ def simulate_data(
         # calculate total amount of charge delivered during discharge segment
         delivered = Q / 60.0  # Amp hours
 
-        V_last = V
-        V_rest = OCV(SoC)
         n_rest_steps = 5
-        for j in range(n_rest_steps):  ##
+        for _ in range(n_rest_steps):  ##
             #         rest loop         #
             #############################
-            V = V_last + (V_rest - V_last) * np.sqrt(
-                (j) / n_rest_steps
-            )  # tend to the rest OCV
             Vs.append(V)
             Is.append(0)
             ts.append(t)
             file.write(f"{t},25.0,{V},0,{int(SoC*100)},{int(SoH*100)},{i}\n")
             t += dt
-        V_diff = None
 
         while True:  ######
             # charge loop #
@@ -110,10 +104,6 @@ def simulate_data(
             # calculate new voltage
             V_OCV = OCV(SoC)
             V = V_OCV + abs(I_chg) * R_int
-            # manually take off the difference to smoothen curve
-            if V_diff is None:
-                V_diff = V - V_rest
-            V -= V_diff
             if V > V_chg_stop or SoC >= 1.0:
                 break
             # append plotting data
