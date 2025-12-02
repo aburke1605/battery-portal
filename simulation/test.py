@@ -3,6 +3,11 @@ import matplotlib.pyplot as plt
 import matplotlib.cm as cm
 import matplotlib.colors as mcolors
 from pathlib import Path
+from datetime import datetime, timedelta
+
+t = datetime.now().replace(second=0, microsecond=0) - timedelta(
+    days=365 * 5
+)  # take off 5 years
 
 
 def simulate_data(
@@ -17,7 +22,7 @@ def simulate_data(
     design_capacity=2.0,  # Amp hours
     SoH=1.0,  # as fraction
     dSoH=0.0001,  # as fraction (per cycle decrease)
-    dt=1.0,  # minutes
+    dt=timedelta(minutes=1),
     V_dis_stop=None,
     SoC_dis_stop=0.0,
     V_chg_stop=None,
@@ -52,7 +57,7 @@ def simulate_data(
 
         ts, Vs, Is = [], [], []
 
-        t = 0.0
+        global t
 
         SoC = 1.0  # start fully charged
         Q = 0.0
@@ -71,8 +76,8 @@ def simulate_data(
             # write to file
             file.write(f"{t},25.0,{V},{I_dis},{int(SoC*100)},{int(SoH*100)},{i}\n")
             # update cell
-            dQ = abs(I_dis) * dt
-            dC = dQ / 60.0  # Amp hours
+            dQ = abs(I_dis) * dt.total_seconds()
+            dC = dQ / 3600.0  # Amp hours
             SoC -= dC / available_capacity  # as fraction
             Q += dQ
             t += dt
@@ -81,7 +86,7 @@ def simulate_data(
         file.write(f"{t},25.0,{V},{I_dis},{int(SoC*100)},{int(SoH*100)},{i}\n")
 
         # calculate total amount of charge delivered during discharge segment
-        delivered = Q / 60.0  # Amp hours
+        delivered = Q / 3600.0  # Amp hours
 
         n_rest_steps = 5
         for _ in range(n_rest_steps):  ##
@@ -108,8 +113,8 @@ def simulate_data(
             # write to file
             file.write(f"{t},25.0,{V},{I_chg},{int(SoC*100)},{int(SoH*100)},{i}\n")
             # update cell
-            dQ = I_chg * dt
-            dC = dQ / 60.0  # Amp hours
+            dQ = I_chg * dt.total_seconds()
+            dC = dQ / 3600.0  # Amp hours
             SoC += dC / available_capacity  # as fraction
             t += dt
         # final write to file
@@ -145,15 +150,18 @@ def simulate_data(
     ax1.patch.set_visible(False)
     ax2.set_zorder(1)
     for i in range(n_plots):
+        t_secs = [
+            (t - plot_data["t"][i][0]).total_seconds() / 60.0 for t in plot_data["t"][i]
+        ]
         ax1.plot(
-            plot_data["t"][i],
+            t_secs,
             plot_data["V"][i],
             marker=".",
             color=cm.Greens(norm(i)),
             label=i + 1 if i == 0 or i == n_plots - 1 else None,
         )
         ax2.plot(
-            plot_data["t"][i],
+            t_secs,
             plot_data["I"][i],
             marker=".",
             color=cm.Purples(norm(i)),
