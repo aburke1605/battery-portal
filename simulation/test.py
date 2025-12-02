@@ -15,9 +15,6 @@ def simulate_data(
     k=14,  # for OCV curve
     m=0.3,  # for OCV curve
     design_capacity=2.0,  # Amp hours
-    R0=0.001,  # ohms (internal resistance)
-    dR=0.0001,  # ohms (per cycle increase)
-    a=10.0,  # for stress ageing
     SoH=1.0,  # as fraction
     dSoH=0.0001,  # as fraction (per cycle decrease)
     dt=1.0,  # minutes
@@ -33,9 +30,8 @@ def simulate_data(
     def OCV(SoC):
         return V_min + (V_max - V_min) * (1 / (1 + np.exp(-k * (SoC - m))))
 
-    R_int = R0
     if V_dis_stop == None:
-        V_dis_stop = V_min - 0.1
+        V_dis_stop = V_min
     if V_chg_stop == None:
         V_chg_stop = V_max
 
@@ -65,8 +61,7 @@ def simulate_data(
             ##################
 
             # calculate new voltage
-            V_OCV = OCV(SoC)
-            V = V_OCV - abs(I_dis) * R_int
+            V = OCV(SoC)
             if V < V_dis_stop or SoC <= SoC_dis_stop:
                 break
             # append plotting data
@@ -102,8 +97,7 @@ def simulate_data(
             ###############
 
             # calculate new voltage
-            V_OCV = OCV(SoC)
-            V = V_OCV + abs(I_chg) * R_int
+            V = OCV(SoC)
             if V > V_chg_stop or SoC >= 1.0:
                 break
             # append plotting data
@@ -130,11 +124,7 @@ def simulate_data(
             t += dt
 
         # age the cell for next cycle
-        stress = 1 + a * (
-            R_int - R0
-        )  # a controls how strongly resistance speeds ageing
-        SoH = max(0.0, SoH - dSoH * stress * (delivered / design_capacity))
-        R_int += dR
+        SoH = max(0.0, SoH - dSoH * (delivered / design_capacity))
 
         plot_data["t"].append(ts)
         plot_data["V"].append(Vs)
