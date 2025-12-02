@@ -77,6 +77,7 @@ def simulate_data(
             Q += dQ
             t += dt
         # final write to file
+        SoC = max(SoC_dis_stop, SoC)
         file.write(f"{t},25.0,{V},{I_dis},{int(SoC*100)},{int(SoH*100)},{i}\n")
 
         # calculate total amount of charge delivered during discharge segment
@@ -112,6 +113,7 @@ def simulate_data(
             SoC += dC / available_capacity  # as fraction
             t += dt
         # final write to file
+        SoC = min(1.0, SoC)
         file.write(f"{t},25.0,{V},{I_chg},{int(SoC*100)},{int(SoH*100)},{i}\n")
 
         for _ in range(n_rest_steps):  ##
