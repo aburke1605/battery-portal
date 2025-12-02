@@ -120,6 +120,15 @@ def simulate_data(
         # final write to file
         file.write(f"{t},25.0,{V},{I_chg},{int(SoC*100)},{int(SoH*100)},{i}\n")
 
+        for _ in range(n_rest_steps):  ##
+            #         rest loop         #
+            #############################
+            Vs.append(V)
+            Is.append(0)
+            ts.append(t)
+            file.write(f"{t},25.0,{V},0,{int(SoC*100)},{int(SoH*100)},{i}\n")
+            t += dt
+
         # age the cell for next cycle
         stress = 1 + a * (
             R_int - R0
