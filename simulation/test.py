@@ -11,6 +11,7 @@ def simulate_data(
     V_max=4.2,  # volts
     V_min=2.7,  # volts
     I_dis=-2.0,  # Amps
+    I_chg=5.0,  # Amps
     k=14,  # for OCV curve
     m=0.3,  # for OCV curve
     design_capacity=2.0,  # Amp hours
@@ -20,8 +21,9 @@ def simulate_data(
     SoH=1.0,  # as fraction
     dSoH=0.0001,  # as fraction (per cycle decrease)
     dt=1.0,  # minutes
-    V_stop=None,
-    SoC_stop=0.0,
+    V_dis_stop=None,
+    SoC_dis_stop=0.0,
+    V_chg_stop=None,
 ):
     plot_data = {"t": [], "V": [], "I": []}
 
@@ -32,8 +34,10 @@ def simulate_data(
         return V_min + (V_max - V_min) * (1 / (1 + np.exp(-k * (SoC - m))))
 
     R_int = R0
-    if V_stop == None:
-        V_stop = V_min - 0.1
+    if V_dis_stop == None:
+        V_dis_stop = V_min - 0.1
+    if V_chg_stop == None:
+        V_chg_stop = V_max
 
     i = 0
     while True:  #####
@@ -50,12 +54,12 @@ def simulate_data(
         capacities.append(available_capacity)
         SoHs.append(SoH)
 
-        SoC = 1.0  # start fully charged
-        Q = 0.0
-        t = 0.0
-
         ts, Vs, Is = [], [], []
 
+        t = 0.0
+
+        SoC = 1.0  # start fully charged
+        Q = 0.0
         while True:  #########
             # discharge loop #
             ##################
@@ -63,7 +67,7 @@ def simulate_data(
             # calculate new voltage
             V_OCV = OCV(SoC)
             V = V_OCV - abs(I_dis) * R_int
-            if V < V_stop or SoC <= SoC_stop:
+            if V < V_dis_stop or SoC <= SoC_dis_stop:
                 break
             # append plotting data
             Vs.append(V)
@@ -80,8 +84,53 @@ def simulate_data(
         # final write to file
         file.write(f"{t},25.0,{V},{I_dis},{int(SoC*100)},{int(SoH*100)},{i}\n")
 
-        # age the cell for next cycle
+        # calculate total amount of charge delivered during discharge segment
         delivered = Q / 60.0  # Amp hours
+
+        V_last = V
+        V_rest = OCV(SoC)
+        n_rest_steps = 5
+        for j in range(n_rest_steps):  ##
+            #         rest loop         #
+            #############################
+            V = V_last + (V_rest - V_last) * np.sqrt(
+                (j) / n_rest_steps
+            )  # tend to the rest OCV
+            Vs.append(V)
+            Is.append(0)
+            ts.append(t)
+            file.write(f"{t},25.0,{V},0,{int(SoC*100)},{int(SoH*100)},{i}\n")
+            t += dt
+        V_diff = None
+
+        while True:  ######
+            # charge loop #
+            ###############
+
+            # calculate new voltage
+            V_OCV = OCV(SoC)
+            V = V_OCV + abs(I_chg) * R_int
+            # manually take off the difference to smoothen curve
+            if V_diff is None:
+                V_diff = V - V_rest
+            V -= V_diff
+            if V > V_chg_stop or SoC >= 1.0:
+                break
+            # append plotting data
+            Vs.append(V)
+            Is.append(I_chg)
+            ts.append(t)
+            # write to file
+            file.write(f"{t},25.0,{V},{I_chg},{int(SoC*100)},{int(SoH*100)},{i}\n")
+            # update cell
+            dQ = I_chg * dt
+            dC = dQ / 60.0  # Amp hours
+            SoC += dC / available_capacity  # as fraction
+            t += dt
+        # final write to file
+        file.write(f"{t},25.0,{V},{I_chg},{int(SoC*100)},{int(SoH*100)},{i}\n")
+
+        # age the cell for next cycle
         stress = 1 + a * (
             R_int - R0
         )  # a controls how strongly resistance speeds ageing
@@ -118,7 +167,7 @@ def simulate_data(
         )
     for V_lim in [V_min, V_max]:
         ax1.hlines(V_lim, *ax1.get_xlim(), linestyle="--", linewidth=0.5, color="k")
-    ax1.legend(title="Voltage for cycle number:", loc="upper right")
+    ax1.legend(title="Voltage for cycle number:", loc="lower right")
     ax2.legend(title="Current for cycle number:", loc="lower left")
     ax1.set_ylabel("Voltage [V]", color=cm.Greens(norm(n_plots - 1)))
     ax2.set_ylabel("Current [A]", color=cm.Purples(norm(n_plots - 1)))
