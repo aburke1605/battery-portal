@@ -1,4 +1,5 @@
 import numpy as np
+import random as rn
 import matplotlib.pyplot as plt
 import matplotlib.cm as cm
 import matplotlib.colors as mcolors
@@ -27,6 +28,8 @@ def simulate_data(
     SoC_dis_stop=0.0,
     V_chg_stop=None,
 ):
+    global t
+
     plot_data = {"t": [], "V": [], "I": []}
 
     capacities = []
@@ -57,7 +60,9 @@ def simulate_data(
 
         ts, Vs, Is = [], [], []
 
-        global t
+        offline = False
+        has_been_offline = False
+        offline_timestamp = t
 
         SoC = 1.0  # start fully charged
         Q = 0.0
@@ -69,12 +74,23 @@ def simulate_data(
             V = OCV(SoC)
             if V < V_dis_stop or SoC <= SoC_dis_stop:
                 break
-            # append plotting data
-            Vs.append(V)
-            Is.append(I_dis)
+            # randomly decide if unit goes offline
+            if not has_been_offline:
+                offline = rn.uniform(0, 1) < 0.001  # chance is 1 in 1000
+                if offline:
+                    has_been_offline = True
+                    offline_timestamp = t
+            if offline:
+                Vs.append(np.nan)
+                Is.append(np.nan)
+                if t - offline_timestamp > timedelta(minutes=15):
+                    offline = False
+            else:
+                Vs.append(V)
+                Is.append(I_dis)
+                # write to file
+                file.write(f"{t},25.0,{V},{I_dis},{int(SoC*100)},{int(SoH*100)},{i}\n")
             ts.append(t)
-            # write to file
-            file.write(f"{t},25.0,{V},{I_dis},{int(SoC*100)},{int(SoH*100)},{i}\n")
             # update cell
             dQ = abs(I_dis) * dt.total_seconds()
             dC = dQ / 3600.0  # Amp hours
@@ -106,12 +122,23 @@ def simulate_data(
             V = OCV(SoC)
             if V > V_chg_stop or SoC >= 1.0:
                 break
-            # append plotting data
-            Vs.append(V)
-            Is.append(I_chg)
+            # randomly decide if unit goes offline
+            if not has_been_offline:
+                offline = rn.uniform(0, 1) < 0.001  # chance is 1 in 1000
+                if offline:
+                    has_been_offline = True
+                    offline_timestamp = t
+            if offline:
+                Vs.append(np.nan)
+                Is.append(np.nan)
+                if t - offline_timestamp > timedelta(minutes=5):
+                    offline = False
+            else:
+                Vs.append(V)
+                Is.append(I_chg)
+                # write to file
+                file.write(f"{t},25.0,{V},{I_chg},{int(SoC*100)},{int(SoH*100)},{i}\n")
             ts.append(t)
-            # write to file
-            file.write(f"{t},25.0,{V},{I_chg},{int(SoC*100)},{int(SoH*100)},{i}\n")
             # update cell
             dQ = I_chg * dt.total_seconds()
             dC = dQ / 3600.0  # Amp hours
