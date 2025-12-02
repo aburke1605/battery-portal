@@ -150,6 +150,9 @@ def simulate_data(
     ax1 = ax[0]
     ax1.set_xlabel("Time [min]")
     ax2 = ax1.twinx()
+    ax1.set_zorder(2)
+    ax1.patch.set_visible(False)
+    ax2.set_zorder(1)
     for i in range(n_plots):
         ax1.plot(
             plot_data["t"][i],
