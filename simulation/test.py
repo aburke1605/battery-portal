@@ -10,7 +10,7 @@ def simulate_data(
     path,
     V_max=4.2,  # volts
     V_min=2.7,  # volts
-    I_dis=2.0,  # Amps
+    I_dis=-2.0,  # Amps
     k=14,  # for OCV curve
     m=0.3,  # for OCV curve
     design_capacity=2.0,  # Amp hours
@@ -55,13 +55,14 @@ def simulate_data(
         t = 0.0
 
         ts, Vs, Is = [], [], []
+
         while True:  #########
             # discharge loop #
             ##################
 
             # calculate new voltage
             V_OCV = OCV(SoC)
-            V = V_OCV - I_dis * R_int
+            V = V_OCV - abs(I_dis) * R_int
             if V < V_stop or SoC <= SoC_stop:
                 break
             # append plotting data
@@ -71,7 +72,7 @@ def simulate_data(
             # write to file
             file.write(f"{t},25.0,{V},{I_dis},{int(SoC*100)},{int(SoH*100)},{i}\n")
             # update cell
-            dQ = I_dis * dt
+            dQ = abs(I_dis) * dt
             dC = dQ / 60.0  # Amp hours
             SoC -= dC / available_capacity  # as fraction
             Q += dQ
