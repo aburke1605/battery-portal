@@ -93,6 +93,7 @@ def simulate_data(
     n_plots = len(plot_data["t"])
     norm = mcolors.Normalize(vmin=-0.5 * (n_plots - 1), vmax=n_plots - 1)
     ax1 = ax[0]
+    ax1.set_xlabel("Time [min]")
     ax2 = ax1.twinx()
     for i in range(n_plots):
         ax1.plot(
@@ -106,19 +107,36 @@ def simulate_data(
             plot_data["t"][i],
             plot_data["I"][i],
             marker=".",
-            color=cm.Oranges(norm(i)),
+            color=cm.Purples(norm(i)),
             label=i + 1 if i == 0 or i == n_plots - 1 else None,
         )
     for V_lim in [V_min, V_max]:
         ax1.hlines(V_lim, *ax1.get_xlim(), linestyle="--", linewidth=0.5, color="k")
     ax1.legend(title="Voltage for cycle number:", loc="upper right")
     ax2.legend(title="Current for cycle number:", loc="lower left")
-    ax1.set_ylabel("Voltage", color=cm.Greens(norm(n_plots - 1)))
-    ax2.set_ylabel("Current", color=cm.Oranges(norm(n_plots - 1)))
+    ax1.set_ylabel("Voltage [V]", color=cm.Greens(norm(n_plots - 1)))
+    ax2.set_ylabel("Current [A]", color=cm.Purples(norm(n_plots - 1)))
 
-    ax[1].plot(range(len(capacities)), capacities, marker=".")
-    ax[1].plot(range(len(SoHs)), SoHs, marker=".")
-    ax[1].set_ylim(0, max(1.0, design_capacity))
+    ax3 = ax[1]
+    ax3.set_xlabel("Cycle")
+    ax4 = ax3.twinx()
+    ax3.plot(
+        range(len(capacities)),
+        capacities,
+        marker=".",
+        color=cm.Blues(norm(n_plots - 1)),
+    )
+    ax4.plot(
+        range(len(SoHs)),
+        SoHs,
+        marker=".",
+        color=cm.Oranges(norm(n_plots - 1)),
+        linestyle="--",
+    )
+    ax3.set_ylim(0, design_capacity)
+    ax4.set_ylim(0, 1.0)
+    ax3.set_ylabel("Capacity [Ah]", color=cm.Blues(norm(n_plots - 1)))
+    ax4.set_ylabel("State of Health [%]", color=cm.Oranges(norm(n_plots - 1)))
 
 
 n = 1
