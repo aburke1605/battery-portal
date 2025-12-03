@@ -258,12 +258,12 @@ def plot(
                     label=cycle if cycle in legend_cycles else None,
                 )
     ax1_L.legend(
-        title="Voltage for cycle number:", bbox_to_anchor=(0, 0.5), loc="lower left"
+        title="Voltage for cycle number:", bbox_to_anchor=(0, 1), loc="lower left"
     )
     ax1_L.set_ylabel("Voltage [V]", color=cm.Greens(norm(n_cycles - 1)))
     if current:
         ax1_R.legend(
-            title="Current for cycle number:", bbox_to_anchor=(0, 0.5), loc="upper left"
+            title="Current for cycle number:", bbox_to_anchor=(1, 1), loc="lower right"
         )
         ax1_R.set_ylabel("Current [A]", color=cm.Purples(norm(n_cycles - 1)))
 
@@ -287,7 +287,7 @@ def plot(
     ax2_L.set_ylabel("Capacity [Ah]", color=cm.Blues(norm(n_cycles - 1)))
     ax2_R.set_ylabel("State of Health [%]", color=cm.Oranges(norm(n_cycles - 1)))
 
-    plt.savefig(f"{path}/plot.pdf")
+    plt.savefig(f"{path}/plot.pdf", bbox_inches="tight")
 
 
 # normal
