@@ -89,7 +89,7 @@ def simulate_data(
             else:
                 # write to file
                 file.write(
-                    f"{t},25.0,{V},{I},{int(SoC*100)},{int(SoH*100)},{available_capacity},{cycle}\n"
+                    f"{t},25.0,{V*1000},{I*1000},{int(SoC*100)},{int(SoH*100)},{available_capacity},{cycle}\n"
                 )
             # update cell
             dQ = abs(I) * dt.total_seconds()
@@ -100,7 +100,7 @@ def simulate_data(
         # final write to file
         SoC = max(SoC_dis_stop, SoC)
         file.write(
-            f"{t},25.0,{V},{I},{int(SoC*100)},{int(SoH*100)},{available_capacity},{cycle}\n"
+            f"{t},25.0,{V*1000},{I*1000},{int(SoC*100)},{int(SoH*100)},{available_capacity},{cycle}\n"
         )
         t += dt
 
@@ -114,7 +114,7 @@ def simulate_data(
             I = rn.gauss(0, 0.005)
             V = rn.gauss(V, 0.001 * V)
             file.write(
-                f"{t},25.0,{V},{I},{int(SoC*100)},{int(SoH*100)},{available_capacity},{cycle}\n"
+                f"{t},25.0,{V*1000},{I*1000},{int(SoC*100)},{int(SoH*100)},{available_capacity},{cycle}\n"
             )
             t += dt
 
@@ -143,7 +143,7 @@ def simulate_data(
             else:
                 # write to file
                 file.write(
-                    f"{t},25.0,{V},{I},{int(SoC*100)},{int(SoH*100)},{available_capacity},{cycle}\n"
+                    f"{t},25.0,{V*1000},{I*1000},{int(SoC*100)},{int(SoH*100)},{available_capacity},{cycle}\n"
                 )
             # update cell
             dQ = I * dt.total_seconds()
@@ -153,7 +153,7 @@ def simulate_data(
         # final write to file
         SoC = min(1.0, SoC)
         file.write(
-            f"{t},25.0,{V},{I},{int(SoC*100)},{int(SoH*100)},{available_capacity},{cycle}\n"
+            f"{t},25.0,{V*1000},{I*1000},{int(SoC*100)},{int(SoH*100)},{available_capacity},{cycle}\n"
         )
         t += dt
 
@@ -163,7 +163,7 @@ def simulate_data(
             I = rn.gauss(0, 0.005)
             V = rn.gauss(V, 0.001 * V)
             file.write(
-                f"{t},25.0,{V},{I},{int(SoC*100)},{int(SoH*100)},{available_capacity},{cycle}\n"
+                f"{t},25.0,{V*1000},{I*1000},{int(SoC*100)},{int(SoH*100)},{available_capacity},{cycle}\n"
             )
             t += dt
 
