@@ -6,5 +6,6 @@ flask-sock
 mysql-connector-python
 python-dotenv
 scipy
+scikit-learn
 gevent
 gunicorn
