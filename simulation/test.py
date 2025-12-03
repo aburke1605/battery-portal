@@ -22,6 +22,7 @@ def simulate_data(
     design_capacity=2.0,  # Amp hours
     SoH=1.0,  # as fraction
     dSoH=0.0001,  # as fraction (per cycle decrease)
+    min_SoH=0.8,
     dt=timedelta(minutes=1),
     V_dis_stop=None,
     SoC_dis_stop=0.0,
@@ -176,7 +177,7 @@ def simulate_data(
         plot_data["I"].append(Is)
 
         i += 1
-        if SoH <= 0.8 or i >= 1000:
+        if SoH <= min_SoH or i >= 1000:
             break
 
 
