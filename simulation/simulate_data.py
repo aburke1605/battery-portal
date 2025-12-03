@@ -207,10 +207,11 @@ def plot(
 
     ax1_L = axs[0]
     ax1_L.set_xlabel("Time [min]")
-    ax1_R = ax1_L.twinx()
     ax1_L.set_zorder(2)
     ax1_L.patch.set_visible(False)
-    ax1_R.set_zorder(1)
+    if current:
+        ax1_R = ax1_L.twinx()
+        ax1_R.set_zorder(1)
 
     ax2_L = axs[1]
     ax2_L.set_xlabel("Cycle")
@@ -271,12 +272,12 @@ def plot(
     ax1_L.legend(
         title="Voltage for cycle number:", bbox_to_anchor=(0, 1), loc="lower left"
     )
-    ax1_L.set_ylabel("Voltage [V]", color=cm.Greens(norm(n_cycles - 1)))
+    ax1_L.set_ylabel("Voltage [V]")
     if current:
         ax1_R.legend(
             title="Current for cycle number:", bbox_to_anchor=(1, 1), loc="lower right"
         )
-        ax1_R.set_ylabel("Current [A]", color=cm.Purples(norm(n_cycles - 1)))
+        ax1_R.set_ylabel("Current [A]")
 
     # plot state of health and capacity
     x = np.arange(1, n_cycles + 1, 1, dtype=int)
