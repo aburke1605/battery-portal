@@ -60,6 +60,7 @@ def simulate_data(
         SoHs.append(SoH)
 
         ts, Vs, Is = [], [], []
+        first_loop_length = 0
 
         offline = False
         has_been_offline = False
@@ -78,7 +79,7 @@ def simulate_data(
             if V < V_dis_stop or SoC <= SoC_dis_stop:
                 break
             # randomly decide if unit goes offline
-            if not has_been_offline and not len(ts) == 0:
+            if not has_been_offline and not len(ts) == first_loop_length:
                 offline = rn.uniform(0, 1) < 0.001  # chance is 1 in 1000
                 if offline:
                     has_been_offline = True
@@ -125,6 +126,8 @@ def simulate_data(
             )
             t += dt
 
+        first_loop_length = len(ts)
+
         while True:  ######
             # charge loop #
             ###############
@@ -136,7 +139,7 @@ def simulate_data(
             if V > V_chg_stop or SoC >= 1.0:
                 break
             # randomly decide if unit goes offline
-            if not has_been_offline:
+            if not has_been_offline and not len(ts) == first_loop_length:
                 offline = rn.uniform(0, 1) < 0.001  # chance is 1 in 1000
                 if offline:
                     has_been_offline = True
