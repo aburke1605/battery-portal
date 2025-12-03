@@ -179,6 +179,7 @@ def simulate_data(
 
         cycle += 1
         if SoH <= min_SoH or cycle >= 1000:
+            cycle -= 1
             break
 
     return cycle
@@ -186,9 +187,9 @@ def simulate_data(
 
 def plot(
     path,
-    n_cycles,
+    normal_cycle_range: list,
+    other_cycle_range: list = [],
     current=True,
-    voltage_colormap=cm.Greens,
 ):
     fig, axs = plt.subplots(1, 2, figsize=(16, 5))
     fig.subplots_adjust(wspace=0.3)
@@ -204,18 +205,19 @@ def plot(
     ax2_L.set_xlabel("Cycle")
     ax2_R = ax2_L.twinx()
 
+    n_cycles = len(normal_cycle_range) + len(other_cycle_range)
     norm = mcolors.Normalize(vmin=-0.5 * (n_cycles - 1), vmax=n_cycles - 1)
 
     SoHs, Cs = [], []
-    for i in range(n_cycles):
-        with open(f"{path}/data_{i}.csv", "r") as f:
+    for cycle in [*normal_cycle_range, *other_cycle_range]:
+        with open(f"{path}/data_{cycle}.csv", "r") as f:
             ts, Vs, Is = [], [], []
             SoH = np.nan
             C = np.nan
             for l in f:
                 if l.startswith("TimeStamp"):
                     continue
-                t, T, V, I, SoC, SoH, C, cycle = l.strip().split(",")
+                t, T, V, I, SoC, SoH, C, _ = l.strip().split(",")
                 ts.append(datetime.fromisoformat(t))
                 Vs.append(float(V))
                 Is.append(float(I))
@@ -233,20 +235,27 @@ def plot(
             Vs[break_idx] = np.nan
 
             # plot voltages and currents
+            legend_cycles = [normal_cycle_range[0], normal_cycle_range[-1]]
+            if len(other_cycle_range) > 0:
+                legend_cycles.append(other_cycle_range[0])
+                if len(other_cycle_range) > 1:
+                    legend_cycles.append(other_cycle_range[-1])
             ax1_L.plot(
                 t_mins,
                 Vs,
                 marker=".",
-                color=voltage_colormap(norm(i)),
-                label=i + 1 if i == 0 or i == n_cycles - 1 else None,
+                color=(cm.Greens if cycle in normal_cycle_range else cm.Reds)(
+                    norm(cycle)
+                ),
+                label=cycle if cycle in legend_cycles else None,
             )
             if current:
                 ax1_R.plot(
                     t_mins,
                     Is,
                     marker=".",
-                    color=cm.Purples(norm(i)),
-                    label=i + 1 if i == 0 or i == n_cycles - 1 else None,
+                    color=cm.Purples(norm(cycle)),
+                    label=cycle if cycle in legend_cycles else None,
                 )
     ax1_L.legend(
         title="Voltage for cycle number:", bbox_to_anchor=(0, 0.5), loc="lower left"
