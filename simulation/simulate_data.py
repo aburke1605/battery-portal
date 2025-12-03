@@ -213,8 +213,8 @@ def plot(
                     continue
                 t, T, V, I, SoC, SoH, C, _ = l.strip().split(",")
                 ts.append(datetime.fromisoformat(t))
-                Vs.append(float(V))
-                Is.append(float(I))
+                Vs.append(float(V) / 1000.0)
+                Is.append(float(I) / 1000.0)
             SoHs.append(float(SoH))
             Cs.append(float(C))
 
