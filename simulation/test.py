@@ -290,15 +290,41 @@ def plot(
     plt.savefig(f"{path}/plot.pdf")
 
 
+# normal
 total_n_cycles = simulate_data("data/normal")
 plot("data/normal", normal_cycle_range=range(1, total_n_cycles + 1))
 
-n_normal_cycles = simulate_data("data/low_power", min_SoH=0.9)
+
+# low power
+trigger_SoH = 0.9
+n_normal_cycles = simulate_data(
+    "data/low_power", min_SoH=trigger_SoH
+)  # normal to start
 total_n_cycles = simulate_data(
-    "data/low_power", SoH=0.9, starting_cycle=n_normal_cycles + 1, I_dis=0.2
+    "data/low_power", SoH=trigger_SoH, starting_cycle=n_normal_cycles + 1, I_dis=0.2
 )
 plot(
     "data/low_power",
+    normal_cycle_range=range(1, n_normal_cycles + 1),
+    other_cycle_range=range(n_normal_cycles + 1, total_n_cycles + 1),
+    current=False,
+)
+
+
+# short duration
+trigger_SoH = 0.95
+n_normal_cycles = simulate_data(
+    "data/short_duration", min_SoH=trigger_SoH
+)  # normal to start
+total_n_cycles = simulate_data(
+    "data/short_duration",
+    SoH=trigger_SoH,
+    starting_cycle=n_normal_cycles + 1,
+    V_dis_stop=3.8,
+    dSoH=0.025 * 5,
+)
+plot(
+    "data/short_duration",
     normal_cycle_range=range(1, n_normal_cycles + 1),
     other_cycle_range=range(n_normal_cycles + 1, total_n_cycles + 1),
     current=False,
