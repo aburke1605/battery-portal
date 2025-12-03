@@ -22,7 +22,7 @@ def simulate_data(
     design_capacity=2.0,  # Amp hours
     starting_cycle=1,
     SoH=1.0,  # as fraction
-    dSoH=0.0001,  # as fraction (per cycle decrease)
+    dSoH=0.025,  # 0.0001,  # as fraction (per cycle decrease)
     min_SoH=0.8,
     dt=timedelta(minutes=1),
     V_dis_stop=None,
@@ -290,9 +290,16 @@ def plot(
     plt.savefig(f"{path}/plot.pdf")
 
 
-simulate_data("data/normal")
-n_cycles = simulate_data("data/low_power", min_SoH=0.9)
-simulate_data("data/low_power", SoH=0.9, starting_cycle=n_cycles, I_dis=0.2)
+total_n_cycles = simulate_data("data/normal")
+plot("data/normal", normal_cycle_range=range(1, total_n_cycles + 1))
 
-plot("data/normal", 3, current=False)
-plot("data/low_power", 3, current=False, voltage_colormap=cm.Reds)
+n_normal_cycles = simulate_data("data/low_power", min_SoH=0.9)
+total_n_cycles = simulate_data(
+    "data/low_power", SoH=0.9, starting_cycle=n_normal_cycles + 1, I_dis=0.2
+)
+plot(
+    "data/low_power",
+    normal_cycle_range=range(1, n_normal_cycles + 1),
+    other_cycle_range=range(n_normal_cycles + 1, total_n_cycles + 1),
+    current=False,
+)
