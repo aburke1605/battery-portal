@@ -377,7 +377,7 @@ def import_data(csv_path: str, esp_id: int):
     name = f"battery_data_bms_{esp_id}"
     inspector = inspect(DB.engine)
     if esp_id == 999 and inspector.has_table(name):
-        return
+        return False
 
     # create entry in battery_info table
     try:
@@ -433,8 +433,14 @@ def import_data(csv_path: str, esp_id: int):
                 }
             )
     if rows:
-        DB.session.execute(table.insert(), rows)
-        DB.session.commit()
+        try:
+            DB.session.execute(table.insert(), rows)
+            DB.session.commit()
+        except Exception as e:
+            logger.error(f"Error: {e}")
+            return False
+
+    return True
 
 
 @db.route("/example", methods=["GET"])

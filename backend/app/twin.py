@@ -23,12 +23,19 @@ def simulation():
     API
     """
     try:
-        for i in range(900):
-            import_data(f"../simulation/data/normal/data_{i+1}.csv", 996)
-            import_data(f"../simulation/data/low_power/data_{i+1}.csv", 997)
-            import_data(f"../simulation/data/short_duration/data_{i+1}.csv", 998)
+        for dataset, esp_id in zip(
+            ["normal", "low_power", "short_duration"], [996, 997, 998]
+        ):
+            i = 0
+            import_success = True
+            while import_success:
+                import_success = import_data(
+                    f"../simulation/data/{dataset}/data_{i+1}.csv", esp_id
+                )
+                i += 1
         return {}, 200
-    except:
+    except Exception as e:
+        logger.error(e)
         return {}, 404
 
 
