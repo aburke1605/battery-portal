@@ -51,7 +51,7 @@ def simulate_data(
         Path(path).mkdir(parents=True, exist_ok=True)
         file = open(f"{path}/data_{i}.csv", "w")
         file.write(
-            "TimeStamp,Temperature,Voltage,Current,Relative State of Charge,State of Health,Cycle\n"
+            "TimeStamp,Temperature,Voltage,Current,Relative State of Charge,State of Health,Capacity,Cycle\n"
         )
 
         available_capacity = design_capacity * SoH
@@ -89,7 +89,9 @@ def simulate_data(
                 Vs.append(V)
                 Is.append(I_dis)
                 # write to file
-                file.write(f"{t},25.0,{V},{I_dis},{int(SoC*100)},{int(SoH*100)},{i}\n")
+                file.write(
+                    f"{t},25.0,{V},{I_dis},{int(SoC*100)},{int(SoH*100)},{available_capacity},{i}\n"
+                )
             ts.append(t)
             # update cell
             dQ = abs(I_dis) * dt.total_seconds()
@@ -99,7 +101,9 @@ def simulate_data(
             t += dt
         # final write to file
         SoC = max(SoC_dis_stop, SoC)
-        file.write(f"{t},25.0,{V},{I_dis},{int(SoC*100)},{int(SoH*100)},{i}\n")
+        file.write(
+            f"{t},25.0,{V},{I_dis},{int(SoC*100)},{int(SoH*100)},{available_capacity},{i}\n"
+        )
 
         # calculate total amount of charge delivered during discharge segment
         delivered = Q / 3600.0  # Amp hours
@@ -111,7 +115,9 @@ def simulate_data(
             Vs.append(V)
             Is.append(0)
             ts.append(t)
-            file.write(f"{t},25.0,{V},0,{int(SoC*100)},{int(SoH*100)},{i}\n")
+            file.write(
+                f"{t},25.0,{V},0,{int(SoC*100)},{int(SoH*100)},{available_capacity},{i}\n"
+            )
             t += dt
 
         while True:  ######
@@ -137,7 +143,9 @@ def simulate_data(
                 Vs.append(V)
                 Is.append(I_chg)
                 # write to file
-                file.write(f"{t},25.0,{V},{I_chg},{int(SoC*100)},{int(SoH*100)},{i}\n")
+                file.write(
+                    f"{t},25.0,{V},{I_chg},{int(SoC*100)},{int(SoH*100)},{available_capacity},{i}\n"
+                )
             ts.append(t)
             # update cell
             dQ = I_chg * dt.total_seconds()
@@ -146,7 +154,9 @@ def simulate_data(
             t += dt
         # final write to file
         SoC = min(1.0, SoC)
-        file.write(f"{t},25.0,{V},{I_chg},{int(SoC*100)},{int(SoH*100)},{i}\n")
+        file.write(
+            f"{t},25.0,{V},{I_chg},{int(SoC*100)},{int(SoH*100)},{available_capacity},{i}\n"
+        )
 
         for _ in range(n_rest_steps):  ##
             #         rest loop         #
@@ -154,7 +164,9 @@ def simulate_data(
             Vs.append(V)
             Is.append(0)
             ts.append(t)
-            file.write(f"{t},25.0,{V},0,{int(SoC*100)},{int(SoH*100)},{i}\n")
+            file.write(
+                f"{t},25.0,{V},0,{int(SoC*100)},{int(SoH*100)},{available_capacity},{i}\n"
+            )
             t += dt
 
         # age the cell for next cycle
