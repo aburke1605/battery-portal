@@ -186,7 +186,7 @@ def simulate_data(
         plot_data["I"].append(Is)
 
         cycle += 1
-        if SoH <= min_SoH or cycle >= 1000:
+        if SoH <= min_SoH or cycle - starting_cycle >= 1000:
             cycle -= 1
             break
 
