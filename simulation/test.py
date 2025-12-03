@@ -180,96 +180,105 @@ def simulate_data(
             break
 
 
-simulate_data("data", dSoH=0.025)
+def plot(
+    path,
+    n_cycles,
+    current=True,
+    voltage_colormap=cm.Greens,
+):
+    fig, axs = plt.subplots(1, 2, figsize=(16, 5))
+    fig.subplots_adjust(wspace=0.3)
 
+    ax1_L = axs[0]
+    ax1_L.set_xlabel("Time [min]")
+    ax1_R = ax1_L.twinx()
+    ax1_L.set_zorder(2)
+    ax1_L.patch.set_visible(False)
+    ax1_R.set_zorder(1)
 
-# plotting
-fig, axs = plt.subplots(1, 2, figsize=(16, 5))
-fig.subplots_adjust(wspace=0.3)
+    ax2_L = axs[1]
+    ax2_L.set_xlabel("Cycle")
+    ax2_R = ax2_L.twinx()
 
-ax1_L = axs[0]
-ax1_L.set_xlabel("Time [min]")
-ax1_R = ax1_L.twinx()
-ax1_L.set_zorder(2)
-ax1_L.patch.set_visible(False)
-ax1_R.set_zorder(1)
+    norm = mcolors.Normalize(vmin=-0.5 * (n_cycles - 1), vmax=n_cycles - 1)
 
-ax2_L = axs[1]
-ax2_L.set_xlabel("Cycle")
-ax2_R = ax2_L.twinx()
+    SoHs, Cs = [], []
+    for i in range(n_cycles):
+        with open(f"{path}/data_{i}.csv", "r") as f:
+            ts, Vs, Is = [], [], []
+            SoH = np.nan
+            C = np.nan
+            for l in f:
+                if l.startswith("TimeStamp"):
+                    continue
+                t, T, V, I, SoC, SoH, C, cycle = l.strip().split(",")
+                ts.append(datetime.fromisoformat(t))
+                Vs.append(float(V))
+                Is.append(float(I))
+            SoHs.append(float(SoH))
+            Cs.append(float(C))
 
-n_cycles = 5
-norm = mcolors.Normalize(vmin=-0.5 * (n_cycles - 1), vmax=n_cycles - 1)
+            t_mins = np.array([(t - ts[0]).total_seconds() / 60.0 for t in ts])
+            Vs = np.array(Vs)
+            Is = np.array(Is)
 
-SoHs, Cs = [], []
-for i in range(n_cycles):
-    with open(f"data/data_{i}.csv", "r") as f:
-        ts, Vs, Is = [], [], []
-        SoH = np.nan
-        C = np.nan
-        for l in f:
-            if l.startswith("TimeStamp"):
-                continue
-            t, T, V, I, SoC, SoH, C, cycle = l.strip().split(",")
-            ts.append(datetime.fromisoformat(t))
-            Vs.append(float(V))
-            Is.append(float(I))
-        SoHs.append(float(SoH))
-        Cs.append(float(C))
+            # break line where gap > 1 minute
+            gaps = np.diff(t_mins) > 1
+            break_idx = np.where(gaps)[0] + 1
+            t_mins[break_idx] = np.nan
+            Vs[break_idx] = np.nan
 
-        t_mins = np.array([(t - ts[0]).total_seconds() / 60.0 for t in ts])
-        Vs = np.array(Vs)
-        Is = np.array(Is)
-
-        # break line where gap > 1 minute
-        gaps = np.diff(t_mins) > 1
-        break_idx = np.where(gaps)[0] + 1
-        t_mins[break_idx] = np.nan
-        Vs[break_idx] = np.nan
-
-        # plot voltages and currents
-        ax1_L.plot(
-            t_mins,
-            Vs,
-            marker=".",
-            color=cm.Greens(norm(i)),
-            label=i + 1 if i == 0 or i == n_cycles - 1 else None,
+            # plot voltages and currents
+            ax1_L.plot(
+                t_mins,
+                Vs,
+                marker=".",
+                color=voltage_colormap(norm(i)),
+                label=i + 1 if i == 0 or i == n_cycles - 1 else None,
+            )
+            if current:
+                ax1_R.plot(
+                    t_mins,
+                    Is,
+                    marker=".",
+                    color=cm.Purples(norm(i)),
+                    label=i + 1 if i == 0 or i == n_cycles - 1 else None,
+                )
+    ax1_L.legend(
+        title="Voltage for cycle number:", bbox_to_anchor=(0, 0.5), loc="lower left"
+    )
+    ax1_L.set_ylabel("Voltage [V]", color=cm.Greens(norm(n_cycles - 1)))
+    if current:
+        ax1_R.legend(
+            title="Current for cycle number:", bbox_to_anchor=(0, 0.5), loc="upper left"
         )
-        ax1_R.plot(
-            t_mins,
-            Is,
-            marker=".",
-            color=cm.Purples(norm(i)),
-            label=i + 1 if i == 0 or i == n_cycles - 1 else None,
-        )
-ax1_L.legend(
-    title="Voltage for cycle number:", bbox_to_anchor=(0, 0.5), loc="lower left"
-)
-ax1_R.legend(
-    title="Current for cycle number:", bbox_to_anchor=(0, 0.5), loc="upper left"
-)
-ax1_L.set_ylabel("Voltage [V]", color=cm.Greens(norm(n_cycles - 1)))
-ax1_R.set_ylabel("Current [A]", color=cm.Purples(norm(n_cycles - 1)))
+        ax1_R.set_ylabel("Current [A]", color=cm.Purples(norm(n_cycles - 1)))
+
+    # plot state of health and capacity
+    x = np.arange(1, n_cycles + 1, 1, dtype=int)
+    ax2_L.plot(
+        x,
+        Cs,
+        marker=".",
+        color=cm.Blues(norm(n_cycles - 1)),
+    )
+    ax2_R.plot(
+        x,
+        SoHs,
+        marker=".",
+        color=cm.Oranges(norm(n_cycles - 1)),
+        linestyle="--",
+    )
+    ax2_L.set_ylim(0, max(Cs))
+    ax2_R.set_ylim(80.0, 100.0)
+    ax2_L.set_ylabel("Capacity [Ah]", color=cm.Blues(norm(n_cycles - 1)))
+    ax2_R.set_ylabel("State of Health [%]", color=cm.Oranges(norm(n_cycles - 1)))
+
+    plt.savefig(f"{path}/plot.pdf")
 
 
-# plot state of health and capacity
-x = np.arange(1, n_cycles + 1, 1, dtype=int)
-ax2_L.plot(
-    x,
-    Cs,
-    marker=".",
-    color=cm.Blues(norm(n_cycles - 1)),
-)
-ax2_R.plot(
-    x,
-    SoHs,
-    marker=".",
-    color=cm.Oranges(norm(n_cycles - 1)),
-    linestyle="--",
-)
-ax2_L.set_ylim(0, max(Cs))
-ax2_R.set_ylim(80.0, 100.0)
-ax2_L.set_ylabel("Capacity [Ah]", color=cm.Blues(norm(n_cycles - 1)))
-ax2_R.set_ylabel("State of Health [%]", color=cm.Oranges(norm(n_cycles - 1)))
+simulate_data("data/normal", dSoH=0.025)
+simulate_data("data/low_power", dSoH=0.025, I_dis=0.2)
 
-plt.savefig("plot.pdf")
+plot("data/normal", 3, current=False)
+plot("data/low_power", 3, current=False, voltage_colormap=cm.Reds)
