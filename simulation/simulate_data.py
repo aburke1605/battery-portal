@@ -78,7 +78,7 @@ def simulate_data(
             if V < V_dis_stop or SoC <= SoC_dis_stop:
                 break
             # randomly decide if unit goes offline
-            if not has_been_offline:
+            if not has_been_offline and not len(ts) == 0:
                 offline = rn.uniform(0, 1) < 0.001  # chance is 1 in 1000
                 if offline:
                     has_been_offline = True
