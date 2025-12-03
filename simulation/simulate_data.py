@@ -31,8 +31,6 @@ def simulate_data(
 ):
     global t
 
-    plot_data = {"t": [], "V": [], "I": []}
-
     capacities = []
     SoHs = []
 
@@ -59,8 +57,7 @@ def simulate_data(
         capacities.append(available_capacity)
         SoHs.append(SoH)
 
-        ts, Vs, Is = [], [], []
-        first_loop_length = 0
+        first_loop = 0
 
         offline = False
         has_been_offline = False
@@ -68,6 +65,7 @@ def simulate_data(
 
         SoC = 1.0  # start fully charged
         Q = 0.0
+        i = 0
         while True:  #########
             # discharge loop #
             ##################
@@ -79,24 +77,20 @@ def simulate_data(
             if V < V_dis_stop or SoC <= SoC_dis_stop:
                 break
             # randomly decide if unit goes offline
-            if not has_been_offline and not len(ts) == first_loop_length:
+            if not has_been_offline and not i == first_loop:
                 offline = rn.uniform(0, 1) < 0.001  # chance is 1 in 1000
                 if offline:
                     has_been_offline = True
                     offline_timestamp = t
+            i += 1
             if offline:
-                Vs.append(np.nan)
-                Is.append(np.nan)
                 if t - offline_timestamp > timedelta(minutes=15):
                     offline = False
             else:
-                Vs.append(V)
-                Is.append(I)
                 # write to file
                 file.write(
                     f"{t},25.0,{V},{I},{int(SoC*100)},{int(SoH*100)},{available_capacity},{cycle}\n"
                 )
-            ts.append(t)
             # update cell
             dQ = abs(I) * dt.total_seconds()
             dC = dQ / 3600.0  # Amp hours
@@ -119,15 +113,12 @@ def simulate_data(
             #############################
             I = rn.gauss(0, 0.005)
             V = rn.gauss(V, 0.001 * V)
-            Vs.append(V)
-            Is.append(I)
-            ts.append(t)
             file.write(
                 f"{t},25.0,{V},{I},{int(SoC*100)},{int(SoH*100)},{available_capacity},{cycle}\n"
             )
             t += dt
 
-        first_loop_length = len(ts)
+        first_loop = i
 
         while True:  ######
             # charge loop #
@@ -140,24 +131,20 @@ def simulate_data(
             if V > V_chg_stop or SoC >= 1.0:
                 break
             # randomly decide if unit goes offline
-            if not has_been_offline and not len(ts) == first_loop_length:
+            if not has_been_offline and not i == first_loop:
                 offline = rn.uniform(0, 1) < 0.001  # chance is 1 in 1000
                 if offline:
                     has_been_offline = True
                     offline_timestamp = t
+            i += 1
             if offline:
-                Vs.append(np.nan)
-                Is.append(np.nan)
                 if t - offline_timestamp > timedelta(minutes=5):
                     offline = False
             else:
-                Vs.append(V)
-                Is.append(I)
                 # write to file
                 file.write(
                     f"{t},25.0,{V},{I},{int(SoC*100)},{int(SoH*100)},{available_capacity},{cycle}\n"
                 )
-            ts.append(t)
             # update cell
             dQ = I * dt.total_seconds()
             dC = dQ / 3600.0  # Amp hours
@@ -175,9 +162,6 @@ def simulate_data(
             #############################
             I = rn.gauss(0, 0.005)
             V = rn.gauss(V, 0.001 * V)
-            Vs.append(V)
-            Is.append(I)
-            ts.append(t)
             file.write(
                 f"{t},25.0,{V},{I},{int(SoC*100)},{int(SoH*100)},{available_capacity},{cycle}\n"
             )
@@ -185,10 +169,6 @@ def simulate_data(
 
         # age the cell for next cycle
         SoH = max(0.0, SoH - dSoH * (delivered / design_capacity))
-
-        plot_data["t"].append(ts)
-        plot_data["V"].append(Vs)
-        plot_data["I"].append(Is)
 
         cycle += 1
         if SoH <= min_SoH or cycle - starting_cycle >= 1000:
