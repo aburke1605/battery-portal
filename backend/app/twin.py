@@ -143,6 +143,7 @@ def low_depth_of_discharge_check(
         # fmt: on
         data = np.array(DB.session.execute(query).fetchall())
 
+        current_threshold = 0.01
         clean_start = False
         start = None
         stop = None
@@ -164,12 +165,12 @@ def low_depth_of_discharge_check(
 
                 # step 2: find the stop point only after we've found the start point
                 else:
-                    if current > 0:
+                    if current > current_threshold:
                         stop = i - 1
 
             # step 1: find the start point
             else:
-                if current > 0:
+                if current > current_threshold:
                     # if the data begins in a discharge cycle, skip that segment
                     clean_start = True
                 else:
