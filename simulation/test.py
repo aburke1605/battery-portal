@@ -12,7 +12,6 @@ t = datetime.now().replace(second=0, microsecond=0) - timedelta(
 
 
 def simulate_data(
-    ax,
     path,
     V_max=4.2,  # volts
     V_min=2.7,  # volts
@@ -180,63 +179,93 @@ def simulate_data(
         if SoH <= 0.8 or i >= 1000:
             break
 
-    n_plots = len(plot_data["t"])
-    norm = mcolors.Normalize(vmin=-0.5 * (n_plots - 1), vmax=n_plots - 1)
-    ax1 = ax[0]
-    ax1.set_xlabel("Time [min]")
-    ax2 = ax1.twinx()
-    ax1.set_zorder(2)
-    ax1.patch.set_visible(False)
-    ax2.set_zorder(1)
-    for i in range(n_plots):
-        t_secs = [
-            (t - plot_data["t"][i][0]).total_seconds() / 60.0 for t in plot_data["t"][i]
-        ]
-        ax1.plot(
-            t_secs,
-            plot_data["V"][i],
+
+simulate_data("data", dSoH=0.025)
+
+
+fig, axs = plt.subplots(1, 2, figsize=(16, 5))
+fig.subplots_adjust(wspace=0.3)
+
+ax1_L = axs[0]
+ax1_L.set_xlabel("Time [min]")
+ax1_R = ax1_L.twinx()
+ax1_L.set_zorder(2)
+ax1_L.patch.set_visible(False)
+ax1_R.set_zorder(1)
+
+ax2_L = axs[1]
+ax2_L.set_xlabel("Cycle")
+ax2_R = ax2_L.twinx()
+
+n_cycles = 5
+norm = mcolors.Normalize(vmin=-0.5 * (n_cycles - 1), vmax=n_cycles - 1)
+
+SoHs, Cs = [], []
+for i in range(n_cycles):
+    with open(f"data/data_{i}.csv", "r") as f:
+        ts, Vs, Is = [], [], []
+        SoH = np.nan
+        C = np.nan
+        for l in f:
+            if l.startswith("TimeStamp"):
+                continue
+            t, T, V, I, SoC, SoH, C, cycle = l.strip().split(",")
+            ts.append(datetime.fromisoformat(t))
+            Vs.append(float(V))
+            Is.append(float(I))
+        SoHs.append(float(SoH))
+        Cs.append(float(C))
+
+        t_mins = np.array([(t - ts[0]).total_seconds() / 60.0 for t in ts])
+        Vs = np.array(Vs)
+        Is = np.array(Is)
+
+        # break line where gap > 1 minute
+        gaps = np.diff(t_mins) > 1
+        break_idx = np.where(gaps)[0] + 1
+        t_mins[break_idx] = np.nan
+        Vs[break_idx] = np.nan
+
+        ax1_L.plot(
+            t_mins,
+            Vs,
             marker=".",
             color=cm.Greens(norm(i)),
-            label=i + 1 if i == 0 or i == n_plots - 1 else None,
+            label=i + 1 if i == 0 or i == n_cycles - 1 else None,
         )
-        ax2.plot(
-            t_secs,
-            plot_data["I"][i],
+        ax1_R.plot(
+            t_mins,
+            Is,
             marker=".",
             color=cm.Purples(norm(i)),
-            label=i + 1 if i == 0 or i == n_plots - 1 else None,
+            label=i + 1 if i == 0 or i == n_cycles - 1 else None,
         )
-    for V_lim in [V_min, V_max]:
-        ax1.hlines(V_lim, *ax1.get_xlim(), linestyle="--", linewidth=0.5, color="k")
-    ax1.legend(title="Voltage for cycle number:", loc="lower right")
-    ax2.legend(title="Current for cycle number:", loc="lower left")
-    ax1.set_ylabel("Voltage [V]", color=cm.Greens(norm(n_plots - 1)))
-    ax2.set_ylabel("Current [A]", color=cm.Purples(norm(n_plots - 1)))
+ax1_L.legend(
+    title="Voltage for cycle number:", bbox_to_anchor=(0, 0.5), loc="lower left"
+)
+ax1_R.legend(
+    title="Current for cycle number:", bbox_to_anchor=(0, 0.5), loc="upper left"
+)
+ax1_L.set_ylabel("Voltage [V]", color=cm.Greens(norm(n_cycles - 1)))
+ax1_R.set_ylabel("Current [A]", color=cm.Purples(norm(n_cycles - 1)))
 
-    ax3 = ax[1]
-    ax3.set_xlabel("Cycle")
-    ax4 = ax3.twinx()
-    ax3.plot(
-        range(len(capacities)),
-        capacities,
-        marker=".",
-        color=cm.Blues(norm(n_plots - 1)),
-    )
-    ax4.plot(
-        range(len(SoHs)),
-        SoHs,
-        marker=".",
-        color=cm.Oranges(norm(n_plots - 1)),
-        linestyle="--",
-    )
-    ax3.set_ylim(0, design_capacity)
-    ax4.set_ylim(0, 1.0)
-    ax3.set_ylabel("Capacity [Ah]", color=cm.Blues(norm(n_plots - 1)))
-    ax4.set_ylabel("State of Health [%]", color=cm.Oranges(norm(n_plots - 1)))
+x = np.arange(1, n_cycles + 1, 1, dtype=int)
+ax2_L.plot(
+    x,
+    Cs,
+    marker=".",
+    color=cm.Blues(norm(n_cycles - 1)),
+)
+ax2_R.plot(
+    x,
+    SoHs,
+    marker=".",
+    color=cm.Oranges(norm(n_cycles - 1)),
+    linestyle="--",
+)
+ax2_L.set_ylim(0, max(Cs))
+ax2_R.set_ylim(80.0, 100.0)
+ax2_L.set_ylabel("Capacity [Ah]", color=cm.Blues(norm(n_cycles - 1)))
+ax2_R.set_ylabel("State of Health [%]", color=cm.Oranges(norm(n_cycles - 1)))
 
-
-n = 1
-fig, axs = plt.subplots(n, 2, figsize=(16, n * 5))
-simulate_data(axs, "data", dSoH=0.025)
-fig.subplots_adjust(wspace=0.3)
-fig.savefig("plot.pdf")
+plt.savefig("plot.pdf")
