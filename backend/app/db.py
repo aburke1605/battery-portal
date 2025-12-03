@@ -4,6 +4,7 @@ logger = logging.getLogger(__name__)
 
 from datetime import datetime, timedelta
 from collections import defaultdict
+from pathlib import Path
 import csv
 
 from flask import Blueprint, request, jsonify
@@ -374,6 +375,9 @@ def import_data(csv_path: str, esp_id: int):
     """
     Creates example data for fresh website lacking real data.
     """
+    if not Path(csv_path).exists():
+        return False
+
     name = f"battery_data_bms_{esp_id}"
     inspector = inspect(DB.engine)
     if esp_id == 999 and inspector.has_table(name):
