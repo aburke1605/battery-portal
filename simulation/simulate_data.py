@@ -108,6 +108,7 @@ def simulate_data(
         file.write(
             f"{t},25.0,{V},{I},{int(SoC*100)},{int(SoH*100)},{available_capacity},{cycle}\n"
         )
+        t += dt
 
         # calculate total amount of charge delivered during discharge segment
         delivered = Q / 3600.0  # Amp hours
@@ -167,6 +168,7 @@ def simulate_data(
         file.write(
             f"{t},25.0,{V},{I},{int(SoC*100)},{int(SoH*100)},{available_capacity},{cycle}\n"
         )
+        t += dt
 
         for _ in range(n_rest_steps):  ##
             #         rest loop         #
