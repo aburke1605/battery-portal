@@ -22,7 +22,7 @@ def simulate_data(
     design_capacity=2.0,  # Amp hours
     starting_cycle=1,
     SoH=1.0,  # as fraction
-    dSoH=0.025,  # 0.0001,  # as fraction (per cycle decrease)
+    dSoH=0.0005,  # as fraction (per cycle decrease)
     min_SoH=0.8,
     dt=timedelta(minutes=1),
     V_dis_stop=None,
@@ -332,7 +332,7 @@ total_n_cycles = simulate_data(
     SoH=trigger_SoH,
     starting_cycle=n_normal_cycles + 1,
     V_dis_stop=3.8,
-    dSoH=0.025 * 5,
+    dSoH=0.0025,
 )  # earlier termination
 plot(
     "data/short_duration",
