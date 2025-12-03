@@ -71,8 +71,10 @@ def simulate_data(
             # discharge loop #
             ##################
 
+            I = rn.gauss(I_dis, 0.01)
             # calculate new voltage
             V = OCV(SoC)
+            V = rn.gauss(V, 0.005 * V)
             if V < V_dis_stop or SoC <= SoC_dis_stop:
                 break
             # randomly decide if unit goes offline
@@ -88,14 +90,14 @@ def simulate_data(
                     offline = False
             else:
                 Vs.append(V)
-                Is.append(I_dis)
+                Is.append(I)
                 # write to file
                 file.write(
-                    f"{t},25.0,{V},{I_dis},{int(SoC*100)},{int(SoH*100)},{available_capacity},{cycle}\n"
+                    f"{t},25.0,{V},{I},{int(SoC*100)},{int(SoH*100)},{available_capacity},{cycle}\n"
                 )
             ts.append(t)
             # update cell
-            dQ = abs(I_dis) * dt.total_seconds()
+            dQ = abs(I) * dt.total_seconds()
             dC = dQ / 3600.0  # Amp hours
             SoC -= dC / available_capacity  # as fraction
             Q += dQ
@@ -103,7 +105,7 @@ def simulate_data(
         # final write to file
         SoC = max(SoC_dis_stop, SoC)
         file.write(
-            f"{t},25.0,{V},{I_dis},{int(SoC*100)},{int(SoH*100)},{available_capacity},{cycle}\n"
+            f"{t},25.0,{V},{I},{int(SoC*100)},{int(SoH*100)},{available_capacity},{cycle}\n"
         )
 
         # calculate total amount of charge delivered during discharge segment
@@ -113,11 +115,13 @@ def simulate_data(
         for _ in range(n_rest_steps):  ##
             #         rest loop         #
             #############################
+            I = rn.gauss(0, 0.005)
+            V = rn.gauss(V, 0.001 * V)
             Vs.append(V)
-            Is.append(0)
+            Is.append(I)
             ts.append(t)
             file.write(
-                f"{t},25.0,{V},0,{int(SoC*100)},{int(SoH*100)},{available_capacity},{cycle}\n"
+                f"{t},25.0,{V},{I},{int(SoC*100)},{int(SoH*100)},{available_capacity},{cycle}\n"
             )
             t += dt
 
@@ -125,8 +129,10 @@ def simulate_data(
             # charge loop #
             ###############
 
+            I = rn.gauss(I_chg, 0.01)
             # calculate new voltage
             V = OCV(SoC)
+            V = rn.gauss(V, 0.005 * V)
             if V > V_chg_stop or SoC >= 1.0:
                 break
             # randomly decide if unit goes offline
@@ -142,31 +148,33 @@ def simulate_data(
                     offline = False
             else:
                 Vs.append(V)
-                Is.append(I_chg)
+                Is.append(I)
                 # write to file
                 file.write(
-                    f"{t},25.0,{V},{I_chg},{int(SoC*100)},{int(SoH*100)},{available_capacity},{cycle}\n"
+                    f"{t},25.0,{V},{I},{int(SoC*100)},{int(SoH*100)},{available_capacity},{cycle}\n"
                 )
             ts.append(t)
             # update cell
-            dQ = I_chg * dt.total_seconds()
+            dQ = I * dt.total_seconds()
             dC = dQ / 3600.0  # Amp hours
             SoC += dC / available_capacity  # as fraction
             t += dt
         # final write to file
         SoC = min(1.0, SoC)
         file.write(
-            f"{t},25.0,{V},{I_chg},{int(SoC*100)},{int(SoH*100)},{available_capacity},{cycle}\n"
+            f"{t},25.0,{V},{I},{int(SoC*100)},{int(SoH*100)},{available_capacity},{cycle}\n"
         )
 
         for _ in range(n_rest_steps):  ##
             #         rest loop         #
             #############################
+            I = rn.gauss(0, 0.005)
+            V = rn.gauss(V, 0.001 * V)
             Vs.append(V)
-            Is.append(0)
+            Is.append(I)
             ts.append(t)
             file.write(
-                f"{t},25.0,{V},0,{int(SoC*100)},{int(SoH*100)},{available_capacity},{cycle}\n"
+                f"{t},25.0,{V},{I},{int(SoC*100)},{int(SoH*100)},{available_capacity},{cycle}\n"
             )
             t += dt
 
