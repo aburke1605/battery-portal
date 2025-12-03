@@ -314,7 +314,7 @@ n_normal_cycles = simulate_data(
 )  # normal to start
 total_n_cycles = simulate_data(
     "data/low_power", SoH=trigger_SoH, starting_cycle=n_normal_cycles + 1, I_dis=0.2
-)  # lower current
+)  # then lower current
 plot(
     "data/low_power",
     normal_cycle_range=range(1, n_normal_cycles + 1),
@@ -334,7 +334,7 @@ total_n_cycles = simulate_data(
     starting_cycle=n_normal_cycles + 1,
     V_dis_stop=3.8,
     dSoH=0.0025,
-)  # earlier termination
+)  # then earlier termination
 plot(
     "data/short_duration",
     normal_cycle_range=range(1, n_normal_cycles + 1),
