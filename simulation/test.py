@@ -183,6 +183,7 @@ def simulate_data(
 simulate_data("data", dSoH=0.025)
 
 
+# plotting
 fig, axs = plt.subplots(1, 2, figsize=(16, 5))
 fig.subplots_adjust(wspace=0.3)
 
@@ -226,6 +227,7 @@ for i in range(n_cycles):
         t_mins[break_idx] = np.nan
         Vs[break_idx] = np.nan
 
+        # plot voltages and currents
         ax1_L.plot(
             t_mins,
             Vs,
@@ -249,6 +251,8 @@ ax1_R.legend(
 ax1_L.set_ylabel("Voltage [V]", color=cm.Greens(norm(n_cycles - 1)))
 ax1_R.set_ylabel("Current [A]", color=cm.Purples(norm(n_cycles - 1)))
 
+
+# plot state of health and capacity
 x = np.arange(1, n_cycles + 1, 1, dtype=int)
 ax2_L.plot(
     x,
