@@ -20,6 +20,7 @@ def simulate_data(
     k=14,  # for OCV curve
     m=0.3,  # for OCV curve
     design_capacity=2.0,  # Amp hours
+    starting_cycle=1,
     SoH=1.0,  # as fraction
     dSoH=0.0001,  # as fraction (per cycle decrease)
     min_SoH=0.8,
@@ -43,13 +44,13 @@ def simulate_data(
     if V_chg_stop == None:
         V_chg_stop = V_max
 
-    i = 0
+    cycle = starting_cycle
     while True:  #####
         # cycle loop #
         ##############
 
         Path(path).mkdir(parents=True, exist_ok=True)
-        file = open(f"{path}/data_{i}.csv", "w")
+        file = open(f"{path}/data_{cycle}.csv", "w")
         file.write(
             "TimeStamp,Temperature,Voltage,Current,Relative State of Charge,State of Health,Capacity,Cycle\n"
         )
@@ -90,7 +91,7 @@ def simulate_data(
                 Is.append(I_dis)
                 # write to file
                 file.write(
-                    f"{t},25.0,{V},{I_dis},{int(SoC*100)},{int(SoH*100)},{available_capacity},{i}\n"
+                    f"{t},25.0,{V},{I_dis},{int(SoC*100)},{int(SoH*100)},{available_capacity},{cycle}\n"
                 )
             ts.append(t)
             # update cell
@@ -102,7 +103,7 @@ def simulate_data(
         # final write to file
         SoC = max(SoC_dis_stop, SoC)
         file.write(
-            f"{t},25.0,{V},{I_dis},{int(SoC*100)},{int(SoH*100)},{available_capacity},{i}\n"
+            f"{t},25.0,{V},{I_dis},{int(SoC*100)},{int(SoH*100)},{available_capacity},{cycle}\n"
         )
 
         # calculate total amount of charge delivered during discharge segment
@@ -116,7 +117,7 @@ def simulate_data(
             Is.append(0)
             ts.append(t)
             file.write(
-                f"{t},25.0,{V},0,{int(SoC*100)},{int(SoH*100)},{available_capacity},{i}\n"
+                f"{t},25.0,{V},0,{int(SoC*100)},{int(SoH*100)},{available_capacity},{cycle}\n"
             )
             t += dt
 
@@ -144,7 +145,7 @@ def simulate_data(
                 Is.append(I_chg)
                 # write to file
                 file.write(
-                    f"{t},25.0,{V},{I_chg},{int(SoC*100)},{int(SoH*100)},{available_capacity},{i}\n"
+                    f"{t},25.0,{V},{I_chg},{int(SoC*100)},{int(SoH*100)},{available_capacity},{cycle}\n"
                 )
             ts.append(t)
             # update cell
@@ -155,7 +156,7 @@ def simulate_data(
         # final write to file
         SoC = min(1.0, SoC)
         file.write(
-            f"{t},25.0,{V},{I_chg},{int(SoC*100)},{int(SoH*100)},{available_capacity},{i}\n"
+            f"{t},25.0,{V},{I_chg},{int(SoC*100)},{int(SoH*100)},{available_capacity},{cycle}\n"
         )
 
         for _ in range(n_rest_steps):  ##
@@ -165,7 +166,7 @@ def simulate_data(
             Is.append(0)
             ts.append(t)
             file.write(
-                f"{t},25.0,{V},0,{int(SoC*100)},{int(SoH*100)},{available_capacity},{i}\n"
+                f"{t},25.0,{V},0,{int(SoC*100)},{int(SoH*100)},{available_capacity},{cycle}\n"
             )
             t += dt
 
@@ -176,9 +177,11 @@ def simulate_data(
         plot_data["V"].append(Vs)
         plot_data["I"].append(Is)
 
-        i += 1
-        if SoH <= min_SoH or i >= 1000:
+        cycle += 1
+        if SoH <= min_SoH or cycle >= 1000:
             break
+
+    return cycle
 
 
 def plot(
@@ -278,8 +281,9 @@ def plot(
     plt.savefig(f"{path}/plot.pdf")
 
 
-simulate_data("data/normal", dSoH=0.025)
-simulate_data("data/low_power", dSoH=0.025, I_dis=0.2)
+simulate_data("data/normal")
+n_cycles = simulate_data("data/low_power", min_SoH=0.9)
+simulate_data("data/low_power", SoH=0.9, starting_cycle=n_cycles, I_dis=0.2)
 
 plot("data/normal", 3, current=False)
 plot("data/low_power", 3, current=False, voltage_colormap=cm.Reds)
