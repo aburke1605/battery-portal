@@ -31,7 +31,7 @@ export default function SignInForm() {
         <div>
           <div className="mb-5 sm:mb-8">
             <h1 className="mb-2 font-semibold text-gray-800 text-title-sm dark:text-white/90 sm:text-title-md">
-              Sign in
+              Log in
             </h1>
           </div>
           {error && (
@@ -39,14 +39,14 @@ export default function SignInForm() {
               {error}
             </div>
           )}
-          <form onSubmit={handleSubmit}>
+          <form onSubmit={handleSubmit} className="mb-4">
             <div className="space-y-6">
               <div>
                 <Label>
                   Email <span className="text-error-500">*</span>
                 </Label>
                 <Input
-                  placeholder="info@gmail.com"
+                  placeholder="email@example.com"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                 />
@@ -75,11 +75,19 @@ export default function SignInForm() {
               </div>
               <div>
                 <Button className="w-full" size="sm">
-                  Sign in
+                  Log in
                 </Button>
               </div>
             </div>
           </form>
+          {!isFromESP32 && (
+            <>
+              No account yet?{" "}
+              <a className="text-blue-500 underline" href="#/register">
+                Register here
+              </a>
+            </>
+          )}
         </div>
       </div>
     </div>
