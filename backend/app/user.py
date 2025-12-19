@@ -64,6 +64,7 @@ class Users(DB.Model, UserMixin):
     roles = DB.relationship(
         "Roles", secondary=roles_users, backref=DB.backref("users", lazy="dynamic")
     )
+    subscribed = DB.Column(DB.Boolean(), default=False)
 
 
 users = SQLAlchemyUserDatastore(DB, Users, Roles)
