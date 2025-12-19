@@ -194,7 +194,6 @@ def list():
 
 
 @user.route("/add", methods=["POST"])
-@roles_required("superuser")
 def add():
     """
     API to add new user to the database, works in conjunction with list.tsx
