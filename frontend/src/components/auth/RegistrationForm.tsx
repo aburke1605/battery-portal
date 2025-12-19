@@ -33,8 +33,9 @@ export default function RegistrationForm() {
         <div>
           <div className="mb-5 sm:mb-8">
             <h1 className="mb-2 font-semibold text-gray-800 text-title-sm dark:text-white/90 sm:text-title-md">
-              Hello
+              Welcome!
             </h1>
+            <p>Enter your details below to create an account with us.</p>
           </div>
           {error && (
             <div className="mb-4 text-sm text-red-600 dark:text-red-400">
