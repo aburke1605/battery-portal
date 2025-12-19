@@ -24,6 +24,12 @@ interface AuthContextType {
     password: string,
     isFromESP32?: boolean,
   ) => Promise<boolean>;
+  register: (
+    firstName: string,
+    familyName: string,
+    email: string,
+    password: string,
+  ) => Promise<boolean>;
   getAuthToken: () => string | null;
 }
 
@@ -124,6 +130,38 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({
     }
   };
 
+  const register = async (
+    firstName: string,
+    familyName: string,
+    email: string,
+    password: string,
+  ): Promise<boolean> => {
+    try {
+      const res = await fetch(`${apiConfig.USER_API}/add`, {
+        method: "POST",
+        credentials: "include",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          first_name: firstName,
+          last_name: familyName,
+          email,
+          password,
+        }),
+      });
+
+      if (res.ok) {
+        return login(email, password, false);
+      } else {
+        return false;
+      }
+    } catch (err) {
+      console.error("Registration failed:", err);
+      return false;
+    }
+  };
+
   const setAuthToken = (token: string) => {
     if (token) {
       localStorage.setItem("auth_token", token);
@@ -142,6 +180,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({
     loading,
     logout,
     login,
+    register,
     getAuthToken,
   };
 
