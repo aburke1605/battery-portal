@@ -9,7 +9,7 @@ from flask_security import Security
 from sqlalchemy import inspect
 
 from app.db import db, DB, BatteryInfo
-from app.user import user, users, create_admin
+from app.user import user, users
 from app.ws import ws
 from app.pay import pay
 
@@ -51,8 +51,6 @@ def create_app():
 
     api.register_blueprint(user)
     Security(app, users)
-
-    create_admin(app)
 
     with app.app_context():
         inspector = inspect(DB.engine)
