@@ -7,6 +7,7 @@ import { AppWrapper } from "./components/common/PageMeta.tsx";
 import { ThemeProvider } from "./context/ThemeContext.tsx";
 import { HashRouter, Routes, Route } from "react-router";
 import SignIn from "./pages/SignIn.tsx";
+import Register from "./pages/Register.tsx";
 import NotFound from "./pages/NotFound.tsx";
 import UserProfiles from "./pages/UserProfiles";
 import SystemSettings from "./pages/Settings";
@@ -59,6 +60,7 @@ function App() {
 
             {/* Auth Layout */}
             <Route path="/login" element={<SignIn />} />
+            <Route path="/register" element={<Register />} />
 
             {/* Fallback Route */}
             <Route path="*" element={<NotFound />} />
