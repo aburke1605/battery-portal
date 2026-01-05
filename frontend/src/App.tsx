@@ -23,6 +23,7 @@ import { AuthProvider } from "./auth/AuthContext.tsx";
 import Db from "./pages/Db";
 import Visualisation from "./pages/Battery/Visualisation.tsx";
 import HomePage from "./home.tsx";
+import SubscriptionManagement from "./pages/SubscriptionManagement.tsx";
 
 function App() {
   return (
@@ -46,6 +47,10 @@ function App() {
 
               {/* Others Page */}
               <Route path="/profile" element={<UserProfiles />} />
+              <Route
+                path="/subscription"
+                element={<SubscriptionManagement />}
+              />
               <Route path="/userlist" element={<UserList />} />
               <Route path="/blank" element={<Blank />} />
 
