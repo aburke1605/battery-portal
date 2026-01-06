@@ -17,7 +17,7 @@ from flask_security import (
 )
 from flask_security.utils import hash_password
 from flask_login import current_user
-from sqlalchemy import inspect
+from sqlalchemy import inspect, select
 
 user = Blueprint("user", __name__, url_prefix="/user")
 
@@ -359,4 +359,20 @@ def profile():
 @login_required
 def subscription():
     email = request.args.get("email")
-    return {"status": "success", "subscribed": True}, 200
+    response = {"status": "success", "subscribed": False}
+
+    users_table = DB.Table("users", DB.metadata, autoload_with=DB.engine)
+    # fmt: off
+    query = (
+        select(users_table.c.subscribed)
+        .where(users_table.c.email == email)
+    )
+    # fmt: on
+    rows = DB.session.execute(query).scalars().all()
+    if len(rows) != 1:
+        response["status"] = "error"
+        logger.error("More than one user with provided email address")
+    else:
+        response["subscribed"] = rows[0]
+
+    return response, 200
