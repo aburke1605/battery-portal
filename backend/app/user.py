@@ -353,3 +353,10 @@ def profile():
     except Exception as e:
         DB.session.rollback()
         return jsonify({"error": f"Failed to update profile: {e}."}), 500
+
+
+@user.route("/subscription", methods=["GET"])
+@login_required
+def subscription():
+    email = request.args.get("email")
+    return {"status": "success", "subscribed": True}, 200

@@ -1,9 +1,17 @@
 import { useEffect, useState } from "react";
 import { useAuth } from "../auth/AuthContext";
+import axios from "axios";
+import apiConfig from "../apiConfig";
 
 async function getSubscriptionStatus(email: string | undefined) {
   try {
     if (email === "user@admin.dev") return true;
+
+    const resp = await axios.get(
+      `${apiConfig.USER_API}/subscription?email=${email}`,
+    );
+    if (resp.data.status == "success") return resp.data.subscribed;
+
     return false;
   } catch (error) {
     console.log("Error fetching subscription data:", error);
