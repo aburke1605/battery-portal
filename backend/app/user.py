@@ -65,6 +65,7 @@ class Users(DB.Model, UserMixin):
         "Roles", secondary=roles_users, backref=DB.backref("users", lazy="dynamic")
     )
     subscribed = DB.Column(DB.Boolean(), default=False)
+    subscription_expiry = DB.Column(DB.DateTime())
 
 
 users = SQLAlchemyUserDatastore(DB, Users, Roles)
@@ -359,20 +360,20 @@ def profile():
 @login_required
 def subscription():
     email = request.args.get("email")
-    response = {"status": "success", "subscribed": False}
+    response = {"status": "success", "subscribed": False, "expiry": None}
 
     users_table = DB.Table("users", DB.metadata, autoload_with=DB.engine)
     # fmt: off
     query = (
-        select(users_table.c.subscribed)
+        select(
+            users_table.c.subscribed,
+            users_table.c.subscription_expiry,
+        )
         .where(users_table.c.email == email)
     )
     # fmt: on
-    rows = DB.session.execute(query).scalars().all()
-    if len(rows) != 1:
-        response["status"] = "error"
-        logger.error("More than one user with provided email address")
-    else:
-        response["subscribed"] = rows[0]
+    rows = DB.session.execute(query).first()
+    response["subscribed"] = rows[0]
+    response["expiry"] = rows[1]
 
     return response, 200
