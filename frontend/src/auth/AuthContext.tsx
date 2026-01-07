@@ -56,34 +56,33 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({
   const [loading, setLoading] = useState<boolean>(true);
   const navigate = useNavigate();
 
-  useEffect(() => {
-    const checkAuthStatus = async () => {
-      try {
-        let url = `${apiConfig.USER_API}/check-auth`;
-        if (isFromESP32) {
-          const token = getAuthToken();
-          url += "?auth_token=" + token;
-        }
-        const response = await fetch(url, {
-          method: "GET",
-          credentials: "include",
-        });
-
-        if (response.ok) {
-          const data = await response.json();
-          setUser(data);
-        } else {
-          setUser(null);
-        }
-      } catch (error) {
-        console.error("Auth check failed:", error);
-        setUser(null);
-      } finally {
-        setLoading(false);
+  const checkAuthStatus = async () => {
+    try {
+      let url = `${apiConfig.USER_API}/check-auth`;
+      if (isFromESP32) {
+        const token = getAuthToken();
+        url += "?auth_token=" + token;
       }
-    };
 
-    checkAuthStatus();
+      const response = await fetch(url, {
+        method: "GET",
+        credentials: "include",
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        setUser(data);
+      } else {
+        setUser(null);
+      }
+    } catch (error) {
+      console.error("Auth check failed:", error);
+      setUser(null);
+    }
+  };
+
+  useEffect(() => {
+    checkAuthStatus().finally(() => setLoading(false));
   }, []);
 
   const logout = async () => {
