@@ -11,7 +11,7 @@ type SubscriptionStatus = {
   expiryDate: string | null;
 };
 
-async function getSubscriptionStatus(
+export async function getSubscriptionStatus(
   email: string | undefined,
 ): Promise<SubscriptionStatus> {
   if (!email) return { subscribed: false, expiryDate: null };
@@ -50,7 +50,7 @@ export default function SubscriptionManagement() {
       setExpiryDate(subscriptionStatus.expiryDate);
     };
     loadSubscriptionStatus();
-  }, [user?.email]);
+  }, [user]);
 
   return (
     <>

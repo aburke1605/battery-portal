@@ -8,8 +8,18 @@ import {
 import { loadStripe } from "@stripe/stripe-js";
 import apiConfig from "../../apiConfig";
 import { useAuth } from "../../auth/AuthContext";
+import { getSubscriptionStatus } from "../../pages/SubscriptionManagement";
 
 const stripePromise = loadStripe(apiConfig.PAY_PUBLIC_KEY);
+
+async function waitForSubscription(email: string) {
+  for (let i = 0; i < 20; i++) {
+    const status = await getSubscriptionStatus(email);
+    if (status.subscribed) return true;
+    await new Promise((r) => setTimeout(r, 500));
+  }
+  return false;
+}
 
 function CheckoutForm({
   price,
@@ -20,6 +30,8 @@ function CheckoutForm({
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState("");
 
+  const { user, refreshUser } = useAuth();
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!stripe || !elements) return;
@@ -29,7 +41,6 @@ function CheckoutForm({
 
     const { error } = await stripe.confirmPayment({
       elements,
-      confirmParams: { return_url: window.location.origin + "/#/subscription" },
       redirect: "if_required",
     });
 
@@ -38,6 +49,11 @@ function CheckoutForm({
       setLoading(false);
       return;
     }
+
+    await waitForSubscription(user?.email!);
+    await refreshUser();
+
+    onClose();
   };
 
   return (
