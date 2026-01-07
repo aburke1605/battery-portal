@@ -8,17 +8,17 @@ import StripeButton from "../components/payment/Checkout";
 
 type SubscriptionStatus = {
   subscribed: boolean;
-  expiryDate: string | null;
+  expiry: string | null;
 };
 
 export async function getSubscriptionStatus(
   email: string | undefined,
 ): Promise<SubscriptionStatus> {
-  if (!email) return { subscribed: false, expiryDate: null };
+  if (!email) return { subscribed: false, expiry: null };
 
   try {
     if (email === "user@admin.dev")
-      return { subscribed: true, expiryDate: "Never" };
+      return { subscribed: true, expiry: "Never" };
 
     const resp = await axios.get(
       `${apiConfig.USER_API}/subscription?email=${email}`,
@@ -26,13 +26,13 @@ export async function getSubscriptionStatus(
     if (resp.data.status == "success") {
       return {
         subscribed: resp.data.subscribed,
-        expiryDate: resp.data.expiryDate ?? null,
+        expiry: resp.data.expiry ?? null,
       };
     }
-    return { subscribed: false, expiryDate: null };
+    return { subscribed: false, expiry: null };
   } catch (error) {
     console.log("Error fetching subscription data:", error);
-    return { subscribed: false, expiryDate: null };
+    return { subscribed: false, expiry: null };
   }
 }
 
@@ -47,7 +47,7 @@ export default function SubscriptionManagement() {
     const loadSubscriptionStatus = async () => {
       let subscriptionStatus = await getSubscriptionStatus(user?.email);
       setIsSubscribed(subscriptionStatus.subscribed);
-      setExpiryDate(subscriptionStatus.expiryDate);
+      setExpiryDate(subscriptionStatus.expiry);
     };
     loadSubscriptionStatus();
   }, [user]);

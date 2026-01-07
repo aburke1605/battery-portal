@@ -374,6 +374,6 @@ def subscription():
     # fmt: on
     rows = DB.session.execute(query).first()
     response["subscribed"] = rows[0]
-    response["expiry"] = rows[1]
+    response["expiry"] = rows[1].date().isoformat()
 
     return response, 200

@@ -1,11 +1,11 @@
 import logging
 
 logger = logging.getLogger(__name__)
+import os
+import stripe
+from datetime import datetime, timedelta
 
 from flask import Blueprint, jsonify, request
-import stripe
-import os
-
 from sqlalchemy import update
 
 pay = Blueprint("pay", __name__, url_prefix="/pay")
@@ -55,7 +55,7 @@ def webhook():
         query = (
             update(users_table)
             .where(users_table.c.email == intent["metadata"]["email"])
-            .values(subscribed=True)
+            .values(subscribed=True, subscription_expiry=datetime.now().replace(month=datetime.now().month+1))
         )
         # fmt: on
         DB.session.execute(query)
