@@ -7,6 +7,7 @@ import {
 } from "@stripe/react-stripe-js";
 import { loadStripe } from "@stripe/stripe-js";
 import apiConfig from "../../apiConfig";
+import { useAuth } from "../../auth/AuthContext";
 
 const stripePromise = loadStripe(apiConfig.PAY_PUBLIC_KEY);
 
@@ -28,11 +29,15 @@ function CheckoutForm({
 
     const { error } = await stripe.confirmPayment({
       elements,
-      confirmParams: { return_url: "http://localhost:5173/success" },
+      confirmParams: { return_url: window.location.origin + "/#/subscription" },
+      redirect: "if_required",
     });
 
-    if (error) setMessage(error.message ?? "Payment failed");
-    setLoading(false);
+    if (error) {
+      setMessage(error.message ?? "Payment failed");
+      setLoading(false);
+      return;
+    }
   };
 
   return (
@@ -70,6 +75,7 @@ export default function StripeButton({ price }: { price: number }) {
   const [clientSecret, setClientSecret] = useState<string | null>(null);
   const [loadingIntent, setLoadingIntent] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const { user } = useAuth();
 
   useEffect(() => {
     if (showCheckout) {
@@ -79,7 +85,7 @@ export default function StripeButton({ price }: { price: number }) {
       fetch("/api/pay/create-payment-intent", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ amount: price }),
+        body: JSON.stringify({ amount: price, email: user?.email }),
       })
         .then(async (res) => {
           if (!res.ok) throw new Error(`Server returned ${res.status}`);
