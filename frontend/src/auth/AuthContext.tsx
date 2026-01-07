@@ -31,6 +31,7 @@ interface AuthContextType {
     password: string,
   ) => Promise<boolean>;
   getAuthToken: () => string | null;
+  refreshUser: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -181,6 +182,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({
     login,
     register,
     getAuthToken,
+    refreshUser: checkAuthStatus,
   };
 
   return (
