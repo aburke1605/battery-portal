@@ -18,7 +18,7 @@ export default function SignInForm() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    const success = await login(email, password, isFromESP32);
+    const success = await login(email, password);
     if (!success) {
       setError("Invalid credentials. Please try again.");
     }
