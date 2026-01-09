@@ -30,7 +30,7 @@ function CheckoutForm({
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState("");
 
-  const { user, refreshUser } = useAuth();
+  const { user, fetchUserData } = fromAuthenticator();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -51,7 +51,7 @@ function CheckoutForm({
     }
 
     await waitForSubscription(user?.email!);
-    await refreshUser();
+    await fetchUserData();
 
     onClose();
   };

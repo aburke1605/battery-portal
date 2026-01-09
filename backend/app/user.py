@@ -132,6 +132,28 @@ def login():
     return jsonify({"success": False}), 401
 
 
+@user.route("/data", methods=["GET"])
+@login_required
+def data():
+    """
+    API to return logged-in users data, works in conjunction with AuthContext.tsx.
+    """
+    return jsonify(
+        {
+            "id": current_user.id,
+            "first_name": current_user.first_name,
+            "last_name": current_user.last_name,
+            "email": current_user.email,
+            # "password": current_user.password,
+            # "active": current_user.active,
+            # "confirmed_at": current_user.confirmed_at,
+            # "fs_uniquifier": current_user.fs_uniquifier,
+            "subscribed": current_user.subscribed,
+            "subscription_expiry": current_user.subscription_expiry,
+        }
+    )
+
+
 @user.route("/check-auth", methods=["GET"])
 @login_required
 def check_auth():
