@@ -124,9 +124,8 @@ def login():
         login_user(u)
         return jsonify(
             {
-                "loggedIn": True,
-                "email": u.email,
-                "roles": [role.name for role in u.roles],
+                "success": True,
+                "id": u.id,
             }
         )
     return jsonify({"success": False}), 401

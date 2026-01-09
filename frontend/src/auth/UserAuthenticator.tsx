@@ -26,7 +26,12 @@ interface AuthContextType {
   user: UserProps | undefined;
   isAuthenticated: boolean;
   authenticationToken: string;
-  register: () => Promise<boolean>;
+  register: (
+    first_name: string,
+    last_name: string,
+    email: string,
+    password: string,
+  ) => Promise<boolean>;
   login: (email: string, password: string) => Promise<boolean>;
   logout: () => Promise<void>;
   fetchUserData: () => Promise<void>;
@@ -55,9 +60,20 @@ export const AuthenticationProvider: React.FC<AuthenticationProps> = ({
   const [authenticationToken, setAuthenticationToken] = useState<string>("");
 
   const navigate = useNavigate();
-  const register = async (): Promise<boolean> => {
-    return true;
-    // return login();
+  const register = async (
+    first_name: string,
+    last_name: string,
+    email: string,
+    password: string,
+  ): Promise<boolean> => {
+    const response = await axios.post(`${apiConfig.USER_API}/add`, {
+      first_name,
+      last_name,
+      email,
+      password,
+    });
+    if (response.statusText === "CREATED") return login(email, password);
+    else return false;
   };
   const login = async (email: string, password: string): Promise<boolean> => {
     const response = await axios.post(`${apiConfig.USER_API}/login`, {

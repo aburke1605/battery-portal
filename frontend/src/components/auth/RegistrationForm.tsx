@@ -1,9 +1,9 @@
 import { useState } from "react";
-import { useAuth } from "../../auth/AuthContext";
 import { Eye, EyeOff } from "lucide-react";
 import Label from "../form/Label";
 import Input from "../form/input/InputField";
 import Button from "../ui/button/Button";
+import { fromAuthenticator } from "../../auth/UserAuthenticator";
 
 export default function RegistrationForm() {
   const [showPassword, setShowPassword] = useState(false);
@@ -12,7 +12,7 @@ export default function RegistrationForm() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
-  const { register } = useAuth();
+  const { register } = fromAuthenticator();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
