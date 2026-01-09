@@ -7,8 +7,8 @@ import {
 } from "@stripe/react-stripe-js";
 import { loadStripe } from "@stripe/stripe-js";
 import apiConfig from "../../apiConfig";
-import { useAuth } from "../../auth/AuthContext";
 import { getSubscriptionStatus } from "../../pages/SubscriptionManagement";
+import { fromAuthenticator } from "../../auth/UserAuthenticator";
 
 const stripePromise = loadStripe(apiConfig.PAY_PUBLIC_KEY);
 
@@ -91,7 +91,7 @@ export default function StripeButton({ price }: { price: number }) {
   const [clientSecret, setClientSecret] = useState<string | null>(null);
   const [loadingIntent, setLoadingIntent] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const { user } = useAuth();
+  const { user } = fromAuthenticator();
 
   useEffect(() => {
     if (showCheckout) {

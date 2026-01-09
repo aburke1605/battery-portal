@@ -1,10 +1,10 @@
 import { useEffect, useState } from "react";
-import { useAuth } from "../auth/AuthContext";
 import axios from "axios";
 import apiConfig from "../apiConfig";
 import PageMeta from "../components/common/PageMeta";
 import PageBreadcrumb from "../components/common/PageBreadCrumb";
 import StripeButton from "../components/payment/Checkout";
+import { fromAuthenticator } from "../auth/UserAuthenticator";
 
 type SubscriptionStatus = {
   subscribed: boolean;
@@ -37,7 +37,7 @@ export async function getSubscriptionStatus(
 }
 
 export default function SubscriptionManagement() {
-  const { user } = useAuth();
+  const { user } = fromAuthenticator();
   const [isSubscribed, setIsSubscribed] = useState<boolean>(false);
   const [expiryDate, setExpiryDate] = useState<string | null>(null);
 

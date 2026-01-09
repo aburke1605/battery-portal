@@ -2,12 +2,12 @@ import { useState } from "react";
 import { ListPlus, ListMinus, LogOut, UserPen, PiggyBank } from "lucide-react";
 import { DropdownItem } from "../ui/dropdown/DropdownItem";
 import { Dropdown } from "../ui/dropdown/Dropdown";
-import { useAuth } from "../../auth/AuthContext";
+import { fromAuthenticator } from "../../auth/UserAuthenticator";
 
 export default function UserDropdown() {
   const [isOpen, setIsOpen] = useState(false);
 
-  const { user, logout } = useAuth();
+  const { user, logout } = fromAuthenticator();
 
   function toggleDropdown() {
     setIsOpen(!isOpen);

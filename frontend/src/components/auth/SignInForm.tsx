@@ -1,17 +1,17 @@
 import { useState } from "react";
-import { useAuth } from "../../auth/AuthContext";
 import { Eye, EyeOff } from "lucide-react";
 import Label from "../form/Label";
 import Input from "../form/input/InputField";
 import Button from "../ui/button/Button";
 import { useLocation } from "react-router";
+import { fromAuthenticator } from "../../auth/UserAuthenticator";
 
 export default function SignInForm() {
   const [showPassword, setShowPassword] = useState(false);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
-  const { login } = useAuth();
+  const { login } = fromAuthenticator();
 
   const { state } = useLocation();
   const isFromESP32 = state?.isFromESP32 ?? false;
