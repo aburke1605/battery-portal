@@ -161,11 +161,7 @@ def check_auth():
     """
     return jsonify(
         {
-            "loggedIn": True,
-            "email": current_user.email,
-            "first_name": current_user.first_name,
-            "last_name": current_user.last_name,
-            "roles": [role.name for role in current_user.roles],
+            "logged_in": True,
         }
     )
 

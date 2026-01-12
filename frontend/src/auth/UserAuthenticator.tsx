@@ -1,7 +1,13 @@
-import React, { createContext, ReactNode, useContext, useState } from "react";
-import { Navigate, useNavigate } from "react-router";
+import React, {
+  createContext,
+  ReactNode,
+  useContext,
+  useEffect,
+  useState,
+} from "react";
 import axios from "axios";
 import apiConfig from "../apiConfig";
+import { Navigate, useNavigate } from "react-router";
 
 interface UserProps {
   // matches the columns in the users DB table
@@ -56,11 +62,38 @@ export const AuthenticationProvider: React.FC<AuthenticationProps> = ({
   children,
   isFromESP32 = false,
 }) => {
-  const [isLoading, setIsLoading] = useState<boolean>(false);
+  const [isLoading, setIsLoading] = useState<boolean>(true);
   const [user, setUser] = useState<UserProps>();
   const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false);
 
   const navigate = useNavigate();
+
+  // check for persistent logged-in session first
+  useEffect(() => {
+    const checkAuthStatus = async () => {
+      try {
+        let url = `${apiConfig.USER_API}/check-auth`;
+        if (isFromESP32) url += "?auth_token=" + getAuthenticationToken();
+
+        const response = await axios.get(url);
+        if (response.statusText === "OK") {
+          if (response.data.logged_in === true) {
+            setIsAuthenticated(true);
+            await fetchUserData();
+          } else {
+            setIsAuthenticated(false);
+          }
+        }
+      } catch (error) {
+        console.error("Authentication check failed:", error);
+        setIsAuthenticated(false);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    checkAuthStatus();
+  }, []);
+
   const register = async (
     first_name: string,
     last_name: string,
