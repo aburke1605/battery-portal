@@ -40,7 +40,7 @@ export default function HomePage() {
           className="inline-flex items-center bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg shadow-lg transition-colors duration-200 mb-18"
         >
           <Settings className="h-5 w-5 mr-2 animate-pulse" />
-          <span className="font-medium">BMS Portal</span>
+          <span className="font-medium">Log in</span>
         </Link>
 
         <div className="bg-blue-600/5 rounded-lg p-6 mb-4">

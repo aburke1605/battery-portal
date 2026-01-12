@@ -7,6 +7,7 @@ import { AppWrapper } from "./components/common/PageMeta.tsx";
 import { ThemeProvider } from "./context/ThemeContext.tsx";
 import { HashRouter, Routes, Route } from "react-router";
 import SignIn from "./pages/SignIn.tsx";
+import Register from "./pages/Register.tsx";
 import NotFound from "./pages/NotFound.tsx";
 import UserProfiles from "./pages/UserProfiles";
 import SystemSettings from "./pages/Settings";
@@ -17,34 +18,44 @@ import Home from "./pages/Dashboard";
 import ListPage from "./pages/Battery/ListPage.tsx";
 import BatteryPage from "./pages/Battery/BatteryPage";
 import UserList from "./pages/Users";
-import AuthRequire from "./auth/AuthRequire.tsx";
-import { AuthProvider } from "./auth/AuthContext.tsx";
 import Db from "./pages/Db";
 import DigitalTwin from "./pages/Battery/DigitalTwin.tsx";
 import HomePage from "./home.tsx";
+import SubscriptionManagement from "./pages/SubscriptionManagement.tsx";
+import AuthenticationRequired, {
+  AuthenticationProvider,
+} from "./auth/UserAuthenticator.tsx";
 
 function App() {
   return (
     <>
       <HashRouter>
-        <AuthProvider>
+        <AuthenticationProvider>
           <ScrollToTop />
           <Routes>
             {/* Home page */}
             <Route path="/" element={<HomePage />} />
 
+            {/* Auth Layout */}
+            <Route path="/login" element={<SignIn />} />
+            <Route path="/register" element={<Register />} />
+
             {/* Dashboard Layout */}
             <Route
               element={
-                <AuthRequire>
+                <AuthenticationRequired>
                   <AppLayout />
-                </AuthRequire>
+                </AuthenticationRequired>
               }
             >
               <Route path="/dashboard" element={<Home />} />
 
               {/* Others Page */}
               <Route path="/profile" element={<UserProfiles />} />
+              <Route
+                path="/subscription"
+                element={<SubscriptionManagement />}
+              />
               <Route path="/userlist" element={<UserList />} />
               <Route path="/blank" element={<Blank />} />
 
@@ -57,13 +68,10 @@ function App() {
               <Route path="/db" element={<Db />} />
             </Route>
 
-            {/* Auth Layout */}
-            <Route path="/login" element={<SignIn />} />
-
             {/* Fallback Route */}
             <Route path="*" element={<NotFound />} />
           </Routes>
-        </AuthProvider>
+        </AuthenticationProvider>
       </HashRouter>
     </>
   );

@@ -3,22 +3,20 @@ import { Eye, EyeOff } from "lucide-react";
 import Label from "../form/Label";
 import Input from "../form/input/InputField";
 import Button from "../ui/button/Button";
-import { useLocation } from "react-router";
 import { fromAuthenticator } from "../../auth/UserAuthenticator";
 
-export default function SignInForm() {
+export default function RegistrationForm() {
   const [showPassword, setShowPassword] = useState(false);
+  const [firstName, setFirstName] = useState("");
+  const [familyName, setFamilyName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
-  const { login } = fromAuthenticator();
-
-  const { state } = useLocation();
-  const isFromESP32 = state?.isFromESP32 ?? false;
+  const { register } = fromAuthenticator();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    const success = await login(email, password);
+    const success = await register(firstName, familyName, email, password);
     if (!success) {
       setError("Invalid credentials. Please try again.");
     }
@@ -31,8 +29,9 @@ export default function SignInForm() {
         <div>
           <div className="mb-5 sm:mb-8">
             <h1 className="mb-2 font-semibold text-gray-800 text-title-sm dark:text-white/90 sm:text-title-md">
-              Log in
+              Welcome!
             </h1>
+            <p>Enter your details below to create an account with us.</p>
           </div>
           {error && (
             <div className="mb-4 text-sm text-red-600 dark:text-red-400">
@@ -41,6 +40,26 @@ export default function SignInForm() {
           )}
           <form onSubmit={handleSubmit} className="mb-4">
             <div className="space-y-6">
+              <div>
+                <Label>
+                  First name <span className="text-error-500">*</span>
+                </Label>
+                <Input
+                  placeholder="First name"
+                  value={firstName}
+                  onChange={(e) => setFirstName(e.target.value)}
+                />
+              </div>
+              <div>
+                <Label>
+                  Family name <span className="text-error-500">*</span>
+                </Label>
+                <Input
+                  placeholder="Family name"
+                  value={familyName}
+                  onChange={(e) => setFamilyName(e.target.value)}
+                />
+              </div>
               <div>
                 <Label>
                   Email <span className="text-error-500">*</span>
@@ -75,19 +94,11 @@ export default function SignInForm() {
               </div>
               <div>
                 <Button className="w-full" size="sm">
-                  Log in
+                  Register
                 </Button>
               </div>
             </div>
           </form>
-          {!isFromESP32 && (
-            <>
-              No account yet?{" "}
-              <a className="text-blue-500 underline" href="#/register">
-                Register here
-              </a>
-            </>
-          )}
         </div>
       </div>
     </div>
