@@ -7,6 +7,7 @@ import { AppWrapper } from "./components/common/PageMeta.tsx";
 import { ThemeProvider } from "./context/ThemeContext.tsx";
 import { HashRouter, Routes, Route } from "react-router";
 import SignIn from "./pages/SignIn.tsx";
+import Register from "./pages/Register.tsx";
 import NotFound from "./pages/NotFound.tsx";
 import UserProfiles from "./pages/UserProfiles";
 import SystemSettings from "./pages/Settings";
@@ -17,62 +18,69 @@ import Home from "./pages/Dashboard";
 import ListPage from "./pages/Battery/ListPage.tsx";
 import BatteryPage from "./pages/Battery/BatteryPage";
 import UserList from "./pages/Users";
-import AuthRequire from "./auth/AuthRequire.tsx";
-import { AuthProvider } from "./auth/AuthContext.tsx";
 import Db from "./pages/Db";
-import Visualisation from "./pages/Battery/Visualisation.tsx";
+import DigitalTwin from "./pages/Battery/DigitalTwin.tsx";
 import HomePage from "./home.tsx";
+import SubscriptionManagement from "./pages/SubscriptionManagement.tsx";
+import AuthenticationRequired, {
+  AuthenticationProvider,
+} from "./auth/UserAuthenticator.tsx";
 
 function App() {
-	return (
-		<>
-			<HashRouter>
-				<AuthProvider>
-					<ScrollToTop />
-					<Routes>
-						{/* Home page */}
-						<Route path="/" element={<HomePage />} />
+  return (
+    <>
+      <HashRouter>
+        <AuthenticationProvider>
+          <ScrollToTop />
+          <Routes>
+            {/* Home page */}
+            <Route path="/" element={<HomePage />} />
 
-						{/* Dashboard Layout */}
-						<Route
-							element={
-								<AuthRequire>
-									<AppLayout />
-								</AuthRequire>
-							}
-						>
-							<Route path="/dashboard" element={<Home />} />
+            {/* Auth Layout */}
+            <Route path="/login" element={<SignIn />} />
+            <Route path="/register" element={<Register />} />
 
-							{/* Others Page */}
-							<Route path="/profile" element={<UserProfiles />} />
-							<Route path="/userlist" element={<UserList />} />
-							<Route path="/blank" element={<Blank />} />
+            {/* Dashboard Layout */}
+            <Route
+              element={
+                <AuthenticationRequired>
+                  <AppLayout />
+                </AuthenticationRequired>
+              }
+            >
+              <Route path="/dashboard" element={<Home />} />
 
-							{/* Forms */}
-							<Route path="/settings" element={<SystemSettings />} />
-							<Route path="/batteries" element={<ListPage />} />
-							<Route path="/battery-detail" element={<BatteryPage />} />
-							<Route path="/visualisation" element={<Visualisation />} />
+              {/* Others Page */}
+              <Route path="/profile" element={<UserProfiles />} />
+              <Route
+                path="/subscription"
+                element={<SubscriptionManagement />}
+              />
+              <Route path="/userlist" element={<UserList />} />
+              <Route path="/blank" element={<Blank />} />
 
-							<Route path="/db" element={<Db />} />
-						</Route>
+              {/* Forms */}
+              <Route path="/settings" element={<SystemSettings />} />
+              <Route path="/batteries" element={<ListPage />} />
+              <Route path="/battery-detail" element={<BatteryPage />} />
+              <Route path="/digital-twin" element={<DigitalTwin />} />
 
-						{/* Auth Layout */}
-						<Route path="/login" element={<SignIn />} />
+              <Route path="/db" element={<Db />} />
+            </Route>
 
-						{/* Fallback Route */}
-						<Route path="*" element={<NotFound />} />
-					</Routes>
-				</AuthProvider>
-			</HashRouter>
-		</>
-	);
+            {/* Fallback Route */}
+            <Route path="*" element={<NotFound />} />
+          </Routes>
+        </AuthenticationProvider>
+      </HashRouter>
+    </>
+  );
 }
 
 createRoot(document.getElementById("root")!).render(
-	<ThemeProvider>
-		<AppWrapper>
-			<App />
-		</AppWrapper>
-	</ThemeProvider>,
+  <ThemeProvider>
+    <AppWrapper>
+      <App />
+    </AppWrapper>
+  </ThemeProvider>,
 );
