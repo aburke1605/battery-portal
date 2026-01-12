@@ -7,8 +7,19 @@ import {
 } from "@stripe/react-stripe-js";
 import { loadStripe } from "@stripe/stripe-js";
 import apiConfig from "../../apiConfig";
+import { getSubscriptionStatus } from "../../pages/SubscriptionManagement";
+import { fromAuthenticator } from "../../auth/UserAuthenticator";
 
 const stripePromise = loadStripe(apiConfig.PAY_PUBLIC_KEY);
+
+async function waitForSubscription(email: string) {
+  for (let i = 0; i < 20; i++) {
+    const status = await getSubscriptionStatus(email);
+    if (status.subscribed) return true;
+    await new Promise((r) => setTimeout(r, 500));
+  }
+  return false;
+}
 
 function CheckoutForm({
   price,
@@ -19,6 +30,8 @@ function CheckoutForm({
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState("");
 
+  const { user, fetchUserData } = fromAuthenticator();
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!stripe || !elements) return;
@@ -28,11 +41,19 @@ function CheckoutForm({
 
     const { error } = await stripe.confirmPayment({
       elements,
-      confirmParams: { return_url: "http://localhost:5173/success" },
+      redirect: "if_required",
     });
 
-    if (error) setMessage(error.message ?? "Payment failed");
-    setLoading(false);
+    if (error) {
+      setMessage(error.message ?? "Payment failed");
+      setLoading(false);
+      return;
+    }
+
+    await waitForSubscription(user?.email!);
+    await fetchUserData();
+
+    onClose();
   };
 
   return (
@@ -70,6 +91,7 @@ export default function StripeButton({ price }: { price: number }) {
   const [clientSecret, setClientSecret] = useState<string | null>(null);
   const [loadingIntent, setLoadingIntent] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const { user } = fromAuthenticator();
 
   useEffect(() => {
     if (showCheckout) {
@@ -79,7 +101,7 @@ export default function StripeButton({ price }: { price: number }) {
       fetch("/api/pay/create-payment-intent", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ amount: price }),
+        body: JSON.stringify({ amount: price, email: user?.email }),
       })
         .then(async (res) => {
           if (!res.ok) throw new Error(`Server returned ${res.status}`);

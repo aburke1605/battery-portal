@@ -4,13 +4,13 @@ import PageMeta from "../../components/common/PageMeta";
 import { BatteryData, parseDataOnESP32 } from "../../types";
 import BatteryDetail from "./BatteryDetail";
 import apiConfig from "../../apiConfig";
-import { useAuth } from "../../auth/AuthContext";
 import {
   createMessage,
   fetchBatteryData,
   useWebSocket,
 } from "../../hooks/useWebSocket";
 import { generate_random_string } from "../../utils/helpers";
+import { fromAuthenticator } from "../../auth/UserAuthenticator";
 
 interface BatteriesPageProps {
   isFromESP32?: boolean;
@@ -20,7 +20,7 @@ export default function BatteryPage({
   isFromESP32 = false,
 }: BatteriesPageProps) {
   // Handle auth_token
-  const { getAuthToken } = useAuth();
+  const { getAuthenticationToken } = fromAuthenticator();
 
   let ws_url = apiConfig.WEBSOCKET_BROWSER;
   let queryString = window.location.search;
@@ -34,7 +34,7 @@ export default function BatteryPage({
 
   const ws_session_browser_id = useRef(generate_random_string(32));
   ws_url = isFromESP32
-    ? (ws_url += "?auth_token=" + getAuthToken())
+    ? (ws_url += "?auth_token=" + getAuthenticationToken())
     : (ws_url +=
         "?browser_id=" + ws_session_browser_id.current + "&esp_id=" + esp_id);
 

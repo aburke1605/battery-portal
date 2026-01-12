@@ -17,7 +17,7 @@ from flask_security import (
 )
 from flask_security.utils import hash_password
 from flask_login import current_user
-from sqlalchemy import inspect
+from sqlalchemy import inspect, select
 
 user = Blueprint("user", __name__, url_prefix="/user")
 
@@ -64,6 +64,8 @@ class Users(DB.Model, UserMixin):
     roles = DB.relationship(
         "Roles", secondary=roles_users, backref=DB.backref("users", lazy="dynamic")
     )
+    subscribed = DB.Column(DB.Boolean(), default=False)
+    subscription_expiry = DB.Column(DB.DateTime())
 
 
 users = SQLAlchemyUserDatastore(DB, Users, Roles)
@@ -122,12 +124,33 @@ def login():
         login_user(u)
         return jsonify(
             {
-                "loggedIn": True,
-                "email": u.email,
-                "roles": [role.name for role in u.roles],
+                "success": True,
+                "id": u.id,
             }
         )
     return jsonify({"success": False}), 401
+
+
+@user.route("/data", methods=["GET"])
+@login_required
+def data():
+    """
+    API to return logged-in users data, works in conjunction with AuthContext.tsx.
+    """
+    return jsonify(
+        {
+            "id": current_user.id,
+            "first_name": current_user.first_name,
+            "last_name": current_user.last_name,
+            "email": current_user.email,
+            # "password": current_user.password,
+            # "active": current_user.active,
+            # "confirmed_at": current_user.confirmed_at,
+            # "fs_uniquifier": current_user.fs_uniquifier,
+            "subscribed": current_user.subscribed,
+            "subscription_expiry": current_user.subscription_expiry,
+        }
+    )
 
 
 @user.route("/check-auth", methods=["GET"])
@@ -138,11 +161,7 @@ def check_auth():
     """
     return jsonify(
         {
-            "loggedIn": True,
-            "email": current_user.email,
-            "first_name": current_user.first_name,
-            "last_name": current_user.last_name,
-            "roles": [role.name for role in current_user.roles],
+            "logged_in": True,
         }
     )
 
@@ -194,7 +213,6 @@ def list():
 
 
 @user.route("/add", methods=["POST"])
-@roles_required("superuser")
 def add():
     """
     API to add new user to the database, works in conjunction with list.tsx

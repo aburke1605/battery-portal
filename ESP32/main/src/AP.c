@@ -292,7 +292,7 @@ esp_err_t file_serve_handler(httpd_req_t *req) {
 }
 
 esp_err_t login_handler(httpd_req_t *req) {
-  char response[39 + UTILS_AUTH_TOKEN_LENGTH];
+  char response[43 + UTILS_AUTH_TOKEN_LENGTH];
   httpd_resp_set_type(req, "application/json");
 
   char *check_session = strstr(req->uri, "/api/user/check-auth?auth_token=");
@@ -306,7 +306,8 @@ esp_err_t login_handler(httpd_req_t *req) {
         strncpy(current_auth_token, auth_token, UTILS_AUTH_TOKEN_LENGTH);
         current_auth_token[UTILS_AUTH_TOKEN_LENGTH - 1] = '\0';
         snprintf(response, sizeof(response),
-                 "{\"loggedIn\": true, \"email\": \"%s\"}", WS_USERNAME);
+                 "{\"success\": true, \"auth_token\": \"%s\"}",
+                 current_auth_token);
         httpd_resp_send(req, response, HTTPD_RESP_USE_STRLEN);
         return ESP_OK;
       }

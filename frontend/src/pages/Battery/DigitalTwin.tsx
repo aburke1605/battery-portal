@@ -14,7 +14,6 @@ import {
 import { Canvas } from "@react-three/fiber";
 import { Edges, Html, OrbitControls } from "@react-three/drei";
 import * as THREE from "three";
-import { useAuth } from "../../auth/AuthContext";
 import apiConfig from "../../apiConfig";
 import { BatteryData } from "../../types";
 import { useLoader } from "@react-three/fiber";
@@ -26,6 +25,7 @@ import {
 } from "../../hooks/useWebSocket";
 import { generate_random_string } from "../../utils/helpers";
 import { useNavigate } from "react-router";
+import { fromAuthenticator } from "../../auth/UserAuthenticator";
 import axios from "axios";
 
 const cellFrameWidthX = 2.5;
@@ -474,7 +474,7 @@ interface BatteriesPageProps {
 export default function DigitalTwin({
   isFromESP32 = false,
 }: BatteriesPageProps) {
-  const { getAuthToken } = useAuth();
+  const { getAuthenticationToken } = fromAuthenticator();
 
   let ws_url = apiConfig.WEBSOCKET_BROWSER;
   let queryString = window.location.search;
@@ -487,7 +487,7 @@ export default function DigitalTwin({
 
   const ws_session_browser_id = useRef(generate_random_string(32));
   ws_url = isFromESP32
-    ? (ws_url += "?auth_token=" + getAuthToken())
+    ? (ws_url += "?auth_token=" + getAuthenticationToken())
     : (ws_url +=
         "?browser_id=" + ws_session_browser_id.current + "&esp_id=" + esp_id);
 
