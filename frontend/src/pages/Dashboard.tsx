@@ -235,8 +235,6 @@ export default function Home() {
             ))}
           </div>
         </div>
-
-        <StripeButton price={9.99} />
       </div>
     </>
   );

@@ -11,6 +11,7 @@ from sqlalchemy import inspect
 from app.db import db, DB, BatteryInfo
 from app.user import user, users, create_admin
 from app.ws import ws
+from app.twin import twin
 from app.pay import pay
 
 
@@ -67,6 +68,8 @@ def create_app():
                 )
                 DB.session.commit()
     api.register_blueprint(ws)
+
+    api.register_blueprint(twin)
 
     api.register_blueprint(pay)
 

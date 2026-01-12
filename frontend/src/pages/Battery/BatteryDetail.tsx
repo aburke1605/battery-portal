@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from "react";
+import React, { useEffect, useState } from "react";
 import { BatteryData } from "../../types";
 import {
   BatteryLow,
@@ -10,20 +10,13 @@ import {
   RefreshCw,
   LockKeyholeOpen,
   Wifi,
-  BrainCircuit,
   BarChart3,
   Sliders,
-  Battery,
   Layers2,
-  ArrowBigRightDash,
-  X,
-  SquareCheckBig,
   Clock,
 } from "lucide-react";
 import { getStatusColor } from "../../utils/helpers";
 import { useNavigate } from "react-router-dom";
-import axios from "axios";
-import apiConfig from "../../apiConfig";
 
 interface BatteryDetailProps {
   battery: BatteryData;
@@ -433,7 +426,7 @@ const BatteryDetail: React.FC<BatteryDetailProps> = ({
                       }
                     >
                       <Layers2 size={16} className="mr-2" />
-                      Visualisation {isFromESP32 ? "- UNAVAILABLE" : ""}
+                      Digital Twin {isFromESP32 ? "- UNAVAILABLE" : ""}
                     </button>
                     <button
                       onClick={() =>
@@ -467,130 +460,6 @@ const BatteryDetail: React.FC<BatteryDetailProps> = ({
                 </div>
               </div>
             </div>
-
-            {/* Beneath */}
-            <div className="bg-white border border-gray-200 rounded-lg shadow-sm">
-              <div className="px-4 py-5 sm:px-6 border-b border-gray-200">
-                <h3 className="text-lg font-medium text-gray-900 flex items-center">
-                  <Battery size={20} className="mr-2" /> Digital Twin
-                </h3>
-              </div>
-              <div className="p-6">
-                {/* <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
-                  <div>
-                    <h4 className="text-sm font-medium text-gray-500 mb-2">Efficiency Rate</h4>
-                    <div className="text-2xl font-semibold text-gray-900">94%</div>
-                    <p className="mt-1 text-sm text-gray-500">Above average performance</p>
-                  </div>
-                  <div>
-                    <h4 className="text-sm font-medium text-gray-500 mb-2">Power Output</h4>
-                    <div className="text-2xl font-semibold text-gray-900">2.4 kW</div>
-                    <p className="mt-1 text-sm text-gray-500">Nominal output</p>
-                  </div>
-                  <div>
-                    <h4 className="text-sm font-medium text-gray-500 mb-2">Temperature Variance</h4>
-                    <div className="text-2xl font-semibold text-gray-900">±2.5°C</div>
-                    <p className="mt-1 text-sm text-gray-500">Within normal range</p>
-                  </div>
-                  <div>
-                    <h4 className="text-sm font-medium text-gray-500 mb-2">Response Time</h4>
-                    <div className="text-2xl font-semibold text-gray-900">50ms</div>
-                    <p className="mt-1 text-sm text-gray-500">Optimal performance</p>
-                  </div>
-                </div> */}
-
-                <div className="space-y-4">
-                  {!isFromESP32 ? (
-                    <div>
-                      <button
-                        onClick={() =>
-                          recommendationCards ? null : getRecommendations()
-                        }
-                        className="w-full flex items-center justify-center px-4 py-2 border border-blue-300 shadow-sm text-sm font-medium rounded-md text-blue-700 bg-blue-50 hover:bg-blue-100 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 mb-4"
-                      >
-                        <BrainCircuit size={16} className="mr-2" />
-                        Get Recommendations
-                      </button>
-                      {recommendationCards?.map((recommendation) => (
-                        <div className="flex items-center justify-between mb-2">
-                          <span>{recommendation.message}</span>
-                          <div className="flex gap-2">
-                            {recommendation.implemented === false ? (
-                              <>
-                                <button
-                                  onClick={() =>
-                                    implementRecommendation(recommendation)
-                                  }
-                                  className="w-auto flex items-center justify-center px-4 py-2 border border-green-300 shadow-sm text-sm font-medium rounded-md text-green-700 bg-green-50 hover:bg-green-100 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500"
-                                >
-                                  {recommendation.implementing === false ? (
-                                    <>
-                                      {recommendation.success === true ? (
-                                        <>Implement</>
-                                      ) : (
-                                        <>Failed! Try again...</>
-                                      )}
-                                      <ArrowBigRightDash
-                                        size={16}
-                                        className="ml-2"
-                                      />
-                                    </>
-                                  ) : (
-                                    <>
-                                      {recommendation.delay === false ? (
-                                        <>Implementing...</>
-                                      ) : (
-                                        <>Waiting for confirmation...</>
-                                      )}
-                                    </>
-                                  )}
-                                </button>
-                                <button
-                                  onClick={() =>
-                                    removeRecommendation(recommendation)
-                                  }
-                                  className="w-auto flex items-center justify-center px-4 py-2 border border-red-300 shadow-sm text-sm font-medium rounded-md text-red-700 bg-red-50 hover:bg-red-100 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500"
-                                >
-                                  <X size={16} />
-                                </button>
-                              </>
-                            ) : (
-                              <>
-                                <button
-                                  onClick={() =>
-                                    removeRecommendation(recommendation)
-                                  }
-                                  className="w-auto flex items-center justify-center px-4 py-2 border border-green-300 shadow-sm text-sm font-medium rounded-md text-green-700 bg-green-50 hover:bg-green-100 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500"
-                                >
-                                  Implemented
-                                  <SquareCheckBig size={16} className="ml-2" />
-                                </button>
-                              </>
-                            )}
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  ) : (
-                    <div>
-                      <h4 className="text-sm font-medium text-gray-500 mb-2">
-                        Not available offline.
-                      </h4>
-                      <h4 className="text-sm font-medium text-gray-500 mb-2">
-                        Check out our{" "}
-                        <a
-                          href="https://batteryportal-e9czhgamgferavf7.ukwest-01.azurewebsites.net/"
-                          className="text-sm font-medium text-blue-500 mb-2"
-                        >
-                          website
-                        </a>
-                        !
-                      </h4>
-                    </div>
-                  )}
-                </div>
-              </div>
-            </div>
           </div>
         );
     }
@@ -598,147 +467,8 @@ const BatteryDetail: React.FC<BatteryDetailProps> = ({
 
   const navigate = useNavigate();
   const viewDigitalTwin = (battery: BatteryData) => {
-    navigate(`/visualisation?esp_id=${battery.esp_id}`);
+    navigate(`/digital-twin?esp_id=${battery.esp_id}`);
   };
-
-  interface Recommendation {
-    type: string;
-    message: string;
-    min?: number;
-    max?: number;
-    implementing: boolean;
-    delay: boolean;
-    implemented: boolean;
-    success: boolean;
-  }
-  const [recommendationCards, setRecommendationCards] = useState<
-    Recommendation[] | null
-  >(null);
-  async function getRecommendations() {
-    const response = await axios.get(
-      `${apiConfig.DB_RECOMMENDATION_API}?esp_id=${battery.esp_id}`,
-    );
-
-    const recommendations: Recommendation[] = (
-      response.data.recommendations || []
-    ).map((rec: any) => ({
-      ...rec,
-      implementing: false,
-      delay: false,
-      implemented: false,
-      success: true, // assumption
-    }));
-    setRecommendationCards(recommendations);
-  }
-
-  async function implementRecommendation(recommendation: Recommendation) {
-    if (recommendation.implementing) return; // already clicked the button recently
-    if (!recommendationCards) return;
-
-    switch (recommendation.type) {
-      case "charge-range":
-        await processRecommendation(
-          recommendation,
-          { Q_low: recommendation.min, Q_high: recommendation.max },
-          () =>
-            battery.Q_low === recommendation.min &&
-            battery.Q_high === recommendation.max,
-        );
-        break;
-
-      case "current-dischg-limit": {
-        await processRecommendation(
-          recommendation,
-          { I_dschg_max: recommendation.max },
-          () => battery.I_dschg_max === recommendation.max,
-        );
-        break;
-      }
-
-      default:
-        console.log("default");
-    }
-  }
-
-  function useBatteryWaiter(battery: BatteryData) {
-    // hook for waiting until next battery object update
-    const resolvers = useRef<(() => void)[]>([]);
-
-    useEffect(() => {
-      // resolve all waiting promises when battery object changes
-      resolvers.current.forEach((r) => r());
-      resolvers.current = [];
-    }, [battery]);
-
-    function awaitNextUpdate(): Promise<void> {
-      return new Promise((resolve) => {
-        resolvers.current.push(resolve);
-      });
-    }
-
-    return awaitNextUpdate;
-  }
-
-  const sleep = (ms: number) =>
-    new Promise((resolve) => setTimeout(resolve, ms));
-  const awaitNextBatteryUpdate = useBatteryWaiter(battery);
-
-  async function processRecommendation(
-    recommendation: Recommendation,
-    values: Partial<BatteryData>,
-    check: () => boolean,
-  ) {
-    // initialise boolean flags
-    setRecommendationCards(
-      (prev) =>
-        prev?.map((rec) =>
-          rec.type === recommendation.type
-            ? { ...rec, implementing: true, delay: false, success: true }
-            : rec,
-        ) ?? null,
-    );
-
-    // send the recommended changes back through WebSocket to device
-    sendBatteryUpdate(values);
-
-    // confirm completion by waiting for new battery data...
-    await sleep(5000); // ...after a brief delay so immediate updates don't interfere
-    setRecommendationCards(
-      (prev) =>
-        prev?.map((rec) =>
-          rec.type === recommendation.type ? { ...rec, delay: true } : rec,
-        ) ?? null,
-    );
-    await awaitNextBatteryUpdate();
-
-    // update boolean flags on result
-    if (check()) {
-      setRecommendationCards(
-        (prev) =>
-          prev?.map((rec) =>
-            rec.type === recommendation.type
-              ? { ...rec, implemented: true }
-              : rec,
-          ) ?? null,
-      );
-    } else {
-      setRecommendationCards(
-        (prev) =>
-          prev?.map((rec) =>
-            rec.type === recommendation.type
-              ? { ...rec, implementing: false, delay: false, success: false }
-              : rec,
-          ) ?? null,
-      );
-    }
-  }
-
-  function removeRecommendation(recommendation: Recommendation) {
-    setRecommendationCards((prev) => {
-      const updated = prev ? prev.filter((r) => r !== recommendation) : prev;
-      return updated && updated.length > 0 ? updated : null; // allows button to be clicked again
-    });
-  }
 
   return (
     <div className="bg-white rounded-lg shadow-md overflow-hidden border border-gray-200">
