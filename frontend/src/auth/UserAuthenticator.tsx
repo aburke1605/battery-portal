@@ -28,7 +28,7 @@ interface UserProps {
 //   context
 //   -------
 interface AuthContextType {
-  isLoading: boolean;
+  isLoading: boolean; // so the screen is white until persistent log-in is checked
   user: UserProps | undefined;
   isAuthenticated: boolean;
   register: (
@@ -46,7 +46,10 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export const fromAuthenticator = (): AuthContextType => {
   const context = useContext(AuthContext);
-  if (!context) throw new Error("fromAuthenticator must be used within ____");
+  if (!context)
+    throw new Error(
+      "fromAuthenticator must be used within AuthenticationProvider",
+    );
   return context;
 };
 

@@ -16,10 +16,6 @@ export default function RegistrationForm() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    console.log(firstName);
-    console.log(familyName);
-    console.log(email);
-    console.log(password);
     const success = await register(firstName, familyName, email, password);
     if (!success) {
       setError("Invalid credentials. Please try again.");
