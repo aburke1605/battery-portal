@@ -20,6 +20,8 @@ const apiConfig = {
   DB_DATA_API: `${HTTP_PROTOCOL}//${HOST}/api/db/data`,
   DB_CHART_DATA_API: `${HTTP_PROTOCOL}//${HOST}/api/db/chart_data`,
   DB_RECOMMENDATION_API: `${HTTP_PROTOCOL}//${HOST}/api/twin/recommendation`,
+  PAY_PUBLIC_KEY:
+    "pk_test_51SPLiIQ6hk09cFJvHS4o1W4NQvom3RfN3AxO6CVim0Az7VWuqKJT2PvV665sCWAsuR1LiiKbPEd2NZzQeHjlgav900fHr0r4PB",
 };
 
 export default apiConfig;

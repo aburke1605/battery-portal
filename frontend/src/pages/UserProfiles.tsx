@@ -1,7 +1,6 @@
 import { useState, useEffect } from "react";
 import PageBreadcrumb from "../components/common/PageBreadCrumb";
 import PageMeta from "../components/common/PageMeta";
-import { useAuth } from "../auth/AuthContext";
 import Button from "../components/ui/button/Button";
 import Input from "../components/form/input/InputField";
 import Label from "../components/form/Label";
@@ -17,6 +16,7 @@ import {
 } from "lucide-react";
 import apiConfig from "../apiConfig";
 import axios from "axios";
+import { fromAuthenticator } from "../auth/UserAuthenticator";
 
 interface ProfileFormData {
   first_name: string;
@@ -31,7 +31,7 @@ interface PasswordFormData {
 }
 
 export default function UserProfiles() {
-  const { user } = useAuth();
+  const { user } = fromAuthenticator();
   const [isEditing, setIsEditing] = useState<boolean>(false);
   const [isChangingPassword, setIsChangingPassword] = useState<boolean>(false);
   const [loading, setLoading] = useState<boolean>(false);
