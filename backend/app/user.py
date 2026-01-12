@@ -371,26 +371,3 @@ def profile():
     except Exception as e:
         DB.session.rollback()
         return jsonify({"error": f"Failed to update profile: {e}."}), 500
-
-
-@user.route("/subscription", methods=["GET"])
-@login_required
-def subscription():
-    email = request.args.get("email")
-    response = {"status": "success", "subscribed": False, "expiry": None}
-
-    users_table = DB.Table("users", DB.metadata, autoload_with=DB.engine)
-    # fmt: off
-    query = (
-        select(
-            users_table.c.subscribed,
-            users_table.c.subscription_expiry,
-        )
-        .where(users_table.c.email == email)
-    )
-    # fmt: on
-    rows = DB.session.execute(query).first()
-    response["subscribed"] = rows[0]
-    response["expiry"] = rows[1].date().isoformat()
-
-    return response, 200
