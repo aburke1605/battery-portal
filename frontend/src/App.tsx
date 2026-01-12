@@ -19,7 +19,7 @@ import ListPage from "./pages/Battery/ListPage.tsx";
 import BatteryPage from "./pages/Battery/BatteryPage";
 import UserList from "./pages/Users";
 import Db from "./pages/Db";
-import Visualisation from "./pages/Battery/Visualisation.tsx";
+import DigitalTwin from "./pages/Battery/DigitalTwin.tsx";
 import HomePage from "./home.tsx";
 import SubscriptionManagement from "./pages/SubscriptionManagement.tsx";
 import AuthenticationRequired, {
@@ -63,7 +63,7 @@ function App() {
               <Route path="/settings" element={<SystemSettings />} />
               <Route path="/batteries" element={<ListPage />} />
               <Route path="/battery-detail" element={<BatteryPage />} />
-              <Route path="/visualisation" element={<Visualisation />} />
+              <Route path="/digital-twin" element={<DigitalTwin />} />
 
               <Route path="/db" element={<Db />} />
             </Route>
