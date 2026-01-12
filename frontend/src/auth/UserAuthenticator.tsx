@@ -100,43 +100,68 @@ export const AuthenticationProvider: React.FC<AuthenticationProps> = ({
     email: string,
     password: string,
   ): Promise<boolean> => {
-    const response = await axios.post(`${apiConfig.USER_API}/add`, {
-      first_name,
-      last_name,
-      email,
-      password,
-    });
-    if (response.statusText === "CREATED") return login(email, password);
-    else return false;
-  };
-  const login = async (email: string, password: string): Promise<boolean> => {
-    const response = await axios.post(`${apiConfig.USER_API}/login`, {
-      email,
-      password,
-    });
-    if (response.statusText === "OK") {
-      if (response.data.success === true) {
-        setIsAuthenticated(true);
-        await fetchUserData();
-        if (isFromESP32) {
-          localStorage.setItem("authenticationToken", response.data.auth_token);
-          navigate("/");
-        } else {
-          navigate("/dashboard");
-        }
-        return true;
-      }
+    try {
+      const response = await axios.post(`${apiConfig.USER_API}/add`, {
+        first_name,
+        last_name,
+        email,
+        password,
+      });
+      if (response.statusText === "CREATED") return login(email, password);
+      else return false;
+    } catch (error) {
+      console.error("Registration failed:", error);
+      return false;
     }
-    return false;
   };
+
+  const login = async (email: string, password: string): Promise<boolean> => {
+    try {
+      const response = await axios.post(`${apiConfig.USER_API}/login`, {
+        email,
+        password,
+      });
+      if (response.statusText === "OK") {
+        if (response.data.success === true) {
+          setIsAuthenticated(true);
+          await fetchUserData();
+          if (isFromESP32) {
+            localStorage.setItem(
+              "authenticationToken",
+              response.data.auth_token,
+            );
+            navigate("/");
+          } else {
+            navigate("/dashboard");
+          }
+          return true;
+        }
+      }
+      return false;
+    } catch (error) {
+      console.error("Login failed:", error);
+      return false;
+    }
+  };
+
   const logout = async (): Promise<void> => {
-    setIsAuthenticated(false);
-    navigate("/login");
+    try {
+      await axios.post(`${apiConfig.USER_API}/logout`);
+    } catch (error) {
+      console.error("Logout failed:", error);
+    } finally {
+      setIsAuthenticated(false);
+      navigate("/login");
+    }
   };
 
   const fetchUserData = async (): Promise<void> => {
-    const response = await axios.get(`${apiConfig.USER_API}/data`);
-    if (response.statusText === "OK") setUser(response.data);
+    try {
+      const response = await axios.get(`${apiConfig.USER_API}/data`);
+      if (response.statusText === "OK") setUser(response.data);
+    } catch (error) {
+      console.error("Failed to fetch user data:", error);
+    }
   };
 
   // this one is for ESP32-use only:
