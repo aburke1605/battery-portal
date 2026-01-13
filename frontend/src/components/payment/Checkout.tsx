@@ -7,19 +7,9 @@ import {
 } from "@stripe/react-stripe-js";
 import { loadStripe } from "@stripe/stripe-js";
 import apiConfig from "../../apiConfig";
-import { getSubscriptionStatus } from "../../pages/SubscriptionManagement";
 import { fromAuthenticator } from "../../auth/UserAuthenticator";
 
 const stripePromise = loadStripe(apiConfig.PAY_PUBLIC_KEY);
-
-async function waitForSubscription(email: string) {
-  for (let i = 0; i < 20; i++) {
-    const status = await getSubscriptionStatus(email);
-    if (status.subscribed) return true;
-    await new Promise((r) => setTimeout(r, 500));
-  }
-  return false;
-}
 
 function CheckoutForm({
   price,
@@ -30,7 +20,7 @@ function CheckoutForm({
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState("");
 
-  const { user, fetchUserData } = fromAuthenticator();
+  const { fetchUserData } = fromAuthenticator();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -50,7 +40,6 @@ function CheckoutForm({
       return;
     }
 
-    await waitForSubscription(user?.email!);
     await fetchUserData();
 
     onClose();
