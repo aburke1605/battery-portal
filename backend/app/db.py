@@ -9,6 +9,7 @@ import csv
 from flask import Blueprint, request, jsonify
 from flask_sqlalchemy import SQLAlchemy
 from flask_security import roles_required, login_required
+from flask_login import current_user
 from sqlalchemy import inspect, insert, select, desc, asc, func, text, Table
 
 from utils import process_telemetry_data
@@ -254,7 +255,9 @@ def info():
     """
     esp_dict = defaultdict()
     nodes_dict = defaultdict(list)
-    batteries = DB.session.query(BatteryInfo).all()
+    batteries = DB.session.query(BatteryInfo).where(
+        BatteryInfo.owner_id == current_user.id
+    )
     for battery in batteries:
         esp_dict[battery.esp_id] = {
             "esp_id": battery.esp_id,
