@@ -66,6 +66,11 @@ class Users(DB.Model, UserMixin):
     )
     subscribed = DB.Column(DB.Boolean(), default=False)
     subscription_expiry = DB.Column(DB.DateTime())
+    batteries = DB.relationship(
+        "BatteryInfo",
+        back_populates="user",
+        passive_deletes=True,
+    )
 
 
 users = SQLAlchemyUserDatastore(DB, Users, Roles)

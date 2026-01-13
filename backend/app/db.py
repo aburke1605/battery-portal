@@ -41,6 +41,15 @@ class BatteryInfo(DB.Model):
         DB.DateTime, default=datetime.now, onupdate=datetime.now, nullable=False
     )
     live_websocket = DB.Column(DB.Boolean, default=False, nullable=False)
+    owner_id = DB.Column(
+        DB.Integer,
+        DB.ForeignKey("users.id", ondelete="SET NULL"),
+        nullable=True,
+    )
+    user = DB.relationship(
+        "Users",
+        back_populates="batteries",
+    )
 
 
 def update_battery_data(json: list) -> None:
