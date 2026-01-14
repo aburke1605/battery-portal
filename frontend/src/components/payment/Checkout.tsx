@@ -8,6 +8,7 @@ import {
 import { loadStripe } from "@stripe/stripe-js";
 import apiConfig from "../../apiConfig";
 import { fromAuthenticator } from "../../auth/UserAuthenticator";
+import axios from "axios";
 
 const stripePromise = loadStripe(apiConfig.PAY_PUBLIC_KEY);
 
@@ -87,18 +88,26 @@ export default function StripeButton({ price }: { price: number }) {
       setLoadingIntent(true);
       setError(null);
 
-      fetch("/api/pay/create-payment-intent", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ amount: price, email: user?.email }),
-      })
-        .then(async (res) => {
-          if (!res.ok) throw new Error(`Server returned ${res.status}`);
-          const data = await res.json();
-          if (!data.clientSecret) throw new Error("No clientSecret returned");
+      axios
+        .post(apiConfig.PAY_INTENT_API, {
+          amount: price,
+          email: user?.email,
+          length: length,
+        })
+        .then((response) => {
+          const data = response.data;
+          if (!data?.clientSecret) {
+            throw new Error("No clientSecret returned");
+          }
           setClientSecret(data.clientSecret);
         })
-        .catch((err: Error) => setError(err.message))
+        .catch((error) => {
+          setError(
+            axios.isAxiosError(error)
+              ? (error.response?.data?.message ?? error.message)
+              : String(error),
+          );
+        })
         .finally(() => setLoadingIntent(false));
     } else {
       setClientSecret(null);
