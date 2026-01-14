@@ -4,6 +4,7 @@ logger = logging.getLogger(__name__)
 import os
 from uuid import uuid4
 import re
+from datetime import datetime
 
 from flask import Flask, Blueprint, request, jsonify
 from flask_security import (
@@ -164,6 +165,18 @@ def check_auth():
     """
     API to check for already logged-in users, works in conjunction with AuthContext.tsx.
     """
+    # update the subscription status regularly
+    try:
+        current_user.subscribed = not (
+            datetime.now() > current_user.subscription_expiry
+        )
+        DB.session.commit()
+    except Exception as e:
+        logger.error(
+            f"Error checking subscription status of user {current_user.id}:", e
+        )
+        DB.session.rollback()
+
     return jsonify(
         {
             "logged_in": True,
