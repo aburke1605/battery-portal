@@ -46,19 +46,20 @@ export default function SubscriptionManagement() {
           </div>
 
           <div className="p-6">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div className="flex flex-col items-center gap-6">
               {isSubscribed ? (
-                <>
-                  <div>Your subscription expiry: {expiryDate}</div>
-                </>
+                <div>Your subscription expiry: {expiryDate}</div>
               ) : (
                 <>
-                  <div>
-                    One month £9.99 (£9.99 / month)
+                  <div className="w-full max-w-[50%] min-w-[280px] rounded-lg bg-gray-100 p-6 text-center shadow-sm">
+                    <div className="mb-4 font-medium">One month £9.99</div>
+                    <div className="mb-4 font-medium">(£9.99 / month)</div>
                     <SubscriptionButton price={9.99} length={1} />
                   </div>
-                  <div>
-                    One year £99.99 (£8.33 / month)
+
+                  <div className="w-full max-w-[50%] min-w-[280px] rounded-lg bg-gray-100 p-6 text-center shadow-sm">
+                    <div className="mb-4 font-medium">One year £99.99</div>
+                    <div className="mb-4 font-medium">(£8.33 / month)</div>
                     <SubscriptionButton price={99.99} length={12} />
                   </div>
                 </>
