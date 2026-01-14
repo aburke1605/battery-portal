@@ -65,7 +65,7 @@ class Users(DB.Model, UserMixin):
         "Roles", secondary=roles_users, backref=DB.backref("users", lazy="dynamic")
     )
     subscribed = DB.Column(DB.Boolean(), default=False)
-    subscription_expiry = DB.Column(DB.DateTime(), default=datetime.now())
+    subscription_expiry = DB.Column(DB.DateTime())
     batteries = DB.relationship(
         "BatteryInfo",
         back_populates="user",
@@ -109,6 +109,8 @@ def create_admin(app: Flask):
             email=admin_email,
             password=hash_password(admin_password),
             roles=[roles["user"], roles["superuser"]],
+            subscribed=True,
+            subscription_expiry=None,
             # are the other columns of Users therefore not needed?
         )
         logger.info(f'creating admin user "{admin_email}"')
@@ -160,12 +162,13 @@ def check_auth():
     """
     API to check for already logged-in users, works in conjunction with AuthContext.tsx.
     """
-    # update the subscription status regularly
+    # update the subscription status (of non-superuser accounts) regularly
     try:
-        current_user.subscribed = not (
-            datetime.now() > current_user.subscription_expiry
-        )
-        DB.session.commit()
+        if not any(role.name == "superuser" for role in current_user.roles):
+            current_user.subscribed = not (
+                datetime.now() > current_user.subscription_expiry
+            )
+            DB.session.commit()
     except Exception as e:
         logger.error(
             f"Error checking subscription status of user {current_user.id}:", e
