@@ -76,7 +76,7 @@ function CheckoutForm({
   );
 }
 
-export default function StripeButton({
+export default function SubscriptionButton({
   price,
   length,
 }: { price: number; length: number }) {
@@ -125,7 +125,7 @@ export default function StripeButton({
         onClick={() => setShowCheckout(true)}
         className="w-full flex items-center justify-center px-4 py-2 border border-blue-300 shadow-sm text-sm font-medium rounded-md text-blue-700 bg-blue-50 hover:bg-blue-100 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 mt-4 mb-4"
       >
-        Pay £{price.toFixed(2)}
+        Checkout
       </button>
 
       {showCheckout && (

@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import PageMeta from "../components/common/PageMeta";
 import PageBreadcrumb from "../components/common/PageBreadCrumb";
-import StripeButton from "../components/payment/Checkout";
+import SubscriptionButton from "../components/payment/Checkout";
 import { fromAuthenticator } from "../auth/UserAuthenticator";
 
 export default function SubscriptionManagement() {
@@ -55,11 +55,11 @@ export default function SubscriptionManagement() {
                 <>
                   <div>
                     One month £9.99 (£9.99 / month)
-                    <StripeButton price={9.99} length={1} />
+                    <SubscriptionButton price={9.99} length={1} />
                   </div>
                   <div>
                     One year £99.99 (£8.33 / month)
-                    <StripeButton price={99.99} length={12} />
+                    <SubscriptionButton price={99.99} length={12} />
                   </div>
                 </>
               )}
