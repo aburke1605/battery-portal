@@ -2,8 +2,9 @@ import logging
 
 logger = logging.getLogger(__name__)
 import os
+import numpy as np
 import stripe
-from datetime import datetime, timedelta
+from datetime import datetime
 
 from flask import Blueprint, jsonify, request
 from sqlalchemy import update
@@ -15,15 +16,15 @@ from app.db import DB
 stripe.api_key = os.getenv("STRIPE_SECRET_KEY")
 
 
-@pay.route("/create-payment-intent", methods=["POST"])
-def create_payment_intent():
+@pay.route("/initiate", methods=["POST"])
+def initiate():
     data = request.get_json()
     try:
         intent = stripe.PaymentIntent.create(
             amount=int(data["amount"] * 100),
             currency="gbp",
             automatic_payment_methods={"enabled": True},
-            metadata={"email": data["email"]},
+            metadata={"email": data["email"], "length": data["length"]},
         )
         return jsonify({"clientSecret": intent.client_secret})
     except stripe.error.StripeError as e:
@@ -50,12 +51,17 @@ def webhook():
     if event["type"] == "payment_intent.succeeded":
         intent = event["data"]["object"]
 
+        today = datetime.now()
+        n_months = int(intent["metadata"]["length"])
+        expiry_years = int(np.floor(n_months / 12))
+        expiry_months = int(n_months % 12)
+
         users_table = DB.Table("users", DB.metadata, autoload_with=DB.engine)
         # fmt: off
         query = (
             update(users_table)
             .where(users_table.c.email == intent["metadata"]["email"])
-            .values(subscribed=True, subscription_expiry=datetime.now().replace(month=datetime.now().month+1))
+            .values(subscribed=True, subscription_expiry=today.replace(month=today.month+expiry_months, year=today.year+expiry_years))
         )
         # fmt: on
         DB.session.execute(query)

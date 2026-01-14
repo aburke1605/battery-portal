@@ -7,19 +7,10 @@ import {
 } from "@stripe/react-stripe-js";
 import { loadStripe } from "@stripe/stripe-js";
 import apiConfig from "../../apiConfig";
-import { getSubscriptionStatus } from "../../pages/SubscriptionManagement";
 import { fromAuthenticator } from "../../auth/UserAuthenticator";
+import axios from "axios";
 
 const stripePromise = loadStripe(apiConfig.PAY_PUBLIC_KEY);
-
-async function waitForSubscription(email: string) {
-  for (let i = 0; i < 20; i++) {
-    const status = await getSubscriptionStatus(email);
-    if (status.subscribed) return true;
-    await new Promise((r) => setTimeout(r, 500));
-  }
-  return false;
-}
 
 function CheckoutForm({
   price,
@@ -30,7 +21,7 @@ function CheckoutForm({
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState("");
 
-  const { user, fetchUserData } = fromAuthenticator();
+  const { fetchUserData } = fromAuthenticator();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -50,7 +41,6 @@ function CheckoutForm({
       return;
     }
 
-    await waitForSubscription(user?.email!);
     await fetchUserData();
 
     onClose();
@@ -86,7 +76,10 @@ function CheckoutForm({
   );
 }
 
-export default function StripeButton({ price }: { price: number }) {
+export default function SubscriptionButton({
+  price,
+  length,
+}: { price: number; length: number }) {
   const [showCheckout, setShowCheckout] = useState(false);
   const [clientSecret, setClientSecret] = useState<string | null>(null);
   const [loadingIntent, setLoadingIntent] = useState(false);
@@ -98,18 +91,26 @@ export default function StripeButton({ price }: { price: number }) {
       setLoadingIntent(true);
       setError(null);
 
-      fetch("/api/pay/create-payment-intent", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ amount: price, email: user?.email }),
-      })
-        .then(async (res) => {
-          if (!res.ok) throw new Error(`Server returned ${res.status}`);
-          const data = await res.json();
-          if (!data.clientSecret) throw new Error("No clientSecret returned");
+      axios
+        .post(apiConfig.PAY_INTENT_API, {
+          amount: price,
+          email: user?.email,
+          length: length,
+        })
+        .then((response) => {
+          const data = response.data;
+          if (!data?.clientSecret) {
+            throw new Error("No clientSecret returned");
+          }
           setClientSecret(data.clientSecret);
         })
-        .catch((err: Error) => setError(err.message))
+        .catch((error) => {
+          setError(
+            axios.isAxiosError(error)
+              ? (error.response?.data?.message ?? error.message)
+              : String(error),
+          );
+        })
         .finally(() => setLoadingIntent(false));
     } else {
       setClientSecret(null);
@@ -122,9 +123,9 @@ export default function StripeButton({ price }: { price: number }) {
     <>
       <button
         onClick={() => setShowCheckout(true)}
-        className="w-full flex items-center justify-center px-4 py-2 border border-blue-300 shadow-sm text-sm font-medium rounded-md text-blue-700 bg-blue-50 hover:bg-blue-100 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 mt-4 mb-4"
+        className="w-full flex items-center justify-center px-4 py-2 border border-blue-300 shadow-sm text-sm font-medium rounded-md text-blue-700 bg-blue-50 hover:bg-blue-100 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
       >
-        Pay £{price.toFixed(2)}
+        Checkout
       </button>
 
       {showCheckout && (
