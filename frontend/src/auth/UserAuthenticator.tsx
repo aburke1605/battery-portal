@@ -94,7 +94,10 @@ export const AuthenticationProvider: React.FC<AuthenticationProps> = ({
         setIsLoading(false);
       }
     };
-    checkAuthStatus();
+    checkAuthStatus(); // run immediately
+
+    const intervalId = setInterval(checkAuthStatus, 60 * 60 * 1000); // run every hour
+    return () => clearInterval(intervalId);
   }, []);
 
   const register = async (

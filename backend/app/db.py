@@ -10,6 +10,7 @@ import csv
 from flask import Blueprint, request, jsonify
 from flask_sqlalchemy import SQLAlchemy
 from flask_security import roles_required, login_required
+from flask_login import current_user
 from sqlalchemy import inspect, insert, select, desc, asc, func, text, Table
 
 from utils import process_telemetry_data
@@ -42,6 +43,15 @@ class BatteryInfo(DB.Model):
         DB.DateTime, default=datetime.now, onupdate=datetime.now, nullable=False
     )
     live_websocket = DB.Column(DB.Boolean, default=False, nullable=False)
+    owner_id = DB.Column(
+        DB.Integer,
+        DB.ForeignKey("users.id", ondelete="SET NULL"),
+        nullable=True,
+    )
+    user = DB.relationship(
+        "Users",
+        back_populates="batteries",
+    )
 
 
 def update_battery_data(json: list) -> None:
@@ -248,7 +258,10 @@ def info():
     """
     esp_dict = defaultdict()
     nodes_dict = defaultdict(list)
-    batteries = DB.session.query(BatteryInfo).all()
+    DB.session.remove()
+    batteries = DB.session.query(BatteryInfo).where(
+        BatteryInfo.owner_id == current_user.id
+    )
     for battery in batteries:
         esp_dict[battery.esp_id] = {
             "esp_id": battery.esp_id,

@@ -4,6 +4,7 @@ logger = logging.getLogger(__name__)
 import os
 from uuid import uuid4
 import re
+from datetime import datetime
 
 from flask import Flask, Blueprint, request, jsonify
 from flask_security import (
@@ -17,7 +18,7 @@ from flask_security import (
 )
 from flask_security.utils import hash_password
 from flask_login import current_user
-from sqlalchemy import inspect, select
+from sqlalchemy import inspect
 
 user = Blueprint("user", __name__, url_prefix="/user")
 
@@ -57,7 +58,6 @@ class Users(DB.Model, UserMixin):
     email = DB.Column(DB.String(255), unique=True, nullable=False)
     password = DB.Column(DB.String(255), nullable=False)
     active = DB.Column(DB.Boolean())
-    confirmed_at = DB.Column(DB.DateTime())
     fs_uniquifier = DB.Column(
         DB.String(64), unique=True, nullable=False, default=lambda: str(uuid4())
     )
@@ -65,7 +65,12 @@ class Users(DB.Model, UserMixin):
         "Roles", secondary=roles_users, backref=DB.backref("users", lazy="dynamic")
     )
     subscribed = DB.Column(DB.Boolean(), default=False)
-    subscription_expiry = DB.Column(DB.DateTime())
+    subscription_expiry = DB.Column(DB.DateTime(), default=datetime.now())
+    batteries = DB.relationship(
+        "BatteryInfo",
+        back_populates="user",
+        passive_deletes=True,
+    )
 
 
 users = SQLAlchemyUserDatastore(DB, Users, Roles)
@@ -143,10 +148,6 @@ def data():
             "first_name": current_user.first_name,
             "last_name": current_user.last_name,
             "email": current_user.email,
-            # "password": current_user.password,
-            # "active": current_user.active,
-            # "confirmed_at": current_user.confirmed_at,
-            # "fs_uniquifier": current_user.fs_uniquifier,
             "subscribed": current_user.subscribed,
             "subscription_expiry": current_user.subscription_expiry,
         }
@@ -159,6 +160,18 @@ def check_auth():
     """
     API to check for already logged-in users, works in conjunction with AuthContext.tsx.
     """
+    # update the subscription status regularly
+    try:
+        current_user.subscribed = not (
+            datetime.now() > current_user.subscription_expiry
+        )
+        DB.session.commit()
+    except Exception as e:
+        logger.error(
+            f"Error checking subscription status of user {current_user.id}:", e
+        )
+        DB.session.rollback()
+
     return jsonify(
         {
             "logged_in": True,
