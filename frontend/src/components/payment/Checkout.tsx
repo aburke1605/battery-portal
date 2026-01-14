@@ -76,7 +76,10 @@ function CheckoutForm({
   );
 }
 
-export default function StripeButton({ price }: { price: number }) {
+export default function StripeButton({
+  price,
+  length,
+}: { price: number; length: number }) {
   const [showCheckout, setShowCheckout] = useState(false);
   const [clientSecret, setClientSecret] = useState<string | null>(null);
   const [loadingIntent, setLoadingIntent] = useState(false);

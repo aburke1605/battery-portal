@@ -54,8 +54,12 @@ export default function SubscriptionManagement() {
               ) : (
                 <>
                   <div>
-                    Subscribe now
-                    <StripeButton price={9.99} />
+                    One month £9.99 (£9.99 / month)
+                    <StripeButton price={9.99} length={1} />
+                  </div>
+                  <div>
+                    One year £99.99 (£8.33 / month)
+                    <StripeButton price={99.99} length={12} />
                   </div>
                 </>
               )}
