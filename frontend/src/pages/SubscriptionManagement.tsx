@@ -1,43 +1,11 @@
 import { useEffect, useState } from "react";
-import axios from "axios";
-import apiConfig from "../apiConfig";
 import PageMeta from "../components/common/PageMeta";
 import PageBreadcrumb from "../components/common/PageBreadCrumb";
-import StripeButton from "../components/payment/Checkout";
+import SubscriptionButton from "../components/payment/Checkout";
 import { fromAuthenticator } from "../auth/UserAuthenticator";
 
-type SubscriptionStatus = {
-  subscribed: boolean;
-  expiry: string | null;
-};
-
-export async function getSubscriptionStatus(
-  email: string | undefined,
-): Promise<SubscriptionStatus> {
-  if (!email) return { subscribed: false, expiry: null };
-
-  try {
-    if (email === "user@admin.dev")
-      return { subscribed: true, expiry: "Never" };
-
-    const resp = await axios.get(
-      `${apiConfig.USER_API}/subscription?email=${email}`,
-    );
-    if (resp.data.status == "success") {
-      return {
-        subscribed: resp.data.subscribed,
-        expiry: resp.data.expiry ?? null,
-      };
-    }
-    return { subscribed: false, expiry: null };
-  } catch (error) {
-    console.log("Error fetching subscription data:", error);
-    return { subscribed: false, expiry: null };
-  }
-}
-
 export default function SubscriptionManagement() {
-  const { user } = fromAuthenticator();
+  const { user, fetchUserData } = fromAuthenticator();
   const [isSubscribed, setIsSubscribed] = useState<boolean>(false);
   const [expiryDate, setExpiryDate] = useState<string | null>(null);
 
@@ -45,9 +13,9 @@ export default function SubscriptionManagement() {
     if (!user?.email) return;
 
     const loadSubscriptionStatus = async () => {
-      let subscriptionStatus = await getSubscriptionStatus(user?.email);
-      setIsSubscribed(subscriptionStatus.subscribed);
-      setExpiryDate(subscriptionStatus.expiry);
+      await fetchUserData();
+      setIsSubscribed(user.subscribed);
+      setExpiryDate(user.subscription_expiry);
     };
     loadSubscriptionStatus();
   }, [user]);
@@ -78,16 +46,21 @@ export default function SubscriptionManagement() {
           </div>
 
           <div className="p-6">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div className="flex flex-col items-center gap-6">
               {isSubscribed ? (
-                <>
-                  <div>Your subscription expiry: {expiryDate}</div>
-                </>
+                <div>Your subscription expiry: {expiryDate}</div>
               ) : (
                 <>
-                  <div>
-                    Subscribe now
-                    <StripeButton price={9.99} />
+                  <div className="w-full max-w-[50%] min-w-[280px] rounded-lg bg-gray-100 p-6 text-center shadow-sm">
+                    <div className="mb-4 font-medium">One month £9.99</div>
+                    <div className="mb-4 font-medium">(£9.99 / month)</div>
+                    <SubscriptionButton price={9.99} length={1} />
+                  </div>
+
+                  <div className="w-full max-w-[50%] min-w-[280px] rounded-lg bg-gray-100 p-6 text-center shadow-sm">
+                    <div className="mb-4 font-medium">One year £99.99</div>
+                    <div className="mb-4 font-medium">(£8.33 / month)</div>
+                    <SubscriptionButton price={99.99} length={12} />
                   </div>
                 </>
               )}
