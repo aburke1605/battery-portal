@@ -18,7 +18,7 @@ from flask_security import (
 )
 from flask_security.utils import hash_password
 from flask_login import current_user
-from sqlalchemy import inspect, select
+from sqlalchemy import inspect
 
 user = Blueprint("user", __name__, url_prefix="/user")
 
@@ -58,7 +58,6 @@ class Users(DB.Model, UserMixin):
     email = DB.Column(DB.String(255), unique=True, nullable=False)
     password = DB.Column(DB.String(255), nullable=False)
     active = DB.Column(DB.Boolean())
-    confirmed_at = DB.Column(DB.DateTime())
     fs_uniquifier = DB.Column(
         DB.String(64), unique=True, nullable=False, default=lambda: str(uuid4())
     )
@@ -150,9 +149,6 @@ def data():
             "last_name": current_user.last_name,
             "email": current_user.email,
             # "password": current_user.password,
-            # "active": current_user.active,
-            # "confirmed_at": current_user.confirmed_at,
-            # "fs_uniquifier": current_user.fs_uniquifier,
             "subscribed": current_user.subscribed,
             "subscription_expiry": current_user.subscription_expiry,
         }
