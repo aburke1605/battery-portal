@@ -64,6 +64,7 @@ def forward_to_esp(data: dict) -> None:
         )
         return
 
+    DB.session.remove()
     owned_batteries = DB.session.query(BatteryInfo).where(
         BatteryInfo.owner_id == current_user.id
     )

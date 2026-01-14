@@ -255,6 +255,7 @@ def info():
     """
     esp_dict = defaultdict()
     nodes_dict = defaultdict(list)
+    DB.session.remove()
     batteries = DB.session.query(BatteryInfo).where(
         BatteryInfo.owner_id == current_user.id
     )
