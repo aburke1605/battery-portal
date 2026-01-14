@@ -66,7 +66,7 @@ class Users(DB.Model, UserMixin):
         "Roles", secondary=roles_users, backref=DB.backref("users", lazy="dynamic")
     )
     subscribed = DB.Column(DB.Boolean(), default=False)
-    subscription_expiry = DB.Column(DB.DateTime())
+    subscription_expiry = DB.Column(DB.DateTime(), default=datetime.now())
     batteries = DB.relationship(
         "BatteryInfo",
         back_populates="user",
