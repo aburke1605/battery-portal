@@ -5,9 +5,10 @@ from threading import Lock
 import json
 
 from flask import Blueprint, request
+from flask_login import current_user
 from flask_sock import Sock
 
-from app.db import update_battery_data, set_live_websocket
+from app.db import DB, BatteryInfo, update_battery_data, set_live_websocket
 
 ws = Blueprint("ws", __name__, url_prefix="/")
 
@@ -60,6 +61,15 @@ def forward_to_esp(data: dict) -> None:
     if not node_id:
         logger.error(
             "ESP32 WebSocket forward error: could not determine node esp_id for request"
+        )
+        return
+
+    owned_batteries = DB.session.query(BatteryInfo).where(
+        BatteryInfo.owner_id == current_user.id
+    )
+    if node_id not in [battery.esp_id for battery in owned_batteries]:
+        logger.warning(
+            f"Attempt to forward request to ESP32 from unauthorised user (id={current_user.id}) dropped"
         )
         return
 
