@@ -4,11 +4,14 @@ import logging
 from dotenv import load_dotenv
 
 from flask import Flask, Blueprint
+from flask_sqlalchemy import SQLAlchemy
 from flask_migrate import Migrate
 from flask_security import Security
 from sqlalchemy import inspect
 
-from app.db import db, DB, BatteryInfo
+DB = SQLAlchemy()
+
+from app.db import db, BatteryInfo
 from app.user import user, users
 from app.ws import ws
 from app.twin import twin

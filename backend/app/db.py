@@ -8,7 +8,6 @@ from pathlib import Path
 import csv
 
 from flask import Blueprint, request, jsonify
-from flask_sqlalchemy import SQLAlchemy
 from flask_security import roles_required, login_required
 from flask_login import current_user
 from sqlalchemy import inspect, insert, select, desc, asc, func, text, Table
@@ -17,7 +16,7 @@ from utils import process_telemetry_data
 
 db = Blueprint("db", __name__, url_prefix="/db")
 
-DB = SQLAlchemy()
+from app import DB
 
 
 class BatteryInfo(DB.Model):

@@ -22,7 +22,7 @@ from sqlalchemy import inspect
 
 user = Blueprint("user", __name__, url_prefix="/user")
 
-from app.db import DB
+from app import DB
 
 
 class Roles(DB.Model, RoleMixin):
