@@ -94,6 +94,7 @@ def update_battery_data(json: list) -> None:
                 lon=content["lon"],
                 Q=content["Q"],
                 H=content["H"],
+                C=content["C"],
                 V=content["V"] / 10,
                 V1=content["V1"] / 100,
                 V2=content["V2"] / 100,
@@ -111,6 +112,7 @@ def update_battery_data(json: list) -> None:
                 T3=content["T3"] / 100,
                 T4=content["T4"] / 100,
                 OTC=content["OTC"],
+                CC=content["CC"],
                 wifi=content["wifi"],
             )
             DB.session.execute(query)
