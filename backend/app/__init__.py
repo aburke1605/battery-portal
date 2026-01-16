@@ -11,7 +11,7 @@ from sqlalchemy import inspect
 
 DB = SQLAlchemy()
 
-from app.db import db, BatteryInfo
+from app.battery import db, BatteryInfo
 from app.user import user, users
 from app.ws import ws
 from app.twin import twin

@@ -14,7 +14,7 @@ from sqlalchemy import select, desc, asc, Table
 twin = Blueprint("twin", __name__, url_prefix="/twin")
 
 from app import DB
-from app.db import import_data
+from app.battery import import_data
 
 
 class PredictionFeatures(DB.Model):

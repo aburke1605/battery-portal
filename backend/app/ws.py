@@ -11,7 +11,7 @@ from flask_sock import Sock
 ws = Blueprint("ws", __name__, url_prefix="/")
 
 from app import DB
-from app.db import BatteryInfo, update_battery_data, set_live_websocket
+from app.battery import BatteryInfo, update_battery_data, set_live_websocket
 
 sock = Sock(ws)
 lock = Lock()
