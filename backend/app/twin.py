@@ -9,9 +9,10 @@ from flask import Blueprint, request
 from flask_security import roles_required, login_required
 from sqlalchemy import select, desc, asc
 
-twin = Blueprint("twin", __name__, url_prefix="/twin")
+from app.db import DB
+from app.battery import import_data, get_query_size
 
-from app.battery import DB, import_data, get_query_size
+twin = Blueprint("twin", __name__, url_prefix="/twin")
 
 
 @twin.route("/simulation", methods=["GET"])
