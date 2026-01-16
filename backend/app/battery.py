@@ -14,7 +14,7 @@ from sqlalchemy import inspect, insert, select, desc, func, text, Table
 
 from utils import process_telemetry_data
 
-db = Blueprint("db", __name__, url_prefix="/db")
+battery = Blueprint("battery", __name__, url_prefix="/battery")
 
 from app import DB
 from app.twin import PredictionFeatures
@@ -244,7 +244,7 @@ def get_battery_data_table(esp_id: str) -> Table:
     return table
 
 
-@db.route("/execute_sql", methods=["POST"])
+@battery.route("/execute_sql", methods=["POST"])
 @roles_required("superuser")
 def execute_sql():
     """
@@ -289,7 +289,7 @@ def execute_query(query: str):
         return {"error": str(e)}, 400
 
 
-@db.route("/info", methods=["GET"])
+@battery.route("/info", methods=["GET"])
 @login_required
 def info():
     """
@@ -325,7 +325,7 @@ def info():
     return jsonify([esp for esp in esp_dict.values() if esp["root_id"] is None])
 
 
-@db.route("/data", methods=["GET"])
+@battery.route("/data", methods=["GET"])
 @login_required
 def data():
     """
@@ -352,7 +352,7 @@ def data():
         return {}, 404
 
 
-@db.route("/esp_ids", methods=["GET"])
+@battery.route("/esp_ids", methods=["GET"])
 # @login_required # log in not required otherwise can't be used in chart data (see below)
 def esp_ids():
     """
@@ -362,7 +362,7 @@ def esp_ids():
     return jsonify([battery.esp_id for battery in batteries])
 
 
-@db.route("/chart_data", methods=["GET"])
+@battery.route("/chart_data", methods=["GET"])
 # @login_required # log in not required otherwise wouldn't show in homepage
 def chart_data():
     """
@@ -502,7 +502,7 @@ def import_data(csv_path: str, esp_id: int):
     return True
 
 
-@db.route("/example", methods=["GET"])
+@battery.route("/example", methods=["GET"])
 @roles_required("superuser")
 def example():
     """
