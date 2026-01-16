@@ -9,9 +9,8 @@ from flask_migrate import Migrate
 from flask_security import Security
 from sqlalchemy import inspect
 
-DB = SQLAlchemy()
-
-from app.battery import battery, BatteryInfo
+from app.db import DB, BatteryInfo
+from app.battery import battery
 from app.user import user, users
 from app.ws import ws
 from app.twin import twin

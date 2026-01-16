@@ -11,30 +11,10 @@ from flask import Blueprint, request
 from flask_security import roles_required, login_required
 from sqlalchemy import select, desc, asc, Table
 
-twin = Blueprint("twin", __name__, url_prefix="/twin")
-
-from app import DB
+from app.db import DB
 from app.battery import import_data
 
-
-class PredictionFeatures(DB.Model):
-    __tablename__ = "prediction_features"
-    id = DB.Column(DB.Integer, primary_key=True)
-
-    # metadata
-    esp_id = DB.Column(DB.Integer, nullable=False)
-    cycle_index = DB.Column(DB.Integer, nullable=False)
-
-    # cycle-based
-    mean_temp_last_50_cycles = DB.Column(DB.Float, nullable=False)
-    mean_DoD_last_50_cycles = DB.Column(DB.Float, nullable=False)
-    charge_Ah_last_50_cycles = DB.Column(DB.Float, nullable=False)
-    capacity_slope_last_200_cycles = DB.Column(DB.Float, nullable=False)
-
-    # time-based
-    hours_soc_gt_90_last_7d = DB.Column(DB.Float, nullable=False)
-    mean_temp_idle_last_7d = DB.Column(DB.Float, nullable=False)
-    idle_hours_last_7d = DB.Column(DB.Float, nullable=False)
+twin = Blueprint("twin", __name__, url_prefix="/twin")
 
 
 @twin.route("/simulation", methods=["GET"])

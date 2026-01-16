@@ -9,9 +9,9 @@ from datetime import datetime
 from flask import Blueprint, jsonify, request
 from sqlalchemy import update
 
-pay = Blueprint("pay", __name__, url_prefix="/pay")
+from app.db import DB
 
-from app import DB
+pay = Blueprint("pay", __name__, url_prefix="/pay")
 
 stripe.api_key = os.getenv("STRIPE_SECRET_KEY")
 
