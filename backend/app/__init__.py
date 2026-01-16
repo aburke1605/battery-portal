@@ -8,7 +8,8 @@ from flask_migrate import Migrate
 from flask_security import Security
 from sqlalchemy import inspect
 
-from app.db import db, DB, BatteryInfo
+from app.db import DB, BatteryInfo
+from app.battery import battery
 from app.user import user, users
 from app.ws import ws
 from app.twin import twin
@@ -46,7 +47,7 @@ def create_app():
     # then eveything else at /api
     api = Blueprint("api", __name__, url_prefix="/api")
 
-    api.register_blueprint(db)
+    api.register_blueprint(battery)
     DB.init_app(app)
     Migrate(app, DB)
 

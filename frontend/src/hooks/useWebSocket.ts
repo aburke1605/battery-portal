@@ -129,7 +129,7 @@ const extendBatteryInfo = (data: BatteryInfoData[]): BatteryData[] => {
 // recursive helper
 const appendBatteryData = async (battery: any): Promise<any> => {
   /*
-        to loop through the json returned at /api/db/data,
+        to loop through the json returned at /api/battery/data,
         merging data defined in BatteryData to the already existing data defined in BatteryInfo
     */
   try {
@@ -166,7 +166,7 @@ const extractSingleBattery = (
   esp_id: number,
 ): any => {
   /*
-        to loop through the json returned at /api/db/info,
+        to loop through the json returned at /api/battery/info,
         returning the correct object according to esp_id
     */
   for (const esp of info) {
