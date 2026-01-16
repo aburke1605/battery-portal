@@ -256,9 +256,12 @@ def info():
     esp_dict = defaultdict()
     nodes_dict = defaultdict(list)
     DB.session.remove()
-    batteries = DB.session.query(BatteryInfo).where(
-        BatteryInfo.owner_id == current_user.id
-    )
+    if any(role.name == "superuser" for role in current_user.roles):
+        batteries = DB.session.query(BatteryInfo)
+    else:
+        batteries = DB.session.query(BatteryInfo).where(
+            BatteryInfo.owner_id == current_user.id
+        )
     for battery in batteries:
         esp_dict[battery.esp_id] = {
             "esp_id": battery.esp_id,
