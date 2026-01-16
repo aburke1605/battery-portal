@@ -8,50 +8,15 @@ from pathlib import Path
 import csv
 
 from flask import Blueprint, request, jsonify
-from flask_sqlalchemy import SQLAlchemy
 from flask_security import roles_required, login_required
 from flask_login import current_user
 from sqlalchemy import inspect, insert, select, desc, asc, func, text, Table
 
 from utils import process_telemetry_data
 
+from app.db import DB, BatteryInfo
+
 battery = Blueprint("battery", __name__, url_prefix="/battery")
-
-DB = SQLAlchemy()
-
-
-class BatteryInfo(DB.Model):
-    """
-    Defines the structure of the battery_info table, which manages the individual battery_data tables.
-    Must first create the database manually in mysql command prompt:
-        $ mysql -u root -p
-        mysql> create database battery_data;
-    Then initiate with flask:
-        $ flask db init
-        $ flask db migrate -m "initiate"
-        $ flask db upgrade
-    Further changes made to the class here are then propagated with:
-        $ flask db migrate -m "add/remove ___ column"
-        $ flask db upgrade
-    """
-
-    __tablename__ = "battery_info"
-
-    esp_id = DB.Column(DB.Integer, primary_key=True)
-    root_id = DB.Column(DB.Integer, nullable=True)
-    last_updated_time = DB.Column(
-        DB.DateTime, default=datetime.now, onupdate=datetime.now, nullable=False
-    )
-    live_websocket = DB.Column(DB.Boolean, default=False, nullable=False)
-    owner_id = DB.Column(
-        DB.Integer,
-        DB.ForeignKey("users.id", ondelete="SET NULL"),
-        nullable=True,
-    )
-    user = DB.relationship(
-        "Users",
-        back_populates="batteries",
-    )
 
 
 def update_battery_data(json: list) -> None:
