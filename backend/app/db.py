@@ -144,12 +144,26 @@ def update_battery_data(json: list) -> None:
             logger.error(f"DB error inserting data from {esp_id} into table: {e}")
 
         # finally, process previous cycle blocks into features for ML model
-        cycle_number = int(content["CC"]) - 1
+        cycle_index = int(content["CC"]) - 1
         if (
-            cycle_number >= 200
+            cycle_index >= 200
         ):  # largest block feature is 200 cycles, so skip until then
-            if (cycle_number) % 10 == 0:  # make a new datapoint every 10 cycles
-                add_to_prediction_features(esp_id, cycle_number)
+            if (cycle_index) % 10 == 0:  # make a new datapoint every 10 cycles
+                prediction_features = DB.Table(
+                    "prediction_features", DB.metadata, autoload_with=DB.engine
+                )
+                if (
+                    len(
+                        DB.session.execute(
+                            select(prediction_features.c.id).where(
+                                prediction_features.c.esp_id == esp_id,
+                                prediction_features.c.cycle_index == cycle_index,
+                            )
+                        ).fetchall()
+                    )
+                    == 0
+                ):  # only if it doesn't already exist
+                    add_to_prediction_features(esp_id, cycle_index)
 
 
 def get_battery_info_entry(esp_id: str) -> BatteryInfo:
