@@ -11,7 +11,7 @@ from sqlalchemy import select, desc, asc
 
 twin = Blueprint("twin", __name__, url_prefix="/twin")
 
-from app.db import DB, import_data, get_query_size
+from app.battery import DB, import_data, get_query_size
 
 
 @twin.route("/simulation", methods=["GET"])
