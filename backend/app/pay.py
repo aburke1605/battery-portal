@@ -11,7 +11,7 @@ from sqlalchemy import update
 
 pay = Blueprint("pay", __name__, url_prefix="/pay")
 
-from app.db import DB
+from app.battery import DB
 
 stripe.api_key = os.getenv("STRIPE_SECRET_KEY")
 
