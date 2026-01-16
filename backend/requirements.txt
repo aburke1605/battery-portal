@@ -7,5 +7,6 @@ mysql-connector-python
 python-dotenv
 stripe
 scipy
+scikit-learn
 gevent
 gunicorn

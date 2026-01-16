@@ -4,6 +4,7 @@ logger = logging.getLogger(__name__)
 
 from datetime import datetime, timedelta
 from collections import defaultdict
+from pathlib import Path
 import csv
 
 from flask import Blueprint, request, jsonify
@@ -58,6 +59,7 @@ def update_battery_data(json: list) -> None:
                 lon=content["lon"],
                 Q=content["Q"],
                 H=content["H"],
+                C=content["C"],
                 V=content["V"] / 10,
                 V1=content["V1"] / 100,
                 V2=content["V2"] / 100,
@@ -75,6 +77,7 @@ def update_battery_data(json: list) -> None:
                 T3=content["T3"] / 100,
                 T4=content["T4"] / 100,
                 OTC=content["OTC"],
+                CC=content["CC"],
                 wifi=content["wifi"],
             )
             DB.session.execute(query)
@@ -142,6 +145,7 @@ def get_battery_data_table(esp_id: str) -> Table:
             DB.Column("lon", DB.Float, nullable=False),
             DB.Column("Q", DB.Integer, nullable=False),
             DB.Column("H", DB.Integer, nullable=False),
+            DB.Column("C", DB.Float, nullable=False),
             DB.Column("V", DB.Float, nullable=False),
             DB.Column("V1", DB.Float, nullable=False),
             DB.Column("V2", DB.Float, nullable=False),
@@ -159,6 +163,7 @@ def get_battery_data_table(esp_id: str) -> Table:
             DB.Column("T3", DB.Float, nullable=False),
             DB.Column("T4", DB.Float, nullable=False),
             DB.Column("OTC", DB.Integer, nullable=False),
+            DB.Column("CC", DB.Integer, nullable=False),
             DB.Column("wifi", DB.Boolean, nullable=False),
         )
         table.create(bind=DB.engine, checkfirst=True)
@@ -353,10 +358,13 @@ def import_data(csv_path: str, esp_id: int):
     """
     Creates example data for fresh website lacking real data.
     """
+    if not Path(csv_path).exists():
+        return False
+
     name = f"battery_data_bms_{esp_id}"
     inspector = inspect(DB.engine)
     if esp_id == 999 and inspector.has_table(name):
-        return
+        return False
 
     # create entry in battery_info table
     try:
@@ -389,6 +397,7 @@ def import_data(csv_path: str, esp_id: int):
                     "lon": 0,
                     "Q": int(row["Relative State of Charge"] or 0),
                     "H": int(row["State of Health"] or 0),
+                    "C": float(row["Capacity"] or 0),
                     "V": float(row["Voltage"] or 0) / 1000,
                     "V1": 0,
                     "V2": 0,
@@ -406,12 +415,19 @@ def import_data(csv_path: str, esp_id: int):
                     "T3": 0,
                     "T4": 0,
                     "OTC": 0,
+                    "CC": int(row["Cycle"] or 0),
                     "wifi": False,
                 }
             )
     if rows:
-        DB.session.execute(table.insert(), rows)
-        DB.session.commit()
+        try:
+            DB.session.execute(table.insert(), rows)
+            DB.session.commit()
+        except Exception as e:
+            logger.error(f"Error: {e}")
+            return False
+
+    return True
 
 
 @battery.route("/example", methods=["GET"])
