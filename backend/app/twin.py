@@ -6,29 +6,13 @@ from datetime import timedelta
 import numpy as np
 
 from flask import Blueprint, request
-from flask_security import roles_required, login_required
+from flask_security import login_required
 from sqlalchemy import select, desc, asc
 
 from app.db import DB
-from app.battery import import_data, get_query_size
+from app.battery import get_query_size
 
 twin = Blueprint("twin", __name__, url_prefix="/twin")
-
-
-@twin.route("/simulation", methods=["GET"])
-@roles_required("superuser")
-def simulation():
-    """
-    API
-    """
-    try:
-        for i in range(900):
-            import_data(f"../simulation/data/normal/data_{i+1}.csv", 996)
-            import_data(f"../simulation/data/low_power/data_{i+1}.csv", 997)
-            import_data(f"../simulation/data/short_duration/data_{i+1}.csv", 998)
-        return {}, 200
-    except:
-        return {}, 404
 
 
 def high_temperature_check(esp_id: str, high_temperature_threshold: float) -> bool:
