@@ -13,91 +13,8 @@ from sqlalchemy import inspect, insert, select, desc, func, text, Table
 from utils import process_telemetry_data
 
 from app.db import DB, BatteryInfo, PredictionFeatures
-from app.twin import add_to_prediction_features
 
 battery = Blueprint("battery", __name__, url_prefix="/battery")
-
-
-def update_battery_data(json: list) -> None:
-    """
-    Is called when new telemetry data is received from an ESP32 WebSocket client.
-    Creates new / updates the battery_data_<esp_id> table and corresponding row in the battery_info table.
-    """
-    # first grab the esp_id of the root for later use
-    root_id = json[0]["esp_id"]
-
-    for i, data in enumerate(json):
-        esp_id = data["esp_id"]
-        content = data["content"]
-
-        if content["I"] == 0:
-            continue
-
-        # first update battery_info table
-        try:
-            # check if the entry already exists
-            battery = get_battery_info_entry(esp_id)
-            # update the entry info
-            battery.esp_id = esp_id
-            battery.root_id = None if i == 0 else root_id
-            DB.session.commit()
-            set_live_websocket(
-                esp_id, True
-            )  # this function (`update_battery_data`) is only ever called from the /esp_ws handler, so must be True
-        except Exception as e:
-            DB.session.rollback()
-            logger.error(f"DB error processing WebSocket message from {esp_id}: {e}")
-
-        # then update/create battery_data_bms_<esp_id> table
-        battery_data_table = get_battery_data_table(esp_id)
-        try:
-            process_telemetry_data(content)  # first add approximate cell charges
-            query = insert(battery_data_table).values(
-                timestamp=datetime.fromisoformat(content["timestamp"]),
-                lat=content["lat"],
-                lon=content["lon"],
-                Q=content["Q"],
-                H=content["H"],
-                C=content["C"],
-                V=content["V"] / 10,
-                V1=content["V1"] / 100,
-                V2=content["V2"] / 100,
-                V3=content["V3"] / 100,
-                V4=content["V4"] / 100,
-                I=content["I"] / 10,
-                I1=content["I1"] / 100,
-                I2=content["I2"] / 100,
-                I3=content["I3"] / 100,
-                I4=content["I4"] / 100,
-                aT=content["aT"] / 10,
-                cT=content["cT"] / 10,
-                T1=content["T1"] / 100,
-                T2=content["T2"] / 100,
-                T3=content["T3"] / 100,
-                T4=content["T4"] / 100,
-                OTC=content["OTC"],
-                CC=content["CC"],
-                wifi=content["wifi"],
-            )
-            DB.session.execute(query)
-            DB.session.commit()
-        except Exception as e:
-            DB.session.rollback()
-            logger.error(f"DB error inserting data from {esp_id} into table: {e}")
-
-        # finally, process previous cycle blocks into features for ML model
-        cycle_index = int(content["CC"]) - 1
-        if (
-            cycle_index >= 200
-        ):  # largest block feature is 200 cycles, so skip until then
-            if (cycle_index) % 10 == 0:  # make a new datapoint every 10 cycles
-                if (
-                    PredictionFeatures.query.filter_by(
-                        esp_id=esp_id, cycle_index=cycle_index
-                    ).first()
-                    is None
-                ):  # only if it doesn't already exist
-                    add_to_prediction_features(esp_id, cycle_index)
 
 
 def get_battery_info_entry(esp_id: str) -> BatteryInfo:
@@ -183,6 +100,91 @@ def get_battery_data_table(esp_id: str) -> Table:
         logger.info(f"created new table: {name}")
 
     return table
+
+
+from app.twin import add_to_prediction_features
+
+
+def update_battery_data(json: list) -> None:
+    """
+    Is called when new telemetry data is received from an ESP32 WebSocket client.
+    Creates new / updates the battery_data_<esp_id> table and corresponding row in the battery_info table.
+    """
+    # first grab the esp_id of the root for later use
+    root_id = json[0]["esp_id"]
+
+    for i, data in enumerate(json):
+        esp_id = data["esp_id"]
+        content = data["content"]
+
+        if content["I"] == 0:
+            continue
+
+        # first update battery_info table
+        try:
+            # check if the entry already exists
+            battery = get_battery_info_entry(esp_id)
+            # update the entry info
+            battery.esp_id = esp_id
+            battery.root_id = None if i == 0 else root_id
+            DB.session.commit()
+            set_live_websocket(
+                esp_id, True
+            )  # this function (`update_battery_data`) is only ever called from the /esp_ws handler, so must be True
+        except Exception as e:
+            DB.session.rollback()
+            logger.error(f"DB error processing WebSocket message from {esp_id}: {e}")
+
+        # then update/create battery_data_bms_<esp_id> table
+        battery_data_table = get_battery_data_table(esp_id)
+        try:
+            process_telemetry_data(content)  # first add approximate cell charges
+            query = insert(battery_data_table).values(
+                timestamp=datetime.fromisoformat(content["timestamp"]),
+                lat=content["lat"],
+                lon=content["lon"],
+                Q=content["Q"],
+                H=content["H"],
+                C=content["C"],
+                V=content["V"] / 10,
+                V1=content["V1"] / 100,
+                V2=content["V2"] / 100,
+                V3=content["V3"] / 100,
+                V4=content["V4"] / 100,
+                I=content["I"] / 10,
+                I1=content["I1"] / 100,
+                I2=content["I2"] / 100,
+                I3=content["I3"] / 100,
+                I4=content["I4"] / 100,
+                aT=content["aT"] / 10,
+                cT=content["cT"] / 10,
+                T1=content["T1"] / 100,
+                T2=content["T2"] / 100,
+                T3=content["T3"] / 100,
+                T4=content["T4"] / 100,
+                OTC=content["OTC"],
+                CC=content["CC"],
+                wifi=content["wifi"],
+            )
+            DB.session.execute(query)
+            DB.session.commit()
+        except Exception as e:
+            DB.session.rollback()
+            logger.error(f"DB error inserting data from {esp_id} into table: {e}")
+
+        # finally, process previous cycle blocks into features for ML model
+        cycle_index = int(content["CC"]) - 1
+        if (
+            cycle_index >= 200
+        ):  # largest block feature is 200 cycles, so skip until then
+            if (cycle_index) % 10 == 0:  # make a new datapoint every 10 cycles
+                if (
+                    PredictionFeatures.query.filter_by(
+                        esp_id=esp_id, cycle_index=cycle_index
+                    ).first()
+                    is None
+                ):  # only if it doesn't already exist
+                    add_to_prediction_features(esp_id, cycle_index)
 
 
 @battery.route("/execute_sql", methods=["POST"])
