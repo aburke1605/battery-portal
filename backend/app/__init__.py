@@ -14,6 +14,7 @@ from app.user import user, users
 from app.ws import ws
 from app.twin import twin
 from app.pay import pay
+from app.data import data
 
 
 def create_app():
@@ -71,6 +72,8 @@ def create_app():
     api.register_blueprint(twin)
 
     api.register_blueprint(pay)
+
+    api.register_blueprint(data)
 
     # finally, register eveything at /api with main app
     app.register_blueprint(api)
