@@ -8,36 +8,13 @@ from sklearn.gaussian_process import GaussianProcessRegressor
 from sklearn.gaussian_process.kernels import RBF
 
 from flask import Blueprint, request
-from flask_security import roles_required, login_required
+from flask_security import login_required
 from sqlalchemy import select, desc, asc, Table
 
 from app.db import DB
-from app.battery import import_data
+
 
 twin = Blueprint("twin", __name__, url_prefix="/twin")
-
-
-@twin.route("/simulation", methods=["GET"])
-@roles_required("superuser")
-def simulation():
-    """
-    API
-    """
-    try:
-        for dataset, esp_id in zip(
-            ["normal", "low_power", "short_duration"], [996, 997, 998]
-        ):
-            i = 0
-            import_success = True
-            while import_success:
-                import_success = import_data(
-                    f"../simulation/data/{dataset}/data_{i+1}.csv", esp_id
-                )
-                i += 1
-        return {}, 200
-    except Exception as e:
-        logger.error(e)
-        return {}, 404
 
 
 def get_query_size(data_table: Table, hours: float) -> int:
