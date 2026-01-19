@@ -13,31 +13,9 @@ from sqlalchemy import inspect, insert, select, desc, func, text, Table
 from utils import process_telemetry_data
 
 from app.db import DB, BatteryInfo, PredictionFeatures
+from app.twin import add_to_prediction_features
 
 battery = Blueprint("battery", __name__, url_prefix="/battery")
-
-
-def add_to_prediction_features(esp_id: int, current_cycle: int) -> None:
-    try:
-        prediction_features = DB.Table(
-            "prediction_features", DB.metadata, autoload_with=DB.engine
-        )
-        query = insert(prediction_features).values(
-            esp_id=esp_id,
-            cycle_index=current_cycle,
-            mean_temp_last_50_cycles=1.0,
-            mean_DoD_last_50_cycles=1.0,
-            charge_Ah_last_50_cycles=1.0,
-            capacity_slope_last_200_cycles=1.0,
-            hours_soc_gt_90_last_7d=1.0,
-            mean_temp_idle_last_7d=1.0,
-            idle_hours_last_7d=1.0,
-        )
-        DB.session.execute(query)
-        DB.session.commit()
-    except Exception as e:
-        DB.session.rollback()
-        logger.error("Error committing prediction features to database:", e)
 
 
 def update_battery_data(json: list) -> None:
