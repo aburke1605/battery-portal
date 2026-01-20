@@ -12,19 +12,73 @@ from flask_security import login_required
 from sqlalchemy import insert, select, desc, asc, Table
 
 from app.db import DB, PredictionFeatures
+from app.battery import get_battery_data_table
 
 twin = Blueprint("twin", __name__, url_prefix="/twin")
 
 
+@twin.route("/TEST")
+def TEST():
+    add_to_prediction_features(1, 250)
+    return {}, 200
+
+
 def add_to_prediction_features(esp_id: int, current_cycle: int) -> None:
     try:
+        table = get_battery_data_table(str(esp_id))
+        cycles = np.arange(current_cycle + 1 - 50, current_cycle + 1, step=1)
+        # fmt: off
+        query = (
+            select(
+                table.c.CC,
+                table.c.cT,
+                table.c.Q,
+                table.c.C,
+            )
+            .where(
+                table.c.CC >= int(cycles[0]),
+                table.c.CC <= int(cycles[-1]),
+            )
+        )
+        # fmt: on
+        block = np.array(DB.session.execute(query).fetchall())
+
+        mean_temp_last_50_cycles = np.mean(block[:, 1])
+
+        DoDs = []
+        for cycle in cycles:
+            mask = block[:, 0] == cycle
+            if np.sum(mask) == 0:
+                continue
+            DoDs.append(min(block[mask][:, 2]))
+        mean_DoD_last_50_cycles = np.mean(DoDs)
+
+        capacity_Ah_last_50_cycles = np.mean(block[:, 3])
+
+        most_recent_timestamp = DB.session.execute(
+            select(table.c.timestamp).order_by(desc(table.c.timestamp))
+        ).first()[0]
+        # fmt: off
+        query = (
+            select(
+                table.c.timestamp,
+                table.c.cT,
+            )
+            .where(
+                table.c.timestamp > most_recent_timestamp - timedelta(days=7)
+            )
+        )
+        # fmt: on
+        block = np.array(DB.session.execute(query).fetchall())
+        print(block)
+
         DB.session.add(
             PredictionFeatures(
                 esp_id=esp_id,
                 cycle_index=current_cycle,
-                mean_temp_last_50_cycles=1.0,
-                mean_DoD_last_50_cycles=1.0,
-                charge_Ah_last_50_cycles=1.0,
+                mean_temp_last_50_cycles=mean_temp_last_50_cycles,
+                mean_DoD_last_50_cycles=mean_DoD_last_50_cycles,
+                capacity_Ah_last_50_cycles=capacity_Ah_last_50_cycles,
                 capacity_slope_last_200_cycles=1.0,
                 hours_soc_gt_90_last_7d=1.0,
                 mean_temp_idle_last_7d=1.0,

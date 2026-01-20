@@ -100,7 +100,7 @@ class PredictionFeatures(DB.Model):
     # cycle-based
     mean_temp_last_50_cycles = DB.Column(DB.Float, nullable=False)
     mean_DoD_last_50_cycles = DB.Column(DB.Float, nullable=False)
-    charge_Ah_last_50_cycles = DB.Column(DB.Float, nullable=False)
+    capacity_Ah_last_50_cycles = DB.Column(DB.Float, nullable=False)
     capacity_slope_last_200_cycles = DB.Column(DB.Float, nullable=False)
 
     # time-based
