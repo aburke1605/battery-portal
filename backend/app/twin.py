@@ -55,6 +55,36 @@ def add_to_prediction_features(esp_id: int, current_cycle: int) -> None:
 
         capacity_Ah_last_50_cycles = np.mean(block[:, 3])
 
+        # fmt: off
+        query = (
+            select(
+                table.c.timestamp,
+                table.c.C,
+            )
+            .where(
+                table.c.CC == current_cycle - 200 + 1
+            )
+            .limit(1)
+        )
+        # fmt: on
+        first = np.array(DB.session.execute(query).fetchall())
+        # fmt: off
+        query = (
+            select(
+                table.c.timestamp,
+                table.c.C,
+            )
+            .where(
+                table.c.CC == current_cycle
+            )
+            .limit(1)
+        )
+        # fmt: on
+        second = np.array(DB.session.execute(query).fetchall())
+        capacity_slope_last_200_cycles = (second[0][1] - first[0][1]) / (
+            (second[0][0] - first[0][0]).total_seconds() / (60 * 60)
+        )
+
         most_recent_timestamp = DB.session.execute(
             select(table.c.timestamp).order_by(desc(table.c.timestamp))
         ).first()[0]
@@ -105,7 +135,7 @@ def add_to_prediction_features(esp_id: int, current_cycle: int) -> None:
                 mean_temp_last_50_cycles=mean_temp_last_50_cycles,
                 mean_DoD_last_50_cycles=mean_DoD_last_50_cycles,
                 capacity_Ah_last_50_cycles=capacity_Ah_last_50_cycles,
-                capacity_slope_last_200_cycles=1.0,
+                capacity_slope_last_200_cycles=capacity_slope_last_200_cycles,
                 hours_soc_gt_90_last_7d=hours_soc_gt_90_last_7d,
                 idle_hours_last_7d=idle_hours_last_7d,
             )
