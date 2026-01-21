@@ -24,6 +24,18 @@ def TEST():
 
 
 def add_to_prediction_features(esp_id: int, current_cycle: int) -> None:
+    if current_cycle < 200:
+        return  # largest block feature is 200 cycles, so skip until then
+    if current_cycle % 10 != 0:
+        return  # make a new datapoint every 10 cycles
+    if (
+        PredictionFeatures.query.filter_by(
+            esp_id=esp_id, cycle_index=current_cycle
+        ).first()
+        is not None
+    ):
+        return  # only if it doesn't already exist
+
     try:
         table = get_battery_data_table(str(esp_id))
         cycles = np.arange(current_cycle + 1 - 50, current_cycle + 1, step=1)
