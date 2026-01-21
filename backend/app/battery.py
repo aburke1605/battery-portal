@@ -12,7 +12,7 @@ from sqlalchemy import inspect, insert, select, desc, func, text, Table
 
 from utils import process_telemetry_data
 
-from app.db import DB, BatteryInfo, PredictionFeatures
+from app.db import DB, BatteryInfo
 
 battery = Blueprint("battery", __name__, url_prefix="/battery")
 

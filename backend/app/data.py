@@ -12,6 +12,7 @@ from sqlalchemy import inspect
 
 from app.db import DB
 from app.battery import get_battery_info_entry, get_battery_data_table
+from app.twin import add_to_prediction_features
 
 data = Blueprint("data", __name__, url_prefix="/data")
 
@@ -81,6 +82,9 @@ def import_data(csv_path: str, esp_id: int):
                     "wifi": False,
                 }
             )
+
+            add_to_prediction_features(esp_id, int(row["Cycle"]) - 1)
+
     if rows:
         try:
             DB.session.execute(table.insert(), rows)
