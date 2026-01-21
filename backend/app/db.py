@@ -105,5 +105,4 @@ class PredictionFeatures(DB.Model):
 
     # time-based
     hours_soc_gt_90_last_7d = DB.Column(DB.Float, nullable=False)
-    mean_temp_idle_last_7d = DB.Column(DB.Float, nullable=False)
     idle_hours_last_7d = DB.Column(DB.Float, nullable=False)

@@ -70,7 +70,15 @@ def add_to_prediction_features(esp_id: int, current_cycle: int) -> None:
         )
         # fmt: on
         block = np.array(DB.session.execute(query).fetchall())
-        print(block)
+
+        idle_hours_last_7d = 0
+        min_downtime = timedelta(minutes=5)
+        last_timestamp = block[0, 0]
+        for timestamp, temperature in block:
+            if timestamp - last_timestamp > min_downtime:
+                idle_hours_last_7d += (timestamp - last_timestamp).total_seconds()
+            last_timestamp = timestamp
+        idle_hours_last_7d /= 60 * 60
 
         DB.session.add(
             PredictionFeatures(
@@ -81,8 +89,7 @@ def add_to_prediction_features(esp_id: int, current_cycle: int) -> None:
                 capacity_Ah_last_50_cycles=capacity_Ah_last_50_cycles,
                 capacity_slope_last_200_cycles=1.0,
                 hours_soc_gt_90_last_7d=1.0,
-                mean_temp_idle_last_7d=1.0,
-                idle_hours_last_7d=1.0,
+                idle_hours_last_7d=idle_hours_last_7d,
             )
         )
         DB.session.commit()
