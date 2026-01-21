@@ -90,7 +90,6 @@ def add_to_prediction_features(esp_id: int, current_cycle: int) -> None:
                         timestamp - first_timestamp_above_90
                     ).total_seconds()
                     Q_was_above_90 = False
-                # last_timestamp_below_90 = timestamp
             else:
                 if not Q_was_above_90:
                     first_timestamp_above_90 = timestamp
