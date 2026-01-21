@@ -142,6 +142,7 @@ def add_to_prediction_features(esp_id: int, current_cycle: int) -> None:
 
         DB.session.add(
             PredictionFeatures(
+                timestamp=second[0][0],
                 esp_id=esp_id,
                 cycle_index=current_cycle,
                 mean_temp_last_50_cycles=mean_temp_last_50_cycles,

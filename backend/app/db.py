@@ -91,7 +91,7 @@ class BatteryInfo(DB.Model):
 
 class PredictionFeatures(DB.Model):
     __tablename__ = "prediction_features"
-    id = DB.Column(DB.Integer, primary_key=True)
+    timestamp = DB.Column(DB.DateTime, primary_key=True)
 
     # metadata
     esp_id = DB.Column(DB.Integer, nullable=False)
