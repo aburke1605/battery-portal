@@ -159,6 +159,33 @@ def add_to_prediction_features(esp_id: int, current_cycle: int) -> None:
         logger.exception("Error committing prediction features to database")
 
 
+def decide_failure_within_14d(esp_id: int) -> None:
+    try:
+        table = get_battery_data_table(str(esp_id))
+
+        # get first timestamp where H is 80
+
+        # fmt: off
+        query = (
+            select(table.c.timestamp)
+            .where(table.c.H < 81)
+            .limit(1)
+        )
+        # fmt: on
+        timestamp = DB.session.execute(query).scalars().all()[0]
+
+        for row in PredictionFeatures.query.filter(
+            PredictionFeatures.esp_id == esp_id,
+            PredictionFeatures.timestamp > timestamp - timedelta(days=14),
+        ).all():
+            row.failure_within_14d = True
+        DB.session.commit()
+
+    except Exception as e:
+        DB.session.rollback()
+        logger.error(f"Error updating failure within 14 days boolean: {e}")
+
+
 def get_query_size(data_table: Table, hours: float) -> int:
     """
     Since data is recorded only when the current is not zero, the data may be 'chunked', with lengthy periods of downtime separating each.
