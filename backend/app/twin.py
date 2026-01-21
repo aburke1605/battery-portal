@@ -62,7 +62,7 @@ def add_to_prediction_features(esp_id: int, current_cycle: int) -> None:
         query = (
             select(
                 table.c.timestamp,
-                table.c.cT,
+                table.c.Q,
             )
             .where(
                 table.c.timestamp > most_recent_timestamp - timedelta(days=7)
@@ -74,11 +74,30 @@ def add_to_prediction_features(esp_id: int, current_cycle: int) -> None:
         idle_hours_last_7d = 0
         min_downtime = timedelta(minutes=5)
         last_timestamp = block[0, 0]
-        for timestamp, temperature in block:
+
+        hours_soc_gt_90_last_7d = 0
+        first_timestamp_above_90 = block[0, 0]
+        Q_was_above_90 = False
+
+        for timestamp, Q in block:
             if timestamp - last_timestamp > min_downtime:
                 idle_hours_last_7d += (timestamp - last_timestamp).total_seconds()
             last_timestamp = timestamp
+
+            if Q <= 90:
+                if Q_was_above_90:
+                    hours_soc_gt_90_last_7d += (
+                        timestamp - first_timestamp_above_90
+                    ).total_seconds()
+                    Q_was_above_90 = False
+                # last_timestamp_below_90 = timestamp
+            else:
+                if not Q_was_above_90:
+                    first_timestamp_above_90 = timestamp
+                Q_was_above_90 = True
+
         idle_hours_last_7d /= 60 * 60
+        hours_soc_gt_90_last_7d /= 60 * 60
 
         DB.session.add(
             PredictionFeatures(
@@ -88,7 +107,7 @@ def add_to_prediction_features(esp_id: int, current_cycle: int) -> None:
                 mean_DoD_last_50_cycles=mean_DoD_last_50_cycles,
                 capacity_Ah_last_50_cycles=capacity_Ah_last_50_cycles,
                 capacity_slope_last_200_cycles=1.0,
-                hours_soc_gt_90_last_7d=1.0,
+                hours_soc_gt_90_last_7d=hours_soc_gt_90_last_7d,
                 idle_hours_last_7d=idle_hours_last_7d,
             )
         )
