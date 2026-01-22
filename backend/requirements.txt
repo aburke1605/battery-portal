@@ -12,3 +12,5 @@ pandas
 xgboost
 gevent
 gunicorn
+azure-identity
+azure-storage-blob

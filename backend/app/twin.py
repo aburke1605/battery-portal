@@ -217,6 +217,36 @@ def train_model():
     ax.scatter(fpr, tpr)
     fig.savefig("ROC.pdf")
 
+    # =====================================
+    # =====================================
+    bst.save_model("/tmp/xgb_v1.json")
+
+    from azure.identity import DefaultAzureCredential
+    from azure.storage.blob import BlobServiceClient
+
+    STORAGE_ACCOUNT_NAME = "batteryportalstorage"
+    CONTAINER_NAME = "xgb-models"
+    BLOB_NAME = "xgb/v1/model.json"
+
+    credential = DefaultAzureCredential()
+
+    blob_service = BlobServiceClient(
+        account_url=f"https://{STORAGE_ACCOUNT_NAME}.blob.core.windows.net",
+        credential=credential,
+    )
+
+    blob_client = blob_service.get_blob_client(
+        container=CONTAINER_NAME,
+        blob=BLOB_NAME,
+    )
+
+    with open("/tmp/xgb_v1.json", "rb") as f:
+        blob_client.upload_blob(f, overwrite=True)
+
+    print("done")
+    # =====================================
+    # =====================================
+
 
 def get_query_size(data_table: Table, hours: float) -> int:
     """
