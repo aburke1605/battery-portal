@@ -28,7 +28,7 @@ def upgrade():
         batch_op.drop_column("charge_Ah_last_50_cycles")
         batch_op.drop_column("mean_temp_idle_last_7d")
         batch_op.add_column(
-            sa.Column("failure_within_14d", sa.Boolean(), nullable=False)
+            sa.Column("failure_within_7d", sa.Boolean(), nullable=False)
         )
 
     # ### end Alembic commands ###
@@ -48,6 +48,6 @@ def downgrade():
         batch_op.add_column(
             sa.Column("mean_temp_idle_last_7d", mysql.FLOAT(), nullable=False)
         )
-        batch_op.drop_column("failure_within_14d")
+        batch_op.drop_column("failure_within_7d")
 
     # ### end Alembic commands ###

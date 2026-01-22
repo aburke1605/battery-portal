@@ -108,4 +108,4 @@ class PredictionFeatures(DB.Model):
     idle_hours_last_7d = DB.Column(DB.Float, nullable=False)
 
     # observable
-    failure_within_14d = DB.Column(DB.Boolean, nullable=False, default=False)
+    failure_within_7d = DB.Column(DB.Boolean, nullable=False, default=False)

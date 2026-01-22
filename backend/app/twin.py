@@ -159,7 +159,7 @@ def add_to_prediction_features(esp_id: int, current_cycle: int) -> None:
         logger.exception("Error committing prediction features to database")
 
 
-def decide_failure_within_14d(esp_id: int) -> None:
+def decide_failure_within_7d(esp_id: int) -> None:
     try:
         table = get_battery_data_table(str(esp_id))
 
@@ -176,9 +176,9 @@ def decide_failure_within_14d(esp_id: int) -> None:
 
         for row in PredictionFeatures.query.filter(
             PredictionFeatures.esp_id == esp_id,
-            PredictionFeatures.timestamp > timestamp - timedelta(days=14),
+            PredictionFeatures.timestamp > timestamp - timedelta(days=7),
         ).all():
-            row.failure_within_14d = True
+            row.failure_within_7d = True
         DB.session.commit()
 
     except Exception as e:
@@ -190,7 +190,7 @@ def train_model():
     esp_ids = DB.session.query(PredictionFeatures.esp_id).distinct().all()
 
     for esp_id in [row[0] for row in esp_ids]:
-        decide_failure_within_14d(esp_id)
+        decide_failure_within_7d(esp_id)
 
 
 def get_query_size(data_table: Table, hours: float) -> int:
