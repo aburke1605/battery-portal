@@ -6,6 +6,9 @@ from datetime import datetime, timedelta
 import numpy as np
 from sklearn.gaussian_process import GaussianProcessRegressor
 from sklearn.gaussian_process.kernels import RBF
+import pandas as pd
+from xgboost import XGBClassifier
+from sklearn.model_selection import train_test_split
 
 from flask import Blueprint, request
 from flask_security import login_required
@@ -19,7 +22,7 @@ twin = Blueprint("twin", __name__, url_prefix="/twin")
 
 @twin.route("/TEST")
 def TEST():
-    add_to_prediction_features(1, 250)
+    train_model()
     return {}, 200
 
 
@@ -191,6 +194,26 @@ def train_model():
 
     for esp_id in [row[0] for row in esp_ids]:
         decide_failure_within_7d(esp_id)
+
+    dataframe = pd.read_sql(select(PredictionFeatures), DB.engine)
+    y = dataframe["failure_within_7d"].to_numpy()
+    X = dataframe.drop(
+        ["timestamp", "esp_id", "failure_within_7d"], axis="columns"
+    ).to_numpy()
+
+    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.1)
+    bst = XGBClassifier(
+        n_estimators=2, max_depth=2, learning_rate=1, objective="binary:logistic"
+    )
+    bst.fit(X_train, y_train)
+    pred = bst.predict(X_test)
+    print("TEST RESULTS:")
+    correct = 0
+    for i in range(len(pred)):
+        if y_test[i] == pred[i]:
+            correct += 1
+        print(f"  actual: {bool(y_test[i])},  predicted: {bool(pred[i])}")
+    print(f"accuracy: {float(correct)/float(len(pred))*100}%")
 
 
 def get_query_size(data_table: Table, hours: float) -> int:

@@ -8,5 +8,7 @@ python-dotenv
 stripe
 scipy
 scikit-learn
+pandas
+xgboost
 gevent
 gunicorn
