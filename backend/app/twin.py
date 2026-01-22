@@ -9,6 +9,7 @@ from sklearn.gaussian_process.kernels import RBF
 import pandas as pd
 from xgboost import XGBClassifier
 from sklearn.model_selection import train_test_split
+from sklearn.metrics import roc_curve
 
 from flask import Blueprint, request
 from flask_security import login_required
@@ -201,19 +202,20 @@ def train_model():
         ["timestamp", "esp_id", "failure_within_7d"], axis="columns"
     ).to_numpy()
 
-    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.1)
+    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.25)
     bst = XGBClassifier(
         n_estimators=2, max_depth=2, learning_rate=1, objective="binary:logistic"
     )
     bst.fit(X_train, y_train)
-    pred = bst.predict(X_test)
-    print("TEST RESULTS:")
-    correct = 0
-    for i in range(len(pred)):
-        if y_test[i] == pred[i]:
-            correct += 1
-        print(f"  actual: {bool(y_test[i])},  predicted: {bool(pred[i])}")
-    print(f"accuracy: {float(correct)/float(len(pred))*100}%")
+    pred_proba = bst.predict_proba(X_test)
+
+    fpr, tpr, *_ = roc_curve(y_test, pred_proba[:, 1])
+    import matplotlib.pyplot as plt
+
+    fig, ax = plt.subplots()
+    ax.plot([0, 1], [0, 1], linestyle=":")
+    ax.scatter(fpr, tpr)
+    fig.savefig("ROC.pdf")
 
 
 def get_query_size(data_table: Table, hours: float) -> int:
