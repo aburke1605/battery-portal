@@ -186,6 +186,13 @@ def decide_failure_within_14d(esp_id: int) -> None:
         logger.error(f"Error updating failure within 14 days boolean: {e}")
 
 
+def train_model():
+    esp_ids = DB.session.query(PredictionFeatures.esp_id).distinct().all()
+
+    for esp_id in [row[0] for row in esp_ids]:
+        decide_failure_within_14d(esp_id)
+
+
 def get_query_size(data_table: Table, hours: float) -> int:
     """
     Since data is recorded only when the current is not zero, the data may be 'chunked', with lengthy periods of downtime separating each.
