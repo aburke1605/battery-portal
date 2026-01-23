@@ -91,11 +91,11 @@ class BatteryInfo(DB.Model):
 
 class PredictionFeatures(DB.Model):
     __tablename__ = "prediction_features"
-    timestamp = DB.Column(DB.DateTime, primary_key=True)
+    timestamp = DB.Column(DB.DateTime, nullable=False, primary_key=True)
 
     # metadata
-    esp_id = DB.Column(DB.Integer, nullable=False)
-    cycle_index = DB.Column(DB.Integer, nullable=False)
+    esp_id = DB.Column(DB.Integer, nullable=False, primary_key=True)
+    cycle_index = DB.Column(DB.Integer, nullable=False, primary_key=True)
 
     # cycle-based
     mean_temp_last_50_cycles = DB.Column(DB.Float, nullable=False)
