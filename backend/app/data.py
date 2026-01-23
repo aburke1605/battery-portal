@@ -131,6 +131,7 @@ def simulation():
             import_success = True
             while import_success:
                 if path == "/tmp":
+                    Path(f"/tmp/{dataset}/").mkdir(exist_ok=True)
                     download_from_azure_blob(
                         f"/tmp/{dataset}/data_{i+1}.csv",
                         "example-data",
