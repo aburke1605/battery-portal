@@ -123,7 +123,7 @@ def simulation():
             path = "../simulation/data"
         else:
             path = "/tmp"
-        print(path)
+        logger.info(path)
 
         for dataset, esp_id in zip(
             ["normal", "low_power", "short_duration"], [996, 997, 998]
