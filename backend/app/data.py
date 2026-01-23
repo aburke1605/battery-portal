@@ -119,10 +119,11 @@ def simulation():
     API
     """
     try:
-        if os.getenv("FLASK_ENV") == "development":
-            path = "../simulation/data"
-        else:
+        RUNNING_IN_AZURE = "WEBSITE_INSTANCE_ID" in os.environ
+        if RUNNING_IN_AZURE:
             path = "/tmp"
+        else:
+            path = "../simulation/data"
         logger.info(path)
 
         for dataset, esp_id in zip(
