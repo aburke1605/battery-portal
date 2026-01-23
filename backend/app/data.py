@@ -2,6 +2,7 @@ import logging
 
 logger = logging.getLogger(__name__)
 
+import os
 from pathlib import Path
 import csv
 from datetime import datetime
@@ -9,6 +10,8 @@ from datetime import datetime
 from flask import Blueprint
 from flask_security import roles_required
 from sqlalchemy import inspect
+
+from utils import download_from_azure_blob
 
 from app.db import DB
 from app.battery import get_battery_info_entry, get_battery_data_table
@@ -116,16 +119,26 @@ def simulation():
     API
     """
     try:
+        if os.getenv("FLASK_ENV") == "development":
+            path = "../simulation/data"
+        else:
+            path = "/tmp"
+
         for dataset, esp_id in zip(
             ["normal", "low_power", "short_duration"], [996, 997, 998]
         ):
             i = 0
             import_success = True
             while import_success:
-                import_success = import_data(
-                    f"../simulation/data/{dataset}/data_{i+1}.csv", esp_id
-                )
+                if path == "/tmp":
+                    download_from_azure_blob(
+                        f"/tmp/{dataset}/data_{i+1}.csv",
+                        "example-data",
+                        f"simulated_data/{dataset}/data_{i+1}.csv",
+                    )
+                import_success = import_data(f"{path}/{dataset}/data_{i+1}.csv", esp_id)
                 i += 1
+                break
         return {}, 200
     except Exception as e:
         logger.error(e)

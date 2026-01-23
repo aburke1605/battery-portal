@@ -13,7 +13,9 @@ from sklearn.metrics import roc_curve
 
 from flask import Blueprint, request
 from flask_security import login_required
-from sqlalchemy import insert, select, desc, asc, Table
+from sqlalchemy import select, desc, asc, Table
+
+from utils import upload_to_azure_blob
 
 from app.db import DB, PredictionFeatures
 from app.battery import get_battery_data_table
@@ -219,31 +221,9 @@ def train_model():
 
     # =====================================
     # =====================================
-    bst.save_model("/tmp/xgb_v1.json")
-
-    from azure.identity import DefaultAzureCredential
-    from azure.storage.blob import BlobServiceClient
-
-    STORAGE_ACCOUNT_NAME = "batteryportalstorage"
-    CONTAINER_NAME = "xgb-models"
-    BLOB_NAME = "xgb/v1/model.json"
-
-    credential = DefaultAzureCredential()
-
-    blob_service = BlobServiceClient(
-        account_url=f"https://{STORAGE_ACCOUNT_NAME}.blob.core.windows.net",
-        credential=credential,
-    )
-
-    blob_client = blob_service.get_blob_client(
-        container=CONTAINER_NAME,
-        blob=BLOB_NAME,
-    )
-
-    with open("/tmp/xgb_v1.json", "rb") as f:
-        blob_client.upload_blob(f, overwrite=True)
-
-    print("done")
+    local_path = "/tmp/xgb_v1.json"
+    bst.save_model(local_path)
+    upload_to_azure_blob(local_path, "xgb-models", "xgb/v1/model.json")
     # =====================================
     # =====================================
 
