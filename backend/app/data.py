@@ -123,6 +123,7 @@ def simulation():
             path = "../simulation/data"
         else:
             path = "/tmp"
+        print(path)
 
         for dataset, esp_id in zip(
             ["normal", "low_power", "short_duration"], [996, 997, 998]
@@ -132,11 +133,14 @@ def simulation():
             while import_success:
                 if path == "/tmp":
                     Path(f"/tmp/{dataset}/").mkdir(exist_ok=True)
-                    download_from_azure_blob(
-                        f"/tmp/{dataset}/data_{i+1}.csv",
-                        "example-data",
-                        f"simulated_data/{dataset}/data_{i+1}.csv",
-                    )
+                    try:
+                        download_from_azure_blob(
+                            f"/tmp/{dataset}/data_{i+1}.csv",
+                            "example-data",
+                            f"simulated_data/{dataset}/data_{i+1}.csv",
+                        )
+                    except Exception as e:
+                        logger.error(f"Could not download blob data: {e}")
                 import_success = import_data(f"{path}/{dataset}/data_{i+1}.csv", esp_id)
                 i += 1
                 break
