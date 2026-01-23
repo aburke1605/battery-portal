@@ -124,7 +124,6 @@ def simulation():
             path = "/tmp"
         else:
             path = "../simulation/data"
-        logger.info(path)
 
         for dataset, esp_id in zip(
             ["normal", "low_power", "short_duration"], [996, 997, 998]
@@ -144,7 +143,6 @@ def simulation():
                         logger.error(f"Could not download blob data: {e}")
                 import_success = import_data(f"{path}/{dataset}/data_{i+1}.csv", esp_id)
                 i += 1
-                break
         return {}, 200
     except Exception as e:
         logger.error(e)
