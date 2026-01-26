@@ -2,6 +2,7 @@ import logging
 
 logger = logging.getLogger(__name__)
 
+import os
 from datetime import datetime, timedelta
 import numpy as np
 from sklearn.gaussian_process import GaussianProcessRegressor
@@ -212,18 +213,27 @@ def train_model():
     pred_proba = bst.predict_proba(X_test)
 
     fpr, tpr, *_ = roc_curve(y_test, pred_proba[:, 1])
+
+    RUNNING_IN_AZURE = "WEBSITE_INSTANCE_ID" in os.environ
+    if RUNNING_IN_AZURE:
+        path = "/tmp"
+    else:
+        path = "."
+
     import matplotlib.pyplot as plt
 
     fig, ax = plt.subplots()
     ax.plot([0, 1], [0, 1], linestyle=":")
     ax.scatter(fpr, tpr)
-    fig.savefig("ROC.pdf")
+    fig.savefig(f"{path}/ROC.pdf")
+    if path == "/tmp":
+        upload_to_azure_blob(f"{path}/ROC.pdf", "xgb-models", "xgb/v1/ROC.pdf")
 
     # =====================================
     # =====================================
-    local_path = "/tmp/xgb_v1.json"
-    bst.save_model(local_path)
-    upload_to_azure_blob(local_path, "xgb-models", "xgb/v1/model.json")
+    bst.save_model(f"{path}/xgb_v1.json")
+    if path == "/tmp":
+        upload_to_azure_blob(f"{path}/xgb_v1.json", "xgb-models", "xgb/v1/model.json")
     # =====================================
     # =====================================
 
