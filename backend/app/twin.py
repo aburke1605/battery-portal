@@ -4,6 +4,7 @@ logger = logging.getLogger(__name__)
 
 import os
 from datetime import datetime, timedelta
+import matplotlib.pyplot as plt
 import numpy as np
 from sklearn.gaussian_process import GaussianProcessRegressor
 from sklearn.gaussian_process.kernels import RBF
@@ -14,11 +15,11 @@ from sklearn.metrics import roc_curve
 
 from flask import Blueprint, request
 from flask_security import login_required
-from sqlalchemy import select, desc, asc, Table
+from sqlalchemy import select, desc, asc, insert, Table
 
 from utils import upload_to_azure_blob
 
-from app.db import DB, PredictionFeatures
+from app.db import DB, PredictionFeatures, ModelMetadata
 from app.battery import get_battery_data_table
 
 twin = Blueprint("twin", __name__, url_prefix="/twin")
@@ -211,7 +212,6 @@ def train_model():
     )
     bst.fit(X_train, y_train)
     pred_proba = bst.predict_proba(X_test)
-
     fpr, tpr, *_ = roc_curve(y_test, pred_proba[:, 1])
 
     RUNNING_IN_AZURE = "WEBSITE_INSTANCE_ID" in os.environ
@@ -220,22 +220,55 @@ def train_model():
     else:
         path = "."
 
-    import matplotlib.pyplot as plt
+    model_name = "xgb"
+    new_version = 0
+    try:
+        creation_timestamp = datetime.now()
+        active_models = DB.session.execute(
+            ModelMetadata.query.filter_by(active=True)
+        ).fetchall()
+        n_active_models = len(active_models)
+        if n_active_models >= 1:
+            ModelMetadata.query.update({ModelMetadata.active: False})
+            DB.session.commit()
+        versions = np.sort(
+            np.ravel(
+                np.array(
+                    DB.session.query(ModelMetadata.version)
+                    .where(ModelMetadata.model_name == model_name)
+                    .all()
+                )
+            )
+        )
+        new_version = int(versions[-1] + 1) if len(versions) > 0 else 1
+        DB.session.execute(
+            insert(ModelMetadata).values(
+                model_name=model_name,
+                version=new_version,
+                storage_uri=f"https://batteryportalstorage.blob.core.windows.net/xgb-models/{model_name}/{new_version}/model.json",
+                creation_timestamp=creation_timestamp,
+                active=True,
+            )
+        )
+        DB.session.commit()
+    except Exception as e:
+        logger.error("Could not update model_metadata:", e)
 
     fig, ax = plt.subplots()
     ax.plot([0, 1], [0, 1], linestyle=":")
     ax.scatter(fpr, tpr)
     fig.savefig(f"{path}/ROC.pdf")
-    if path == "/tmp":
-        upload_to_azure_blob(f"{path}/ROC.pdf", "xgb-models", "xgb/v1/ROC.pdf")
+    bst.save_model(f"{path}/{model_name}_{new_version}.json")
 
-    # =====================================
-    # =====================================
-    bst.save_model(f"{path}/xgb_v1.json")
     if path == "/tmp":
-        upload_to_azure_blob(f"{path}/xgb_v1.json", "xgb-models", "xgb/v1/model.json")
-    # =====================================
-    # =====================================
+        upload_to_azure_blob(
+            f"{path}/ROC.pdf", "xgb-models", f"{model_name}/{new_version}/ROC.pdf"
+        )
+        upload_to_azure_blob(
+            f"{path}/{model_name}_{new_version}.json",
+            "xgb-models",
+            f"{model_name}/{new_version}/model.json",
+        )
 
 
 def get_query_size(data_table: Table, hours: float) -> int:
