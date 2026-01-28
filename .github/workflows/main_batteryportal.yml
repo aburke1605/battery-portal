@@ -54,7 +54,17 @@ jobs:
       # add step to run tests here (PyTest etc)
 
       - name: Zip artifact for deployment
-        run: zip -r release.zip backend/app backend/migrations backend/run.py backend/utils.py backend/.env requirements.txt frontend/dist
+        run: |
+          chmod +x App_Data/jobs/triggered/TrainModel/run.sh
+          zip -r release.zip \
+            App_Data \
+            backend/app \
+            backend/migrations \
+            backend/run.py \
+            backend/utils.py \
+            backend/.env \
+            requirements.txt \
+            frontend/dist
 
       - name: Upload artifact for deployment jobs
         if: ${{ !env.ACT }}
