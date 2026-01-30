@@ -19,7 +19,7 @@ services:
       target: backend-build
     environment:
       MYSQL_SERVER_HOST: db # the db service: set environment variable for local docker dev
-    command: bash -c "flask db upgrade && FLASK_ENV=production gunicorn -k gevent run:app -b 0.0.0.0:8000" # mimic azure command, but bind to all (0.0.0.0) so can reach container from local host machine
+    command: bash -c "export FLASK_APP=run:app && flask db upgrade && flask seed-admin && FLASK_ENV=production gunicorn -k gevent run:app -b 0.0.0.0:8000" # mimic azure command, but bind to all (0.0.0.0) so can reach container from local host machine
     depends_on:
       db:
         condition: service_healthy
