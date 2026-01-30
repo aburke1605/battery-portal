@@ -1,6 +1,6 @@
 services:
   db:
-    image: mysql:8.0 # pull pre-built image from DockerHub
+    image: mysql:8.4 # pull pre-built image from DockerHub
     environment:
       MYSQL_ROOT_PASSWORD: ${MYSQL_ADMIN_PASSWORD} # required
       MYSQL_ADMIN_USERNAME: ${MYSQL_ADMIN_USERNAME}
