@@ -55,7 +55,9 @@ jobs:
 
       - name: Zip artifact for deployment
         run: |
+          chmod +x App_Data/jobs/triggered/TrainModel/run.sh
           zip -r release.zip \
+            App_Data \
             backend/app \
             backend/migrations \
             backend/run.py \
