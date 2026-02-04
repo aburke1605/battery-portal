@@ -28,6 +28,7 @@ def initiate():
         )
         return jsonify({"clientSecret": intent.client_secret})
     except stripe.error.StripeError as e:
+        logger.error(f"Error initiating payment: {e}")
         return jsonify(error=str(e)), 400
 
 

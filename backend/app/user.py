@@ -114,10 +114,12 @@ def check_auth():
     # update the subscription status (of non-superuser accounts) regularly
     try:
         if not any(role.name == "superuser" for role in current_user.roles):
-            current_user.subscribed = not (
-                datetime.now() > current_user.subscription_expiry
-            )
-            DB.session.commit()
+            if current_user.subscribed == True:
+                current_user.subscribed = (
+                    not current_user.subscription_expiry == None
+                    and not (datetime.now() > current_user.subscription_expiry)
+                )
+                DB.session.commit()
     except Exception as e:
         logger.error(
             f"Error checking subscription status of user {current_user.id}:", e
