@@ -14,11 +14,11 @@ const apiConfig = {
       ? "ws://localhost:8888/browser_ws"
       : `${WS_BASE_URL}/api/browser_ws`,
   USER_API: `${HTTP_PROTOCOL}//${HOST}/api/user`,
-  DB_EXECUTE_SQL_API: `${HTTP_PROTOCOL}//${HOST}/api/db/execute_sql`,
-  DB_INFO_API: `${HTTP_PROTOCOL}//${HOST}/api/db/info`,
-  DB_ESP_ID_API: `${HTTP_PROTOCOL}//${HOST}/api/db/esp_ids`,
-  DB_DATA_API: `${HTTP_PROTOCOL}//${HOST}/api/db/data`,
-  DB_CHART_DATA_API: `${HTTP_PROTOCOL}//${HOST}/api/db/chart_data`,
+  DB_EXECUTE_SQL_API: `${HTTP_PROTOCOL}//${HOST}/api/battery/execute_sql`,
+  DB_INFO_API: `${HTTP_PROTOCOL}//${HOST}/api/battery/info`,
+  DB_ESP_ID_API: `${HTTP_PROTOCOL}//${HOST}/api/battery/esp_ids`,
+  DB_DATA_API: `${HTTP_PROTOCOL}//${HOST}/api/battery/data`,
+  DB_CHART_DATA_API: `${HTTP_PROTOCOL}//${HOST}/api/battery/chart_data`,
   DB_RECOMMENDATION_API: `${HTTP_PROTOCOL}//${HOST}/api/twin/recommendation`,
   PAY_INTENT_API: `${HTTP_PROTOCOL}//${HOST}/api/pay/initiate`,
   PAY_PUBLIC_KEY:

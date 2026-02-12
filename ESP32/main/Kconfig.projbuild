@@ -226,6 +226,12 @@ config CURRENT_ADDR
     help
       Set the SBS address for the BMS to read the battery average current.
 
+config CYCLE_COUNT_ADDR
+    hex "BMS Cycle Count Address"
+    default 0x17
+    help
+      Set the SBS address for the BMS to read the battery cycle count.
+
 
 config DEVICE_NAME_ADDR
     hex "BMS Device Name Address"
