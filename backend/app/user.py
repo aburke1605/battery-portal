@@ -2,14 +2,11 @@ import logging
 
 logger = logging.getLogger(__name__)
 import os
-from uuid import uuid4
 import re
 from datetime import datetime
 
 from flask import Flask, Blueprint, request, jsonify
 from flask_security import (
-    UserMixin,
-    RoleMixin,
     SQLAlchemyUserDatastore,
     login_user,
     logout_user,
@@ -20,57 +17,9 @@ from flask_security.utils import hash_password
 from flask_login import current_user
 from sqlalchemy import inspect
 
+from app.db import DB, Users, Roles
+
 user = Blueprint("user", __name__, url_prefix="/user")
-
-from app.db import DB
-
-
-class Roles(DB.Model, RoleMixin):
-    """
-    Defines the structure of the roles table, which defines types of users.
-    """
-
-    __tablename__ = "roles"
-
-    id = DB.Column(DB.Integer, primary_key=True)
-    name = DB.Column(DB.String(80), unique=True)
-    description = DB.Column(DB.String(255))
-
-
-# simple association table to link User(s) and Role(s)
-roles_users = DB.Table(
-    "roles_users",
-    DB.Column("user_id", DB.Integer, DB.ForeignKey("users.id")),
-    DB.Column("role_id", DB.Integer, DB.ForeignKey("roles.id")),
-)
-
-
-class Users(DB.Model, UserMixin):
-    """
-    Defines the structure of the users table.
-    """
-
-    __tablename__ = "users"
-
-    id = DB.Column(DB.Integer, primary_key=True)
-    first_name = DB.Column(DB.String(255), nullable=False)
-    last_name = DB.Column(DB.String(255))
-    email = DB.Column(DB.String(255), unique=True, nullable=False)
-    password = DB.Column(DB.String(255), nullable=False)
-    active = DB.Column(DB.Boolean())
-    fs_uniquifier = DB.Column(
-        DB.String(64), unique=True, nullable=False, default=lambda: str(uuid4())
-    )
-    roles = DB.relationship(
-        "Roles", secondary=roles_users, backref=DB.backref("users", lazy="dynamic")
-    )
-    subscribed = DB.Column(DB.Boolean(), default=False)
-    subscription_expiry = DB.Column(DB.DateTime(), default=datetime.now())
-    batteries = DB.relationship(
-        "BatteryInfo",
-        back_populates="user",
-        passive_deletes=True,
-    )
 
 
 users = SQLAlchemyUserDatastore(DB, Users, Roles)
@@ -109,6 +58,8 @@ def create_admin(app: Flask):
             email=admin_email,
             password=hash_password(admin_password),
             roles=[roles["user"], roles["superuser"]],
+            subscribed=True,
+            subscription_expiry=None,
             # are the other columns of Users therefore not needed?
         )
         logger.info(f'creating admin user "{admin_email}"')
@@ -160,12 +111,15 @@ def check_auth():
     """
     API to check for already logged-in users, works in conjunction with AuthContext.tsx.
     """
-    # update the subscription status regularly
+    # update the subscription status (of non-superuser accounts) regularly
     try:
-        current_user.subscribed = not (
-            datetime.now() > current_user.subscription_expiry
-        )
-        DB.session.commit()
+        if not any(role.name == "superuser" for role in current_user.roles):
+            if current_user.subscribed == True:
+                current_user.subscribed = (
+                    not current_user.subscription_expiry == None
+                    and not (datetime.now() > current_user.subscription_expiry)
+                )
+                DB.session.commit()
     except Exception as e:
         logger.error(
             f"Error checking subscription status of user {current_user.id}:", e

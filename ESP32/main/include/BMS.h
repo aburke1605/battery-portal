@@ -23,6 +23,7 @@ typedef struct {
   int16_t I3;
   int16_t I4;
   int16_t OTC;
+  uint16_t CC;
 } telemetry_data_t;
 
 void reset();
