@@ -2,6 +2,7 @@ import logging
 
 logger = logging.getLogger(__name__)
 
+import os
 from pathlib import Path
 import csv
 from datetime import datetime
@@ -10,8 +11,11 @@ from flask import Blueprint
 from flask_security import roles_required
 from sqlalchemy import inspect
 
+from utils import download_from_azure_blob
+
 from app.db import DB
 from app.battery import get_battery_info_entry, get_battery_data_table
+from app.twin import add_to_prediction_features
 
 data = Blueprint("data", __name__, url_prefix="/data")
 
@@ -81,6 +85,9 @@ def import_data(csv_path: str, esp_id: int):
                     "wifi": False,
                 }
             )
+
+            add_to_prediction_features(esp_id, int(row["Cycle"]) - 1)
+
     if rows:
         try:
             DB.session.execute(table.insert(), rows)
@@ -112,15 +119,29 @@ def simulation():
     API
     """
     try:
+        RUNNING_IN_AZURE = "WEBSITE_INSTANCE_ID" in os.environ
+        if RUNNING_IN_AZURE:
+            path = "/tmp"
+        else:
+            path = "../simulation/data"
+
         for dataset, esp_id in zip(
             ["normal", "low_power", "short_duration"], [996, 997, 998]
         ):
             i = 0
             import_success = True
             while import_success:
-                import_success = import_data(
-                    f"../simulation/data/{dataset}/data_{i+1}.csv", esp_id
-                )
+                if path == "/tmp":
+                    Path(f"/tmp/{dataset}/").mkdir(exist_ok=True)
+                    try:
+                        download_from_azure_blob(
+                            f"/tmp/{dataset}/data_{i+1}.csv",
+                            "example-data",
+                            f"simulated_data/{dataset}/data_{i+1}.csv",
+                        )
+                    except Exception as e:
+                        logger.error(f"Could not download blob data: {e}")
+                import_success = import_data(f"{path}/{dataset}/data_{i+1}.csv", esp_id)
                 i += 1
         return {}, 200
     except Exception as e:

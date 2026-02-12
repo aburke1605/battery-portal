@@ -2,19 +2,257 @@ import logging
 
 logger = logging.getLogger(__name__)
 
-from datetime import timedelta
+import os
+import requests
+from datetime import datetime, timedelta
 import numpy as np
 from sklearn.gaussian_process import GaussianProcessRegressor
 from sklearn.gaussian_process.kernels import RBF
 
 from flask import Blueprint, request
-from flask_security import login_required
-from sqlalchemy import select, desc, asc
+from flask_security import login_required, roles_required
+from sqlalchemy import select, desc, asc, Table
 
-from app.db import DB
-from app.battery import get_query_size
+from app.db import DB, PredictionFeatures
+from app.battery import get_battery_data_table
 
 twin = Blueprint("twin", __name__, url_prefix="/twin")
+
+
+def add_to_prediction_features(esp_id: int, current_cycle: int) -> None:
+    if current_cycle < 200:
+        return  # largest block feature is 200 cycles, so skip until then
+    if current_cycle % 10 != 0:
+        return  # make a new datapoint every 10 cycles
+    if (
+        PredictionFeatures.query.filter_by(
+            esp_id=esp_id, cycle_index=current_cycle
+        ).first()
+        is not None
+    ):
+        return  # only if it doesn't already exist
+
+    try:
+        table = get_battery_data_table(str(esp_id))
+        cycles = np.arange(current_cycle + 1 - 50, current_cycle + 1, step=1)
+        # fmt: off
+        query = (
+            select(
+                table.c.CC,
+                table.c.cT,
+                table.c.Q,
+                table.c.C,
+            )
+            .where(
+                table.c.CC >= int(cycles[0]),
+                table.c.CC <= int(cycles[-1]),
+            )
+        )
+        # fmt: on
+        block = np.array(DB.session.execute(query).fetchall())
+
+        mean_temp_last_50_cycles = np.mean(block[:, 1])
+
+        DoDs = []
+        for cycle in cycles:
+            mask = block[:, 0] == cycle
+            if np.sum(mask) == 0:
+                continue
+            DoDs.append(min(block[mask][:, 2]))
+        mean_DoD_last_50_cycles = np.mean(DoDs)
+
+        capacity_Ah_last_50_cycles = np.mean(block[:, 3])
+
+        # fmt: off
+        query = (
+            select(
+                table.c.timestamp,
+                table.c.C,
+            )
+            .where(
+                table.c.CC == current_cycle - 200 + 1
+            )
+            .limit(1)
+        )
+        # fmt: on
+        first = np.array(DB.session.execute(query).fetchall())
+        # fmt: off
+        query = (
+            select(
+                table.c.timestamp,
+                table.c.C,
+            )
+            .where(
+                table.c.CC == current_cycle
+            )
+            .limit(1)
+        )
+        # fmt: on
+        second = np.array(DB.session.execute(query).fetchall())
+        capacity_slope_last_200_cycles = (second[0][1] - first[0][1]) / (
+            (second[0][0] - first[0][0]).total_seconds() / (60 * 60)
+        )
+
+        most_recent_timestamp = DB.session.execute(
+            select(table.c.timestamp).order_by(desc(table.c.timestamp))
+        ).first()[0]
+        # fmt: off
+        query = (
+            select(
+                table.c.timestamp,
+                table.c.Q,
+            )
+            .where(
+                table.c.timestamp > most_recent_timestamp - timedelta(days=7)
+            )
+        )
+        # fmt: on
+        block = np.array(DB.session.execute(query).fetchall())
+
+        idle_hours_last_7d = 0
+        min_downtime = timedelta(minutes=5)
+        last_timestamp = block[0, 0]
+
+        hours_soc_gt_90_last_7d = 0
+        first_timestamp_above_90 = block[0, 0]
+        Q_was_above_90 = False
+
+        for timestamp, Q in block:
+            if timestamp - last_timestamp > min_downtime:
+                idle_hours_last_7d += (timestamp - last_timestamp).total_seconds()
+            last_timestamp = timestamp
+
+            if Q <= 90:
+                if Q_was_above_90:
+                    hours_soc_gt_90_last_7d += (
+                        timestamp - first_timestamp_above_90
+                    ).total_seconds()
+                    Q_was_above_90 = False
+            else:
+                if not Q_was_above_90:
+                    first_timestamp_above_90 = timestamp
+                Q_was_above_90 = True
+
+        idle_hours_last_7d /= 60 * 60
+        hours_soc_gt_90_last_7d /= 60 * 60
+
+        DB.session.add(
+            PredictionFeatures(
+                timestamp=second[0][0],
+                esp_id=esp_id,
+                cycle_index=current_cycle,
+                mean_temp_last_50_cycles=mean_temp_last_50_cycles,
+                mean_DoD_last_50_cycles=mean_DoD_last_50_cycles,
+                capacity_Ah_last_50_cycles=capacity_Ah_last_50_cycles,
+                capacity_slope_last_200_cycles=capacity_slope_last_200_cycles,
+                hours_soc_gt_90_last_7d=hours_soc_gt_90_last_7d,
+                idle_hours_last_7d=idle_hours_last_7d,
+            )
+        )
+        DB.session.commit()
+    except Exception:
+        DB.session.rollback()
+        logger.exception("Error committing prediction features to database")
+
+
+def decide_failure_within_7d(esp_id: int) -> None:
+    try:
+        table = get_battery_data_table(str(esp_id))
+
+        # get first timestamp where H is 80
+
+        # fmt: off
+        query = (
+            select(table.c.timestamp)
+            .where(table.c.H < 81)
+            .limit(1)
+        )
+        # fmt: on
+        timestamp = DB.session.execute(query).scalars().all()[0]
+
+        for row in PredictionFeatures.query.filter(
+            PredictionFeatures.esp_id == esp_id,
+            PredictionFeatures.timestamp > timestamp - timedelta(days=7),
+        ).all():
+            row.failure_within_7d = True
+        DB.session.commit()
+
+    except Exception as e:
+        DB.session.rollback()
+        logger.error(f"Error updating failure within 14 days boolean: {e}")
+
+
+def get_query_size(data_table: Table, hours: float) -> int:
+    """
+    Since data is recorded only when the current is not zero, the data may be 'chunked', with lengthy periods of downtime separating each.
+    The 12h therefore must be acquired cumulatively, where we define some minimum downtime period (e.g. 5m) which separates consecutive chunks.
+
+    TODO:
+        Assuming any connected battery unit sends data on average every one minute, it would be simpler to just do a `.limit(hours*60)`.
+        So, check if the assumption is true!
+    """
+
+    target_duration = timedelta(hours=hours)
+    min_downtime = timedelta(minutes=5)
+    batch_size = 60
+
+    last_timestamp = datetime.now()
+    cumulative_duration = timedelta(0)
+
+    query_size = 1  # at least
+
+    try:
+        # progressively fetch timestamps until get >=hours of collected time
+        while cumulative_duration < target_duration:
+            # initial query
+            # fmt: off
+            sub_query = (
+                select(data_table.c.timestamp)
+                .order_by(desc(data_table.c.timestamp))          # order by most recent
+                .where(data_table.c.timestamp <= last_timestamp) # skip previously queried batches
+                .limit(batch_size)                               # query in batches to avoid large queries
+                .subquery()
+            )
+            query = (
+                select(sub_query.c.timestamp)
+                .order_by(asc(sub_query.c.timestamp)) # reorder
+            )
+            # fmt: on
+            timestamps = DB.session.execute(query).scalars().all()
+            if not timestamps:
+                break
+
+            # measure accurate cumulative time by splitting into chunks
+            chunks = []  # will be 2D array; list of lists of timestamps
+            current_chunk = [timestamps[0]]  # first chunk, starts from the beginning
+            for previous_timestamp, next_timestamp in zip(timestamps, timestamps[1:]):
+                if (next_timestamp - previous_timestamp) < min_downtime:
+                    current_chunk.append(next_timestamp)
+                else:
+                    chunks.append(current_chunk)  # chunk complete
+                    current_chunk = [next_timestamp]  # start new chunk for next loop
+            chunks.append(current_chunk)  # final chunk
+
+            reversed_chunks = reversed(chunks)
+
+            # increment cumulative time by chunk time periods and number of data points
+            for chunk in reversed_chunks:
+                cumulative_duration += chunk[-1] - chunk[0]
+                query_size += len(chunk)
+                if cumulative_duration >= target_duration:
+                    break  # break early, no need to continue to next chunk or batch
+
+            # prepare for next batch loop
+            last_timestamp = timestamps[0]
+            query_size -= 1  # because first time in batch i == last time in batch i-1
+            # (see `where(data_table.c.timestamp <= last_timestamp)` in inital query)
+            if len(timestamps) < batch_size:
+                break  # no more data in table
+
+    except Exception as e:
+        logger.error(f"Error: {e}")
+
+    return query_size
 
 
 def high_temperature_check(esp_id: str, high_temperature_threshold: float) -> bool:
@@ -376,3 +614,28 @@ def recommendation():
 
     except Exception as e:
         return {"Error": e}, 404
+
+
+@twin.route("/train_model", methods=["POST"])
+@roles_required("superuser")
+def train_model():
+    """
+    API to manually trigger training via WebJob
+    """
+    app__name = "batteryportal-e9czhgamgferavf7"
+    server_location = "ukwest-01"
+    URL = f"https://{app__name}.scm.{server_location}.azurewebsites.net/api/triggeredwebjobs/TrainModel/run"
+
+    FTPS_USERNAME = os.getenv("FTPS_USERNAME", "$BatteryPortal")
+    FTPS_PASSWORD = os.getenv("FTPS_PASSWORD", None)
+
+    print(FTPS_USERNAME, FTPS_PASSWORD)
+
+    r = requests.post(
+        URL,
+        auth=(FTPS_USERNAME, FTPS_PASSWORD),
+        timeout=30,
+    )
+    r.raise_for_status()
+
+    return {"status": "started"}, 202

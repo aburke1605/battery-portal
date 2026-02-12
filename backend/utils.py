@@ -1,5 +1,38 @@
 import numpy as np
 from scipy.interpolate import interp1d
+from azure.identity import DefaultAzureCredential
+from azure.storage.blob import BlobServiceClient
+
+
+def upload_to_azure_blob(LOCAL_PATH, CONTAINER_NAME, BLOB_PATH):
+    credential = DefaultAzureCredential()
+    blob_service = BlobServiceClient(
+        account_url=f"https://batteryportalstorage.blob.core.windows.net",
+        credential=credential,
+    )
+    blob_client = blob_service.get_blob_client(
+        container=CONTAINER_NAME,
+        blob=BLOB_PATH,
+    )
+
+    with open(LOCAL_PATH, "rb") as f:
+        blob_client.upload_blob(f, overwrite=True)
+
+
+def download_from_azure_blob(LOCAL_PATH, CONTAINER_NAME, BLOB_PATH):
+    credential = DefaultAzureCredential()
+    blob_service = BlobServiceClient(
+        account_url=f"https://batteryportalstorage.blob.core.windows.net",
+        credential=credential,
+    )
+    blob_client = blob_service.get_blob_client(
+        container=CONTAINER_NAME,
+        blob=BLOB_PATH,
+    )
+
+    download_stream = blob_client.download_blob()
+    with open(LOCAL_PATH, "wb") as f:
+        f.write(download_stream.readall())
 
 
 def temperature_corrected_voltage(voltage, temp_C):

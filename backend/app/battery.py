@@ -8,81 +8,13 @@ from collections import defaultdict
 from flask import Blueprint, request, jsonify
 from flask_security import roles_required, login_required
 from flask_login import current_user
-from sqlalchemy import inspect, insert, select, desc, asc, func, text, Table
+from sqlalchemy import inspect, insert, select, desc, func, text, Table
 
 from utils import process_telemetry_data
 
 from app.db import DB, BatteryInfo
 
 battery = Blueprint("battery", __name__, url_prefix="/battery")
-
-
-def update_battery_data(json: list) -> None:
-    """
-    Is called when new telemetry data is received from an ESP32 WebSocket client.
-    Creates new / updates the battery_data_<esp_id> table and corresponding row in the battery_info table.
-    """
-    # first grab the esp_id of the root for later use
-    root_id = json[0]["esp_id"]
-
-    for i, data in enumerate(json):
-        esp_id = data["esp_id"]
-        content = data["content"]
-
-        if content["I"] == 0:
-            continue
-
-        # first update battery_info table
-        try:
-            # check if the entry already exists
-            battery = get_battery_info_entry(esp_id)
-            # update the entry info
-            battery.esp_id = esp_id
-            battery.root_id = None if i == 0 else root_id
-            DB.session.commit()
-            set_live_websocket(
-                esp_id, True
-            )  # this function (`update_battery_data`) is only ever called from the /esp_ws handler, so must be True
-        except Exception as e:
-            DB.session.rollback()
-            logger.error(f"DB error processing WebSocket message from {esp_id}: {e}")
-
-        # then update/create battery_data_bms_<esp_id> table
-        battery_data_table = get_battery_data_table(esp_id)
-        try:
-            process_telemetry_data(content)  # first add approximate cell charges
-            query = insert(battery_data_table).values(
-                timestamp=datetime.fromisoformat(content["timestamp"]),
-                lat=content["lat"],
-                lon=content["lon"],
-                Q=content["Q"],
-                H=content["H"],
-                C=content["C"],
-                V=content["V"] / 10,
-                V1=content["V1"] / 100,
-                V2=content["V2"] / 100,
-                V3=content["V3"] / 100,
-                V4=content["V4"] / 100,
-                I=content["I"] / 10,
-                I1=content["I1"] / 100,
-                I2=content["I2"] / 100,
-                I3=content["I3"] / 100,
-                I4=content["I4"] / 100,
-                aT=content["aT"] / 10,
-                cT=content["cT"] / 10,
-                T1=content["T1"] / 100,
-                T2=content["T2"] / 100,
-                T3=content["T3"] / 100,
-                T4=content["T4"] / 100,
-                OTC=content["OTC"],
-                CC=content["CC"],
-                wifi=content["wifi"],
-            )
-            DB.session.execute(query)
-            DB.session.commit()
-        except Exception as e:
-            DB.session.rollback()
-            logger.error(f"DB error inserting data from {esp_id} into table: {e}")
 
 
 def get_battery_info_entry(esp_id: str) -> BatteryInfo:
@@ -168,6 +100,80 @@ def get_battery_data_table(esp_id: str) -> Table:
         logger.info(f"created new table: {name}")
 
     return table
+
+
+from app.twin import add_to_prediction_features
+
+
+def update_battery_data(json: list) -> None:
+    """
+    Is called when new telemetry data is received from an ESP32 WebSocket client.
+    Creates new / updates the battery_data_<esp_id> table and corresponding row in the battery_info table.
+    """
+    # first grab the esp_id of the root for later use
+    root_id = json[0]["esp_id"]
+
+    for i, data in enumerate(json):
+        esp_id = data["esp_id"]
+        content = data["content"]
+
+        if content["I"] == 0:
+            continue
+
+        # first update battery_info table
+        try:
+            # check if the entry already exists
+            battery = get_battery_info_entry(esp_id)
+            # update the entry info
+            battery.esp_id = esp_id
+            battery.root_id = None if i == 0 else root_id
+            DB.session.commit()
+            set_live_websocket(
+                esp_id, True
+            )  # this function (`update_battery_data`) is only ever called from the /esp_ws handler, so must be True
+        except Exception as e:
+            DB.session.rollback()
+            logger.error(f"DB error processing WebSocket message from {esp_id}: {e}")
+
+        # then update/create battery_data_bms_<esp_id> table
+        battery_data_table = get_battery_data_table(esp_id)
+        try:
+            process_telemetry_data(content)  # first add approximate cell charges
+            query = insert(battery_data_table).values(
+                timestamp=datetime.fromisoformat(content["timestamp"]),
+                lat=content["lat"],
+                lon=content["lon"],
+                Q=content["Q"],
+                H=content["H"],
+                C=content["C"],
+                V=content["V"] / 10,
+                V1=content["V1"] / 100,
+                V2=content["V2"] / 100,
+                V3=content["V3"] / 100,
+                V4=content["V4"] / 100,
+                I=content["I"] / 10,
+                I1=content["I1"] / 100,
+                I2=content["I2"] / 100,
+                I3=content["I3"] / 100,
+                I4=content["I4"] / 100,
+                aT=content["aT"] / 10,
+                cT=content["cT"] / 10,
+                T1=content["T1"] / 100,
+                T2=content["T2"] / 100,
+                T3=content["T3"] / 100,
+                T4=content["T4"] / 100,
+                OTC=content["OTC"],
+                CC=content["CC"],
+                wifi=content["wifi"],
+            )
+            DB.session.execute(query)
+            DB.session.commit()
+        except Exception as e:
+            DB.session.rollback()
+            logger.error(f"DB error inserting data from {esp_id} into table: {e}")
+
+        # finally, process previous cycle blocks into features for ML model
+        add_to_prediction_features(esp_id, int(content["CC"]) - 1)
 
 
 @battery.route("/execute_sql", methods=["POST"])
@@ -350,76 +356,3 @@ def chart_data():
         return jsonify(data)
     else:
         return {}, 404
-
-
-def get_query_size(data_table: Table, hours: float) -> int:
-    """
-    Since data is recorded only when the current is not zero, the data may be 'chunked', with lengthy periods of downtime separating each.
-    The 12h therefore must be acquired cumulatively, where we define some minimum downtime period (e.g. 5m) which separates consecutive chunks.
-
-    TODO:
-        Assuming any connected battery unit sends data on average every one minute, it would be simpler to just do a `.limit(hours*60)`.
-        So, check if the assumption is true!
-    """
-
-    target_duration = timedelta(hours=hours)
-    min_downtime = timedelta(minutes=5)
-    batch_size = 60
-
-    last_timestamp = datetime.now()
-    cumulative_duration = timedelta(0)
-
-    query_size = 1  # at least
-
-    try:
-        # progressively fetch timestamps until get >=hours of collected time
-        while cumulative_duration < target_duration:
-            # initial query
-            # fmt: off
-            sub_query = (
-                select(data_table.c.timestamp)
-                .order_by(desc(data_table.c.timestamp))          # order by most recent
-                .where(data_table.c.timestamp <= last_timestamp) # skip previously queried batches
-                .limit(batch_size)                               # query in batches to avoid large queries
-                .subquery()
-            )
-            query = (
-                select(sub_query.c.timestamp)
-                .order_by(asc(sub_query.c.timestamp)) # reorder
-            )
-            # fmt: on
-            timestamps = DB.session.execute(query).scalars().all()
-            if not timestamps:
-                break
-
-            # measure accurate cumulative time by splitting into chunks
-            chunks = []  # will be 2D array; list of lists of timestamps
-            current_chunk = [timestamps[0]]  # first chunk, starts from the beginning
-            for previous_timestamp, next_timestamp in zip(timestamps, timestamps[1:]):
-                if (next_timestamp - previous_timestamp) < min_downtime:
-                    current_chunk.append(next_timestamp)
-                else:
-                    chunks.append(current_chunk)  # chunk complete
-                    current_chunk = [next_timestamp]  # start new chunk for next loop
-            chunks.append(current_chunk)  # final chunk
-
-            reversed_chunks = reversed(chunks)
-
-            # increment cumulative time by chunk time periods and number of data points
-            for chunk in reversed_chunks:
-                cumulative_duration += chunk[-1] - chunk[0]
-                query_size += len(chunk)
-                if cumulative_duration >= target_duration:
-                    break  # break early, no need to continue to next chunk or batch
-
-            # prepare for next batch loop
-            last_timestamp = timestamps[0]
-            query_size -= 1  # because first time in batch i == last time in batch i-1
-            # (see `where(data_table.c.timestamp <= last_timestamp)` in inital query)
-            if len(timestamps) < batch_size:
-                break  # no more data in table
-
-    except Exception as e:
-        logger.error(f"Error: {e}")
-
-    return query_size
