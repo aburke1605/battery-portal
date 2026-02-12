@@ -3,32 +3,20 @@ import logging
 logger = logging.getLogger(__name__)
 
 import os
+import requests
 from datetime import datetime, timedelta
-import matplotlib.pyplot as plt
 import numpy as np
 from sklearn.gaussian_process import GaussianProcessRegressor
 from sklearn.gaussian_process.kernels import RBF
-import pandas as pd
-from xgboost import XGBClassifier
-from sklearn.model_selection import train_test_split
-from sklearn.metrics import roc_curve
 
 from flask import Blueprint, request
-from flask_security import login_required
-from sqlalchemy import select, desc, asc, insert, Table
+from flask_security import login_required, roles_required
+from sqlalchemy import select, desc, asc, Table
 
-from utils import upload_to_azure_blob
-
-from app.db import DB, PredictionFeatures, ModelMetadata
+from app.db import DB, PredictionFeatures
 from app.battery import get_battery_data_table
 
 twin = Blueprint("twin", __name__, url_prefix="/twin")
-
-
-@twin.route("/TEST")
-def TEST():
-    train_model()
-    return {}, 200
 
 
 def add_to_prediction_features(esp_id: int, current_cycle: int) -> None:
@@ -192,83 +180,6 @@ def decide_failure_within_7d(esp_id: int) -> None:
     except Exception as e:
         DB.session.rollback()
         logger.error(f"Error updating failure within 14 days boolean: {e}")
-
-
-def train_model():
-    esp_ids = DB.session.query(PredictionFeatures.esp_id).distinct().all()
-
-    for esp_id in [row[0] for row in esp_ids]:
-        decide_failure_within_7d(esp_id)
-
-    dataframe = pd.read_sql(select(PredictionFeatures), DB.engine)
-    y = dataframe["failure_within_7d"].to_numpy()
-    X = dataframe.drop(
-        ["timestamp", "esp_id", "failure_within_7d"], axis="columns"
-    ).to_numpy()
-
-    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.25)
-    bst = XGBClassifier(
-        n_estimators=2, max_depth=2, learning_rate=1, objective="binary:logistic"
-    )
-    bst.fit(X_train, y_train)
-    pred_proba = bst.predict_proba(X_test)
-    fpr, tpr, *_ = roc_curve(y_test, pred_proba[:, 1])
-
-    RUNNING_IN_AZURE = "WEBSITE_INSTANCE_ID" in os.environ
-    if RUNNING_IN_AZURE:
-        path = "/tmp"
-    else:
-        path = "."
-
-    model_name = "xgb"
-    new_version = 0
-    try:
-        creation_timestamp = datetime.now()
-        active_models = DB.session.execute(
-            ModelMetadata.query.filter_by(active=True)
-        ).fetchall()
-        n_active_models = len(active_models)
-        if n_active_models >= 1:
-            ModelMetadata.query.update({ModelMetadata.active: False})
-            DB.session.commit()
-        versions = np.sort(
-            np.ravel(
-                np.array(
-                    DB.session.query(ModelMetadata.version)
-                    .where(ModelMetadata.model_name == model_name)
-                    .all()
-                )
-            )
-        )
-        new_version = int(versions[-1] + 1) if len(versions) > 0 else 1
-        DB.session.execute(
-            insert(ModelMetadata).values(
-                model_name=model_name,
-                version=new_version,
-                storage_uri=f"https://batteryportalstorage.blob.core.windows.net/xgb-models/{model_name}/{new_version}/model.json",
-                creation_timestamp=creation_timestamp,
-                active=True,
-            )
-        )
-        DB.session.commit()
-    except Exception as e:
-        logger.error("Could not update model_metadata:", e)
-
-    fig, ax = plt.subplots()
-    ax.plot([0, 1], [0, 1], linestyle=":")
-    ax.scatter(fpr, tpr)
-    fig.savefig(f"{path}/ROC.pdf")
-    bst.save_model(f"{path}/{model_name}_{new_version}.json")
-
-    if path == "/tmp":
-        upload_to_azure_blob(
-            f"{path}/ROC.pdf", "xgb-models", f"{model_name}/{new_version}/ROC.pdf"
-        )
-        upload_to_azure_blob(
-            f"{path}/{model_name}_{new_version}.json",
-            "xgb-models",
-            f"{model_name}/{new_version}/model.json",
-        )
 
 
 def get_query_size(data_table: Table, hours: float) -> int:
@@ -703,3 +614,28 @@ def recommendation():
 
     except Exception as e:
         return {"Error": e}, 404
+
+
+@twin.route("/train_model", methods=["POST"])
+@roles_required("superuser")
+def train_model():
+    """
+    API to manually trigger training via WebJob
+    """
+    app__name = "batteryportal-e9czhgamgferavf7"
+    server_location = "ukwest-01"
+    URL = f"https://{app__name}.scm.{server_location}.azurewebsites.net/api/triggeredwebjobs/TrainModel/run"
+
+    FTPS_USERNAME = os.getenv("FTPS_USERNAME", "$BatteryPortal")
+    FTPS_PASSWORD = os.getenv("FTPS_PASSWORD", None)
+
+    print(FTPS_USERNAME, FTPS_PASSWORD)
+
+    r = requests.post(
+        URL,
+        auth=(FTPS_USERNAME, FTPS_PASSWORD),
+        timeout=30,
+    )
+    r.raise_for_status()
+
+    return {"status": "started"}, 202
