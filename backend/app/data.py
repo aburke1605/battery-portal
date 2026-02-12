@@ -2,6 +2,7 @@ import logging
 
 logger = logging.getLogger(__name__)
 
+from pathlib import Path
 import csv
 from datetime import datetime
 
@@ -19,10 +20,13 @@ def import_data(csv_path: str, esp_id: int):
     """
     Creates example data for fresh website lacking real data.
     """
+    if not Path(csv_path).exists():
+        return False
+
     name = f"battery_data_bms_{esp_id}"
     inspector = inspect(DB.engine)
     if esp_id == 999 and inspector.has_table(name):
-        return
+        return False
 
     # create entry in battery_info table
     try:
@@ -55,6 +59,7 @@ def import_data(csv_path: str, esp_id: int):
                     "lon": 0,
                     "Q": int(row["Relative State of Charge"] or 0),
                     "H": int(row["State of Health"] or 0),
+                    "C": float(row["Capacity"] or 0),
                     "V": float(row["Voltage"] or 0) / 1000,
                     "V1": 0,
                     "V2": 0,
@@ -72,12 +77,19 @@ def import_data(csv_path: str, esp_id: int):
                     "T3": 0,
                     "T4": 0,
                     "OTC": 0,
+                    "CC": int(row["Cycle"] or 0),
                     "wifi": False,
                 }
             )
     if rows:
-        DB.session.execute(table.insert(), rows)
-        DB.session.commit()
+        try:
+            DB.session.execute(table.insert(), rows)
+            DB.session.commit()
+        except Exception as e:
+            logger.error(f"Error: {e}")
+            return False
+
+    return True
 
 
 @data.route("/example", methods=["GET"])
@@ -100,10 +112,17 @@ def simulation():
     API
     """
     try:
-        for i in range(900):
-            import_data(f"../simulation/data/normal/data_{i+1}.csv", 996)
-            import_data(f"../simulation/data/low_power/data_{i+1}.csv", 997)
-            import_data(f"../simulation/data/short_duration/data_{i+1}.csv", 998)
+        for dataset, esp_id in zip(
+            ["normal", "low_power", "short_duration"], [996, 997, 998]
+        ):
+            i = 0
+            import_success = True
+            while import_success:
+                import_success = import_data(
+                    f"../simulation/data/{dataset}/data_{i+1}.csv", esp_id
+                )
+                i += 1
         return {}, 200
-    except:
+    except Exception as e:
+        logger.error(e)
         return {}, 404

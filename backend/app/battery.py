@@ -57,6 +57,7 @@ def update_battery_data(json: list) -> None:
                 lon=content["lon"],
                 Q=content["Q"],
                 H=content["H"],
+                C=content["C"],
                 V=content["V"] / 10,
                 V1=content["V1"] / 100,
                 V2=content["V2"] / 100,
@@ -74,6 +75,7 @@ def update_battery_data(json: list) -> None:
                 T3=content["T3"] / 100,
                 T4=content["T4"] / 100,
                 OTC=content["OTC"],
+                CC=content["CC"],
                 wifi=content["wifi"],
             )
             DB.session.execute(query)
@@ -141,6 +143,7 @@ def get_battery_data_table(esp_id: str) -> Table:
             DB.Column("lon", DB.Float, nullable=False),
             DB.Column("Q", DB.Integer, nullable=False),
             DB.Column("H", DB.Integer, nullable=False),
+            DB.Column("C", DB.Float, nullable=False),
             DB.Column("V", DB.Float, nullable=False),
             DB.Column("V1", DB.Float, nullable=False),
             DB.Column("V2", DB.Float, nullable=False),
@@ -158,6 +161,7 @@ def get_battery_data_table(esp_id: str) -> Table:
             DB.Column("T3", DB.Float, nullable=False),
             DB.Column("T4", DB.Float, nullable=False),
             DB.Column("OTC", DB.Integer, nullable=False),
+            DB.Column("CC", DB.Integer, nullable=False),
             DB.Column("wifi", DB.Boolean, nullable=False),
         )
         table.create(bind=DB.engine, checkfirst=True)

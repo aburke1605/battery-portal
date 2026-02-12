@@ -153,6 +153,9 @@ void update_telemetry_data() {
                           true);
   read_data_flash(address, sizeof(address), data_flash, sizeof(data_flash));
   telemetry_data.OTC = (int16_t)(data_flash[1] << 8 | data_flash[0]);
+
+  read_SBS_data(I2C_CYCLE_COUNT_ADDR, data_SBS, 2);
+  telemetry_data.CC = (uint16_t)(data_SBS[1] << 8 | data_SBS[0]);
 }
 
 void read_data_callback(TimerHandle_t xTimer) {
