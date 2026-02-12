@@ -522,6 +522,7 @@ char *get_data() {
       data, "cT", round_to_dp(((float)telemetry_data.cT) / 10.0 - 273.15, 1));
   cJSON_AddNumberToObject(data, "OTC",
                           round_to_dp(((float)telemetry_data.OTC) / 10.0, 1));
+  cJSON_AddNumberToObject(data, "CC", telemetry_data.CC);
 
   // wifi connection status
   cJSON_AddBoolToObject(data, "wifi", connected_to_WiFi);

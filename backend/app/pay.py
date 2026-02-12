@@ -9,9 +9,9 @@ from datetime import datetime
 from flask import Blueprint, jsonify, request
 from sqlalchemy import update
 
-pay = Blueprint("pay", __name__, url_prefix="/pay")
-
 from app.db import DB
+
+pay = Blueprint("pay", __name__, url_prefix="/pay")
 
 stripe.api_key = os.getenv("STRIPE_SECRET_KEY")
 
@@ -28,6 +28,7 @@ def initiate():
         )
         return jsonify({"clientSecret": intent.client_secret})
     except stripe.error.StripeError as e:
+        logger.error(f"Error initiating payment: {e}")
         return jsonify(error=str(e)), 400
 
 

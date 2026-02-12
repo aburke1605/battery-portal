@@ -6,10 +6,16 @@ flask-sock
 mysql-connector-python
 python-dotenv
 stripe
+matplotlib
 scipy
+scikit-learn
+pandas
+xgboost
 gevent
 gunicorn
 pytest
 selenium
 websocket-client
 gevent-websocket
+azure-identity
+azure-storage-blob
