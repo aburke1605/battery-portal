@@ -160,13 +160,13 @@ config I2C_ADDR
 
 config MASTER_SDA_PIN
     int "I2C Serial Data (SDA) GPIO"
-    default 21
+    default 47
     help
       Set the GPIO number for the I2C SDA line.
 
 config MASTER_SCL_PIN
     int "I2C Serial Clock (SCL) GPIO"
-    default 22
+    default 48
     help
       Set the GPIO number for the I2C SCL line.
 
@@ -310,13 +310,13 @@ menu "[CUSTOM] External I2C Device Configuration"
 
     config EXT_SDA_PIN
         int "I2C Serial Data (SDA) GPIO"
-        default 4
+        default 9
         help
           Set the GPIO number for the SDA line to external I2C devices.
 
     config EXT_SCL_PIN
         int "I2C Serial Clock (SCL) GPIO"
-        default 25
+        default 8
         help
           Set the GPIO number for the SCL line to external I2C devices.
 
@@ -343,6 +343,18 @@ endmenu
 
 
 menu "[CUSTOM] Inverter Configuration"
+
+config INV_UART_RX_PIN
+    int "UART RX GPIO"
+    default 18
+    help
+      Set the GPIO number for the inverter UART RX line.
+
+config INV_UART_TX_PIN
+    int "UART TX GPIO"
+    default 17
+    help
+      Set the GPIO number for the inverter UART TX line.
 
 endmenu
 
@@ -386,37 +398,37 @@ config IS_RECEIVER
 
 config SPI_SCK_PIN
     int "SPI SCK GPIO"
-    default 18
+    default 36
     help
       Set the GPIO number for the SPI clock (SCK) line.
 
 config SPI_MOSI_PIN
     int "SPI MOSI GPIO"
-    default 23
+    default 35
     help
       Set the GPIO number for the SPI master out, slave in (MOSI) line.
 
 config SPI_MISO_PIN
     int "SPI MISO GPIO"
-    default 19
+    default 37
     help
       Set the GPIO number for the SPI master in, slave out (MISO) line.
 
 config SPI_NSS_CS_PIN
     int "SPI NSS/CS GPIO"
-    default 5
+    default 39
     help
       Set the GPIO number for the SPI chip select line.
 
 config SPI_RST_PIN
     int "SPI RESET GPIO"
-    default 26
+    default 40
     help
       Set the GPIO number for the SPI manual reset line.
 
 config SPI_DIO0_PIN
     int "SPI IRQ/DIO0 GPIO"
-    default 27
+    default 38
     help
       Set the GPIO number for the SPI LoRa interrupt line.
 
@@ -497,5 +509,25 @@ config POWER_BOOST
     default n
     help
       Set to true to enable up to +20 dBm high power transmission. WARNING: ensure 1% duty cycle and adequate cooling.
+
+endmenu
+
+
+
+
+
+menu "[CUSTOM] GPS Configuration"
+
+config GPS_UART_RX_PIN
+    int "UART RX GPIO"
+    default 19
+    help
+      Set the GPIO number for the GPS UART RX line.
+
+config GPS_UART_TX_PIN
+    int "UART TX GPIO"
+    default 20
+    help
+      Set the GPIO number for the GPS UART TX line.
 
 endmenu
