@@ -8,7 +8,8 @@ from flask import Blueprint, request
 from flask_login import current_user
 from flask_sock import Sock
 
-from app.db import DB, BatteryInfo, update_battery_data, set_live_websocket
+from app.db import DB, BatteryInfo
+from app.battery import update_battery_data, set_live_websocket
 
 ws = Blueprint("ws", __name__, url_prefix="/")
 
