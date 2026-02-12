@@ -614,3 +614,28 @@ def recommendation():
 
     except Exception as e:
         return {"Error": e}, 404
+
+
+@twin.route("/train_model", methods=["POST"])
+@roles_required("superuser")
+def train_model():
+    """
+    API to manually trigger training via WebJob
+    """
+    app__name = "batteryportal-e9czhgamgferavf7"
+    server_location = "ukwest-01"
+    URL = f"https://{app__name}.scm.{server_location}.azurewebsites.net/api/triggeredwebjobs/TrainModel/run"
+
+    FTPS_USERNAME = os.getenv("FTPS_USERNAME", "$BatteryPortal")
+    FTPS_PASSWORD = os.getenv("FTPS_PASSWORD", None)
+
+    print(FTPS_USERNAME, FTPS_PASSWORD)
+
+    r = requests.post(
+        URL,
+        auth=(FTPS_USERNAME, FTPS_PASSWORD),
+        timeout=30,
+    )
+    r.raise_for_status()
+
+    return {"status": "started"}, 202
