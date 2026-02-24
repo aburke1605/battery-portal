@@ -178,6 +178,9 @@ def simulate_data(
         # age the cell for next cycle
         SoH = max(0.0, SoH - dSoH * (delivered / design_capacity))
 
+        if T > 70.0:
+            dSoH = max(0.005, dSoH)
+
         cycle += 1
         if SoH <= min_SoH or cycle - starting_cycle >= 1000:
             cycle -= 1
