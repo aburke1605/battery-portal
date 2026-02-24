@@ -47,6 +47,7 @@ def simulate_data(
     cycle = starting_cycle
     T = T_env
     T_max = min(T + 50.0, 90.0)
+    original_dSoH = dSoH
     while True:  #####
         # cycle loop #
         ##############
@@ -178,8 +179,10 @@ def simulate_data(
         # age the cell for next cycle
         SoH = max(0.0, SoH - dSoH * (delivered / design_capacity))
 
-        if T > 50.0:
+        if T > 50.0 or T < -10.0:
             dSoH = max(0.005, dSoH)
+        else:
+            dSoH = original_dSoH
 
         cycle += 1
         if SoH <= min_SoH or cycle - starting_cycle >= 1000:
@@ -354,5 +357,18 @@ plot(
     "data/higher_temperature",
     normal_cycle_range=range(1, n_normal_cycles + 1),
     other_cycle_range=range(n_normal_cycles + 1, total_n_cycles + 1),
+    current=False,
+)
+
+
+# lower temperature
+n_cycles = simulate_data(
+    "data/lower_temperature",
+    T_env=-25.0,
+    dT=0.0005,
+)
+plot(
+    "data/lower_temperature",
+    normal_cycle_range=range(1, n_cycles + 1),
     current=False,
 )
