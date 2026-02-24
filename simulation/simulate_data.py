@@ -334,3 +334,25 @@ plot(
     other_cycle_range=range(n_normal_cycles + 1, total_n_cycles + 1),
     current=False,
 )
+
+
+# higher temperature
+trigger_SoH = 0.98
+n_normal_cycles = simulate_data(
+    "data/higher_temperature",
+    min_SoH=trigger_SoH,
+    dT=0.0001,
+)  # normal to start
+total_n_cycles = simulate_data(
+    "data/higher_temperature",
+    SoH=trigger_SoH,
+    starting_cycle=n_normal_cycles + 1,
+    T_env=45.0,
+    dT=0.0002,
+)  # then higher temperature
+plot(
+    "data/higher_temperature",
+    normal_cycle_range=range(1, n_normal_cycles + 1),
+    other_cycle_range=range(n_normal_cycles + 1, total_n_cycles + 1),
+    current=False,
+)
