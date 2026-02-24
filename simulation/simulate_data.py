@@ -25,7 +25,7 @@ def simulate_data(
     dSoH=0.0005,  # as fraction (per cycle decrease)
     min_SoH=0.8,
     T_env=25.0,
-    dT=0.0005,
+    dT=0.001,
     dt=timedelta(minutes=1),
     V_dis_stop=None,
     SoC_dis_stop=0.0,
@@ -122,7 +122,7 @@ def simulate_data(
                 f"{t},{T},{V*1000},{I*1000},{int(SoC*100)},{int(SoH*100)},{available_capacity},{cycle}\n"
             )
             t += dt
-            T -= min((T - T_env) * 0.0005, 0.2)
+            T -= min((T - T_env) * 0.001, 0.2)
 
         first_loop = i
 
@@ -173,12 +173,12 @@ def simulate_data(
                 f"{t},{T},{V*1000},{I*1000},{int(SoC*100)},{int(SoH*100)},{available_capacity},{cycle}\n"
             )
             t += dt
-            T -= min((T - T_env) * 0.0005, 0.2)
+            T -= min((T - T_env) * 0.001, 0.2)
 
         # age the cell for next cycle
         SoH = max(0.0, SoH - dSoH * (delivered / design_capacity))
 
-        if T > 70.0:
+        if T > 50.0:
             dSoH = max(0.005, dSoH)
 
         cycle += 1
