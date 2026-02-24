@@ -24,6 +24,8 @@ def simulate_data(
     SoH=1.0,  # as fraction
     dSoH=0.0005,  # as fraction (per cycle decrease)
     min_SoH=0.8,
+    T_env=25.0,
+    dT=0.0005,
     dt=timedelta(minutes=1),
     V_dis_stop=None,
     SoC_dis_stop=0.0,
@@ -43,6 +45,8 @@ def simulate_data(
         V_chg_stop = V_max
 
     cycle = starting_cycle
+    T = T_env
+    T_max = min(T + 50.0, 90.0)
     while True:  #####
         # cycle loop #
         ##############
@@ -89,7 +93,7 @@ def simulate_data(
             else:
                 # write to file
                 file.write(
-                    f"{t},25.0,{V*1000},{I*1000},{int(SoC*100)},{int(SoH*100)},{available_capacity},{cycle}\n"
+                    f"{t},{T},{V*1000},{I*1000},{int(SoC*100)},{int(SoH*100)},{available_capacity},{cycle}\n"
                 )
             # update cell
             dQ = abs(I) * dt.total_seconds()
@@ -97,10 +101,11 @@ def simulate_data(
             SoC -= dC / available_capacity  # as fraction
             Q += dQ
             t += dt
+            T += min((T_max - T) * dT, 0.2)
         # final write to file
         SoC = max(SoC_dis_stop, SoC)
         file.write(
-            f"{t},25.0,{V*1000},{I*1000},{int(SoC*100)},{int(SoH*100)},{available_capacity},{cycle}\n"
+            f"{t},{T},{V*1000},{I*1000},{int(SoC*100)},{int(SoH*100)},{available_capacity},{cycle}\n"
         )
         t += dt
 
@@ -114,9 +119,10 @@ def simulate_data(
             I = rn.gauss(0, 0.005)
             V = rn.gauss(V, 0.001 * V)
             file.write(
-                f"{t},25.0,{V*1000},{I*1000},{int(SoC*100)},{int(SoH*100)},{available_capacity},{cycle}\n"
+                f"{t},{T},{V*1000},{I*1000},{int(SoC*100)},{int(SoH*100)},{available_capacity},{cycle}\n"
             )
             t += dt
+            T -= min((T - T_env) * 0.0005, 0.2)
 
         first_loop = i
 
@@ -143,17 +149,18 @@ def simulate_data(
             else:
                 # write to file
                 file.write(
-                    f"{t},25.0,{V*1000},{I*1000},{int(SoC*100)},{int(SoH*100)},{available_capacity},{cycle}\n"
+                    f"{t},{T},{V*1000},{I*1000},{int(SoC*100)},{int(SoH*100)},{available_capacity},{cycle}\n"
                 )
             # update cell
             dQ = I * dt.total_seconds()
             dC = dQ / 3600.0  # Amp hours
             SoC += dC / available_capacity  # as fraction
             t += dt
+            T += min((T_max - T) * dT, 0.2)
         # final write to file
         SoC = min(1.0, SoC)
         file.write(
-            f"{t},25.0,{V*1000},{I*1000},{int(SoC*100)},{int(SoH*100)},{available_capacity},{cycle}\n"
+            f"{t},{T},{V*1000},{I*1000},{int(SoC*100)},{int(SoH*100)},{available_capacity},{cycle}\n"
         )
         t += dt
 
@@ -163,9 +170,10 @@ def simulate_data(
             I = rn.gauss(0, 0.005)
             V = rn.gauss(V, 0.001 * V)
             file.write(
-                f"{t},25.0,{V*1000},{I*1000},{int(SoC*100)},{int(SoH*100)},{available_capacity},{cycle}\n"
+                f"{t},{T},{V*1000},{I*1000},{int(SoC*100)},{int(SoH*100)},{available_capacity},{cycle}\n"
             )
             t += dt
+            T -= min((T - T_env) * 0.0005, 0.2)
 
         # age the cell for next cycle
         SoH = max(0.0, SoH - dSoH * (delivered / design_capacity))
