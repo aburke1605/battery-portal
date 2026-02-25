@@ -21,6 +21,7 @@ typedef enum {
 } uart_hw_flowcontrol_t;
 
 typedef enum {
+  UART_NUM_0,
   UART_NUM_1,
 } uart_port_t;
 

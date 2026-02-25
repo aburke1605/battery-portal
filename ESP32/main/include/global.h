@@ -3,6 +3,7 @@
 
 #include "BMS.h"
 #include "GPS.h"
+#include "INV.h"
 #include "config.h"
 
 #include <stdbool.h>
@@ -17,6 +18,7 @@ extern bool is_root;
 extern int num_connected_clients;
 extern uint8_t ESP_ID;
 extern telemetry_data_t telemetry_data;
+extern inverter_data_t inverter_data;
 extern GPRMC_t gps_data;
 extern httpd_handle_t server;
 extern bool connected_to_WiFi;

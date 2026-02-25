@@ -533,6 +533,9 @@ char *get_data() {
   cJSON_AddNumberToObject(data, "lat", gps_data.latitude);
   cJSON_AddNumberToObject(data, "lon", gps_data.longitude);
 
+  // get inverter data from global struct
+  cJSON_AddNumberToObject(data, "P", inverter_data.output_power);
+
   // construct full message
   cJSON *message = cJSON_CreateObject();
   cJSON_AddNumberToObject(message, "esp_id", ESP_ID);

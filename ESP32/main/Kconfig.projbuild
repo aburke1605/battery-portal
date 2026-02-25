@@ -89,6 +89,12 @@ config READ_GPS_ENABLED
     help
       Set to false to disable the software-timed task which reads GPS data.
 
+config READ_INV_ENABLED
+    bool "Inverter data reading task"
+    default y
+    help
+      Set to false to disable the software-timed task which reads inverter data.
+
 config WEBSOCKET_MESSAGES_ENABLED
     bool "WebSocket message handling task"
     default y
