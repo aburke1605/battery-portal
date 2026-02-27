@@ -82,6 +82,7 @@ def import_data(csv_path: str, esp_id: int):
                     "T4": 0,
                     "OTC": 0,
                     "CC": int(row["Cycle"] or 0),
+                    "P": 0,
                     "wifi": False,
                 }
             )
@@ -126,7 +127,14 @@ def simulation():
             path = "../simulation/data"
 
         for dataset, esp_id in zip(
-            ["normal", "low_power", "short_duration"], [996, 997, 998]
+            [
+                "normal",
+                "low_power",
+                "short_duration",
+                "higher_temperature",
+                "lower_temperature",
+            ],
+            [994, 995, 996, 997, 998],
         ):
             i = 0
             import_success = True
