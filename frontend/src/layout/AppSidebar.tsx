@@ -6,7 +6,7 @@ import {
   LayoutGrid,
   Battery,
   UserCircle,
-  Settings,
+  // Settings,
   ChevronDown,
   Ellipsis,
   Settings2,
@@ -37,11 +37,11 @@ const navItems: NavItem[] = [
     name: "Users",
     path: "/userlist",
   },
-  {
-    icon: <Settings size={16} className="mr-1" />,
-    name: "Settings",
-    path: "/settings",
-  },
+  // {
+  //   icon: <Settings size={16} className="mr-1" />,
+  //   name: "Settings",
+  //   path: "/settings",
+  // },
   {
     name: "Database",
     icon: <Settings2 />,

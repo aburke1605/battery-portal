@@ -13,5 +13,9 @@ pandas
 xgboost
 gevent
 gunicorn
+pytest
+selenium
+websocket-client
+gevent-websocket
 azure-identity
 azure-storage-blob
