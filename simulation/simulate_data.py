@@ -25,7 +25,7 @@ def simulate_data(
     dSoH=0.0005,  # as fraction (per cycle decrease)
     min_SoH=0.8,
     T_env=25.0,
-    dT=0.001,
+    dT=0.0001,
     dt=timedelta(minutes=1),
     V_dis_stop=None,
     SoC_dis_stop=0.0,
@@ -340,11 +340,11 @@ plot(
 
 
 # higher temperature
-trigger_SoH = 0.98
+trigger_SoH = 0.9
 n_normal_cycles = simulate_data(
     "data/higher_temperature",
     min_SoH=trigger_SoH,
-    dT=0.0001,
+    T_env=0.0,
 )  # normal to start
 total_n_cycles = simulate_data(
     "data/higher_temperature",
