@@ -82,6 +82,7 @@ def import_data(csv_path: str, esp_id: int):
                     "T4": 0,
                     "OTC": 0,
                     "CC": int(row["Cycle"] or 0),
+                    "P": 0,
                     "wifi": False,
                 }
             )
