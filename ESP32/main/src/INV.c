@@ -21,17 +21,17 @@ void uart_inv_init() {
   ESP_ERROR_CHECK(uart_param_config(INV_UART_NUM, &uart_config));
   ESP_ERROR_CHECK(uart_set_pin(INV_UART_NUM, INV_TX_GPIO, INV_RX_GPIO,
                                UART_PIN_NO_CHANGE, UART_PIN_NO_CHANGE));
-  ESP_ERROR_CHECK(
-      uart_driver_install(INV_UART_NUM, INV_BUFF_SIZE, 0, 0, NULL, 0));
+  ESP_ERROR_CHECK(uart_driver_install(INV_UART_NUM, INV_BUFF_SIZE,
+                                      INV_BUFF_SIZE, 0, NULL, 0));
 }
 
 void update_inv() {
   uint8_t msg[3] = {0x51, 0x30, 0x0D};
   uart_write_bytes(INV_UART_NUM, msg, sizeof(msg));
 
-  uint8_t buff[INV_BUFF_SIZE];
-  int len = uart_read_bytes(INV_UART_NUM, buff, INV_BUFF_SIZE - 1,
-                            pdMS_TO_TICKS(1000));
+  uint8_t buff[12];
+  int len =
+      uart_read_bytes(INV_UART_NUM, buff, sizeof(buff), pdMS_TO_TICKS(1000));
   if (len > 0) {
     inverter_data.status = buff[3];
     inverter_data.output_voltage = buff[4] << 8 | buff[5];
