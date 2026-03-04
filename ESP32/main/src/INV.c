@@ -38,6 +38,7 @@ void update_inv() {
     inverter_data.battery_voltage = buff[6] << 8 | buff[7];
     inverter_data.temperature = buff[8];
     inverter_data.output_power = buff[9] << 8 | buff[10];
+    inverter_data.enabled = false; // TODO!!
   }
 
   return;

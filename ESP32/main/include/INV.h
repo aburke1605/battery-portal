@@ -1,6 +1,7 @@
 #ifndef INV_H
 #define INV_H
 
+#include <stdbool.h>
 #include <stdint.h>
 
 typedef struct {
@@ -9,7 +10,7 @@ typedef struct {
   uint16_t battery_voltage;
   uint8_t temperature;
   uint16_t output_power;
-  char mode;
+  bool enabled;
 } inverter_data_t;
 
 void uart_inv_init();
