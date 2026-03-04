@@ -550,6 +550,7 @@ char *get_data() {
 
   // get inverter data from global struct
   cJSON_AddNumberToObject(data, "P", inverter_data.output_power);
+  cJSON_AddNumberToObject(data, "inv", inverter_data.enabled);
 
   // construct full message
   cJSON *message = cJSON_CreateObject();
