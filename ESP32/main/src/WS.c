@@ -354,6 +354,21 @@ esp_err_t perform_request(cJSON *message, cJSON *response) {
     } else if (summary && strcmp(summary->valuestring, "unseal-bms") == 0) {
       unseal();
       cJSON_AddStringToObject(response_content, "status", "success");
+    } else if (summary && strcmp(summary->valuestring, "flip-inverter") == 0) {
+      cJSON *data = cJSON_GetObjectItem(content, "data");
+      if (!data) {
+        ESP_LOGE(TAG, "Failed to parse JSON");
+        cJSON_AddStringToObject(response_content, "status", "error");
+        return ESP_FAIL;
+      }
+
+      bool is_enabled = (bool)cJSON_GetObjectItem(data, "is-enabled")->valueint;
+      if (is_enabled) {
+
+      } else {
+      }
+      printf("%s\n", is_enabled ? "true" : "false");
+      cJSON_AddStringToObject(response_content, "status", "success");
     }
   } else {
     return ESP_ERR_NOT_SUPPORTED;
