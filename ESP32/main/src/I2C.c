@@ -189,8 +189,9 @@ void write_data_flash(uint8_t *address, size_t address_size, uint8_t *data,
 }
 
 void write_to_slave_esp32() {
-  uint8_t data[3] = {0};
-  get_display_data(data);
+  uint8_t data[4] = {0};
+  data[0] = 0x01;
+  get_display_data(&data[1]);
 
   esp_err_t ret = i2c_master_transmit(slave_esp32_device, data, sizeof(data),
                                       I2C_SLAVE_TIMEOUT_MS);
