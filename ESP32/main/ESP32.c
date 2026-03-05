@@ -59,8 +59,9 @@ void app_main(void) {
     if (SCAN_I2C)
       device_scan();
 
-    uart_init();
-    uart_inv_init();
+    gps_init();
+
+    inv_init();
 
     // grab BMS DeviceName from the BMS DataFlash
     uint8_t address[2] = {0};
@@ -72,7 +73,7 @@ void app_main(void) {
     if (strcmp((char *)data_flash, "") != 0)
       change_esp_id((char *)&data_flash[1]);
 
-    if (READ_BMS_ENABLED || READ_GPS_ENABLED)
+    if (READ_BMS_ENABLED || READ_GPS_ENABLED || READ_INV_ENABLED)
       start_read_data_timed_task();
 
     // TODO: this should only be started if a task which uses `server` is

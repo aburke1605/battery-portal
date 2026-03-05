@@ -11,7 +11,7 @@
 
 static const char *TAG = "GPS";
 
-void uart_init() {
+void gps_init() {
   const uart_config_t uart_config = {.baud_rate = 9600, // typical for NEO-6M
                                      .data_bits = UART_DATA_8_BITS,
                                      .parity = UART_PARITY_DISABLE,

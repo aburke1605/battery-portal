@@ -104,6 +104,11 @@ export default function BatteryPage({
 
   const sendReset = () => sendMessage(createMessage("reset-bms", {}, esp_id));
 
+  const flipInverter = (isEnabled: boolean) =>
+    sendMessage(
+      createMessage("flip-inverter", { "is-enabled": isEnabled }, esp_id),
+    );
+
   const updateRequest = async () => {
     const esp = await fetchBatteryData(esp_id);
     if (esp !== null) setBatteryData(esp);
@@ -124,6 +129,7 @@ export default function BatteryPage({
             sendWiFiConnect={sendWiFiConnect}
             sendUnseal={sendUnseal}
             sendReset={sendReset}
+            flipInverter={flipInverter}
             isFromESP32={isFromESP32}
             updateRequest={updateRequest}
           />
