@@ -371,7 +371,6 @@ esp_err_t perform_request(cJSON *message, cJSON *response) {
         gpio_set_level(INV_EN_GPIO, 1);
         inverter_data.enabled = true;
       }
-      printf("%s\n", is_enabled ? "true" : "false");
       cJSON_AddStringToObject(response_content, "status", "success");
     }
   } else {

@@ -38,21 +38,20 @@ void inv_init() {
 }
 
 void update_inv() {
-  uint8_t msg[3] = {0x51, 0x30, 0x0D};
-  uart_write_bytes(INV_UART_NUM, msg, sizeof(msg));
+  if (inverter_data.enabled) {
+    uint8_t msg[3] = {0x51, 0x30, 0x0D};
+    uart_write_bytes(INV_UART_NUM, msg, sizeof(msg));
 
-  uint8_t buff[12] = {0};
-  int len =
-      uart_read_bytes(INV_UART_NUM, buff, sizeof(buff), pdMS_TO_TICKS(1000));
-  if (len > 0) {
-    inverter_data.status = buff[3];
-    inverter_data.output_voltage = buff[4] << 8 | buff[5];
-    inverter_data.battery_voltage = buff[6] << 8 | buff[7];
-    inverter_data.temperature = buff[8];
-    inverter_data.output_power = buff[9] << 8 | buff[10];
-    inverter_data.enabled = true;
-  } else {
-    inverter_data.enabled = false;
+    uint8_t buff[12] = {0};
+    int len =
+        uart_read_bytes(INV_UART_NUM, buff, sizeof(buff), pdMS_TO_TICKS(1000));
+    if (len > 0) {
+      inverter_data.status = buff[3];
+      inverter_data.output_voltage = buff[4] << 8 | buff[5];
+      inverter_data.battery_voltage = buff[6] << 8 | buff[7];
+      inverter_data.temperature = buff[8];
+      inverter_data.output_power = buff[9] << 8 | buff[10];
+    }
   }
 
   return;
