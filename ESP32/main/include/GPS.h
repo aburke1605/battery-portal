@@ -18,7 +18,7 @@ typedef struct {
   char mode;
 } GPRMC_t;
 
-void uart_init();
+void gps_init();
 
 bool validate_nmea_checksum(const char *sentence);
 

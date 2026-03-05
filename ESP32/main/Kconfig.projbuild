@@ -89,6 +89,12 @@ config READ_GPS_ENABLED
     help
       Set to false to disable the software-timed task which reads GPS data.
 
+config READ_INV_ENABLED
+    bool "Inverter data reading task"
+    default y
+    help
+      Set to false to disable the software-timed task which reads inverter data.
+
 config WEBSOCKET_MESSAGES_ENABLED
     bool "WebSocket message handling task"
     default y
@@ -355,6 +361,12 @@ config INV_UART_TX_PIN
     default 17
     help
       Set the GPIO number for the inverter UART TX line.
+
+config INV_ENABLE_PIN
+    int "Enable/Disable GPIO"
+    default 32 # 41
+    help
+      Set the GPIO number for the inverter enable / disable line.
 
 endmenu
 
