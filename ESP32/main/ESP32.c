@@ -59,8 +59,9 @@ void app_main(void) {
     if (SCAN_I2C)
       device_scan();
 
-    uart_init();
-    uart_inv_init();
+    gps_init();
+
+    inv_init();
 
     // grab BMS DeviceName from the BMS DataFlash
     uint8_t address[2] = {0};

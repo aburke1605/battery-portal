@@ -11,7 +11,7 @@
 
 static const char *TAG = "INV";
 
-void uart_inv_init() {
+void inv_init() {
   const uart_config_t uart_config = {.baud_rate = 9600,
                                      .data_bits = UART_DATA_8_BITS,
                                      .parity = UART_PARITY_DISABLE,

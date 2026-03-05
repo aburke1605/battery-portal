@@ -13,7 +13,7 @@ typedef struct {
   bool enabled;
 } inverter_data_t;
 
-void uart_inv_init();
+void inv_init();
 
 void update_inv();
 
