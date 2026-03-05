@@ -362,6 +362,12 @@ config INV_UART_TX_PIN
     help
       Set the GPIO number for the inverter UART TX line.
 
+config INV_ENABLE_PIN
+    int "Enable/Disable GPIO"
+    default 32 # 41
+    help
+      Set the GPIO number for the inverter enable / disable line.
+
 endmenu
 
 

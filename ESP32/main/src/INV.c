@@ -6,6 +6,7 @@
 
 #include <string.h>
 
+#include "driver/gpio.h"
 #include "driver/uart.h"
 #include "esp_log.h"
 
@@ -23,6 +24,15 @@ void inv_init() {
                                UART_PIN_NO_CHANGE, UART_PIN_NO_CHANGE));
   ESP_ERROR_CHECK(uart_driver_install(INV_UART_NUM, INV_BUFF_SIZE,
                                       INV_BUFF_SIZE, 0, NULL, 0));
+
+  gpio_config_t io_conf = {
+      .intr_type = GPIO_INTR_DISABLE,
+      .mode = GPIO_MODE_OUTPUT,
+      .pin_bit_mask = 1ULL << INV_EN_GPIO,
+      .pull_down_en = GPIO_PULLDOWN_DISABLE,
+      .pull_up_en = GPIO_PULLUP_DISABLE,
+  };
+  gpio_config(&io_conf);
 }
 
 void update_inv() {

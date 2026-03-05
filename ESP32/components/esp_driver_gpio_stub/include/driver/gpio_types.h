@@ -7,6 +7,7 @@ extern "C" {
 #endif
 
 typedef enum {
+  GPIO_INTR_DISABLE = 0,
   GPIO_INTR_POSEDGE = 1,
 } gpio_int_type_t;
 
