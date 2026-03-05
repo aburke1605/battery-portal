@@ -52,6 +52,9 @@ void update_inv() {
       inverter_data.temperature = buff[8];
       inverter_data.output_power = buff[9] << 8 | buff[10];
     }
+  } else {
+    if (VERBOSE)
+      ESP_LOGW(TAG, "Inverter disabled, skipping update");
   }
 
   return;
