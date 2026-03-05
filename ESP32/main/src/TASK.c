@@ -4,6 +4,7 @@
 #include "DNS.h"
 #include "GPS.h"
 #include "I2C.h"
+#include "INV.h"
 #include "LoRa.h"
 #include "MESH.h"
 #include "WS.h"
@@ -37,6 +38,7 @@ void job_worker_freertos_task(void *arg) {
       case JOB_UPDATE_DATA:
         char bms[5] = "";
         char gps[5] = "";
+        char inv[5] = "";
         if (READ_BMS_ENABLED) {
           update_telemetry_data();
           strcpy(bms, " BMS");
@@ -45,7 +47,12 @@ void job_worker_freertos_task(void *arg) {
           update_gps();
           strcpy(gps, " GPS");
         }
-        snprintf(job_type, sizeof(job_type), "JOB_UPDATE_DATA:%s%s", bms, gps);
+        if (READ_INV_ENABLED) {
+          update_inv();
+          strcpy(inv, " INV");
+        }
+        snprintf(job_type, sizeof(job_type), "JOB_UPDATE_DATA:%s%s%s", bms, gps,
+                 inv);
         break;
 
       case JOB_SLAVE_ESP32_TRANSMIT:

@@ -94,6 +94,7 @@ def get_battery_data_table(esp_id: str) -> Table:
             DB.Column("T4", DB.Float, nullable=False),
             DB.Column("OTC", DB.Integer, nullable=False),
             DB.Column("CC", DB.Integer, nullable=False),
+            DB.Column("P", DB.Integer, nullable=False),
             DB.Column("wifi", DB.Boolean, nullable=False),
         )
         table.create(bind=DB.engine, checkfirst=True)
@@ -164,6 +165,7 @@ def update_battery_data(json: list) -> None:
                 T4=content["T4"] / 100,
                 OTC=content["OTC"],
                 CC=content["CC"],
+                P=content["P"],
                 wifi=content["wifi"],
             )
             DB.session.execute(query)
