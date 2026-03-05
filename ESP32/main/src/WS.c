@@ -14,6 +14,7 @@
 #include <inttypes.h>
 
 #include "cJSON.h"
+#include "driver/gpio.h"
 #include "esp_log.h"
 #include "esp_netif.h"
 #include "esp_websocket_client.h"
@@ -364,8 +365,11 @@ esp_err_t perform_request(cJSON *message, cJSON *response) {
 
       bool is_enabled = (bool)cJSON_GetObjectItem(data, "is-enabled")->valueint;
       if (is_enabled) {
-
+        gpio_set_level(INV_EN_GPIO, 0);
+        inverter_data.enabled = false;
       } else {
+        gpio_set_level(INV_EN_GPIO, 1);
+        inverter_data.enabled = true;
       }
       printf("%s\n", is_enabled ? "true" : "false");
       cJSON_AddStringToObject(response_content, "status", "success");
