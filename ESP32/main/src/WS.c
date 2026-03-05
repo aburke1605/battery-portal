@@ -14,6 +14,7 @@
 #include <inttypes.h>
 
 #include "cJSON.h"
+#include "driver/gpio.h"
 #include "esp_log.h"
 #include "esp_netif.h"
 #include "esp_websocket_client.h"
@@ -354,6 +355,23 @@ esp_err_t perform_request(cJSON *message, cJSON *response) {
     } else if (summary && strcmp(summary->valuestring, "unseal-bms") == 0) {
       unseal();
       cJSON_AddStringToObject(response_content, "status", "success");
+    } else if (summary && strcmp(summary->valuestring, "flip-inverter") == 0) {
+      cJSON *data = cJSON_GetObjectItem(content, "data");
+      if (!data) {
+        ESP_LOGE(TAG, "Failed to parse JSON");
+        cJSON_AddStringToObject(response_content, "status", "error");
+        return ESP_FAIL;
+      }
+
+      bool is_enabled = (bool)cJSON_GetObjectItem(data, "is-enabled")->valueint;
+      if (is_enabled) {
+        gpio_set_level(INV_EN_GPIO, 0);
+        inverter_data.enabled = false;
+      } else {
+        gpio_set_level(INV_EN_GPIO, 1);
+        inverter_data.enabled = true;
+      }
+      cJSON_AddStringToObject(response_content, "status", "success");
     }
   } else {
     return ESP_ERR_NOT_SUPPORTED;
@@ -532,6 +550,10 @@ char *get_data() {
   cJSON_AddNumberToObject(data, "d", gps_data.date);
   cJSON_AddNumberToObject(data, "lat", gps_data.latitude);
   cJSON_AddNumberToObject(data, "lon", gps_data.longitude);
+
+  // get inverter data from global struct
+  cJSON_AddNumberToObject(data, "P", inverter_data.output_power);
+  cJSON_AddNumberToObject(data, "inv", inverter_data.enabled);
 
   // construct full message
   cJSON *message = cJSON_CreateObject();

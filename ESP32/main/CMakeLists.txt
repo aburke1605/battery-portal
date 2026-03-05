@@ -5,6 +5,7 @@ set(SRCS
     "src/DNS.c"
     "src/GPS.c"
     "src/I2C.c"
+    "src/INV.c"
     "src/LoRa.c"
     "src/MESH.c"
     "src/SLAVE.c"

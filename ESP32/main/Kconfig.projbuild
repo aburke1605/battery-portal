@@ -89,6 +89,12 @@ config READ_GPS_ENABLED
     help
       Set to false to disable the software-timed task which reads GPS data.
 
+config READ_INV_ENABLED
+    bool "Inverter data reading task"
+    default y
+    help
+      Set to false to disable the software-timed task which reads inverter data.
+
 config WEBSOCKET_MESSAGES_ENABLED
     bool "WebSocket message handling task"
     default y
@@ -344,6 +350,24 @@ endmenu
 
 menu "[CUSTOM] Inverter Configuration"
 
+config INV_UART_RX_PIN
+    int "UART RX GPIO"
+    default 18
+    help
+      Set the GPIO number for the inverter UART RX line.
+
+config INV_UART_TX_PIN
+    int "UART TX GPIO"
+    default 17
+    help
+      Set the GPIO number for the inverter UART TX line.
+
+config INV_ENABLE_PIN
+    int "Enable/Disable GPIO"
+    default 32 # 41
+    help
+      Set the GPIO number for the inverter enable / disable line.
+
 endmenu
 
 
@@ -497,5 +521,25 @@ config POWER_BOOST
     default n
     help
       Set to true to enable up to +20 dBm high power transmission. WARNING: ensure 1% duty cycle and adequate cooling.
+
+endmenu
+
+
+
+
+
+menu "[CUSTOM] GPS Configuration"
+
+config GPS_UART_RX_PIN
+    int "UART RX GPIO"
+    default 19
+    help
+      Set the GPIO number for the GPS UART RX line.
+
+config GPS_UART_TX_PIN
+    int "UART TX GPIO"
+    default 20
+    help
+      Set the GPIO number for the GPS UART TX line.
 
 endmenu

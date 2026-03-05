@@ -1,0 +1,20 @@
+#ifndef INV_H
+#define INV_H
+
+#include <stdbool.h>
+#include <stdint.h>
+
+typedef struct {
+  uint8_t status;
+  uint16_t output_voltage;
+  uint16_t battery_voltage;
+  uint8_t temperature;
+  uint16_t output_power;
+  bool enabled;
+} inverter_data_t;
+
+void inv_init();
+
+void update_inv();
+
+#endif

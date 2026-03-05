@@ -8,6 +8,7 @@ import {
   ThermometerSun,
   Info,
   RefreshCw,
+  WeightTilde,
   LockKeyholeOpen,
   Wifi,
   BarChart3,
@@ -30,6 +31,7 @@ interface BatteryDetailProps {
   ) => void;
   sendUnseal: () => void;
   sendReset: () => void;
+  flipInverter: (isEnabled: boolean) => void;
   isFromESP32: boolean;
   updateRequest: () => void;
 }
@@ -41,6 +43,7 @@ const BatteryDetail: React.FC<BatteryDetailProps> = ({
   sendWiFiConnect,
   sendUnseal,
   sendReset,
+  flipInverter,
   isFromESP32,
 }) => {
   const [activeTab, setActiveTab] = useState("overview");
@@ -452,6 +455,20 @@ const BatteryDetail: React.FC<BatteryDetailProps> = ({
                     >
                       <RefreshCw size={16} className="mr-2" />
                       Reset BMS{" "}
+                      {!isFromESP32 && !battery.live_websocket
+                        ? "- OFFLINE"
+                        : ""}
+                    </button>
+                    <button
+                      onClick={() =>
+                        isFromESP32 || battery.live_websocket
+                          ? flipInverter(battery.inv)
+                          : null
+                      }
+                      className="w-full flex items-center justify-center px-4 py-2 border border-green-300 shadow-sm text-sm font-medium rounded-md text-green-700 bg-green-50 hover:bg-green-100 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500"
+                    >
+                      <WeightTilde size={16} className="mr-2" />
+                      {battery.inv ? "Disable" : "Enable"} Inverter{" "}
                       {!isFromESP32 && !battery.live_websocket
                         ? "- OFFLINE"
                         : ""}
