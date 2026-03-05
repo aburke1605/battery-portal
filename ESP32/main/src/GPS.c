@@ -11,7 +11,7 @@
 
 static const char *TAG = "GPS";
 
-void uart_init() {
+void gps_init() {
   const uart_config_t uart_config = {.baud_rate = 9600, // typical for NEO-6M
                                      .data_bits = UART_DATA_8_BITS,
                                      .parity = UART_PARITY_DISABLE,
@@ -19,9 +19,8 @@ void uart_init() {
                                      .flow_ctrl = UART_HW_FLOWCTRL_DISABLE};
 
   ESP_ERROR_CHECK(uart_param_config(GPS_UART_NUM, &uart_config));
-  ESP_ERROR_CHECK(uart_set_pin(GPS_UART_NUM, GPS_GPIO_NUM_32, GPS_GPIO_NUM_33,
-                               UART_PIN_NO_CHANGE,
-                               UART_PIN_NO_CHANGE)); // TX, RX
+  ESP_ERROR_CHECK(uart_set_pin(GPS_UART_NUM, GPS_TX_GPIO, GPS_RX_GPIO,
+                               UART_PIN_NO_CHANGE, UART_PIN_NO_CHANGE));
   ESP_ERROR_CHECK(
       uart_driver_install(GPS_UART_NUM, GPS_BUFF_SIZE, 0, 0, NULL, 0));
 }

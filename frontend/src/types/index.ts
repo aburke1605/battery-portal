@@ -37,6 +37,7 @@ export interface BatteryData extends BatteryInfoData {
   Q_high: number;
   V_max: number;
   wifi: boolean;
+  inv: boolean;
 }
 
 export const parseDataOnESP32 = (raw: any): BatteryData => ({
@@ -73,6 +74,7 @@ export const parseDataOnESP32 = (raw: any): BatteryData => ({
   Q_high: raw?.Q_high || 0,
   V_max: raw?.V_max || 0,
   wifi: !!raw?.wifi,
+  inv: !!raw?.inv,
 });
 
 // Alert Data Types

@@ -123,6 +123,7 @@ const extendBatteryInfo = (data: BatteryInfoData[]): BatteryData[] => {
     Q_high: 0,
     V_max: 0,
     wifi: false,
+    inv: false,
   }));
 };
 

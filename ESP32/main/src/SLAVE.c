@@ -19,6 +19,9 @@ void get_display_data(uint8_t *data) {
   // I
   data[1] = telemetry_data.I & 0xff;
   data[2] = (telemetry_data.I >> 8) & 0xff;
+
+  // inverter
+  data[3] = (int8_t)inverter_data.enabled;
 }
 
 void slave_esp32_callback(TimerHandle_t xTimer) {
