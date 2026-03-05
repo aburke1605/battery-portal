@@ -36,6 +36,17 @@ services:
     depends_on:
       - web
 
+  e2e:
+    image: selenium/standalone-chrome:latest
+    user: root
+    working_dir: /battery-portal/website
+    volumes:
+      - ./website/tests/e2e:/battery-portal/website
+    depends_on:
+      - nginx
+    environment:
+      BASE_URL: https://nginx:443
+    command: bash -c "python3 -m venv /tmp/venv && . /tmp/venv/bin/activate && pip install --no-cache-dir -r requirements.txt -q && pytest -v -W default"
 
 volumes:
   mysqldata:
