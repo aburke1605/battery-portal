@@ -42,6 +42,8 @@ typedef struct __attribute__((packed)) {
   int16_t T4;
   int16_t OTC;
   uint16_t CC;
+  uint16_t P;
+  bool inv;
   bool wifi;
 } radio_data_packet;
 

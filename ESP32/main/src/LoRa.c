@@ -251,6 +251,15 @@ size_t json_to_binary(uint8_t *binary_message, cJSON *json_array) {
         packet->CC = (uint16_t)obj->valueint;
       obj = NULL;
 
+      obj = cJSON_GetObjectItem(content, "P");
+      if (obj)
+        packet->P = (uint16_t)obj->valueint;
+      obj = NULL;
+
+      obj = cJSON_GetObjectItem(content, "inv");
+      if (obj)
+        packet->inv = (bool)obj->valueint;
+
       obj = cJSON_GetObjectItem(content, "wifi");
       if (obj)
         packet->wifi = (bool)obj->valueint;
@@ -499,6 +508,8 @@ void binary_to_json(uint8_t *binary_message, cJSON *json_array) {
       cJSON_AddNumberToObject(content, "T4", packet->T4);
       cJSON_AddNumberToObject(content, "OTC", packet->OTC);
       cJSON_AddNumberToObject(content, "CC", packet->CC);
+      cJSON_AddNumberToObject(content, "P", packet->P);
+      cJSON_AddBoolToObject(content, "inv", packet->inv);
       cJSON_AddBoolToObject(content, "wifi", packet->wifi);
 
       cJSON_AddNumberToObject(message, "esp_id", packet->esp_id);
