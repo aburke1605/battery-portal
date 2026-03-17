@@ -1,0 +1,217 @@
+\documentclass[10pt]{article}
+
+\usepackage{fullpage}
+\usepackage{CJKutf8}
+\usepackage[utf8]{inputenc}
+\usepackage{setspace}
+\usepackage{parskip}
+\usepackage{titlesec}
+\usepackage[section]{placeins}
+\usepackage{xcolor}
+\usepackage{breakcites}
+\usepackage{lineno}
+\usepackage{hyphenat}
+
+
+
+
+
+\PassOptionsToPackage{hyphens}{url}
+\usepackage[colorlinks = true,
+            linkcolor = blue,
+            urlcolor  = blue,
+            citecolor = blue,
+            anchorcolor = blue]{hyperref}
+\usepackage{etoolbox}
+\makeatletter
+\patchcmd\@combinedblfloats{\box\@outputbox}{\unvbox\@outputbox}{}{%
+  \errmessage{\noexpand\@combinedblfloats could not be patched}%
+}%
+\makeatother
+
+
+\usepackage{natbib}
+
+
+
+
+\renewenvironment{abstract}
+  {{\bfseries\noindent{\abstractname}\par\nobreak}\footnotesize}
+  {\bigskip}
+
+\titlespacing{\section}{0pt}{*3}{*1}
+\titlespacing{\subsection}{0pt}{*2}{*0.5}
+\titlespacing{\subsubsection}{0pt}{*1.5}{0pt}
+
+
+\usepackage{authblk}
+
+
+\usepackage{graphicx}
+\usepackage[space]{grffile}
+\usepackage{latexsym}
+\usepackage{textcomp}
+\usepackage{longtable}
+\usepackage{tabulary}
+\usepackage{booktabs,array,multirow}
+\usepackage{amsfonts,amsmath,amssymb}
+\providecommand\citet{\cite}
+\providecommand\citep{\cite}
+\providecommand\citealt{\cite}
+% You can conditionalize code for latexml or normal latex using this.
+\newif\iflatexml\latexmlfalse
+\providecommand{\tightlist}{\setlength{\itemsep}{0pt}\setlength{\parskip}{0pt}}%
+
+\AtBeginDocument{\DeclareGraphicsExtensions{.pdf,.PDF,.eps,.EPS,.png,.PNG,.tif,.TIF,.jpg,.JPG,.jpeg,.JPEG}}
+
+\usepackage[utf8]{inputenc}
+\usepackage[english]{babel}
+
+
+
+\usepackage{float}
+
+
+
+
+
+
+
+
+\begin{document}
+\begin{CJK}{UTF8}{gbsn}
+
+\title{Journal Of Energy Storage Template}
+
+
+
+\author[1]{Aodh\'an Burke}%
+\affil[1]{University of Liverpool}%
+
+
+\vspace{-1em}
+
+
+
+
+  \date{March 17, 2026}
+
+
+\begingroup
+\let\center\flushleft
+\let\endcenter\endflushleft
+\maketitle
+\endgroup
+
+
+
+
+
+\selectlanguage{english}
+\begin{abstract}
+Pellentesque tincidunt lobortis orci non venenatis. Cras in justo
+luctus, pulvinar augue id, suscipit diam. Morbi aliquet fringilla nibh,
+vel pellentesque dui venenatis eget. Orci varius natoque penatibus et
+magnis dis parturient montes, nascetur ridiculus mus. Donec ultricies
+ultrices magna gravida porta. Maecenas accumsan diam dui, auctor ornare
+ex pellentesque id. Integer tempus massa id augue finibus convallis.
+Nulla vestibulum, nisl id tempor pulvinar, felis dui pellentesque lacus,
+quis bibendum metus enim sed ex.%
+\end{abstract}%
+
+
+
+\sloppy
+
+
+
+
+\hypertarget{introduction}{%
+\section*{Introduction}}
+
+{\label{874460}}
+
+Lorem ipsum dolor sit amet, consectetur adipiscing elit
+\hyperref[csl:1]{[1]}. Cras egestas auctor molestie. \textbf{In hac
+habitasse platea dictumst.} Duis turpis tellus, scelerisque sit amet
+lectus ut, ultricies cursus enim. Integer fringilla a elit at fringilla.
+Lorem ipsum dolor sit amet, consectetur adipiscing elit. Nulla congue
+consequat consectetur. Duis ac mi ultricies, mollis ipsum nec, porta
+est.~\({}^{4}_{12}\mathbf{C}^{5+}_{2}\)
+
+\par\null\selectlanguage{english}
+\begin{figure}[H]
+\begin{center}
+\includegraphics[width=1.00\columnwidth]{figures/mass/mass}
+\caption{{Pellentesque suscipit risus massa, non vestibulum libero euismod
+feugiat. In hac habitasse platea dictumst. Maecenas rutrum lobortis
+lobortis. Vestibulum convallis porttitor sem ac ultricies.
+{\label{931769}}%
+}}
+\end{center}
+\end{figure}
+
+\par\null
+
+Mauris nec massa leo. Mauris ac diam auctor nisl imperdiet porta. Sed
+sit amet neque eget nisi dictum placerat. Duis sit amet pellentesque
+odio. Cras scelerisque sem a consectetur vehicula. Aliquam interdum
+luctus fringilla. Nunc sollicitudin, lorem in semper viverra, dui nisi
+sodales sem, ut condimentum erat leo eget arcu. Donec pharetra aliquam
+metus, non pulvinar tellus interdum a. Mauris a ante pharetra, mollis
+enim in, eleifend erat. Pellentesque suscipit risus massa, non
+vestibulum libero euismod feugiat. In hac habitasse platea dictumst.
+Maecenas rutrum lobortis lobortis. Vestibulum convallis porttitor sem ac
+ultricies. Mauris volutpat fringilla nisl blandit semper. Proin nec
+iaculis sem. Aenean neque ipsum, pretium a faucibus non, tincidunt ut
+sapien \hyperref[csl:2]{[2]}; \hyperref[csl:3]{[3]}~.
+
+Nunc a aliquet sem, eget aliquet purus. Vestibulum ac placerat mauris.
+Proin sed dolor ac justo semper iaculis. Donec varius, nibh sit amet
+finibus tristique, sapien ante interdum odio, et pretium sapien libero
+nec massa. In hac habitasse platea dictumst. Donec vel augue ac sapien
+imperdiet pretium. Maecenas gravida risus id ultricies dignissim.
+Maecenas gravida felis quis dolor faucibus, sed maximus lorem tristique.
+Nam hendrerit quam quis ante porta posuere. Fusce finibus maximus orci
+at porttitor. Nulla tempor ex a porttitor consequat. Quisque quis tempor
+eros. Donec nisi mauris, sollicitudin in dapibus eu, interdum ultricies
+quam Fig {\textbackslash ref\{931769\}}.
+
+\hypertarget{section}{%
+\section*{Section}}
+
+{\label{507127}}
+
+Nunc a aliquet sem, eget aliquet purus. Vestibulum ac placerat mauris.
+Proin sed dolor ac justo semper iaculis. Donec varius, nibh sit amet
+finibus tristique, sapien ante interdum odio, et pretium sapien libero
+nec massa. In hac habitasse platea dictumst. Donec vel augue ac sapien
+imperdiet pretium. Maecenas gravida risus id ultricies dignissim.
+Maecenas gravida felis quis dolor faucibus, sed maximus lorem
+tristique~\(e^{i\pi}+1=0\)
+
+\hypertarget{acknowledgements}{%
+\section*{Acknowledgements}}
+
+{\label{687807}}
+
+Lorem ipsum dolor sit amet, consectetur adipiscing elit. Cras egestas
+auctor molestie. In hac habitasse platea dictumst. Duis turpis tellus,
+scelerisque sit amet lectus ut, ultricies cursus enim. Integer fringilla
+a elit at fringilla. Lorem ipsum dolor sit amet, consectetur adipiscing
+elit. Nulla congue consequat consectetur. Duis ac mi ultricies, mollis
+ipsum nec, porta est.
+
+\selectlanguage{english}
+\FloatBarrier
+\section*{References}\sloppy
+\phantomsection
+\label{csl:1}[1]K. Zinszer, K. Morrison, A. Verma, J.S. Brownstein, {Spatial Determinants of Ebola Virus Disease Risk for the West African Epidemic.}, PLoS Curr. 9 (2017).
+
+\phantomsection
+\label{csl:2}[2]J. Zhou, Z. Xue, Z. Du, T. Melese, P.D. Boyer, {Relationship of tightly bound {ADP} and {ATP} to control and catalysis by chloroplast {ATP} synthase}, Biochemistry. 27 (1988) 5129–5135. \url{https://doi.org/10.1021/bi00414a027.}
+
+\phantomsection
+\label{csl:3}[3]P.D. Boyer, {Energy Life, and {ATP} (Nobel Lecture)}, Angewandte Chemie International Edition. 37 (1998) 2296–2307. \url{https://doi.org/10.1002/(sici)1521-3773(19980918)37:17<2296::aid-anie2296>3.0.co;2-w.}
+
+\end{CJK}\end{document}
