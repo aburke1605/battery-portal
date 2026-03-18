@@ -81,11 +81,13 @@
 \begin{document}
 \begin{CJK}{UTF8}{gbsn}
 
-\title{Journal Of Energy Storage Template}
+\title{A Remote Management System for Monitoring and Optimising Portable Energy Storage Systems}
 
 
 
+\author[1]{Musa Bashir}%
 \author[1]{Aodh\'an Burke}%
+\author[1]{Yunfeng Zhao}%
 \affil[1]{University of Liverpool}%
 
 
@@ -109,14 +111,7 @@
 
 \selectlanguage{english}
 \begin{abstract}
-Pellentesque tincidunt lobortis orci non venenatis. Cras in justo
-luctus, pulvinar augue id, suscipit diam. Morbi aliquet fringilla nibh,
-vel pellentesque dui venenatis eget. Orci varius natoque penatibus et
-magnis dis parturient montes, nascetur ridiculus mus. Donec ultricies
-ultrices magna gravida porta. Maecenas accumsan diam dui, auctor ornare
-ex pellentesque id. Integer tempus massa id augue finibus convallis.
-Nulla vestibulum, nisl id tempor pulvinar, felis dui pellentesque lacus,
-quis bibendum metus enim sed ex.%
+ABSTRACT
 \end{abstract}%
 
 
@@ -128,79 +123,72 @@ quis bibendum metus enim sed ex.%
 
 \hypertarget{introduction}{%
 \section*{Introduction}}
-
-{\label{874460}}
-
-Lorem ipsum dolor sit amet, consectetur adipiscing elit
-\hyperref[csl:1]{[1]}. Cras egestas auctor molestie. \textbf{In hac
-habitasse platea dictumst.} Duis turpis tellus, scelerisque sit amet
-lectus ut, ultricies cursus enim. Integer fringilla a elit at fringilla.
-Lorem ipsum dolor sit amet, consectetur adipiscing elit. Nulla congue
-consequat consectetur. Duis ac mi ultricies, mollis ipsum nec, porta
-est.~\({}^{4}_{12}\mathbf{C}^{5+}_{2}\)
+{\label{sec:introduction}}
+INTRODUCTION
 
 \par\null\selectlanguage{english}
 \begin{figure}[H]
 \begin{center}
-\includegraphics[width=1.00\columnwidth]{figures/mass/mass}
-\caption{{Pellentesque suscipit risus massa, non vestibulum libero euismod
-feugiat. In hac habitasse platea dictumst. Maecenas rutrum lobortis
-lobortis. Vestibulum convallis porttitor sem ac ultricies.
-{\label{931769}}%
+% \includegraphics[width=1.00\columnwidth]{figures/mass/mass}
+\caption{{CAPTION
+{\label{fig:mass}}%
 }}
 \end{center}
 \end{figure}
 
 \par\null
+INTRODUCTION
 
-Mauris nec massa leo. Mauris ac diam auctor nisl imperdiet porta. Sed
-sit amet neque eget nisi dictum placerat. Duis sit amet pellentesque
-odio. Cras scelerisque sem a consectetur vehicula. Aliquam interdum
-luctus fringilla. Nunc sollicitudin, lorem in semper viverra, dui nisi
-sodales sem, ut condimentum erat leo eget arcu. Donec pharetra aliquam
-metus, non pulvinar tellus interdum a. Mauris a ante pharetra, mollis
-enim in, eleifend erat. Pellentesque suscipit risus massa, non
-vestibulum libero euismod feugiat. In hac habitasse platea dictumst.
-Maecenas rutrum lobortis lobortis. Vestibulum convallis porttitor sem ac
-ultricies. Mauris volutpat fringilla nisl blandit semper. Proin nec
-iaculis sem. Aenean neque ipsum, pretium a faucibus non, tincidunt ut
-sapien \hyperref[csl:2]{[2]}; \hyperref[csl:3]{[3]}~.
+\hypertarget{hardware}{%
+\section*{Hardware description}}
+{\label{sec:hardware}}
+\begin{itemize}
+  \item unit
+  \item ESP32 microcontroller - built in WiFi
+  \item BMS and inverter
+  \item GPS
+  \item LoRa transceivers
+\end{itemize}
 
-Nunc a aliquet sem, eget aliquet purus. Vestibulum ac placerat mauris.
-Proin sed dolor ac justo semper iaculis. Donec varius, nibh sit amet
-finibus tristique, sapien ante interdum odio, et pretium sapien libero
-nec massa. In hac habitasse platea dictumst. Donec vel augue ac sapien
-imperdiet pretium. Maecenas gravida risus id ultricies dignissim.
-Maecenas gravida felis quis dolor faucibus, sed maximus lorem tristique.
-Nam hendrerit quam quis ante porta posuere. Fusce finibus maximus orci
-at porttitor. Nulla tempor ex a porttitor consequat. Quisque quis tempor
-eros. Donec nisi mauris, sollicitudin in dapibus eu, interdum ultricies
-quam Fig {\textbackslash ref\{931769\}}.
+\hypertarget{telemetry}{%
+\section*{Telemetry and network design}}
+{\label{sec:telemetry}}
+\begin{itemize}
+  \item local HTTP server
+  \item websocket connection with web app
+  \item MESH network
+  \item radio communication
+\end{itemize}
 
-\hypertarget{section}{%
-\section*{Section}}
+\hypertarget{portal}{%
+\section*{Management portal}}
+{\label{sec:portal}}
+\begin{itemize}
+  \item Python backend
+  \item TypeScript React frontend
+  \item MySQL database
+  \item Azure cloud deployment
+\end{itemize}
+\hypertarget{twin}{%
+\subsection*{Digital twins}}
+{\label{sec:twin}}
+\begin{itemize}
+  \item visual display
+  \item machine learning
+\end{itemize}
 
-{\label{507127}}
-
-Nunc a aliquet sem, eget aliquet purus. Vestibulum ac placerat mauris.
-Proin sed dolor ac justo semper iaculis. Donec varius, nibh sit amet
-finibus tristique, sapien ante interdum odio, et pretium sapien libero
-nec massa. In hac habitasse platea dictumst. Donec vel augue ac sapien
-imperdiet pretium. Maecenas gravida risus id ultricies dignissim.
-Maecenas gravida felis quis dolor faucibus, sed maximus lorem
-tristique~\(e^{i\pi}+1=0\)
+\hypertarget{discussion}{%
+\section*{Discussion}}
+{\label{sec:discussion}}
+\begin{itemize}
+  \item integration into a combined energy storage system
+  \item replacing radio with satellite communication
+\end{itemize}
 
 \hypertarget{acknowledgements}{%
 \section*{Acknowledgements}}
-
-{\label{687807}}
-
-Lorem ipsum dolor sit amet, consectetur adipiscing elit. Cras egestas
-auctor molestie. In hac habitasse platea dictumst. Duis turpis tellus,
-scelerisque sit amet lectus ut, ultricies cursus enim. Integer fringilla
-a elit at fringilla. Lorem ipsum dolor sit amet, consectetur adipiscing
-elit. Nulla congue consequat consectetur. Duis ac mi ultricies, mollis
-ipsum nec, porta est.
+{\label{sec:acknowledgements}}
+ACKNOWLEDGEMENTS
 
 \selectlanguage{english}
 \FloatBarrier
