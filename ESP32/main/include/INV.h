@@ -10,7 +10,8 @@ typedef struct {
   uint16_t battery_voltage;
   uint8_t temperature;
   uint16_t output_power;
-  bool enabled;
+  bool remote_enabled;
+  bool physically_enabled;
 } inverter_data_t;
 
 void inv_init();
