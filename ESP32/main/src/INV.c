@@ -25,7 +25,9 @@ void inv_init() {
   ESP_ERROR_CHECK(uart_driver_install(INV_UART_NUM, INV_BUFF_SIZE,
                                       INV_BUFF_SIZE, 0, NULL, 0));
 
-  inverter_data.enabled = true; // enabled by default on startup
+  // enabled by default on startup
+  inverter_data.remote_enabled = true;
+  inverter_data.physically_enabled = true;
 
   gpio_config_t io_conf = {
       .intr_type = GPIO_INTR_DISABLE,
@@ -38,7 +40,7 @@ void inv_init() {
 }
 
 void update_inv() {
-  if (inverter_data.enabled) {
+  if (inverter_data.remote_enabled) {
     uint8_t msg[3] = {0x51, 0x30, 0x0D};
     uart_write_bytes(INV_UART_NUM, msg, sizeof(msg));
 
@@ -51,7 +53,13 @@ void update_inv() {
       inverter_data.battery_voltage = buff[6] << 8 | buff[7];
       inverter_data.temperature = buff[8];
       inverter_data.output_power = buff[9] << 8 | buff[10];
+      inverter_data.physically_enabled = true;
+    } else {
+      inverter_data.physically_enabled = false;
     }
+  } else {
+    if (VERBOSE)
+      ESP_LOGW(TAG, "Inverter disabled, skipping update");
   }
 
   return;

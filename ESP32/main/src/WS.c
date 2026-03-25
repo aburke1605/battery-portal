@@ -366,10 +366,10 @@ esp_err_t perform_request(cJSON *message, cJSON *response) {
       bool is_enabled = (bool)cJSON_GetObjectItem(data, "is-enabled")->valueint;
       if (is_enabled) {
         gpio_set_level(INV_EN_GPIO, 0);
-        inverter_data.enabled = false;
+        inverter_data.remote_enabled = false;
       } else {
         gpio_set_level(INV_EN_GPIO, 1);
-        inverter_data.enabled = true;
+        inverter_data.remote_enabled = true;
       }
       cJSON_AddStringToObject(response_content, "status", "success");
     }
@@ -553,7 +553,8 @@ char *get_data() {
 
   // get inverter data from global struct
   cJSON_AddNumberToObject(data, "P", inverter_data.output_power);
-  cJSON_AddNumberToObject(data, "inv", inverter_data.enabled);
+  cJSON_AddNumberToObject(data, "inv_re", inverter_data.remote_enabled);
+  cJSON_AddNumberToObject(data, "inv_pe", inverter_data.physically_enabled);
 
   // construct full message
   cJSON *message = cJSON_CreateObject();

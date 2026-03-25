@@ -461,16 +461,21 @@ const BatteryDetail: React.FC<BatteryDetailProps> = ({
                     </button>
                     <button
                       onClick={() =>
-                        isFromESP32 || battery.live_websocket
-                          ? flipInverter(battery.inv)
+                        (isFromESP32 || battery.live_websocket) &&
+                        battery.inv_pe
+                          ? flipInverter(battery.inv_re)
                           : null
                       }
                       className="w-full flex items-center justify-center px-4 py-2 border border-green-300 shadow-sm text-sm font-medium rounded-md text-green-700 bg-green-50 hover:bg-green-100 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500"
                     >
                       <WeightTilde size={16} className="mr-2" />
-                      {battery.inv ? "Disable" : "Enable"} Inverter{" "}
+                      {battery.inv_pe
+                        ? battery.inv_re
+                          ? "Disable Inverter"
+                          : "Enable Inverter"
+                        : "Inverter disabled locally"}
                       {!isFromESP32 && !battery.live_websocket
-                        ? "- OFFLINE"
+                        ? " - OFFLINE"
                         : ""}
                     </button>
                   </div>
